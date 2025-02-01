@@ -12413,7 +12413,8 @@ if [[ "$RUNTIME_MODE" == "upgradeDeploymentStatus" ]]; then
 
             zenservice_version=$(${CLI_CMD} get zenService $zen_service_name --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS -o jsonpath='{.status.currentVersion}')
             isCompleted=$(${CLI_CMD} get zenService $zen_service_name --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS -o jsonpath='{.status.zenStatus}')
-            isProgressDone=$(${CLI_CMD} get zenService $zen_service_name --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS -o jsonpath='{.status.Progress}')
+            # DBACLD-165802:Updated zenService check from "Progress" to "progress" for CPFS 4.10 and above
+            isProgressDone=$(${CLI_CMD} get zenService $zen_service_name --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS -o jsonpath='{.status.progress}')
 
             if [[ "$isCompleted" != "Completed" || "$isProgressDone" != "100%" || "$zenservice_version" != "${ZEN_OPERATOR_VERSION//v/}" ]]; then
                 clear
