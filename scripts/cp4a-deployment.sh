@@ -82,7 +82,7 @@ function parse_arguments() {
                 exit -1
                 ;;
             *)
-                isProjExists=`${CLI_CMD} get project $TARGET_PROJECT_NAME --ignore-not-found | wc -l`  >/dev/null 2>&1
+                isProjExists=`${CLI_CMD} get namespace $TARGET_PROJECT_NAME --ignore-not-found | wc -l`  >/dev/null 2>&1
                 if [ $isProjExists -ne 2 ] ; then
                     echo -e "\x1B[1;31mInvalid project name \"$TARGET_PROJECT_NAME\", please set a valid name...\x1B[0m"
                     exit 1
@@ -770,7 +770,7 @@ EOF
 function setup_opensearch_cr(){
 # Create ElasticsearchCluster
     info "Creating Opensearch cluster in the project \"$CP4BA_SERVICES_NS\"."
-    sa_scc_mcs=$(${CLI_CMD} get project $CP4BA_SERVICES_NS --no-headers --ignore-not-found -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.mcs}')
+    sa_scc_mcs=$(${CLI_CMD} get namespace $CP4BA_SERVICES_NS --no-headers --ignore-not-found -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.mcs}')
     if [ -z $sa_scc_mcs ]; then
         fail "Can NOT get value for \"sa.scc.mcs\" from the attribute of project \"$CP4BA_SERVICES_NS\"."
         exit 1
@@ -1262,10 +1262,10 @@ function create_project() {
     local project_name=$1
     project_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$project_name")
 
-    isProjExists=`${CLI_CMD} get project $project_name --ignore-not-found | wc -l`  >/dev/null 2>&1
+    isProjExists=`${CLI_CMD} get namespace $project_name --ignore-not-found | wc -l`  >/dev/null 2>&1
 
     if [ $isProjExists -ne 2 ] ; then
-        oc new-project ${project_name} >/dev/null 2>&1
+        ${CLI_CMD} create namespace ${project_name} >/dev/null 2>&1
         returnValue=$?
         if [ "$returnValue" == 1 ]; then
             if [ -z "$CP4BA_AUTO_NAMESPACE" ]; then
@@ -10531,7 +10531,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                 fi
 
                 # Additionally, we would check if cs-control namespace exists.
-                isProjExists=`${CLI_CMD} get project $DEDICATED_CS_PROJECT --no-headers --ignore-not-found | wc -l`  >/dev/null 2>&1
+                isProjExists=`${CLI_CMD} get namespace $DEDICATED_CS_PROJECT --no-headers --ignore-not-found | wc -l`  >/dev/null 2>&1
                 if [ $isProjExists -eq 1 ] ; then
                     # If it exists, we will deploy the same ibm-licensing-catalog into cs-control namespace.
                     if [[ $machine == "Linux" ]]; then
@@ -11202,7 +11202,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                     fi
 
                     # Additionally, we would check if cs-control namespace exists.
-                    isProjExists=`${CLI_CMD} get project $DEDICATED_CS_PROJECT --no-headers --ignore-not-found | wc -l`  >/dev/null 2>&1
+                    isProjExists=`${CLI_CMD} get namespace $DEDICATED_CS_PROJECT --no-headers --ignore-not-found | wc -l`  >/dev/null 2>&1
                     if [ $isProjExists -eq 1 ] ; then
                         # If it exists, we will deploy the same ibm-licensing-catalog into cs-control namespace.
                         if [[ $machine == "Linux" ]]; then
@@ -11292,7 +11292,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                     fi
 
                     # Additionally, we would check if cs-control namespace exists.
-                    isProjExists=`${CLI_CMD} get project $DEDICATED_CS_PROJECT --no-headers --ignore-not-found | wc -l`  >/dev/null 2>&1
+                    isProjExists=`${CLI_CMD} get namespace $DEDICATED_CS_PROJECT --no-headers --ignore-not-found | wc -l`  >/dev/null 2>&1
                     if [ $isProjExists -eq 1 ] ; then
                         # If it exists, we will deploy the same ibm-licensing-catalog into cs-control namespace.
                         if [[ $machine == "Linux" ]]; then
@@ -11403,7 +11403,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                 # This is still a valid scenario in 24.0.0 upgrading to 24.0.1.
                 if [[ $UPGRADE_MODE == "dedicated2dedicated" && $ENABLE_PRIVATE_CATALOG -eq 1 ]]; then
                     # Additionally, we would check if cs-control namespace exists.
-                    isProjExists=`${CLI_CMD} get project $DEDICATED_CS_PROJECT --no-headers --ignore-not-found | wc -l`  >/dev/null 2>&1
+                    isProjExists=`${CLI_CMD} get namespace $DEDICATED_CS_PROJECT --no-headers --ignore-not-found | wc -l`  >/dev/null 2>&1
                     if [ $isProjExists -eq 1 ] ; then
                         # If it exists, we will deploy the same ibm-licensing-catalog into cs-control namespace.
                         if [[ $machine == "Linux" ]]; then

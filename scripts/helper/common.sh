@@ -205,9 +205,9 @@ COMMON_SERVICES_CM_DEDICATE_FILE_UPDATE="${PARENT_DIR}/descriptors/${COMMON_SERV
 CP4BA_OPERATOR_LIST="ibm-cp4a-operator ibm-content-operator icp4a-foundation-operator  ibm-ads-operator  ibm-cp4a-wfps-operator ibm-dpe-operator ibm-insights-engine-operator ibm-odm-operator ibm-pfs-operator ibm-workflow-operator"
 
 # set CLI_CMD var
-if which oc >/dev/null 2>&1; then
-    CLI_CMD=oc
-elif which kubectl >/dev/null 2>&1; then
+#if which oc >/dev/null 2>&1; then
+#    CLI_CMD=oc
+if which kubectl >/dev/null 2>&1; then
     CLI_CMD=kubectl
 else
     echo -e  "\x1B[1;31mUnable to locate Kubernetes CLI or OpenShift CLI. You must install it to run this script.\x1B[0m" && \

@@ -1,0 +1,10 @@
+/.vs
+.tmp
+scripts/baw-prerequisites*
+scripts/cp4ba-prerequisites*
+scripts/cp4ba-upgrade*
+.idea
+.DS_Store
+.vscode/*
+scripts/generated-cr*
+scripts/jdbc*
