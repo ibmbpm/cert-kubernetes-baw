@@ -1929,11 +1929,11 @@ function select_platform(){
         elif [[ $DEPLOYMENT_TYPE == "production" ]]
         then
             if [[ "${SCRIPT_MODE}" == "OLM" ]]; then
-                options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
-                PS3='Enter a valid option [1 to 2]: '
+                options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud" "Other CNCF Kubernetes")
+                PS3='Enter a valid option [1 to 3]: '
             else
-                options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
-                PS3='Enter a valid option [1 to 2]: '
+                options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud" "Other CNCF Kubernetes")
+                PS3='Enter a valid option [1 to 3]: '
             fi
         fi
         if [[ -z "${CP4BA_AUTO_PLATFORM}" ]]; then
@@ -1947,6 +1947,11 @@ function select_platform(){
                         ;;
                     "Openshift Container Platform (OCP) - Private Cloud")
                         PLATFORM_SELECTED="OCP"
+                        use_entitlement="yes"
+                        break
+                        ;;
+                    "Other CNCF Kubernetes")
+                        PLATFORM_SELECTED="other"
                         use_entitlement="yes"
                         break
                         ;;
