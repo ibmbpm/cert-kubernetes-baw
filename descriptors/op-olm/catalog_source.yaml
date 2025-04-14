@@ -140,7 +140,7 @@ spec:
   displayName: BTS Operator-3.35.3
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:095817b84c9415c16d1b35b1ed48b1e5875ec19220e7295c4b0b73318c40bb5d
+  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:2dc18f55b0665ebb305e8dcfe8da9c3c8dc1be7b5029838c74e7dc6d297f005d
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
