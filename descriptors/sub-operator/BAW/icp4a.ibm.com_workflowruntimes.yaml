@@ -80,6 +80,10 @@ spec:
                     format: int32
                     type: integer
                 type: object
+              baw_cncf:
+                default: false
+                description: Whether it is the BAW standalone version on CNCF
+                type: boolean
               business_event:
                 description: IBM Business Automation Insights integration configuration.
                 properties:
