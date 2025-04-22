@@ -8,7 +8,7 @@
 # disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
 #
 ###############################################################################
-# CP4BA 2500.SP05 catalog
+# CP4BA 2500.SP07 catalog
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -27,7 +27,7 @@ spec:
     registryPoll:
       interval: 45m
 ---
-# IBM CS Flink Operator Catalog 1.19 (2.0.8)
+# IBM CS Flink Operator Catalog 1.18.1 (2.0.4)
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -38,7 +38,7 @@ spec:
   publisher: IBM
   sourceType: grpc
   image: >-
-    icr.io/cpopen/ibm-opencontent-flink-operator-catalog@sha256:de3d2f661368ff8e032848704cc21783ffd8d9469eb48d9c1ebb557bc37fb688
+    icr.io/cpopen/ibm-opencontent-flink-operator-catalog@sha256:b1e6182101793348aaf45b77160848b09674033a2b6c910d14d3049a711bbdd7
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -48,11 +48,11 @@ spec:
       interval: 45m
   priority: 100
 ---
-# IBM CS Opensearch Operator Catalog 1.1.2470
+# IBM CS Opensearch Operator Catalog 1.1.1714
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-cs-opensearch-catalog
+  name: ibm-opensearch-operator-catalog
   namespace: openshift-marketplace
 spec:
   displayName: IBM CS Opencontent Opensearch Catalog
@@ -184,8 +184,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  #image: cp.stg.icr.io/cp/ibm-zen-operator-catalog@sha256:8aa614c2538ddb65c2df4b5eabb208272f3026136772cbe3af7d26ba283aba34
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:a5566fc765d898a50fefdf83c88443178e2d718492f7709330c10052e05c9ece
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:8aa614c2538ddb65c2df4b5eabb208272f3026136772cbe3af7d26ba283aba34
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
