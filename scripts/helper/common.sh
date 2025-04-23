@@ -27,6 +27,9 @@ ALL_NAMESPACE_NAME="openshift-operators"
 CP4BA_SERVICES_NS=""
 CP4BA_OPERATORS_NS=""
 
+# BAW CNCF folder
+BAW_CNCF_FOLDER=${PARENT_DIR}/cncf/scripts
+
 PREREQUISITES_FOLDER=${CUR_DIR}/cp4ba-prerequisites/project/$1
 PREREQUISITES_FOLDER_BAK=${CUR_DIR}/cp4ba-prerequisites-backup/project/$1
 PROPERTY_FILE_FOLDER=${PREREQUISITES_FOLDER}/propertyfile
