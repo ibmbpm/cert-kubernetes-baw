@@ -7,6 +7,5 @@ scripts/cp4ba-upgrade/*
 .DS_Store
 .vscode/*
 scripts/generated-cr/*
-scripts/jdbc*
 scripts/.bak
 scripts/cp4a-script-logs/*
