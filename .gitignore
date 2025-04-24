@@ -10,3 +10,9 @@ scripts/generated-cr/*
 scripts/jdbc*
 scripts/.bak
 scripts/cp4a-script-logs/*
+scripts/baw-script-logs/*
+*.log
+network_cidr
+network_type
+operators_namespace
+services_namespace

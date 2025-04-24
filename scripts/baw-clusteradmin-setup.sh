@@ -1,5 +1,5 @@
 #!/bin/bash
-# set -x
+set -x
 ###############################################################################
 #
 # Licensed Materials - Property of IBM
@@ -2493,7 +2493,7 @@ function retrieve_domain_name(){
 # DBACLD-168151
 function setup_other_type_platform()
 {
-    source $BAW_CNCF_FOLDER/baw-utils.sh # TODO find or create scripts
+    source $BAW_CNCF_FOLDER/baw-utils.sh
     source $BAW_CNCF_FOLDER/baw-install-prereqs.sh
     check_cncf_rancher_prereqs  # function definition in baw-install-prereqs
     select_project

@@ -76,10 +76,10 @@ function create_subscriptions() {
 
 # Function that checks for prereqs needed 
 # This includes installing olm if it is not present already
-# Function gets called as soon as rancher platform is selected in bai-clusteradmin-setup.sh
+# Function gets called as soon as rancher platform is selected in baw-clusteradmin-setup.sh
 function check_cncf_rancher_prereqs() {
     printf "\n"
-    info "Checking the prerequisites to install BAI Standalone Operators for Rancher..."
+    info "Checking the prerequisites to install BAW Standalone Operators for Rancher..."
     #check_command kubectl
 
     oc_version=$(kubectl get clusterversion version -o=jsonpath={.status.desired.version} 2>/dev/null)
@@ -135,7 +135,7 @@ function check_cert_manager() {
 
     # If any of these exist, proceed with installation
     if [[ -n "$CERT_MANAGER_CONFIGS" || -n "$SUBSCRIPTION_EXISTS" || -n "$CSV_NAME" ]]; then
-        info "Cert Manager components detected. The BAI deployment will use the existing Cert Manager available.Proceeding with installation..."
+        info "Cert Manager components detected. The BAW deployment will use the existing Cert Manager available.Proceeding with installation..."
         existing_cert_manager=true
         
     else
@@ -148,7 +148,7 @@ function check_cert_manager() {
     #   info "No certificate manager detected, will install one."
     #   existing_cert_manager=false
     #else
-    #   info "A certificate manager is already installed in this cluster, BAI will use it."
+    #   info "A certificate manager is already installed in this cluster, BAW will use it."
     #   existing_cert_manager=true
     #fi
 }
@@ -168,19 +168,19 @@ function check_licensing_service() {
     fi
 }
 
-# The main function that is called by bai-clusteradmin-setup.sh script that will install cert manager, licensing manager and create all catalog sources
+# The main function that is called by baw-clusteradmin-setup.sh script that will install cert manager, licensing manager and create all catalog sources
 # Takes in 3 parameters
 # licensing_namespace which is the licensing manager namespace, defaulted to ibm-licensing
-# bai_namespace which is the namespace where BAI Standalone is to be deployed
-# Dev mode flag which is only true when we want to deploy BAI Standalone with the staging ER images.
-function bai_cncf_rancher_prereq_install() {
+# baw_namespace which is the namespace where BAW Standalone is to be deployed
+# Dev mode flag which is only true when we want to deploy BAW Standalone with the staging ER images.
+function baw_cncf_rancher_prereq_install() {
     licensing_namespace=$1
-    bai_namespace=$2
+    baw_namespace=$2
     dev_mode=$3
     #check_prereqs
     check_cert_manager
     check_licensing_service
-    create_all_catalog_sources ${bai_namespace} ${dev_mode} # this function is in bai-utils and is used to create all catalog sources.
+    create_all_catalog_sources ${baw_namespace} ${dev_mode} # this function is in baw-utils and is used to create all catalog sources.
     create_operator_groups
     create_subscriptions
 }
