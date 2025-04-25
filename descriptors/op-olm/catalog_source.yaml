@@ -192,7 +192,9 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: cp.stg.icr.io/cp/ibm-zen-operator-catalog@sha256:8aa614c2538ddb65c2df4b5eabb208272f3026136772cbe3af7d26ba283aba34
+  # DBACLD-175640 issue to pull bundle with this catalog
+  #image: cp.stg.icr.io/cp/ibm-zen-operator-catalog@sha256:8aa614c2538ddb65c2df4b5eabb208272f3026136772cbe3af7d26ba283aba34
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:a5566fc765d898a50fefdf83c88443178e2d718492f7709330c10052e05c9ece
   secrets:
   - "ibm-entitlement-key"
   - "ibm-stg-entitlement-key"
