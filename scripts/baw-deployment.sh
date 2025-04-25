@@ -4,7 +4,7 @@
 #
 # Licensed Materials - Property of IBM
 #
-# (C) Copyright IBM Corp. 2024. All Rights Reserved.
+# (C) Copyright IBM Corp. 2024, 2025. All Rights Reserved.
 #
 # US Government Users Restricted Rights - Use, duplication or
 # disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
@@ -1923,10 +1923,10 @@ function select_platform(){
     echo -e "\x1B[1mSelect the cloud platform to deploy: \x1B[0m"
     COLUMNS=12
     if [ -z "$existing_platform_type" ]; then
-        if [[ $DEPLOYMENT_TYPE == "starter" ]];then
-            options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
-            PS3='Enter a valid option [1 to 2]: '
-        elif [[ $DEPLOYMENT_TYPE == "production" ]]
+        #if [[ $DEPLOYMENT_TYPE == "starter" ]];then
+        #    options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
+        #    PS3='Enter a valid option [1 to 2]: '
+        if [[ $DEPLOYMENT_TYPE == "production" ]]
         then
             if [[ "${SCRIPT_MODE}" == "OLM" ]]; then
                 options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud" "Other CNCF Kubernetes")
@@ -1963,10 +1963,10 @@ function select_platform(){
            use_entitlement="yes"
         fi
     else
-        if [[ $DEPLOYMENT_TYPE == "starter" ]];then
-            options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
-            options_var=("ROKS" "OCP")
-        elif [[ $DEPLOYMENT_TYPE == "production" ]]
+        #if [[ $DEPLOYMENT_TYPE == "starter" ]];then
+        #    options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
+        #    options_var=("ROKS" "OCP")
+        if [[ $DEPLOYMENT_TYPE == "production" ]]
         then
             if [[ "${SCRIPT_MODE}" == "OLM" ]]; then
                 options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
@@ -1998,44 +1998,44 @@ function select_platform(){
     validate_kube_oc_cli
 
     # For Azure Red Hat OpenShift (ARO)/Red Hat OpenShift Service on AWS (ROSA)
-    if [[ "$PLATFORM_SELECTED" == "OCP" && "${DEPLOYMENT_TYPE}" == "starter" ]]; then
-        while true; do
-            printf "\n"
-            printf "\x1B[1mIs your OCP deployed on AWS or Azure? (Yes/No, default: No): \x1B[0m"
-            read -rp "" ans
-            case "$ans" in
-            "y"|"Y"|"yes"|"Yes"|"YES")
-                printf "\n"
-                echo -e "\x1B[1mWhich platform is OCP deployed on? \x1B[0m"
-                COLUMNS=12
-                options=("AWS (ROSA: Red Hat OpenShift Service on AWS)" "Azure (ARO: Azure Red Hat OpenShift)")
-                PS3='Enter a valid option [1 to 2]: '
-                select opt in "${options[@]}"
-                do
-                    case $opt in
-                        "Azure"*)
-                            OCP_PLATFORM="ARO"
-                            break
-                            ;;
-                        "AWS"*)
-                            OCP_PLATFORM="ROSA"
-                            break
-                            ;;
-                        *) echo "invalid option $REPLY";;
-                    esac
-                done
-                break
-                ;;
-            "n"|"N"|"no"|"No"|"NO"|"")
-                OCP_PLATFORM=""
-                break
-                ;;
-            *)
-                echo -e "Answer must be \"Yes\" or \"No\"\n"
-                ;;
-            esac
-        done
-    fi
+    #if [[ "$PLATFORM_SELECTED" == "OCP" && "${DEPLOYMENT_TYPE}" == "starter" ]]; then
+    #    while true; do
+    #        printf "\n"
+    #        printf "\x1B[1mIs your OCP deployed on AWS or Azure? (Yes/No, default: No): \x1B[0m"
+    #        read -rp "" ans
+    #        case "$ans" in
+    #        "y"|"Y"|"yes"|"Yes"|"YES")
+    #            printf "\n"
+    #            echo -e "\x1B[1mWhich platform is OCP deployed on? \x1B[0m"
+    #            COLUMNS=12
+    #            options=("AWS (ROSA: Red Hat OpenShift Service on AWS)" "Azure (ARO: Azure Red Hat OpenShift)")
+    #            PS3='Enter a valid option [1 to 2]: '
+    #            select opt in "${options[@]}"
+    #            do
+    #                case $opt in
+    #                    "Azure"*)
+    #                        OCP_PLATFORM="ARO"
+    #                        break
+    #                        ;;
+    #                    "AWS"*)
+    #                        OCP_PLATFORM="ROSA"
+    #                        break
+    #                        ;;
+    #                    *) echo "invalid option $REPLY";;
+    #                esac
+    #            done
+    #            break
+    #            ;;
+    #        "n"|"N"|"no"|"No"|"NO"|"")
+    #            OCP_PLATFORM=""
+    #            break
+    #            ;;
+    #        *)
+    #            echo -e "Answer must be \"Yes\" or \"No\"\n"
+    #            ;;
+    #        esac
+    #    done
+    #fi
 }
 
 function check_ocp_version(){
@@ -2072,69 +2072,69 @@ function select_pattern(){
 
 
     if [[ "${PLATFORM_SELECTED}" == "other" ]]; then
-        if [[ "${DEPLOYMENT_TYPE}" == "starter" ]];
-        then
-            options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow Authoring and Automation Workstream Services" "IBM Automation Document Processing")
-            options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow-workstreams" "document_processing")
-            foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
-            foundation_1=("BAN" "RR")                # Foundation for Operational Decision Manager
-            foundation_2=("BAN" "RR" "UMS")     # Foundation for Automation Decision Services
-            foundation_3=("RR" "UMS" "BAS")     # Foundation for Business Automation Applications (full)
-            foundation_4=("RR" "UMS" "AE" "BAS")           # Foundation for Business Automation Workflow and workstreams(Demo)
-            foundation_5=("BAN" "RR" "AE" "BAS" "UMS")  # Foundation for IBM Automation Document Processing
-        else
-            options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow" "(a) Workflow Authoring" "(b) Workflow Runtime" "Automation Workstream Services" "IBM Automation Document Processing" "(a) Development Environment" "(b) Runtime Environment" "Workflow Process Service Authoring")
-            options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow" "workflow-authoring" "workflow-runtime" "workstreams" "document_processing" "document_processing_designer" "document_processing_runtime" "workflow-process-service")
-            foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
-            foundation_1=("BAN" "RR")                 # Foundation for Operational Decision Manager
-            foundation_2=("BAN" "RR" "UMS")     # Foundation for Automation Decision Services
-            foundation_3=("BAN" "RR" "UMS" "AE")     # Foundation for Business Automation Applications (full)
-            foundation_4=("BAN" "RR")           # Foundation for dummy
-            foundation_5=("BAN" "RR" "UMS" "BAS")          # Foundation for Business Automation Workflow - Workflow Authoring (5a)
-            foundation_6=("BAN" "RR" "UMS" "AE")           # Foundation for Business Automation Workflow - Workflow Runtime (5b)
-            foundation_7=("BAN" "RR" "UMS" "AE")           # Foundation for Automation Workstream Services (6)
-            foundation_8=("BAN" "RR")  # Foundation for IBM Automation Document Processing
-            foundation_9=("BAN" "RR" "AE" "BAS" "UMS")  # Foundation for IBM Automation Document Processing - 7a Development Environment
-            foundation_10=("BAN" "RR" "AE" "UMS")  # Foundation for IBM Automation Document Processing - 7b Runtime Environment
-            foundation_11=("BAS")           # Foundation for Workflow Process Service Authoring
-            foundation_12=("BAN" "RR" "UMS" "AE")           # Foundation for Business Automation Workflow and workstreams(5b+6)
-        fi
+        #if [[ "${DEPLOYMENT_TYPE}" == "starter" ]];
+        #then
+        #    options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow Authoring and Automation Workstream Services" "IBM Automation Document Processing")
+        #    options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow-workstreams" "document_processing")
+        #    foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
+        #    foundation_1=("BAN" "RR")                # Foundation for Operational Decision Manager
+        #    foundation_2=("BAN" "RR" "UMS")     # Foundation for Automation Decision Services
+        #    foundation_3=("RR" "UMS" "BAS")     # Foundation for Business Automation Applications (full)
+        #    foundation_4=("RR" "UMS" "AE" "BAS")           # Foundation for Business Automation Workflow and workstreams(Demo)
+        #    foundation_5=("BAN" "RR" "AE" "BAS" "UMS")  # Foundation for IBM Automation Document Processing
+        #else
+        options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow" "(a) Workflow Authoring" "(b) Workflow Runtime" "Automation Workstream Services" "IBM Automation Document Processing" "(a) Development Environment" "(b) Runtime Environment" "Workflow Process Service Authoring")
+        options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow" "workflow-authoring" "workflow-runtime" "workstreams" "document_processing" "document_processing_designer" "document_processing_runtime" "workflow-process-service")
+        foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
+        foundation_1=("BAN" "RR")                 # Foundation for Operational Decision Manager
+        foundation_2=("BAN" "RR" "UMS")     # Foundation for Automation Decision Services
+        foundation_3=("BAN" "RR" "UMS" "AE")     # Foundation for Business Automation Applications (full)
+        foundation_4=("BAN" "RR")           # Foundation for dummy
+        foundation_5=("BAN" "RR" "UMS" "BAS")          # Foundation for Business Automation Workflow - Workflow Authoring (5a)
+        foundation_6=("BAN" "RR" "UMS" "AE")           # Foundation for Business Automation Workflow - Workflow Runtime (5b)
+        foundation_7=("BAN" "RR" "UMS" "AE")           # Foundation for Automation Workstream Services (6)
+        foundation_8=("BAN" "RR")  # Foundation for IBM Automation Document Processing
+        foundation_9=("BAN" "RR" "AE" "BAS" "UMS")  # Foundation for IBM Automation Document Processing - 7a Development Environment
+        foundation_10=("BAN" "RR" "AE" "UMS")  # Foundation for IBM Automation Document Processing - 7b Runtime Environment
+        foundation_11=("BAS")           # Foundation for Workflow Process Service Authoring
+        foundation_12=("BAN" "RR" "UMS" "AE")           # Foundation for Business Automation Workflow and workstreams(5b+6)
+        #fi
     else
-        if [[ "${DEPLOYMENT_TYPE}" == "starter" ]];
-        then
-            options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow Authoring and Automation Workstream Services" "IBM Automation Document Processing")
-            options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow-workstreams" "document_processing")
-            foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
-            foundation_1=("BAN" "RR")                # Foundation for Operational Decision Manager
-            foundation_2=("BAN" "RR")     # Foundation for Automation Decision Services
-            foundation_3=("RR" "BAS")     # Foundation for Business Automation Applications (full)
-            foundation_4=("RR" "AE" "BAS")           # Foundation for Business Automation Workflow and workstreams(Demo)
-            foundation_5=("BAN" "RR" "AE" "BAS")  # Foundation for IBM Automation Document Processing
-        else
-            options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow" "(a) Workflow Authoring" "(b) Workflow Runtime" "Automation Workstream Services" "IBM Automation Document Processing" "(a) Development Environment" "(b) Runtime Environment" "Workflow Process Service Authoring")
-            options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow" "workflow-authoring" "workflow-runtime" "workstreams" "document_processing" "document_processing_designer" "document_processing_runtime" "workflow-process-service")
-            foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
-            foundation_1=("BAN" "RR")                 # Foundation for Operational Decision Manager
-            foundation_2=("BAN" "RR")     # Foundation for Automation Decision Services
-            foundation_3=("BAN" "RR" "AE")     # Foundation for Business Automation Applications (full)
-            foundation_4=("BAN" "RR")           # Foundation for dummy
-            foundation_5=("BAN" "RR" "BAS")           # Foundation for Business Automation Workflow - Workflow Authoring (5a)
-            foundation_6=("BAN" "RR" "AE")           # Foundation for Business Automation Workflow - Workflow Runtime (5b)
-            foundation_7=("BAN" "RR" "AE")           # Foundation for Automation Workstream Services (6)
-            foundation_8=("BAN" "RR")  # Foundation for IBM Automation Document Processing
-            foundation_9=("BAN" "RR" "AE" "BAS")  # Foundation for IBM Automation Document Processing - 7a Development Environment
-            foundation_10=("BAN" "RR" "AE")  # Foundation for IBM Automation Document Processing - 7b Runtime Environment
-            foundation_11=("BAS")           # Foundation for Workflow Process Service Authoring
-            foundation_12=("BAN" "RR" "AE")           # Foundation for Business Automation Workflow and workstreams(5b+6)
-        fi
+        #if [[ "${DEPLOYMENT_TYPE}" == "starter" ]];
+        #then
+        #    options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow Authoring and Automation Workstream Services" "IBM Automation Document Processing")
+        #    options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow-workstreams" "document_processing")
+        #    foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
+        #    foundation_1=("BAN" "RR")                # Foundation for Operational Decision Manager
+        #    foundation_2=("BAN" "RR")     # Foundation for Automation Decision Services
+        #    foundation_3=("RR" "BAS")     # Foundation for Business Automation Applications (full)
+        #    foundation_4=("RR" "AE" "BAS")           # Foundation for Business Automation Workflow and workstreams(Demo)
+        #    foundation_5=("BAN" "RR" "AE" "BAS")  # Foundation for IBM Automation Document Processing
+        #else
+        options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow" "(a) Workflow Authoring" "(b) Workflow Runtime" "Automation Workstream Services" "IBM Automation Document Processing" "(a) Development Environment" "(b) Runtime Environment" "Workflow Process Service Authoring")
+        options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow" "workflow-authoring" "workflow-runtime" "workstreams" "document_processing" "document_processing_designer" "document_processing_runtime" "workflow-process-service")
+        foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
+        foundation_1=("BAN" "RR")                 # Foundation for Operational Decision Manager
+        foundation_2=("BAN" "RR")     # Foundation for Automation Decision Services
+        foundation_3=("BAN" "RR" "AE")     # Foundation for Business Automation Applications (full)
+        foundation_4=("BAN" "RR")           # Foundation for dummy
+        foundation_5=("BAN" "RR" "BAS")           # Foundation for Business Automation Workflow - Workflow Authoring (5a)
+        foundation_6=("BAN" "RR" "AE")           # Foundation for Business Automation Workflow - Workflow Runtime (5b)
+        foundation_7=("BAN" "RR" "AE")           # Foundation for Automation Workstream Services (6)
+        foundation_8=("BAN" "RR")  # Foundation for IBM Automation Document Processing
+        foundation_9=("BAN" "RR" "AE" "BAS")  # Foundation for IBM Automation Document Processing - 7a Development Environment
+        foundation_10=("BAN" "RR" "AE")  # Foundation for IBM Automation Document Processing - 7b Runtime Environment
+        foundation_11=("BAS")           # Foundation for Workflow Process Service Authoring
+        foundation_12=("BAN" "RR" "AE")           # Foundation for Business Automation Workflow and workstreams(5b+6)
+        #fi
     fi
     patter_ent_input_array=("1" "2" "3" "4" "5a" "5b" "5A" "5B" "6" "7a" "7b" "7A" "7B" "8" "5b,6" "5B,6" "5b, 6" "5B, 6" "5b 6" "5B 6")
     tips1="\x1B[1;31mTips\x1B[0m:\x1B[1m Press [ENTER] to accept the default (None of the capabilities is selected). If none of the capabilities is chosen, the script will exit.\x1B[0m"
     tips2="\x1B[1;31mTips\x1B[0m:\x1B[1m Press [ENTER] when you are done\x1B[0m"
-    pattern_starter_tips="\x1B[1mInfo: Business Automation Navigator will be automatically installed in the environment as it is part of the Cloud Pak for Business Automation foundation platform. \n\nTips: After you make your first selection you will be able to make additional selections since you can combine multiple selections.\n\x1B[0m"
+#    pattern_starter_tips="\x1B[1mInfo: Business Automation Navigator will be automatically installed in the environment as it is part of the Cloud Pak for Business Automation foundation platform. \n\nTips: After you make your first selection you will be able to make additional selections since you can combine multiple selections.\n\x1B[0m"
     pattern_production_tips="\x1B[1mInfo: Business Automation Navigator will be automatically installed in the environment as it is part of the Cloud Pak for Business Automation foundation platform. \n\nTips: After you make your first selection you will be able to make additional selections since you can combine multiple selections.\n\x1B[0m"
     baw_iaws_tips="\x1B[1mInfo: Note that Business Automation Workflow Authoring (5a) cannot be installed together with Automation Workstream Services (6). However, Business Automation Workflow Runtime (5b) can be installed together with Automation Workstream Services (6).\n\x1B[0m"
-    linux_starter_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31mIBM Automation Document Processing (6) does NOT support a cluster running a Linux on Z (s390x) or Power (ppc64le) architecture.\n\x1B[0m"
+#    linux_starter_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31mIBM Automation Document Processing (6) does NOT support a cluster running a Linux on Z (s390x) or Power (ppc64le) architecture.\n\x1B[0m"
     linux_production_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31mIBM Automation Document Processing (7a/7b) does NOT support a cluster running a Linux on Z (s390x) or Power (ppc64le) architecture.\n\x1B[0m"
     content_deployed_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31m\"FileNet Content Manager\" can not be selected because one Content (Kind: content.icp4a.ibm.com) custom resource was deployed.\n\x1B[0m"
     indexof() {
@@ -2148,19 +2148,19 @@ function select_pattern(){
         clear
         echo -e "\x1B[1mSelect the Cloud Pak for Business Automation capability to install: \x1B[0m"
         for i in ${!options[@]}; do
-            if [[ $DEPLOYMENT_TYPE == "starter" ]];then
-                containsElement "${options_cr_val[i]}" "${EXISTING_PATTERN_ARR[@]}"
-                retVal=$?
-                if [ $retVal -ne 0 ]; then
-                    printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
-                else
-                    if [[ "${choices_pattern[i]}" == "(To Be Uninstalled)" ]]; then
-                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
-                    else
-                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "(Installed)"
-                    fi
-                fi
-            elif [[ $DEPLOYMENT_TYPE == "production" ]]
+#            if [[ $DEPLOYMENT_TYPE == "starter" ]];then
+#                containsElement "${options_cr_val[i]}" "${EXISTING_PATTERN_ARR[@]}"
+#                retVal=$?
+#                if [ $retVal -ne 0 ]; then
+#                    printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
+#                else
+#                    if [[ "${choices_pattern[i]}" == "(To Be Uninstalled)" ]]; then
+#                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
+#                    else
+#                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "(Installed)"
+#                    fi
+#                fi
+            if [[ $DEPLOYMENT_TYPE == "production" ]]
             then
                 containsElement "${options_cr_val[i]}" "${EXISTING_PATTERN_ARR[@]}"
                 retVal=$?
@@ -2307,9 +2307,9 @@ function select_pattern(){
             if [[ $CONTENT_DEPLOYED == "Yes" ]]; then
                 echo -e "${content_deployed_tips}"
             fi
-        else
-            echo -e "${pattern_starter_tips}"
-            echo -e "${linux_starter_tips}"
+        #else
+        #    echo -e "${pattern_starter_tips}"
+        #    echo -e "${linux_starter_tips}"
         fi
         # Show different tips according components select or unselect
         containsElement "(Selected)" "${choices_pattern[@]}"
@@ -2326,20 +2326,20 @@ function select_pattern(){
 # ##########################DEBUG############################
     }
 
-    if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
-        prompt="Enter a valid option [1 to ${#options[@]}]: "
-    elif [[ $DEPLOYMENT_TYPE == "production" ]]
+#    if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
+#        prompt="Enter a valid option [1 to ${#options[@]}]: "
+    if [[ $DEPLOYMENT_TYPE == "production" ]]
     then
         prompt="Enter a valid option [1 to 4, 5a, 5b, 6, 7a, 7b, 8]: "
     fi
 
     while menu && read -rp "$prompt" num && [[ "$num" ]]; do
-        if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
-            [[ "$num" != *[![:digit:]]* ]] &&
-            (( num > 0 && num <= ${#options[@]} )) ||
-            { msg="Invalid option: $num"; continue; }
-            ((num--));
-        elif [[ $DEPLOYMENT_TYPE == "production" ]]
+#        if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
+#            [[ "$num" != *[![:digit:]]* ]] &&
+#            (( num > 0 && num <= ${#options[@]} )) ||
+#            { msg="Invalid option: $num"; continue; }
+#            ((num--));
+        if [[ $DEPLOYMENT_TYPE == "production" ]]
         then
             containsElement "${num}" "${patter_ent_input_array[@]}"
             inputretVal=$?
@@ -2490,9 +2490,9 @@ function select_pattern(){
                 fi
             fi
         else
-            if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
-                [[ "${choices_pattern[num]}" ]] && choices_pattern[num]="" || choices_pattern[num]="(To Be Uninstalled)"
-            elif [[ $DEPLOYMENT_TYPE == "production" ]]
+#            if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
+#                [[ "${choices_pattern[num]}" ]] && choices_pattern[num]="" || choices_pattern[num]="(To Be Uninstalled)"
+            if [[ $DEPLOYMENT_TYPE == "production" ]]
             then
                 case "$num" in
                 "5")
@@ -2641,14 +2641,14 @@ function select_optional_component(){
         tips1="\x1B[1;31mTips\x1B[0m:\x1B[1m Press [ENTER] if you do not want any optional components or when you are finished selecting your optional components\x1B[0m"
         tips2="\x1B[1;31mTips\x1B[0m:\x1B[1m Press [ENTER] when you are done\x1B[0m"
         fncm_tips="\x1B[1mNote: IBM Enterprise Records (IER) and IBM Content Collector for SAP (ICCSAP) do not integrate with User Management Service (UMS).\n"
-        linux_starter_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31mIBM Content Collector for SAP (4) does NOT support a cluster running a Linux on Power architecture.\n\x1B[0m"
+        #linux_starter_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31mIBM Content Collector for SAP (4) does NOT support a cluster running a Linux on Power architecture.\n\x1B[0m"
         linux_production_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31mIBM Content Collector for SAP (5) does NOT support a cluster running a Linux on Power architecture.\n\x1B[0m"
         ads_tips="\x1B[1mTips:\x1B[0m Decision Designer is typically required if you are deploying a development or test environment.\nThis feature will automatically install Business Automation Studio, if not already present. \n\nDecision Runtime is typically recommended if you are deploying a test or production environment.\n\nDecision Runtime is required when Decision Designer is selected.\n\nYou should choose at least one these features to have a minimum environment configuration.\n"
-        if [[ $DEPLOYMENT_TYPE == "starter" ]];then
-            decision_tips="\x1B[1mTips:\x1B[0m Decision Center, Rule Execution Server and Decision Runner will be installed by default.\n"
-        else
-            decision_tips="\x1B[1mTips:\x1B[0m Decision Center is typically required for development and testing environments. \nRule Execution Server is typically required for testing and production environments and for using Business Automation Insights. \nYou should choose at least one these 2 features to have a minimum environment configuration. \n"
-        fi
+        #if [[ $DEPLOYMENT_TYPE == "starter" ]];then
+        #    decision_tips="\x1B[1mTips:\x1B[0m Decision Center, Rule Execution Server and Decision Runner will be installed by default.\n"
+        #else
+        decision_tips="\x1B[1mTips:\x1B[0m Decision Center is typically required for development and testing environments. \nRule Execution Server is typically required for testing and production environments and for using Business Automation Insights. \nYou should choose at least one these 2 features to have a minimum environment configuration. \n"
+        #fi
         application_tips_demo="\x1B[1mTips:\x1B[0m Application Designer is typically required if you are deploying a development or test environment.\nThis feature will automatically install Business Automation Studio, if not already present.  \n\nMake your selection or press enter to proceed. \n"
         application_tips_ent="\x1B[1mTips:\x1B[0m Application Designer is typically required if you are deploying a development or test environment.\nThis feature will automatically install Business Automation Studio, if not already present. \n\nApplication Engine is automatically installed in the environment.  \n\nMake your selection or press enter to proceed. \n"
 
@@ -2727,18 +2727,18 @@ function select_optional_component(){
             if [[ "${item_pattern}" == "Business Automation Application" ]]; then
 
                 echo -e "${application_tips}"
-                if [[ $DEPLOYMENT_TYPE == "starter" ]];then
-                    echo -e "${application_tips_demo}"
-                elif [[ $DEPLOYMENT_TYPE == "production" ]]
+                #if [[ $DEPLOYMENT_TYPE == "starter" ]];then
+                #    echo -e "${application_tips_demo}"
+                if [[ $DEPLOYMENT_TYPE == "production" ]]
                 then
                     echo -e "${application_tips_ent}"
                 fi
             fi
 
             if [[ "${item_pattern}" == "FileNet Content Manager" ]]; then
-                if [[ $DEPLOYMENT_TYPE == "starter" ]];then
-                    echo -e "${linux_starter_tips}"
-                elif [[ $DEPLOYMENT_TYPE == "production" ]]
+                #if [[ $DEPLOYMENT_TYPE == "starter" ]];then
+                #    echo -e "${linux_starter_tips}"
+                if [[ $DEPLOYMENT_TYPE == "production" ]]
                 then
                     echo -e "${linux_production_tips}"
                 fi
@@ -2772,12 +2772,12 @@ function select_optional_component(){
                     ((num--))
                     ;;
                 esac
-            elif [[ "${item_pattern}" == "FileNet Content Manager" && "$DEPLOYMENT_TYPE" == "starter" ]]; then
-                case "$num" in
-                "1"|"2"|"3"|"4"|"5"|"6"|"7")
-                    ((num--))
-                    ;;
-                esac
+            #elif [[ "${item_pattern}" == "FileNet Content Manager" && "$DEPLOYMENT_TYPE" == "starter" ]]; then
+            #    case "$num" in
+            #    "1"|"2"|"3"|"4"|"5"|"6"|"7")
+            #        ((num--))
+            #        ;;
+            #    esac
             else
                 ((num--))
             fi
@@ -2992,10 +2992,10 @@ function select_optional_component(){
             case $item_pattern in
                 "FileNet Content Manager")
                     # echo "select $item_pattern pattern optional components"
-                    if [[ $DEPLOYMENT_TYPE == "starter" ]];then
-                        optional_components_list=("Content Search Services" "Content Management Interoperability Services" "IBM Enterprise Records" "IBM Content Collector for SAP" "Business Automation Insights" "Task Manager")
-                        optional_components_cr_list=("css" "cmis" "ier" "iccsap" "bai" "tm")
-                    elif [[ $DEPLOYMENT_TYPE == "production" ]]
+                    #if [[ $DEPLOYMENT_TYPE == "starter" ]];then
+                    #    optional_components_list=("Content Search Services" "Content Management Interoperability Services" "IBM Enterprise Records" "IBM Content Collector for SAP" "Business Automation Insights" "Task Manager")
+                    #    optional_components_cr_list=("css" "cmis" "ier" "iccsap" "bai" "tm")
+                    if [[ $DEPLOYMENT_TYPE == "production" ]]
                     then
                         if [[ $PLATFORM_SELECTED == "other" ]]; then
                             optional_components_list=("Content Search Services" "Content Management Interoperability Services" "IBM Enterprise Records" "IBM Content Collector for SAP" "User Management Service" "Business Automation Insights" "Task Manager")
@@ -3026,21 +3026,21 @@ function select_optional_component(){
                     ;;
                 "Operational Decision Manager")
                     # echo "select $item_pattern pattern optional components"
-                    if [[ "${DEPLOYMENT_TYPE}" == "starter" ]]; then
-                        optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "decisionCenter" )
-                        optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "decisionServerRuntime" )
-                        optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "decisionRunner" )
-                        optional_components_list=("Business Automation Insights")
-                        optional_components_cr_list=("bai")
+                    #if [[ "${DEPLOYMENT_TYPE}" == "starter" ]]; then
+                    #    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "decisionCenter" )
+                    #    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "decisionServerRuntime" )
+                    #    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "decisionRunner" )
+                    #    optional_components_list=("Business Automation Insights")
+                    #    optional_components_cr_list=("bai")
+                    #else
+                    if [[ $PLATFORM_SELECTED == "other" ]]; then
+                        optional_components_list=("Decision Center" "Rule Execution Server" "Decision Runner" "User Management Service" "Business Automation Insights")
+                        optional_components_cr_list=("decisionCenter" "decisionServerRuntime" "decisionRunner" "ums" "bai")
                     else
-                        if [[ $PLATFORM_SELECTED == "other" ]]; then
-                            optional_components_list=("Decision Center" "Rule Execution Server" "Decision Runner" "User Management Service" "Business Automation Insights")
-                            optional_components_cr_list=("decisionCenter" "decisionServerRuntime" "decisionRunner" "ums" "bai")
-                        else
-                            optional_components_list=("Decision Center" "Rule Execution Server" "Decision Runner" "Business Automation Insights")
-                            optional_components_cr_list=("decisionCenter" "decisionServerRuntime" "decisionRunner" "bai")
-                        fi
+                        optional_components_list=("Decision Center" "Rule Execution Server" "Decision Runner" "Business Automation Insights")
+                        optional_components_cr_list=("decisionCenter" "decisionServerRuntime" "decisionRunner" "bai")
                     fi
+                    #fi
                         show_optional_components
                         if [[ $PLATFORM_SELECTED == "other" ]]; then
                             containsElement "bai" "${optional_component_cr_arr[@]}"
@@ -3056,30 +3056,30 @@ function select_optional_component(){
                     ;;
                 "Automation Decision Services")
                     # echo "select $item_pattern pattern optional components"
-                    if [[ "${DEPLOYMENT_TYPE}" == "starter" ]]; then
-                        optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "ads_designer" )
-                        optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "ads_runtime" )
-                        optional_components_list=("Business Automation Insights")
-                        optional_components_cr_list=("bai")
-                        show_optional_components
-                        optional_components_list=()
-                        optional_components_cr_list=()
-                    else
-                        optional_components_list=("Business Automation Insights" "Decision Designer" "Decision Runtime")
-                        optional_components_cr_list=("bai" "ads_designer" "ads_runtime")
-                        show_optional_components
-                        optional_components_list=()
-                        optional_components_cr_list=()
-                    fi
+                    #if [[ "${DEPLOYMENT_TYPE}" == "starter" ]]; then
+                    #    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "ads_designer" )
+                    #    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "ads_runtime" )
+                    #    optional_components_list=("Business Automation Insights")
+                    #    optional_components_cr_list=("bai")
+                    #    show_optional_components
+                    #    optional_components_list=()
+                    #    optional_components_cr_list=()
+                    #else
+                    optional_components_list=("Business Automation Insights" "Decision Designer" "Decision Runtime")
+                    optional_components_cr_list=("bai" "ads_designer" "ads_runtime")
+                    show_optional_components
+                    optional_components_list=()
+                    optional_components_cr_list=()
+                    #fi
                     break
                     ;;
                 "Business Automation Workflow")
                     # The logic for BAW only in 4Q
-                    if [[ $DEPLOYMENT_TYPE == "starter" && $retVal_baw -eq 0 ]]; then
-                        optional_components_list=("Business Automation Insights")
-                        optional_components_cr_list=("bai")
-                        show_optional_components
-                    fi
+                    #if [[ $DEPLOYMENT_TYPE == "starter" && $retVal_baw -eq 0 ]]; then
+                    #    optional_components_list=("Business Automation Insights")
+                    #    optional_components_cr_list=("bai")
+                    #    show_optional_components
+                    #fi
                     if [[ $DEPLOYMENT_TYPE == "production" && $retVal_baw -eq 0 ]]; then
                         optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "bai" )
                         optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "ae_data_persistence" )
@@ -3117,24 +3117,24 @@ function select_optional_component(){
                     break
                     ;;
                 "Business Automation Workflow Authoring and Automation Workstream Services")
-                    if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
-                        optional_components_list=("Case" "Content Integration" "Workstreams" "Data Collector and Data Indexer" "Business Automation Insights" "Business Automation Machine Learning")
-                        optional_components_cr_list=("case" "content_integration" "workstreams" "pfs" "bai" "baml")
-                        show_optional_components
+                    #if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
+                    #    optional_components_list=("Case" "Content Integration" "Workstreams" "Data Collector and Data Indexer" "Business Automation Insights" "Business Automation Machine Learning")
+                    #    optional_components_cr_list=("case" "content_integration" "workstreams" "pfs" "bai" "baml")
+                    #    show_optional_components
                     # elif [[ $DEPLOYMENT_TYPE == "production" ]]; then
                     #     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "bai" )
                     #     optional_component_arr=( "${optional_component_arr[@]}" "BusinessAutomationInsights" )
-                    fi
+                    #fi
                     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "cmis" )
                     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "baw_authoring" )
-                    if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
-                        containsElement "baml" "${optional_component_cr_arr[@]}"
-                        retVal=$?
-                        if [[ $retVal -eq 0 ]]; then
-                            optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "bai" "pfs")
-                            optional_component_arr=( "${optional_component_arr[@]}" "BusinessAutomationInsights" "ProcessFederationServer")
-                        fi
-                    fi
+                    #if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
+                    #    containsElement "baml" "${optional_component_cr_arr[@]}"
+                    #    retVal=$?
+                    #    if [[ $retVal -eq 0 ]]; then
+                    #        optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "bai" "pfs")
+                    #        optional_component_arr=( "${optional_component_arr[@]}" "BusinessAutomationInsights" "ProcessFederationServer")
+                    #    fi
+                    #fi
                     optional_components_list=()
                     optional_components_cr_list=()
                     break
@@ -3182,12 +3182,12 @@ function select_optional_component(){
                     break
                     ;;
                 "IBM Automation Document Processing")
-                    if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
-                        optional_components_list=("Content Search Services" "Content Management Interoperability Services" "Task Manager")
-                        optional_components_cr_list=("css" "cmis" "tm")
-                        show_optional_components
-                        optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "document_processing_designer" )
-                    fi
+                    #if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
+                    #    optional_components_list=("Content Search Services" "Content Management Interoperability Services" "Task Manager")
+                    #    optional_components_cr_list=("css" "cmis" "tm")
+                    #    show_optional_components
+                    #    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "document_processing_designer" )
+                    #fi
                     optional_components_list=()
                     optional_components_cr_list=()
                     break
@@ -3468,28 +3468,28 @@ function get_storage_class_name(){
     sc_fast_file_storage_classname=""
 
     printf "\n"
-    if [[ $DEPLOYMENT_TYPE == "starter" && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "other")]] ;
-    then
-        printf "\x1B[1mTo provision the persistent volumes and volume claims, enter the file storage classname(RWX): \x1B[0m"
+    #if [[ $DEPLOYMENT_TYPE == "starter" && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "other")]] ;
+    #then
+    #    printf "\x1B[1mTo provision the persistent volumes and volume claims, enter the file storage classname(RWX): \x1B[0m"
 
-        while [[ $storage_class_name == "" ]]
-        do
-            read -rp "" storage_class_name
-            if [ -z "$storage_class_name" ]; then
-               echo -e "\x1B[1;31mEnter a valid file storage classname(RWX)\x1B[0m"
-            fi
-        done
-        printf "\x1B[1mTo provision the persistent volumes and volume claims, enter the block storage classname(RWO): \x1B[0m"
-        if [[ $PLATFORM_SELECTED == "OCP" ]]; then
-        while [[ $block_storage_class_name == "" ]]
-        do
-            read -rp "" block_storage_class_name
-            if [ -z "$block_storage_class_name" ]; then
-               echo -e "\x1B[1;31mEnter a valid block storage classname(RWO)\x1B[0m"
-            fi
-        done
-        fi
-    elif [[ ($DEPLOYMENT_TYPE == "production" && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "other")) || $PLATFORM_SELECTED == "ROKS" ]]
+    #    while [[ $storage_class_name == "" ]]
+    #    do
+    #        read -rp "" storage_class_name
+    #        if [ -z "$storage_class_name" ]; then
+    #           echo -e "\x1B[1;31mEnter a valid file storage classname(RWX)\x1B[0m"
+    #        fi
+    #    done
+    #    printf "\x1B[1mTo provision the persistent volumes and volume claims, enter the block storage classname(RWO): \x1B[0m"
+    #    if [[ $PLATFORM_SELECTED == "OCP" ]]; then
+    #    while [[ $block_storage_class_name == "" ]]
+    #    do
+    #        read -rp "" block_storage_class_name
+    #        if [ -z "$block_storage_class_name" ]; then
+    #           echo -e "\x1B[1;31mEnter a valid block storage classname(RWO)\x1B[0m"
+    #        fi
+    #    done
+    #    fi
+    if [[ ($DEPLOYMENT_TYPE == "production" && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "other")) || $PLATFORM_SELECTED == "ROKS" ]]
     then
         printf "\x1B[1mTo provision the persistent volumes and volume claims\n\x1B[0m"
         while [[ $sc_slow_file_storage_classname == "" ]] # While get slow storage clase name
@@ -3743,53 +3743,53 @@ function select_ocp_olm(){
 }
 
 
-function select_deployment_type(){
-    printf "\n"
-
-    if [[ "$SCRIPT_MODE" == "OLM" ]]
-    then
-        DEPLOYMENT_TYPE="production"
-        echo -e "An enterprise deployment will be prepared for the OCP Catalog."
-    else
-        echo -e "\x1B[1mWhat type of deployment is being performed?\x1B[0m"
-
-        COLUMNS=12
-        options=("Starter" "Production")
-        if [ -z "$existing_deployment_type" ]; then
-          if [[ $CP4BA_DEPLOYMENT_TYPE != ""  ]]; then
-            DEPLOYMENT_TYPE=$CP4BA_DEPLOYMENT_TYPE
-          else
-            PS3='Enter a valid option [1 to 2]: '
-            select opt in "${options[@]}"
-            do
-                case $opt in
-                    "Starter")
-                        DEPLOYMENT_TYPE="starter"
-                        break
-                        ;;
-                    "Production")
-                        DEPLOYMENT_TYPE="production"
-                        break
-                        ;;
-                    *) echo "invalid option $REPLY";;
-                esac
-            done
-          fi
-        else
-            options_var=("Starter" "Production")
-            for i in ${!options_var[@]}; do
-                if [[ "${options_var[i]}" == "$existing_deployment_type" ]]; then
-                    printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "(Selected)"
-                else
-                    printf "%1d) %s\n" $((i+1)) "${options[i]}"
-                fi
-            done
-            echo -e "\x1B[1;31mExisting deployment type found in CR: \"$existing_deployment_type\"\x1B[0m"
-            # echo -e "\x1B[1;31mDo not need to select again.\n\x1B[0m"
-            prompt_press_any_key_to_continue
-        fi
-    fi
-}
+#function select_deployment_type(){
+#    printf "\n"
+#
+#    if [[ "$SCRIPT_MODE" == "OLM" ]]
+#    then
+#        DEPLOYMENT_TYPE="production"
+#        echo -e "An enterprise deployment will be prepared for the OCP Catalog."
+#    else
+#        echo -e "\x1B[1mWhat type of deployment is being performed?\x1B[0m"
+#
+#        COLUMNS=12
+#        options=("Starter" "Production")
+#        if [ -z "$existing_deployment_type" ]; then
+#          if [[ $CP4BA_DEPLOYMENT_TYPE != ""  ]]; then
+#            DEPLOYMENT_TYPE=$CP4BA_DEPLOYMENT_TYPE
+#          else
+#            PS3='Enter a valid option [1 to 2]: '
+#            select opt in "${options[@]}"
+#            do
+#                case $opt in
+#                    "Starter")
+#                        DEPLOYMENT_TYPE="starter"
+#                        break
+#                        ;;
+#                    "Production")
+#                        DEPLOYMENT_TYPE="production"
+#                        break
+#                        ;;
+#                    *) echo "invalid option $REPLY";;
+#                esac
+#            done
+#          fi
+#        else
+#            options_var=("Starter" "Production")
+#            for i in ${!options_var[@]}; do
+#                if [[ "${options_var[i]}" == "$existing_deployment_type" ]]; then
+#                    printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "(Selected)"
+#                else
+#                    printf "%1d) %s\n" $((i+1)) "${options[i]}"
+#                fi
+#            done
+#            echo -e "\x1B[1;31mExisting deployment type found in CR: \"$existing_deployment_type\"\x1B[0m"
+#            # echo -e "\x1B[1;31mDo not need to select again.\n\x1B[0m"
+#            prompt_press_any_key_to_continue
+#        fi
+#    fi
+#}
 
 function enable_ae_data_persistence_workflow_authoring(){
     if [[ $DEPLOYMENT_TYPE == "production" ]] ;
@@ -3916,7 +3916,7 @@ function select_fips_enable(){
     select_project
     all_fips_enabled_flag=$(${CLI_CMD} get configmap cp4ba-fips-status --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS -o jsonpath={.data.all-fips-enabled})
     if [ -z $all_fips_enabled_flag ]; then
-        if [[ ("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No") || "$DEPLOYMENT_TYPE" == "starter" ]]; then
+        if [[ ("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No") ]]; then #|| "$DEPLOYMENT_TYPE" == "starter" ]]; then
             info "Not found configmap \"cp4ba-fips-status\" in the project \"$CP4BA_SERVICES_NS\". setting \"shared_configuration.enable_fips\" as \"false\" by default in the final custom resource."
             FIPS_ENABLED="false"
         fi
@@ -4110,7 +4110,7 @@ function set_external_share_content_pattern(){
             vi ${CONTENT_PATTERN_FILE_TMP} -c ':'"${content_start}"','"${content_stop}"'s/  # /  ' -c ':wq' >/dev/null 2>&1
 
             # un-comment LDAP
-            if [[ $DEPLOYMENT_TYPE == "starter" || ($DEPLOYMENT_TYPE == "production" && $DEPLOYMENT_WITH_PROPERTY == "No") ]]; then
+            if [[  ($DEPLOYMENT_TYPE == "production" && $DEPLOYMENT_WITH_PROPERTY == "No") ]]; then
                 if [[ "$LDAP_TYPE" == "AD" ]]; then
                     # content_start="$(grep -n "ad:" ${CONTENT_PATTERN_FILE_TMP} | awk 'NR==2{print $1}' | cut -d: -f1)"
                     content_start="$(grep -n "ad:" ${CONTENT_PATTERN_FILE_TMP} | cut -d: -f1)"
@@ -4486,7 +4486,7 @@ function clean_up_temp_file(){
 }
 
 function input_information(){
-    if [[ $DEPLOYMENT_WITH_PROPERTY == "No" || $DEPLOYMENT_TYPE == "starter" ]]; then
+    if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then #|| $DEPLOYMENT_TYPE == "starter" ]]; then
         select_installation_type
     elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" ]]; then
         INSTALLATION_TYPE="new"
@@ -4502,7 +4502,8 @@ function input_information(){
     if [[ ${INSTALLATION_TYPE} == "existing" ]]; then
         # INSTALL_BAW_IAWS="No"
         prepare_pattern_file
-        select_deployment_type
+        #select_deployment_type
+        DEPLOYMENT_TYPE="production"
         if [[ $DEPLOYMENT_TYPE == "production" && (-z $PROFILE_TYPE) ]]; then
             select_profile_type
         fi
@@ -4510,15 +4511,16 @@ function input_information(){
         if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "production" && "$USE_DEFAULT_IAM_ADMIN" == "" && "$NON_DEFAULT_IAM_ADMIN" == "" ]]; then
             select_iam_default_admin
         fi
-        if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "starter" ]]; then
-            select_project
-        fi
+        #if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "starter" ]]; then
+        #    select_project
+        #fi
         check_ocp_version
         validate_docker_podman_cli
     elif [[ ${INSTALLATION_TYPE} == "new" ]]
     then
         # select_ocp_olm
-        select_deployment_type
+        #select_deployment_type
+        DEPLOYMENT_TYPE="production"
         if [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && $DEPLOYMENT_TYPE == "production" ]]; then
             if [[ ! -z $CP4BA_AUTO_NAMESPACE ]]; then
                 TARGET_PROJECT_NAME=$CP4BA_AUTO_NAMESPACE
@@ -4533,9 +4535,9 @@ function input_information(){
         if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "production" && "$USE_DEFAULT_IAM_ADMIN" == "" && "$NON_DEFAULT_IAM_ADMIN" == "" ]]; then
             select_iam_default_admin
         fi
-        if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "starter" ]]; then
-            select_project
-        fi
+        #if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "starter" ]]; then
+        #    select_project
+        #fi
         check_ocp_version
         validate_docker_podman_cli
         prepare_pattern_file
@@ -4549,7 +4551,7 @@ function input_information(){
 
     if [[ "${INSTALL_BAW_ONLY}" == "No" ]];
     then
-        if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+        if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
             select_pattern
         elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && $DEPLOYMENT_TYPE == "production" ]]; then
             FOUNDATION_CR_SELECTED=($(echo "${foundation_component_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
@@ -4563,7 +4565,7 @@ function input_information(){
         select_baw_only
     fi
 
-    if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+    if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
         select_optional_component
     elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && $DEPLOYMENT_TYPE == "production" ]]; then
         OPT_COMPONENTS_CR_SELECTED=($(echo "${optional_component_cr_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
@@ -4591,7 +4593,7 @@ function input_information(){
         #     get_infra_name
         # fi
         # load storage class name
-        if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+        if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
             get_storage_class_name
         elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && $DEPLOYMENT_TYPE == "production" ]]; then
             SLOW_STORAGE_CLASS_NAME=$(prop_user_profile_property_file CP4BA.SLOW_FILE_STORAGE_CLASSNAME)
@@ -4607,16 +4609,16 @@ function input_information(){
 
         if  [[ ("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No") && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
             select_fips_enable
-        elif [[ "$DEPLOYMENT_TYPE" == "starter" ]]; then
-            FIPS_ENABLED="false"
+        #elif [[ "$DEPLOYMENT_TYPE" == "starter" ]]; then
+        #    FIPS_ENABLED="false"
         fi
 
         if  [[  ("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No") && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
             select_restricted_internet_access
-        elif [[ "$DEPLOYMENT_TYPE" == "starter" ]]; then
-            # For starter deployment, always set sc_restricted_internet_access: true
-            info "For starter deployment, always setting \"sc_restricted_internet_access\" to \"true\" in final custom resource."
-            RESTRICTED_INTERNET_ACCESS="true"
+        #elif [[ "$DEPLOYMENT_TYPE" == "starter" ]]; then
+        #    # For starter deployment, always set sc_restricted_internet_access: true
+        #    info "For starter deployment, always setting \"sc_restricted_internet_access\" to \"true\" in final custom resource."
+        #    RESTRICTED_INTERNET_ACCESS="true"
         fi
 
         if [[ "$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
@@ -4677,7 +4679,7 @@ function input_information(){
             select_objectstore_number
         fi
     fi
-    if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+    if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
         select_cpe_full_storage
 
         containsElement "document_processing_designer" "${PATTERNS_CR_SELECTED[@]}"
@@ -4688,14 +4690,14 @@ function input_information(){
 
         containsElement "document_processing" "${PATTERNS_CR_SELECTED[@]}"
         retVal=$?
-        if [[ ( $retVal -eq 0 ) && "$DEPLOYMENT_TYPE" == "starter" ]]; then
-            select_enable_deep_learning
-            if [[ $ADP_DL_ENABLED == "Yes" ]]; then
-                select_gpu_document_processing
-            elif [[ $ADP_DL_ENABLED == "No" || -z $ADP_DL_ENABLED ]]; then
-                ENABLE_GPU_ARIA="No"
-            fi
-        fi
+        #if [[ ( $retVal -eq 0 ) && "$DEPLOYMENT_TYPE" == "starter" ]]; then
+        #    select_enable_deep_learning
+        #    if [[ $ADP_DL_ENABLED == "Yes" ]]; then
+        #        select_gpu_document_processing
+        #    elif [[ $ADP_DL_ENABLED == "No" || -z $ADP_DL_ENABLED ]]; then
+        #        ENABLE_GPU_ARIA="No"
+        #    fi
+        #fi
     fi
     if [[ ! (" ${PATTERNS_CR_SELECTED[@]} " =~ "content" && "${#PATTERNS_CR_SELECTED[@]}" -eq "1") ]]; then
         if [[ $IBM_LICENS == "Accept" ]]; then
@@ -4943,14 +4945,14 @@ function merge_pattern(){
                             #     ${YQ_CMD} d -i ${WORKFLOW_PATTERN_FILE_BAK} spec.baw_configuration
                             # fi
                             ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WORKFLOW_PATTERN_FILE_BAK}
-                        elif [[ $DEPLOYMENT_TYPE == "starter" ]]
-                        then
-                            # if [[ $INSTALLATION_TYPE == "existing" && (" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow") ]]; then
-                            #     ${YQ_CMD} d -i ${WORKFLOW_PATTERN_FILE_BAK} spec.baw_configuration
-                            # fi
-                            ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WORKFLOW_PATTERN_FILE_BAK}
-                            ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.bastudio_configuration
-                        fi
+                        #elif [[ $DEPLOYMENT_TYPE == "starter" ]]
+                        #then
+                        #    # if [[ $INSTALLATION_TYPE == "existing" && (" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow") ]]; then
+                        #    #     ${YQ_CMD} d -i ${WORKFLOW_PATTERN_FILE_BAK} spec.baw_configuration
+                        #    # fi
+                        #    ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WORKFLOW_PATTERN_FILE_BAK}
+                        #    ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.bastudio_configuration
+                        #fi
                     fi
                     break
                     ;;
@@ -4988,11 +4990,11 @@ function merge_pattern(){
                             # fi
                             ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WORKFLOW_PATTERN_FILE_BAK}
                         fi
-                    elif [[ $DEPLOYMENT_TYPE == "starter" ]]
-                    then
-                        ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WORKFLOW_PATTERN_FILE_BAK}
-                        ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.bastudio_configuration
-                    fi
+                    #elif [[ $DEPLOYMENT_TYPE == "starter" ]]
+                    #then
+                    #    ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WORKFLOW_PATTERN_FILE_BAK}
+                    #    ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.bastudio_configuration
+                    #fi
                     break
                     ;;
                 "workstreams")
@@ -5022,11 +5024,11 @@ function merge_pattern(){
                             ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WW_PATTERN_FILE_BAK}
 
                         fi
-                    elif [[ $DEPLOYMENT_TYPE == "starter" ]]
-                    then
-                        ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WW_PATTERN_FILE_BAK}
-                        ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.application_engine_configuration
-                    fi
+                    #elif [[ $DEPLOYMENT_TYPE == "starter" ]]
+                    #then
+                    #    ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WW_PATTERN_FILE_BAK}
+                    #    ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.application_engine_configuration
+                    #fi
                     break
                     ;;
                 "application")
@@ -5145,43 +5147,43 @@ function merge_optional_components(){
                     break
                     ;;
                 "case")
-                    if [[ "${DEPLOYMENT_TYPE}" == "starter" && (" ${OPTIONAL_COMPONENT_DELETE_LIST[@]} " =~ "workstreams") && (" ${OPTIONAL_COMPONENT_DELETE_LIST[@]} " =~ "content_integration") && (" ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams") ]]; then
-                        ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.ecm_configuration
-                    fi
+                    #if [[ "${DEPLOYMENT_TYPE}" == "starter" && (" ${OPTIONAL_COMPONENT_DELETE_LIST[@]} " =~ "workstreams") && (" ${OPTIONAL_COMPONENT_DELETE_LIST[@]} " =~ "content_integration") && (" ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams") ]]; then
+                    #    ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.ecm_configuration
+                    #fi
                     break
                     ;;
                 "workstreams")
-                    if [[ "${DEPLOYMENT_TYPE}" == "starter" && (" ${OPTIONAL_COMPONENT_DELETE_LIST[@]} " =~ "case") && (" ${OPTIONAL_COMPONENT_DELETE_LIST[@]} " =~ "content_integration") && (" ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams") ]]; then
-                        ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.ecm_configuration
-                    fi
+                    #if [[ "${DEPLOYMENT_TYPE}" == "starter" && (" ${OPTIONAL_COMPONENT_DELETE_LIST[@]} " =~ "case") && (" ${OPTIONAL_COMPONENT_DELETE_LIST[@]} " =~ "content_integration") && (" ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams") ]]; then
+                    #    ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.ecm_configuration
+                    #fi
                     break
                     ;;
                 "content_integration")
-                    if [[ "${DEPLOYMENT_TYPE}" == "starter" && (" ${OPTIONAL_COMPONENT_DELETE_LIST[@]} " =~ "workstreams") && (" ${OPTIONAL_COMPONENT_DELETE_LIST[@]} " =~ "case") && (" ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams") ]]; then
-                        ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.ecm_configuration
-                    fi
+                    #if [[ "${DEPLOYMENT_TYPE}" == "starter" && (" ${OPTIONAL_COMPONENT_DELETE_LIST[@]} " =~ "workstreams") && (" ${OPTIONAL_COMPONENT_DELETE_LIST[@]} " =~ "case") && (" ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams") ]]; then
+                    #    ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.ecm_configuration
+                    #fi
                     break
                     ;;
                 "bai")
                     if [[ (" ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-runtime") && (" ${PATTERNS_CR_SELECTED[@]} " =~ "workstreams") ]]; then
                         break
-                    elif [[ "${DEPLOYMENT_TYPE}" == "starter" && (" ${OPT_COMPONENTS_CR_SELECTED[@]} " =~ "baml") && (" ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams") ]]; then
-                        break
+                    #elif [[ "${DEPLOYMENT_TYPE}" == "starter" && (" ${OPT_COMPONENTS_CR_SELECTED[@]} " =~ "baml") && (" ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams") ]]; then
+                    #    break
                     else
                         ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration
                         break
                     fi
                     ;;
                 "pfs")
-                    if [[ "${DEPLOYMENT_TYPE}" == "starter" && (" ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams") ]]; then
-                        ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.pfs_configuration
-                    fi
+                    #if [[ "${DEPLOYMENT_TYPE}" == "starter" && (" ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams") ]]; then
+                    #    ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.pfs_configuration
+                    #fi
                     break
                     ;;
                 "baml")
-                    if [[ "${DEPLOYMENT_TYPE}" == "starter" && (" ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams") ]]; then
-                        ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.baml_configuration
-                    fi
+                    #if [[ "${DEPLOYMENT_TYPE}" == "starter" && (" ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams") ]]; then
+                    #    ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.baml_configuration
+                    #fi
                     break
                     ;;
                 "ads_designer")
@@ -5279,7 +5281,7 @@ function get_existing_pattern_name(){
                 # Loop through the keys and values of spec.content_optional_components which will give us the list of optional components selected
                 optional_components_section=$(${YQ_CMD} r "$existing_pattern_cr_name" "spec.content_optional_components")
                 while IFS=: read -r key value; do
-                    key=$(echo "$key" | xargs)       
+                    key=$(echo "$key" | xargs)
                     value=$(echo "$value" | xargs)
                     if [[ "$value" == "true" ]]; then
                         if [[ -n "$existing_opt_component_list" ]]; then
@@ -5300,25 +5302,25 @@ function get_existing_pattern_name(){
                 key_value=$(${YQ_CMD} r $existing_pattern_cr_name 'spec.shared_configuration.sc_deployment_patterns' 2>/dev/null)
                 if [[ "$key_value" ]]; then
                     existing_pattern_list=`cat $existing_pattern_cr_name | ${YQ_CMD} r - spec.shared_configuration.sc_deployment_patterns`
-                else
+                #else
                     # IF the CR is generated from the from UI then the sc_deployment_patterns is not a key that will be in the CR , the patterns selected will be mapped to the list of keys below by being set to true for a specific pattern key
                     # For https://jsw.ibm.com/browse/DBACLD-159390
-                    keys=("olm_starter_application" "olm_starter_content" "olm_starter_decisions" "olm_starter_decisions_ads" "olm_starter_document_processing" "olm_starter_workflow")
-                    for key in "${keys[@]}"; do
-                        # Get the value of the current key from the YAML file
-                        value=$(${YQ_CMD} r "$existing_pattern_cr_name" "spec.$key")
-                        value=$(echo "$value" | xargs)
-                        if [[ "$value" == "true" && "$key" == olm_starter_* ]]; then
-                            part_after_prefix="${key#olm_starter_}"
-                            if [ -z "$existing_pattern_list" ]; then
-                                existing_pattern_list="$part_after_prefix"
-                            else
-                                existing_pattern_list="$existing_pattern_list,$part_after_prefix"
-                            fi
-                        fi
-                    done
+                    #keys=("olm_starter_application" "olm_starter_content" "olm_starter_decisions" "olm_starter_decisions_ads" "olm_starter_document_processing" "olm_starter_workflow")
+                    #for key in "${keys[@]}"; do
+                    #    # Get the value of the current key from the YAML file
+                    #    value=$(${YQ_CMD} r "$existing_pattern_cr_name" "spec.$key")
+                    #    value=$(echo "$value" | xargs)
+                    #    if [[ "$value" == "true" && "$key" == olm_starter_* ]]; then
+                    #        part_after_prefix="${key#olm_starter_}"
+                    #        if [ -z "$existing_pattern_list" ]; then
+                    #            existing_pattern_list="$part_after_prefix"
+                    #        else
+                    #            existing_pattern_list="$existing_pattern_list,$part_after_prefix"
+                    #        fi
+                    #    fi
+                    #done
                 fi
-                
+
                 key_value=$(${YQ_CMD} r $existing_pattern_cr_name 'spec.shared_configuration.sc_optional_components' 2>/dev/null)
                 if [[ "$key_value" ]]; then
                     existing_opt_component_list=`cat $existing_pattern_cr_name | ${YQ_CMD} r - spec.shared_configuration.sc_optional_components`
@@ -5339,18 +5341,18 @@ function get_existing_pattern_name(){
                             existing_opt_component_list+="$key"
                         fi
                     done <<< "$optional_components_section"
-                fi 
+                fi
             fi
             existing_platform_type=`cat $existing_pattern_cr_name | ${YQ_CMD} r - spec.shared_configuration.sc_deployment_platform`
             existing_profile_type=`cat $existing_pattern_cr_name | ${YQ_CMD} r - spec.shared_configuration.sc_deployment_profile_size`
 
-            if [[ $existing_deployment_type == "demo" ]];then
-                existing_deployment_type="Starter"
-            elif [[ $existing_deployment_type == "enterprise" ]];then
+            #if [[ $existing_deployment_type == "demo" ]];then
+            #    existing_deployment_type="Starter"
+            if [[ $existing_deployment_type == "enterprise" ]];then
                 existing_deployment_type="Production"
             fi
             case "${existing_deployment_type}" in
-                starter*|Starter*)     DEPLOYMENT_TYPE="starter";;
+                #starter*|Starter*)     DEPLOYMENT_TYPE="starter";;
                 production*|Production*)    DEPLOYMENT_TYPE="production";;
                 *)
                     echo -e "\x1B[1;31mNot valid deployment type found in CR, exiting....\n\x1B[0m"
@@ -5509,12 +5511,12 @@ function select_gpu_document_processing(){
 
 function set_baa_app_designer(){
     ${COPY_CMD} -rf ${APPLICATION_PATTERN_FILE_BAK} ${APPLICATION_PATTERN_FILE_TMP}
-    if [[ $DEPLOYMENT_TYPE == "starter"  ]] ;
-    then
-        foundation_baa=("BAS")
-        foundation_component_arr=( "${foundation_component_arr[@]}" "${foundation_baa[@]}" )
+    #if [[ $DEPLOYMENT_TYPE == "starter"  ]] ;
+    #then
+    #    foundation_baa=("BAS")
+    #    foundation_component_arr=( "${foundation_component_arr[@]}" "${foundation_baa[@]}" )
 
-    elif [[ $DEPLOYMENT_TYPE == "production" ]]
+    if [[ $DEPLOYMENT_TYPE == "production" ]]
     then
         containsElement "app_designer" "${OPT_COMPONENTS_CR_SELECTED[@]}"
         retVal=$?
@@ -5528,14 +5530,14 @@ function set_baa_app_designer(){
 
 function set_ads_designer_runtime(){
     ${COPY_CMD} -rf ${ADS_PATTERN_FILE_BAK} ${ADS_PATTERN_FILE_TMP}
-    if [[ $DEPLOYMENT_TYPE == "starter"  ]] ;
-    then
-        ${YQ_CMD} w -i ${ADS_PATTERN_FILE_TMP} spec.ads_configuration.decision_designer.enabled "true"
-        ${YQ_CMD} w -i ${ADS_PATTERN_FILE_TMP} spec.ads_configuration.decision_runtime.enabled "true"
-        foundation_ads=("BAS")
-        foundation_component_arr=( "${foundation_component_arr[@]}" "${foundation_ads[@]}" )
+    #if [[ $DEPLOYMENT_TYPE == "starter"  ]] ;
+    #then
+    #    ${YQ_CMD} w -i ${ADS_PATTERN_FILE_TMP} spec.ads_configuration.decision_designer.enabled "true"
+    #    ${YQ_CMD} w -i ${ADS_PATTERN_FILE_TMP} spec.ads_configuration.decision_runtime.enabled "true"
+    #    foundation_ads=("BAS")
+    #    foundation_component_arr=( "${foundation_component_arr[@]}" "${foundation_ads[@]}" )
 
-    elif [[ $DEPLOYMENT_TYPE == "production" ]]
+    if [[ $DEPLOYMENT_TYPE == "production" ]]
     then
         containsElement "ads_designer" "${OPT_COMPONENTS_CR_SELECTED[@]}"
         retVal=$?
@@ -5561,12 +5563,12 @@ function set_ads_designer_runtime(){
 
 function set_decision_feature(){
     ${COPY_CMD} -rf ${DECISIONS_PATTERN_FILE_BAK} ${DECISIONS_PATTERN_FILE_TMP}
-    if [[ $DEPLOYMENT_TYPE == "starter"  ]] ;
-    then
-        ${YQ_CMD} w -i ${DECISIONS_PATTERN_FILE_TMP} spec.odm_configuration.decisionCenter.enabled "true"
-        ${YQ_CMD} w -i ${DECISIONS_PATTERN_FILE_TMP} spec.odm_configuration.decisionServerRuntime.enabled "true"
-        ${YQ_CMD} w -i ${DECISIONS_PATTERN_FILE_TMP} spec.odm_configuration.decisionRunner.enabled "true"
-    elif [[ $DEPLOYMENT_TYPE == "production" ]]
+    #if [[ $DEPLOYMENT_TYPE == "starter"  ]] ;
+    #then
+    #    ${YQ_CMD} w -i ${DECISIONS_PATTERN_FILE_TMP} spec.odm_configuration.decisionCenter.enabled "true"
+    #    ${YQ_CMD} w -i ${DECISIONS_PATTERN_FILE_TMP} spec.odm_configuration.decisionServerRuntime.enabled "true"
+    #    ${YQ_CMD} w -i ${DECISIONS_PATTERN_FILE_TMP} spec.odm_configuration.decisionRunner.enabled "true"
+    if [[ $DEPLOYMENT_TYPE == "production" ]]
     then
         containsElement "decisionCenter" "${OPT_COMPONENTS_CR_SELECTED[@]}"
         retVal=$?
@@ -5595,7 +5597,7 @@ function set_decision_feature(){
 
 function set_aria_gpu(){
     ${COPY_CMD} -rf ${ARIA_PATTERN_FILE_BAK} ${ARIA_PATTERN_FILE_TMP}
-    if [[ ($DEPLOYMENT_TYPE == "production" && (" ${PATTERNS_CR_SELECTED[@]} " =~ "document_processing_designer")) || $DEPLOYMENT_TYPE == "starter" ]] ;
+    if [[ ($DEPLOYMENT_TYPE == "production" && (" ${PATTERNS_CR_SELECTED[@]} " =~ "document_processing_designer")) ]] ; #|| $DEPLOYMENT_TYPE == "starter" ]] ;
     then
         if [[ "$ENABLE_GPU_ARIA" == "Yes" ]]; then
             ${YQ_CMD} w -i ${ARIA_PATTERN_FILE_TMP} spec.ca_configuration.deeplearning.gpu_enabled "true"
@@ -5612,15 +5614,15 @@ function set_aria_gpu(){
         ${YQ_CMD} w -i ${ARIA_PATTERN_FILE_TMP} spec.ca_configuration.deeplearning.gpu_enabled "false"
     fi
 
-    if [[ $DEPLOYMENT_TYPE == "starter" ]] ;
-    then
-        if [[ "$ADP_DL_ENABLED" == "Yes" ]]; then
-            ${YQ_CMD} w -i ${ARIA_PATTERN_FILE_TMP} spec.ca_configuration.ocrextraction.deep_learning_object_detection.enabled "true"
-        elif [[ "$ADP_DL_ENABLED" == "No" ]]
-        then
-            ${YQ_CMD} w -i ${ARIA_PATTERN_FILE_TMP} spec.ca_configuration.ocrextraction.deep_learning_object_detection.enabled "false"
-        fi
-    fi
+    #if [[ $DEPLOYMENT_TYPE == "starter" ]] ;
+    #then
+    #    if [[ "$ADP_DL_ENABLED" == "Yes" ]]; then
+    #        ${YQ_CMD} w -i ${ARIA_PATTERN_FILE_TMP} spec.ca_configuration.ocrextraction.deep_learning_object_detection.enabled "true"
+    #    elif [[ "$ADP_DL_ENABLED" == "No" ]]
+    #    then
+    #        ${YQ_CMD} w -i ${ARIA_PATTERN_FILE_TMP} spec.ca_configuration.ocrextraction.deep_learning_object_detection.enabled "false"
+    #    fi
+    #fi
     ${COPY_CMD} -rf ${ARIA_PATTERN_FILE_TMP} ${ARIA_PATTERN_FILE_BAK}
 }
 
@@ -5697,7 +5699,7 @@ function sync_property_into_final_cr(){
         if [[ $DB_TYPE == "postgresql" ]]; then
             tmp_gcd_db_name=$(echo $tmp_gcd_db_name | tr '[:upper:]' '[:lower:]')
         fi
-        
+
         #https://jsw.ibm.com/browse/DBACLD-158651 << Make ssl_secret_name empty when dc_ssl_enabled value is False>>
         # Initialize the isfalse variable to validate spec.datasource_configuration.dc_ssl_enabled is true or false
         isfalse=false
@@ -6312,7 +6314,7 @@ function sync_property_into_final_cr(){
                 tmp_os_db_name=$(echo $tmp_os_db_name | tr '[:upper:]' '[:lower:]')
             fi
             #https://jsw.ibm.com/browse/DBACLD-158651 << Make ssl_secret_name empty when dc_ssl_enabled value is False>>
-            # Initialize the isfalse variable to validate dc_ssl_enabled is true or false for DEVOS1 
+            # Initialize the isfalse variable to validate dc_ssl_enabled is true or false for DEVOS1
             isfalse=false
             for i in "${!OSDB_CR_MAPPING[@]}"; do
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} "spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].${OSDB_CR_MAPPING[i]}" "\"$(prop_db_server_property_file $tmp_os_db_servername.${OSDB_COMMON_PROPERTY[i]})\""
@@ -6596,13 +6598,13 @@ function sync_property_into_final_cr(){
             if [[ $DB_TYPE == "postgresql" ]]; then
                 tmp_icn_db_name=$(echo $tmp_icn_db_name | tr '[:upper:]' '[:lower:]')
             fi
-            
+
             #https://jsw.ibm.com/browse/DBACLD-158651 << Make ssl_secret_name empty when dc_ssl_enabled value is False>>
             # Initialize the isfalse variable to validate dc_ssl_enabled is true or false
             isfalse=false
             for i in "${!ICNDB_CR_MAPPING[@]}"; do
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} "${ICNDB_CR_MAPPING[i]}" "\"$(prop_db_server_property_file $tmp_icn_db_servername.${ICNDB_COMMON_PROPERTY[i]})\""
-                # Check if we are updating spec.datasource_configuration.dc_ssl_enabled value is false    
+                # Check if we are updating spec.datasource_configuration.dc_ssl_enabled value is false
                 if [ "${ICNDB_CR_MAPPING[i]}" == "spec.datasource_configuration.dc_ssl_enabled" ] && [[ "$(prop_db_server_property_file $tmp_icn_db_servername.${ICNDB_COMMON_PROPERTY[i]})" =~ ^[fF]alse$ ]]; then
                     isfalse=true
                 fi
@@ -6781,7 +6783,7 @@ function sync_property_into_final_cr(){
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} "${BAW_RUNTIME_CR_MAPPING[i]}" "\"$(prop_db_server_property_file $tmp_baw_runtime_db_servername.${BAW_RUNTIME_COMMON_PROPERTY[i]})\""
             fi
         done
-        
+
         # For DBACLD-155445 where we need to use the namespace value passed to find the secret name and populate the CR accordingly
         tmp_secret_name=`kubectl get secret -l db-name=${tmp_baw_runtime_db_name} -o yaml -n $TARGET_PROJECT_NAME | ${YQ_CMD} r - items.[0].metadata.name`
 
@@ -7264,7 +7266,7 @@ function sync_property_into_final_cr(){
             tmp_app_db_name="$(prop_db_name_user_property_file APP_PLAYBACK_DB_NAME)"
         fi
         tmp_app_db_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_app_db_name")
-        
+
         #https://jsw.ibm.com/browse/DBACLD-158651 << Make ssl_secret_name empty when dc_ssl_enabled value is False>>
         # Initialize the isfalse variable to validate dc_ssl_enabled is true or false for Playback
         isfalse=false
@@ -7358,7 +7360,7 @@ function sync_property_into_final_cr(){
             tmp_ae_db_name="$(prop_db_name_user_property_file APP_ENGINE_DB_NAME)"
         fi
         tmp_ae_db_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_ae_db_name")
-        
+
         #https://jsw.ibm.com/browse/DBACLD-158651 << Make ssl_secret_name empty when dc_ssl_enabled value is False>>
         # Initialize the isfalse variable to validate dc_ssl_enabled is true or false for AAE
         isfalse=false
@@ -7602,7 +7604,7 @@ function apply_pattern_cr(){
         ${YQ_CMD} d -i ${CP4A_EXISTING_TMP} spec.shared_configuration.sc_optional_components
         # If a starter deployment CR generated from the form UI is supplied it will not need these fields anymore
         #For DBACLD-159390
-        keys=("olm_production_workflow_process_service" "olm_production_workflow" "olm_production_document_processing" "olm_production_application" "olm_production_decisions_ads" "olm_production_decisions" "olm_production_content" "olm_production_option" "olm_starter_option" "olm_starter_application" "olm_starter_content" "olm_starter_decisions" "olm_starter_decisions_ads" "olm_starter_document_processing" "olm_starter_workflow")
+        keys=("olm_production_workflow_process_service" "olm_production_workflow" "olm_production_document_processing" "olm_production_application" "olm_production_decisions_ads" "olm_production_decisions" "olm_production_content" "olm_production_option") # "olm_starter_option" "olm_starter_application" "olm_starter_content" "olm_starter_decisions" "olm_starter_decisions_ads" "olm_starter_document_processing" "olm_starter_workflow")
         for key in "${keys[@]}"; do
             ${YQ_CMD} d -i ${CP4A_EXISTING_TMP} spec.${key}
         done
@@ -7624,10 +7626,10 @@ function apply_pattern_cr(){
     delim=""
     pattern_joined=""
     for item in "${PATTERNS_CR_SELECTED[@]}"; do
-        if [[ "${DEPLOYMENT_TYPE}" == "starter" ]]; then
-            pattern_joined="$pattern_joined$delim$item"
-            delim=","
-        elif [[ ${DEPLOYMENT_TYPE} == "production" ]]
+        #if [[ "${DEPLOYMENT_TYPE}" == "starter" ]]; then
+        #    pattern_joined="$pattern_joined$delim$item"
+        #    delim=","
+        if [[ ${DEPLOYMENT_TYPE} == "production" ]]
         then
             case "$item" in
             "workflow-authoring"|"workflow-runtime"|"workflow-workstreams"|"document_processing_designer"|"document_processing_runtime")
@@ -7640,24 +7642,24 @@ function apply_pattern_cr(){
         fi
     done
 
-    if [[ "${DEPLOYMENT_TYPE}" == "starter" ]]; then
-        if [[ " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams" && "${#PATTERNS_CR_SELECTED[@]}" -eq "1" ]]; then
-            echo
-        elif [[ " ${PATTERNS_CR_SELECTED[@]} " =~ "application" && "${#PATTERNS_CR_SELECTED[@]}" -eq "1" ]]; then
-            echo
-        elif [[ " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams" && " ${PATTERNS_CR_SELECTED[@]} " =~ "application" && "${#PATTERNS_CR_SELECTED[@]}" -eq "2" ]]; then
-            echo
-        else
-            pattern_joined="foundation$delim$pattern_joined"
-        fi
+    #if [[ "${DEPLOYMENT_TYPE}" == "starter" ]]; then
+    #    if [[ " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams" && "${#PATTERNS_CR_SELECTED[@]}" -eq "1" ]]; then
+    #        echo
+    #    elif [[ " ${PATTERNS_CR_SELECTED[@]} " =~ "application" && "${#PATTERNS_CR_SELECTED[@]}" -eq "1" ]]; then
+    #        echo
+    #    elif [[ " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams" && " ${PATTERNS_CR_SELECTED[@]} " =~ "application" && "${#PATTERNS_CR_SELECTED[@]}" -eq "2" ]]; then
+    #        echo
+    #    else
+    #        pattern_joined="foundation$delim$pattern_joined"
+    #    fi
+    #else
+    if [[ ! ("${#pattern_cr_arr[@]}" -eq "1" && "${pattern_cr_arr[@]}" =~ "workflow-process-service") ]]; then
+        pattern_joined="foundation$delim$pattern_joined"
     else
-        if [[ ! ("${#pattern_cr_arr[@]}" -eq "1" && "${pattern_cr_arr[@]}" =~ "workflow-process-service") ]]; then
-            pattern_joined="foundation$delim$pattern_joined"
-        else
-            pattern_joined="$pattern_joined"
-        fi
-
+        pattern_joined="$pattern_joined"
     fi
+
+    #fi
     # if [[ $INSTALL_BAW_IAWS == "No" ]];then
     #     pattern_joined="foundation$delim$pattern_joined"
     # fi
@@ -7671,13 +7673,13 @@ function apply_pattern_cr(){
         fi
     done
 
-    if [[ "${DEPLOYMENT_TYPE}" == "starter" ]]; then
-        if [[ " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams" && "${#PATTERNS_CR_SELECTED[@]}" -eq "1" ]]; then
-            OPT_COMPONENTS_CR_SELECTED=(${OPT_COMPONENTS_CR_SELECTED[@]:0:$tmp_idx} ${OPT_COMPONENTS_CR_SELECTED[@]:$(($tmp_idx + 1))})
-        elif [[ " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams" && " ${PATTERNS_CR_SELECTED[@]} " =~ "application" && "${#PATTERNS_CR_SELECTED[@]}" -eq "2" ]]; then
-            OPT_COMPONENTS_CR_SELECTED=(${OPT_COMPONENTS_CR_SELECTED[@]:0:$tmp_idx} ${OPT_COMPONENTS_CR_SELECTED[@]:$(($tmp_idx + 1))})
-        fi
-    fi
+    #if [[ "${DEPLOYMENT_TYPE}" == "starter" ]]; then
+    #    if [[ " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams" && "${#PATTERNS_CR_SELECTED[@]}" -eq "1" ]]; then
+    #        OPT_COMPONENTS_CR_SELECTED=(${OPT_COMPONENTS_CR_SELECTED[@]:0:$tmp_idx} ${OPT_COMPONENTS_CR_SELECTED[@]:$(($tmp_idx + 1))})
+    #    elif [[ " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams" && " ${PATTERNS_CR_SELECTED[@]} " =~ "application" && "${#PATTERNS_CR_SELECTED[@]}" -eq "2" ]]; then
+    #        OPT_COMPONENTS_CR_SELECTED=(${OPT_COMPONENTS_CR_SELECTED[@]:0:$tmp_idx} ${OPT_COMPONENTS_CR_SELECTED[@]:$(($tmp_idx + 1))})
+    #    fi
+    #fi
 
    # Convert optional components array to list by common
     delim=""
@@ -7687,7 +7689,7 @@ function apply_pattern_cr(){
         delim=","
     done
 
-    
+
     merge_pattern
     merge_optional_components
     set_foundation_components
@@ -7877,9 +7879,9 @@ function apply_pattern_cr(){
 
     # Set sc_deployment_type
     case "${DEPLOYMENT_TYPE}" in
-    starter*|Starter*)
-    ${SED_COMMAND} "s|sc_deployment_type:.*|sc_deployment_type: \"Starter\"|g" ${CP4A_PATTERN_FILE_TMP}
-    ;;
+    #starter*|Starter*)
+    #${SED_COMMAND} "s|sc_deployment_type:.*|sc_deployment_type: \"Starter\"|g" ${CP4A_PATTERN_FILE_TMP}
+    #;;
     production*|Production*)
     ${SED_COMMAND} "s|sc_deployment_type:.*|sc_deployment_type: \"Production\"|g" ${CP4A_PATTERN_FILE_TMP}
     ;;
@@ -7915,7 +7917,7 @@ function apply_pattern_cr(){
     fi
 
     # Set fips_enable
-    if  [[ ("$DEPLOYMENT_TYPE" == "starter" || ("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No")) && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
+    if  [[ (("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No")) && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
         if [[ $FIPS_ENABLED == "true" ]]; then
             ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.enable_fips "true"
         else
@@ -7935,7 +7937,7 @@ function apply_pattern_cr(){
     fi
 
     # Set sc_restricted_internet_access
-    if  [[ ("$DEPLOYMENT_TYPE" == "starter" || ("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No")) && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
+    if  [[ (("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No")) && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
         if [[ $RESTRICTED_INTERNET_ACCESS == "true" ]]; then
             ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.sc_egress_configuration.sc_restricted_internet_access "true"
         else
@@ -8404,42 +8406,42 @@ function apply_pattern_cr(){
 
     ${COPY_CMD} -rf ${CP4A_PATTERN_FILE_TMP} ${CP4A_PATTERN_FILE_BAK}
 
-    if [[ "$DEPLOYMENT_TYPE" == "starter" && "$INSTALLATION_TYPE" == "new" && !("$SCRIPT_MODE" == "review" || "$SCRIPT_MODE" == "OLM") ]];then
-        ${CLI_CMD} delete -f ${CP4A_PATTERN_FILE_TMP} >/dev/null 2>&1
-        sleep 5
-        printf "\n"
-        echo -e "\x1B[1mInstalling the selected Cloud Pak capability...\x1B[0m"
+    #if [[ "$DEPLOYMENT_TYPE" == "starter" && "$INSTALLATION_TYPE" == "new" && !("$SCRIPT_MODE" == "review" || "$SCRIPT_MODE" == "OLM") ]];then
+    #    ${CLI_CMD} delete -f ${CP4A_PATTERN_FILE_TMP} >/dev/null 2>&1
+    #    sleep 5
+    #    printf "\n"
+    #    echo -e "\x1B[1mInstalling the selected Cloud Pak capability...\x1B[0m"
 
-        if [[ "${ALL_NAMESPACE}" == "Yes" ]]; then
-            APPLY_CONTENT_CMD="${CLI_CMD} apply -f ${CP4A_PATTERN_FILE_BAK} -n openshift-operators"
-        else
-            APPLY_CONTENT_CMD="${CLI_CMD} apply -f ${CP4A_PATTERN_FILE_BAK} -n $CP4BA_SERVICES_NS"
-        fi
-        if $APPLY_CONTENT_CMD ; then
-            echo -e "\x1B[1mDone\x1B[0m"
-        else
-            echo -e "\x1B[1;31mFailed\x1B[0m"
-        fi
-    elif  [[ "$DEPLOYMENT_TYPE" == "starter" && "$INSTALLATION_TYPE" == "existing" && !("$SCRIPT_MODE" == "review" || "$SCRIPT_MODE" == "OLM") ]]
-    then
-        echo "Applying the existing Custom Resource file supplied on the cluster...\n"
-        # Merging the existing CR sections to the CR that will be applied
-        # For https://jsw.ibm.com/browse/DBACLD-159390
-        ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_BAK} ${CP4A_EXISTING_TMP}
-        echo -e "\x1B[1mInstalling the selected Cloud Pak capability...\x1B[0m"
+    #    if [[ "${ALL_NAMESPACE}" == "Yes" ]]; then
+    #        APPLY_CONTENT_CMD="${CLI_CMD} apply -f ${CP4A_PATTERN_FILE_BAK} -n openshift-operators"
+    #    else
+    #        APPLY_CONTENT_CMD="${CLI_CMD} apply -f ${CP4A_PATTERN_FILE_BAK} -n $CP4BA_SERVICES_NS"
+    #    fi
+    #    if $APPLY_CONTENT_CMD ; then
+    #        echo -e "\x1B[1mDone\x1B[0m"
+    #    else
+    #        echo -e "\x1B[1;31mFailed\x1B[0m"
+    #    fi
+    #elif  [[ "$DEPLOYMENT_TYPE" == "starter" && "$INSTALLATION_TYPE" == "existing" && !("$SCRIPT_MODE" == "review" || "$SCRIPT_MODE" == "OLM") ]]
+    #then
+    #    echo "Applying the existing Custom Resource file supplied on the cluster...\n"
+    #    # Merging the existing CR sections to the CR that will be applied
+    #    # For https://jsw.ibm.com/browse/DBACLD-159390
+    #    ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_BAK} ${CP4A_EXISTING_TMP}
+    #    echo -e "\x1B[1mInstalling the selected Cloud Pak capability...\x1B[0m"
 
-        if [[ "${ALL_NAMESPACE}" == "Yes" ]]; then
-            APPLY_CONTENT_CMD="${CLI_CMD} apply -f ${CP4A_PATTERN_FILE_BAK} -n openshift-operators"
-        else
-            APPLY_CONTENT_CMD="${CLI_CMD} apply -f ${CP4A_PATTERN_FILE_BAK} -n $CP4BA_SERVICES_NS"
-        fi
+    #    if [[ "${ALL_NAMESPACE}" == "Yes" ]]; then
+    #        APPLY_CONTENT_CMD="${CLI_CMD} apply -f ${CP4A_PATTERN_FILE_BAK} -n openshift-operators"
+    #    else
+    #        APPLY_CONTENT_CMD="${CLI_CMD} apply -f ${CP4A_PATTERN_FILE_BAK} -n $CP4BA_SERVICES_NS"
+    #    fi
 
-        if $APPLY_CONTENT_CMD ; then
-            echo -e "\x1B[1mDone\x1B[0m"
-        else
-            echo -e "\x1B[1;31mFailed\x1B[0m"
-        fi
-    elif  [[ "$DEPLOYMENT_TYPE" == "production" && "$INSTALLATION_TYPE" == "new" && "$DEPLOYMENT_WITH_PROPERTY" == "Yes" ]]
+    #    if $APPLY_CONTENT_CMD ; then
+    #        echo -e "\x1B[1mDone\x1B[0m"
+    #    else
+    #        echo -e "\x1B[1;31mFailed\x1B[0m"
+    #    fi
+    if  [[ "$DEPLOYMENT_TYPE" == "production" && "$INSTALLATION_TYPE" == "new" && "$DEPLOYMENT_WITH_PROPERTY" == "Yes" ]]
     then
         ## CP4BA_APPLY_CR is going to be a environment variable to apply the CR for silent install.
         if [[ "$CP4BA_APPLY_CR" == "Yes" || "$CP4BA_APPLY_CR" == "YES" || "$CP4BA_APPLY_CR" == "yes" || "$CP4BA_APPLY_CR" == "True"  || "$CP4BA_APPLY_CR" == "TRUE"  || "$CP4BA_APPLY_CR" == "true" ]]; then
@@ -8683,21 +8685,21 @@ function show_summary(){
     if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]];
     then
         if [ -z "$existing_infra_name" ]; then
-            if  [[ $DEPLOYMENT_TYPE == "starter" && $PLATFORM_SELECTED == "OCP" ]];
-            then
-                echo -e "\x1B[1;31m3. File storage classname(RWX):\x1B[0m ${STORAGE_CLASS_NAME}"
-                echo -e "\x1B[1;31m4. Block storage classname(RWO):\x1B[0m ${BLOCK_STORAGE_CLASS_NAME}"
-                if [[ " ${optional_component_cr_arr[@]} " =~ "iccsap" ]]; then
-                    echo -e "\x1B[1;31m5. URL to zip file for JDBC and/or ICCSAP drivers:\x1B[0m ${CP4BA_JDBC_URL}"
-                fi
-            else
-                echo -e "\x1B[1;31m3. File storage classname(RWX):\x1B[0m"
-                printf '   * \x1B[1;31m%s\x1B[0m %s\n' "Slow:" "${SLOW_STORAGE_CLASS_NAME}"
-                printf '   * \x1B[1;31m%s\x1B[0m %s\n' "Medium:" "${MEDIUM_STORAGE_CLASS_NAME}"
-                printf '   * \x1B[1;31m%s\x1B[0m %s\n' "Fast:" "${FAST_STORAGE_CLASS_NAME}"
-                echo -e "\x1B[1;31m4. Block storage classname(RWO): \x1B[0m${BLOCK_STORAGE_CLASS_NAME}"
-                echo -e "\x1B[1;31m5. URL to zip file for JDBC and/or ICCSAP drivers:\x1B[0m ${CP4BA_JDBC_URL}"
-            fi
+            #if  [[ $DEPLOYMENT_TYPE == "starter" && $PLATFORM_SELECTED == "OCP" ]];
+            #then
+            #    echo -e "\x1B[1;31m3. File storage classname(RWX):\x1B[0m ${STORAGE_CLASS_NAME}"
+            #    echo -e "\x1B[1;31m4. Block storage classname(RWO):\x1B[0m ${BLOCK_STORAGE_CLASS_NAME}"
+            #    if [[ " ${optional_component_cr_arr[@]} " =~ "iccsap" ]]; then
+            #        echo -e "\x1B[1;31m5. URL to zip file for JDBC and/or ICCSAP drivers:\x1B[0m ${CP4BA_JDBC_URL}"
+            #    fi
+            #else
+            echo -e "\x1B[1;31m3. File storage classname(RWX):\x1B[0m"
+            printf '   * \x1B[1;31m%s\x1B[0m %s\n' "Slow:" "${SLOW_STORAGE_CLASS_NAME}"
+            printf '   * \x1B[1;31m%s\x1B[0m %s\n' "Medium:" "${MEDIUM_STORAGE_CLASS_NAME}"
+            printf '   * \x1B[1;31m%s\x1B[0m %s\n' "Fast:" "${FAST_STORAGE_CLASS_NAME}"
+            echo -e "\x1B[1;31m4. Block storage classname(RWO): \x1B[0m${BLOCK_STORAGE_CLASS_NAME}"
+            echo -e "\x1B[1;31m5. URL to zip file for JDBC and/or ICCSAP drivers:\x1B[0m ${CP4BA_JDBC_URL}"
+            #fi
         else
             if  [[ $PLATFORM_SELECTED == "OCP" ]]; then
                 echo -e "\x1B[1;31m3. OCP Infrastructure Node:\x1B[0m ${INFRA_NAME}"
@@ -8705,37 +8707,37 @@ function show_summary(){
             then
                 echo -e "\x1B[1;31m3. ROKS Infrastructure Node:\x1B[0m ${INFRA_NAME}"
             fi
-            if  [[ $DEPLOYMENT_TYPE == "starter" && $PLATFORM_SELECTED == "OCP" ]];
-            then
-                echo -e "\x1B[1;31m4. File storage classname(RWX):\x1B[0m ${STORAGE_CLASS_NAME}"
-                echo -e "\x1B[1;31m5. Block storage classname(RWO):\x1B[0m ${BLOCK_STORAGE_CLASS_NAME}"
-                if [[ " ${optional_component_cr_arr[@]} " =~ "iccsap" ]]; then
-                    echo -e "\x1B[1;31m6. URL to zip file for JDBC and/or ICCSAP drivers:\x1B[0m ${CP4BA_JDBC_URL}"
-                fi
-            else
-                echo -e "\x1B[1;31m4. File storage classname(RWX):\x1B[0m"
-                printf '   * \x1B[1;31m%s\x1B[0m %s\n' "Slow:" "${SLOW_STORAGE_CLASS_NAME}"
-                printf '   * \x1B[1;31m%s\x1B[0m %s\n' "Medium:" "${MEDIUM_STORAGE_CLASS_NAME}"
-                printf '   * \x1B[1;31m%s\x1B[0m %s\n' "Fast:" "${FAST_STORAGE_CLASS_NAME}"
-                echo -e "\x1B[1;31m5. Block storage classname(RWO): \x1B[0m${BLOCK_STORAGE_CLASS_NAME}"
-                echo -e "\x1B[1;31m6. URL to zip file for JDBC and/or ICCSAP drivers:\x1B[0m ${CP4BA_JDBC_URL}"
-            fi
+            #if  [[ $DEPLOYMENT_TYPE == "starter" && $PLATFORM_SELECTED == "OCP" ]];
+            #then
+            #    echo -e "\x1B[1;31m4. File storage classname(RWX):\x1B[0m ${STORAGE_CLASS_NAME}"
+            #    echo -e "\x1B[1;31m5. Block storage classname(RWO):\x1B[0m ${BLOCK_STORAGE_CLASS_NAME}"
+            #    if [[ " ${optional_component_cr_arr[@]} " =~ "iccsap" ]]; then
+            #        echo -e "\x1B[1;31m6. URL to zip file for JDBC and/or ICCSAP drivers:\x1B[0m ${CP4BA_JDBC_URL}"
+            #    fi
+            #else
+            echo -e "\x1B[1;31m4. File storage classname(RWX):\x1B[0m"
+            printf '   * \x1B[1;31m%s\x1B[0m %s\n' "Slow:" "${SLOW_STORAGE_CLASS_NAME}"
+            printf '   * \x1B[1;31m%s\x1B[0m %s\n' "Medium:" "${MEDIUM_STORAGE_CLASS_NAME}"
+            printf '   * \x1B[1;31m%s\x1B[0m %s\n' "Fast:" "${FAST_STORAGE_CLASS_NAME}"
+            echo -e "\x1B[1;31m5. Block storage classname(RWO): \x1B[0m${BLOCK_STORAGE_CLASS_NAME}"
+            echo -e "\x1B[1;31m6. URL to zip file for JDBC and/or ICCSAP drivers:\x1B[0m ${CP4BA_JDBC_URL}"
+            #fi
         fi
     else
-        if  [[ $DEPLOYMENT_TYPE == "starter" ]];
-        then
-            echo -e "\x1B[1;31m3. File storage classname(RWX):\x1B[0m ${STORAGE_CLASS_NAME}"
-            echo -e "\x1B[1;31m4. Block storage classname(RWO):\x1B[0m ${BLOCK_STORAGE_CLASS_NAME}"
-            if [[ " ${optional_component_cr_arr[@]} " =~ "iccsap" ]]; then
-                echo -e "\x1B[1;31m5. URL to zip file for JDBC and/or ICCSAP drivers:\x1B[0m ${CP4BA_JDBC_URL}"
-            fi
+        #if  [[ $DEPLOYMENT_TYPE == "starter" ]];
+        #then
+        #    echo -e "\x1B[1;31m3. File storage classname(RWX):\x1B[0m ${STORAGE_CLASS_NAME}"
+        #    echo -e "\x1B[1;31m4. Block storage classname(RWO):\x1B[0m ${BLOCK_STORAGE_CLASS_NAME}"
+        #    if [[ " ${optional_component_cr_arr[@]} " =~ "iccsap" ]]; then
+        #        echo -e "\x1B[1;31m5. URL to zip file for JDBC and/or ICCSAP drivers:\x1B[0m ${CP4BA_JDBC_URL}"
+        #    fi
+        #else
+        if [[ $PLATFORM_SELECTED == "other" ]]; then
+            echo -e "\x1B[1;31m7. File storage classname(RWX):\x1B[0m"
         else
-            if [[ $PLATFORM_SELECTED == "other" ]]; then
-                echo -e "\x1B[1;31m7. File storage classname(RWX):\x1B[0m"
-            else
-                echo -e "\x1B[1;31m3. File storage classname(RWX):\x1B[0m"
-            fi
+            echo -e "\x1B[1;31m3. File storage classname(RWX):\x1B[0m"
         fi
+        #fi
         printf '   * \x1B[1;31m%s\x1B[0m %s\n' "Slow:" "${SLOW_STORAGE_CLASS_NAME}"
         printf '   * \x1B[1;31m%s\x1B[0m %s\n' "Medium:" "${MEDIUM_STORAGE_CLASS_NAME}"
         printf '   * \x1B[1;31m%s\x1B[0m %s\n' "Fast:" "${FAST_STORAGE_CLASS_NAME}"
@@ -8756,8 +8758,8 @@ function prepare_pattern_file(){
 
     if [[ "$DEPLOYMENT_TYPE" == "production" ]];then
         DEPLOY_TYPE_IN_FILE_NAME="production"
-    else
-        DEPLOY_TYPE_IN_FILE_NAME="starter"
+    #else
+    #    DEPLOY_TYPE_IN_FILE_NAME="starter"
     fi
 
     FOUNDATION_PATTERN_FILE=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_foundation.yaml
@@ -8791,17 +8793,17 @@ function prepare_pattern_file(){
     ${COPY_CMD} -rf "${ARIA_PATTERN_FILE}" "${ARIA_PATTERN_FILE_BAK}"
 
     ${COPY_CMD} -rf "${FOUNDATION_PATTERN_FILE}" "${CP4A_PATTERN_FILE_TMP}"
-    if [[ "$DEPLOYMENT_TYPE" == "starter" ]];then
-        WORKFLOW_PATTERN_FILE=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow.yaml
-        WORKFLOW_PATTERN_FILE_TMP=$TEMP_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_tmp.yaml
-        WORKFLOW_PATTERN_FILE_BAK=$BAK_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow.yaml
+    #if [[ "$DEPLOYMENT_TYPE" == "starter" ]];then
+    #    WORKFLOW_PATTERN_FILE=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow.yaml
+    #    WORKFLOW_PATTERN_FILE_TMP=$TEMP_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_tmp.yaml
+    #    WORKFLOW_PATTERN_FILE_BAK=$BAK_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow.yaml
 
-        WW_PATTERN_FILE=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_authoring-workstreams.yaml
-        WW_PATTERN_FILE_TMP=$TEMP_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_authoring-workstreams_tmp.yaml
-        WW_PATTERN_FILE_BAK=$BAK_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_authoring-workstreams.yaml
-        ${COPY_CMD} -rf "${WORKFLOW_PATTERN_FILE}" "${WORKFLOW_PATTERN_FILE_BAK}"
-        ${COPY_CMD} -rf "${WW_PATTERN_FILE}" "${WW_PATTERN_FILE_BAK}"
-    elif [[ "$DEPLOYMENT_TYPE" == "production" ]]
+    #    WW_PATTERN_FILE=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_authoring-workstreams.yaml
+    #    WW_PATTERN_FILE_TMP=$TEMP_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_authoring-workstreams_tmp.yaml
+    #    WW_PATTERN_FILE_BAK=$BAK_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_authoring-workstreams.yaml
+    #    ${COPY_CMD} -rf "${WORKFLOW_PATTERN_FILE}" "${WORKFLOW_PATTERN_FILE_BAK}"
+    #    ${COPY_CMD} -rf "${WW_PATTERN_FILE}" "${WW_PATTERN_FILE_BAK}"
+    if [[ "$DEPLOYMENT_TYPE" == "production" ]]
     then
         WORKFLOW_PATTERN_FILE=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow.yaml
         WORKFLOW_PATTERN_FILE_TMP=$TEMP_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_tmp.yaml
@@ -8883,7 +8885,7 @@ function shutdown_operator(){
     # scale down CP4BA operators base on the CP4BA_OPERATOR_LIST defined in common.sh
     local project_name=$1
     for operator in $CP4BA_OPERATOR_LIST; do
-        
+
         if [[ $operator == "ibm-ads-operator" || $operator == "ibm-cp4a-wfps-operator" || $operator == "ibm-insights-engine-operator" ]]; then
             info "Scaling down \"$operator\" operator"
             kubectl scale --replicas=0 deployment $operator -n $project_name >/dev/null 2>&1
@@ -9008,7 +9010,7 @@ then
                 then
                     case "$ans" in
                     "1")
-                        if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+                        if [[  $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
                             select_pattern
                             select_optional_component
                             if [[ ( -z "$CP4BA_JDBC_URL" ) && (" ${optional_component_cr_arr[@]} " =~ "iccsap") ]]; then
@@ -9021,7 +9023,7 @@ then
                         break
                         ;;
                     "2")
-                        if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+                        if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
                             select_optional_component
                             if [[ ( -z "$CP4BA_JDBC_URL" ) && (" ${optional_component_cr_arr[@]} " =~ "iccsap") ]]; then
                                 get_jdbc_url
@@ -9033,7 +9035,7 @@ then
                         break
                         ;;
                     "3"|"4")
-                        if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+                        if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
                             get_storage_class_name
                         else
                             info "Please run cp4a-prerequisites.sh to modify storage class name"
@@ -9052,7 +9054,7 @@ then
                 else
                     case "$ans" in
                     "1")
-                        if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+                        if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
                             select_pattern
                             select_optional_component
                             if [[ ( -z "$CP4BA_JDBC_URL" ) && (" ${optional_component_cr_arr[@]} " =~ "iccsap") ]]; then
@@ -9065,7 +9067,7 @@ then
                         break
                         ;;
                     "2")
-                        if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+                        if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
                             select_optional_component
                             if [[ ( -z "$CP4BA_JDBC_URL" ) && (" ${optional_component_cr_arr[@]} " =~ "iccsap") ]]; then
                                 get_jdbc_url
@@ -9093,7 +9095,7 @@ then
                         break
                         ;;
                     "7")
-                        if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+                        if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
                             get_storage_class_name
                         else
                             info "Please run cp4a-prerequisites.sh to modify storage class name"
@@ -9807,7 +9809,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
     # The previous condition if [[ $cp4a_operator_csv_version != "$CP4BA_RELEASE_BASE" ]]; will not work for an upgrade from 24.0.0 IF001 to 24.0.1 since the csv version of 24.0.0 IF001 is the same as the release base of 24.0.1
     # Updated this condition to use the is_ifix_to_ifix_upgrade flag which can correctly detect if it is an n-1 to n upgrade or ifix to ifix upgrade
     if [[ "$is_ifix_to_ifix_upgrade" == "false" ]]; then
- 
+
         if [[ "$ALLOW_DIRECT_UPGRADE" == 1 ]]; then # Only execute this block when it's a skip-version upgrade.
             # In 24.0.0, only merge bai.json into yaml but not call savepoint RestAPI because that savepoint should be done during migration from ES to OS
             if [[ $RERUN_UPGRADE_DEPLOYMENT == "Yes" ]]; then
@@ -10071,11 +10073,11 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                         else
                             fail "Not found \"${UPGRADE_DEPLOYMENT_CR}/bai.json\" for Flink savepoint."
                             msg "Please fetch Flink job savepoints for recovery path using above REST API manually, and then put JSON file (bai.json) under the directory \"${TEMP_FOLDER}/\""
-                        fi 
+                        fi
                     fi
                 fi # End of checking for bai.json for ICP4ACluster CR
             fi
-        fi #  End of block for skip-version upgrade. This is BAI related block when $ALLOW_DIRECT_UPGRADE =1 
+        fi #  End of block for skip-version upgrade. This is BAI related block when $ALLOW_DIRECT_UPGRADE =1
         # In 24.0.0, follow the flow of migration from  Elasticsearch to Opensearch, the bai savepoint creation already done before upgrade CP4BA
         # So do not rerun savepoint. But need to covert bai json into UPGRADE_DEPLOYMENT_BAI_TMP for next upgradeDeployment mode.
         # Keep below logic for future IFIX to IFX upgrade.  Setting the RUN_BAI_SAVEPOINT="No" which will skip the savepoint creation in IFIX to IFIX upgrade
@@ -11150,7 +11152,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
             fi
             # # Sourcing the message.sh to use the displayUpgradeOperatorMessage
             source ${CUR_DIR}/helper/messages.sh $COMMON_SERVICES_SCRIPT_FOLDER
-             # Can be skipped for 24.0.0 to 24.0.1 upgrade since the csv version will NOT be 21.3.x or 22.2.x.  Only execute when allow_direct_upgrade flag is 1 
+             # Can be skipped for 24.0.0 to 24.0.1 upgrade since the csv version will NOT be 21.3.x or 22.2.x.  Only execute when allow_direct_upgrade flag is 1
             if [[ ("$cp4a_operator_csv_version" == "21.3."* || "$cp4a_operator_csv_version" == "22.2."* ) && ("$ALLOW_DIRECT_UPGRADE" == 1) ]]; then
                 info "Starting to migrate IBM Cloud Pak foundational services from 3.x to $CS_OPERATOR_VERSION"
 
@@ -11168,7 +11170,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                     msg "All arguments passed into the CPfs script: $COMMON_SERVICES_SCRIPT_FOLDER/migrate_tenant.sh --operator-namespace $TARGET_PROJECT_NAME --services-namespace $TARGET_PROJECT_NAME --cert-manager-source ibm-cert-manager-catalog --enable-licensing --yq \"$CPFS_YQ_PATH\" -c $CS_CHANNEL_VERSION -s $CS_CATALOG_VERSION --license-accept --enable-private-catalog"
                     # switch catalog from GCN to private
                     $COMMON_SERVICES_SCRIPT_FOLDER/migrate_tenant.sh --operator-namespace $TARGET_PROJECT_NAME --services-namespace $TARGET_PROJECT_NAME --cert-manager-source ibm-cert-manager-catalog --enable-licensing --yq "$CPFS_YQ_PATH" -c $CS_CHANNEL_VERSION -s $CS_CATALOG_VERSION --license-accept --enable-private-catalog
-                    if [ $? -ne 0 ]; then                        
+                    if [ $? -ne 0 ]; then
                         TMP_MESSAGE="Failed to execute command: $COMMON_SERVICES_SCRIPT_FOLDER/migrate_tenant.sh --operator-namespace $TARGET_PROJECT_NAME --services-namespace $TARGET_PROJECT_NAME --cert-manager-source ibm-cert-manager-catalog --enable-licensing --yq \"$CPFS_YQ_PATH\" -c $CS_CHANNEL_VERSION -s $CS_CATALOG_VERSION --license-accept --enable-private-catalog"
                         #source ${CUR_DIR}/helper/messages.sh
                         displayUpgradeOperatorMessage "$TMP_MESSAGE" $TARGET_PROJECT_NAME $cp4a_operator_csv_version
@@ -11487,11 +11489,11 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                         displayUpgradeOperatorMessage "$TMP_MESSAGE" $TARGET_PROJECT_NAME $cp4a_operator_csv_version
                         exit 1
                     fi
-                    
+
                     # set --service-namespace property to CP4BA_SERVICES_NS when it's seperation of duty
                     if [[ $SEPARATE_OPERAND_FLAG == "Yes" ]]; then
                         TMP_SERVICES_NAMESPACE=$CP4BA_SERVICES_NS
-                    
+
                     # set --service-namespace property to TARGET_PROJECT_NAME when it's not seperation of duty
                     else
                         TMP_SERVICES_NAMESPACE=$TARGET_PROJECT_NAME
@@ -11505,7 +11507,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                         displayUpgradeOperatorMessage "$TMP_MESSAGE" $TARGET_PROJECT_NAME $cp4a_operator_csv_version
                         exit 1
                     fi
-             
+
                 # This is still a valid scenario in 24.0.0 upgrading to 24.0.1.
                 elif [[ $UPGRADE_MODE == "shared2shared" && $ALL_NAMESPACE_FLAG == "Yes" ]]; then
                     # It is not recommended to install 23.0.2 in all namespace. but script keep coverage for it
