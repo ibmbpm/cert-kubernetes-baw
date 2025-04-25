@@ -82,6 +82,8 @@ BTS_DB_SSL_CERT_FOLDER=${PROPERTY_FILE_FOLDER}/cert/bts_external_db
 
 TEMPORARY_PROPERTY_FILE=${TEMP_FOLDER}/.TEMPORARY.property
 LDAP_PROPERTY_FILE=${PROPERTY_FILE_FOLDER}/baw_LDAP.property
+DB_NAME_USER_PROPERTY_FILE=${PROPERTY_FILE_FOLDER}/cp4ba_db_name_user.property
+DB_SERVER_INFO_PROPERTY_FILE=${PROPERTY_FILE_FOLDER}/cp4ba_db_server.property
 USER_PROFILE_PROPERTY_FILE=${PROPERTY_FILE_FOLDER}/baw_user_profile.property
 
 # Directory and template file for secret YAML template 
@@ -179,6 +181,16 @@ function prop_ldap_property_file() {
 
 function prop_user_profile_property_file() {
     grep "^${1}=" ${USER_PROFILE_PROPERTY_FILE}|cut -d'"' -f2
+}
+function prop_db_name_user_property_file() {
+    grep "^.*${1}=" ${DB_NAME_USER_PROPERTY_FILE}|cut -d'"' -f2
+}
+
+function prop_db_name_user_property_file_for_server_name() {
+    grep "^.*${1}=" ${DB_NAME_USER_PROPERTY_FILE}|cut -d'.' -f1
+}
+function prop_db_server_property_file() {
+    grep "^${1}=" ${DB_SERVER_INFO_PROPERTY_FILE}|cut -d'"' -f2
 }
 
 # set CLI_CMD var
