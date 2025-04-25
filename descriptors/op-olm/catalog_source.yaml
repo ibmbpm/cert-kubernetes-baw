@@ -50,7 +50,8 @@ spec:
       interval: 45m
   priority: 100
 ---
-# IBM CS Opensearch Operator Catalog 1.1.1714
+# IBM CS Opensearch Operator Catalog 1.1.2042
+# This version currently available in development channel only.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -60,7 +61,8 @@ spec:
   displayName: IBM CS Opencontent Opensearch Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/opencontent-ibm-opensearch-operator-catalog@sha256:426d27d1fac806db94782e4017e92ca570113af674a7bb203fd1433aa7a72bb7
+  #image: icr.io/cpopen/opencontent-ibm-opensearch-operator-catalog@sha256:426d27d1fac806db94782e4017e92ca570113af674a7bb203fd1433aa7a72bb7
+  image: cp.stg.icr.io/cp/opencontent-ibm-opensearch-operator-catalog:devel-main
   secrets:
   - "ibm-entitlement-key"
   - "ibm-stg-entitlement-key"
@@ -123,7 +125,7 @@ spec:
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:d875123a9f01fed953036065c81131b5e1ebfc4f89047df876f90cf5d12cc00f
+  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:d4dff1a8968c18d984e16c4c9f1517c3a10e23a11bf166c64d734773324d4c9d
   secrets:
   - "ibm-entitlement-key"
   - "ibm-stg-entitlement-key"
@@ -168,7 +170,7 @@ spec:
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:412a1941301da0adcfb0e2213e14eca7e01f1dbbe416db72d1c9b26c2abc6cee
+  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:f289ac0d44803ff12d41c3659e6fdf04c404e0b3b233b6bc44eec671abb1b47e
   secrets:
   - "ibm-entitlement-key"
   - "ibm-stg-entitlement-key"
@@ -179,7 +181,7 @@ spec:
       interval: 45m
   priority: 100
 ---
-# IBM Zen Operator Catalog 6.1.3+20250327.140337.10
+# IBM Zen Operator Catalog 6.1.3+20250416.164817.22
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
@@ -194,7 +196,7 @@ spec:
   sourceType: grpc
   # DBACLD-175640 issue to pull bundle with this catalog
   #image: cp.stg.icr.io/cp/ibm-zen-operator-catalog@sha256:8aa614c2538ddb65c2df4b5eabb208272f3026136772cbe3af7d26ba283aba34
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:a5566fc765d898a50fefdf83c88443178e2d718492f7709330c10052e05c9ece
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:209ea4b77b3b0863c591bcdec6f53c4c39dafcb10ff13e27ae4e1cb986a59727
   secrets:
   - "ibm-entitlement-key"
   - "ibm-stg-entitlement-key"
