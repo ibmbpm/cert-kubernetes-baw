@@ -20,10 +20,11 @@ mkdir -p $TEMP_FOLDER
 
 # Directory for common service script
 COMMON_SERVICES_SCRIPT_FOLDER=${CUR_DIR}/cpfs/installer_scripts/cp3pt0-deployment
+COMMON_SERVICES_SCRIPT_PARENT_FOLDER=${CUR_DIR}/cpfs/installer_scripts
+OPENSEARCH_MIGRATION_SCRIPT=${CUR_DIR}/cpfs/migration/es-os-migration-script.sh
 
 COMMON_SERVICES_SCRIPT_YQ_FOLDER=${CUR_DIR}/cpfs/yq
-
-
+ALL_NAMESPACE_NAME="openshift-operators"
 # Start of Section for BAW Rancher specific variables
 
 # BAW CNCF folder
@@ -63,6 +64,8 @@ BAW_S_FC_CR=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_production_FC_baw.yam
 
 #Change required each sprint for using dev mode
 CURRENT_SPRINT_TAG="2500.SP06"
+CP4BA_SERVICES_NS=""
+CP4BA_OPERATORS_NS=""
 
 
 # End of Section for BAW Rancher specific variables
@@ -76,18 +79,109 @@ PROPERTY_FILE_FOLDER_BAK=${PREREQUISITES_FOLDER_BAK}/propertyfile
 CREATE_SECRET_SCRIPT_FILE=$PREREQUISITES_FOLDER/create_secret.sh
 
 LDAP_SSL_CERT_FOLDER=${PROPERTY_FILE_FOLDER}/cert/ldap
+EXT_LDAP_SSL_CERT_FOLDER=${PROPERTY_FILE_FOLDER}/cert/external_ldap
+DB_SSL_CERT_FOLDER=${PROPERTY_FILE_FOLDER}/cert/db
 ZEN_DB_SSL_CERT_FOLDER=${PROPERTY_FILE_FOLDER}/cert/zen_external_db
 IM_DB_SSL_CERT_FOLDER=${PROPERTY_FILE_FOLDER}/cert/im_external_db
 BTS_DB_SSL_CERT_FOLDER=${PROPERTY_FILE_FOLDER}/cert/bts_external_db
+CP4BA_TLS_ISSUER_CERT_FOLDER=${PROPERTY_FILE_FOLDER}/cert/cp4ba_tls_issuer
+AE_REDIS_SSL_CERT_FOLDER=${DB_SSL_CERT_FOLDER}/redis-ae
+PLAYBACK_REDIS_SSL_CERT_FOLDER=${DB_SSL_CERT_FOLDER}/redis-playback
+ADP_GIT_SSL_CERT_FOLDER=${PROPERTY_FILE_FOLDER}/cert/adp_git
+ADP_CDRA_CERT_FOLDER=${PROPERTY_FILE_FOLDER}/cert/adp_cdra
 
 TEMPORARY_PROPERTY_FILE=${TEMP_FOLDER}/.TEMPORARY.property
 LDAP_PROPERTY_FILE=${PROPERTY_FILE_FOLDER}/baw_LDAP.property
+EXTERNAL_LDAP_PROPERTY_FILE=${PROPERTY_FILE_FOLDER}/cp4ba_External_LDAP.property
+
+DB_NAME_USER_PROPERTY_FILE=${PROPERTY_FILE_FOLDER}/cp4ba_db_name_user.property
+DB_SERVER_INFO_PROPERTY_FILE=${PROPERTY_FILE_FOLDER}/cp4ba_db_server.property
 USER_PROFILE_PROPERTY_FILE=${PROPERTY_FILE_FOLDER}/baw_user_profile.property
 
-# Directory and template file for secret YAML template 
+BAW_AUTH_OS_ARR=("BAWDOCS" "BAWDOS" "BAWTOS")
+AEOS=("AEOS")
+# Directory and script file for DB Script
+DB_SCRIPT_FOLDER=${PREREQUISITES_FOLDER}/dbscript
+FNCM_DB_SCRIPT_FOLDER=${DB_SCRIPT_FOLDER}/fncm
+BAN_DB_SCRIPT_FOLDER=${DB_SCRIPT_FOLDER}/ban
+ODM_DB_SCRIPT_FOLDER=${DB_SCRIPT_FOLDER}/odm
+BAS_DB_SCRIPT_FOLDER=${DB_SCRIPT_FOLDER}/bas
+ADP_DB_SCRIPT_FOLDER=${DB_SCRIPT_FOLDER}/adp
+ADS_DB_SCRIPT_FOLDER=${DB_SCRIPT_FOLDER}/ads
+BAA_DB_SCRIPT_FOLDER=${DB_SCRIPT_FOLDER}/baa
+AE_DB_SCRIPT_FOLDER=${DB_SCRIPT_FOLDER}/ae
+BAW_DB_SCRIPT_FOLDER=${DB_SCRIPT_FOLDER}/baw-authoring
+BAW_AWS_DB_SCRIPT_FOLDER=${DB_SCRIPT_FOLDER}/baw-aws
+
+# Directory and template file for secret YAML template
 SECRET_FILE_FOLDER=${PREREQUISITES_FOLDER}/secret_template
 
+DB_SSL_SECRET_FOLDER=${SECRET_FILE_FOLDER}/cp4ba_db_ssl_secret
 LDAP_SSL_SECRET_FOLDER=${SECRET_FILE_FOLDER}/baw_ldap_ssl_secret
+REDIS_SSL_SECRET_FOLDER=${SECRET_FILE_FOLDER}/cp4ba_redis_ssl_secret
+
+CP4A_DB_SSL_SECRET_FILE=${DB_SSL_SECRET_FOLDER}/ibm-cp4ba-db-ssl-cert-secret.sh
+CP4A_AE_REDIS_SSL_SECRET_FILE=${REDIS_SSL_SECRET_FOLDER}/ibm-cp4ba-ae-redis-ssl-cert-secret.sh
+CP4A_PLAYBACK_REDIS_SSL_SECRET_FILE=${REDIS_SSL_SECRET_FOLDER}/ibm-cp4ba-playback-redis-ssl-cert-secret.sh
+CP4A_LDAP_SSL_SECRET_FILE=${LDAP_SSL_SECRET_FOLDER}/ibm-cp4ba-ldap-ssl-cert-secret.sh
+CP4A_EXT_LDAP_SSL_SECRET_FILE=${LDAP_SSL_SECRET_FOLDER}/ibm-cp4ba-external-ldap-ssl-cert-secret.sh
+
+
+LDAP_SECRET_FILE=${SECRET_FILE_FOLDER}/ldap-bind-secret.yaml
+EXT_LDAP_SECRET_FILE=${SECRET_FILE_FOLDER}/ext-ldap-bind-secret.yaml
+
+FNCM_SECRET_FOLDER=${SECRET_FILE_FOLDER}/fncm
+FNCM_SECRET_FILE=${FNCM_SECRET_FOLDER}/ibm-fncm-secret.yaml
+
+FNCM_ICC_SECRET_FILE=${FNCM_SECRET_FOLDER}/ibm-fncm-icc-secret.yaml
+FNCM_ICCSAP_SECRET_FILE=${FNCM_SECRET_FOLDER}/ibm-fncm-iccsap-secret.yaml
+FNCM_IER_SECRET_FILE=${FNCM_SECRET_FOLDER}/ibm-fncm-ier-secret.yaml
+FNCM_DB_SSL_SECRET_FILE=${FNCM_SECRET_FOLDER}/ibm-fncm-db-ssl-cert-secret.sh
+
+BAN_SECRET_FOLDER=${SECRET_FILE_FOLDER}/ban
+BAN_SECRET_FILE=${BAN_SECRET_FOLDER}/ibm-ban-secret.yaml
+BAN_DB_SSL_SECRET_FILE=${BAN_SECRET_FOLDER}/ibm-ban-db-ssl-cert-secret.sh
+
+ODM_SECRET_FOLDER=${SECRET_FILE_FOLDER}/odm
+ODM_SECRET_FILE=${ODM_SECRET_FOLDER}/ibm-odm-db-secret.yaml
+ODM_DB_SSL_SECRET_FILE=${ODM_SECRET_FOLDER}/ibm-odm-db-ssl-cert-secret.sh
+
+ADP_SECRET_FOLDER=${SECRET_FILE_FOLDER}/adp
+ADP_BASE_DB_SECRET_FILE=${ADP_SECRET_FOLDER}/ibm-aca-db-secret.sh
+ADP_BASE_DB_SECRET_YAML_FILE=${ADP_SECRET_FOLDER}/ibm-aca-db-secret.yaml
+ADP_GIT_SSL_SECRET_FILE=${ADP_SECRET_FOLDER}/ibm-adp-git-connection-secret.sh
+ADP_CDRA_SSL_SECRET_FILE=${ADP_SECRET_FOLDER}/ibm-adp-cdra-route-secret.sh
+ADP_SECRET_FILE=${ADP_SECRET_FOLDER}/ibm-adp-secret.yaml
+ADP_ACA_DESIGN_API_KEY_SECRET_FILE=${ADP_SECRET_FOLDER}/ibm-adp-aca-design-api-key-secret.sh
+
+ADP_DB_SSL_SECRET_FILE=${ADP_SECRET_FOLDER}/ibm-apd-db-ssl-cert-secret.sh
+
+BAW_SECRET_FOLDER=${SECRET_FILE_FOLDER}/baw
+BAW_SECRET_FILE=${BAW_SECRET_FOLDER}/ibm-baw-db-secret.yaml
+BAW_DB_SSL_SECRET_FILE=${BAW_SECRET_FOLDER}/ibm-baw-authoring-db-ssl-cert-secret.sh
+
+BAW_AWS_SECRET_FOLDER=${SECRET_FILE_FOLDER}/baw-aws
+BAW_AWS_SECRET_FILE=${BAW_AWS_SECRET_FOLDER}/ibm-aws-db-secret.yaml
+BAW_RUNTIME_SECRET_FILE=${BAW_AWS_SECRET_FOLDER}/ibm-baw-db-secret.yaml
+ICP4A_ENCRYPTION_KEY_SECRET_FILE=${BAW_AWS_SECRET_FOLDER}/icp4a-shared-encryption-key-secret.yaml
+
+APP_ENGINE_SECRET_FOLDER=${SECRET_FILE_FOLDER}/ae
+APP_ENGINE_SECRET_FILE=${APP_ENGINE_SECRET_FOLDER}/ibm-aae-app-engine-secret.yaml
+APP_ENGINE_PLAYBACK_SECRET_FILE=${APP_ENGINE_SECRET_FOLDER}/ibm-playback-server-admin-secret.yaml
+APP_ENGINE_DB_SSL_SECRET_FILE=${APP_ENGINE_SECRET_FOLDER}/ibm-aae-app-engine-db-ssl-cert-secret.sh
+APP_ORACLE_SSO_SSL_SECRET_FILE=${DB_SSL_SECRET_FOLDER}/ibm-ae-oracle-sso-cert-secret.sh
+
+BAS_SECRET_FOLDER=${SECRET_FILE_FOLDER}/bas
+BAS_SECRET_FILE=${BAS_SECRET_FOLDER}/ibm-bas-admin-secret.yaml
+BAS_DB_SSL_SECRET_FILE=${BAS_SECRET_FOLDER}/ibm-bas-admin-db-ssl-cert-secret.sh
+
+#add ads varibles
+ADS_SECRET_FOLDER=${SECRET_FILE_FOLDER}/ads
+ADS_SECRET_FILE=${ADS_SECRET_FOLDER}/ibm-dba-ads-mongo-secret.yaml
+ADS_DB_SSL_SECRET_FILE=${ADS_SECRET_FOLDER}/ibm-dba-ads-mongo-db-ssl-cert-secret.sh
+ADS_DESIGNER_FILE=${ADS_SECRET_FOLDER}/ibm-ads-designer-database.yaml
+ADS_RUNTIME_FILE=${ADS_SECRET_FOLDER}/ibm-ads-runtime-database.yaml
+
 ZEN_SECRET_FOLDER=${SECRET_FILE_FOLDER}/zen_external_db
 ZEN_SECRET_FILE=${ZEN_SECRET_FOLDER}/ibm-zen-metastore-edb-secret.sh
 ZEN_CONFIGMAP_FILE=${ZEN_SECRET_FOLDER}/ibm-zen-metastore-edb-cm.yaml
@@ -101,6 +195,9 @@ BTS_SSL_SECRET_FILE=${BTS_SECRET_FOLDER}/ibm-bts-metastore-edb-ssl-secret.sh
 BTS_SECRET_FILE=${BTS_SECRET_FOLDER}/ibm-bts-metastore-edb-user-secret.yaml
 BTS_CONFIGMAP_FILE=${BTS_SECRET_FOLDER}/ibm-bts-metastore-edb-cm.yaml
 
+CP4BA_TLS_ISSUER_FOLDER=${SECRET_FILE_FOLDER}/cp4ba_tls_issuer
+CP4BA_TLS_ISSUER_SECRET_FILE=${CP4BA_TLS_ISSUER_FOLDER}/ibm-cp4ba-tls-issuer-secret.sh
+CP4BA_TLS_ISSUER_FILE=${CP4BA_TLS_ISSUER_FOLDER}/ibm-cp4ba-tls-issuer.yaml
 CP4A_LDAP_SSL_SECRET_FILE=${LDAP_SSL_SECRET_FOLDER}/ibm-baw-ldap-ssl-cert-secret.sh
 
 
@@ -137,7 +234,7 @@ REQUIREDVER_BTS="3.35.3"
 # REQUIREDVER_POSTGRESQL is for checking postgresql operator upgrade status before run removal_iaf.sh, need to update for each IFIX
 REQUIREDVER_POSTGRESQL="1.25.1"
 # EVENTS_OPERATOR_VERSION is for checking IBM Events operator upgrade status, need to update for each IFIX
-EVENTS_OPERATOR_VERSION="v5.1.1"
+EVENTS_OPERATOR_VERSION="v5.1.2"
 # List of BAW versions that are supported for upgrade to $BAW_CSV_VERSION
 MINIMUM_SUPPORTED_UPGRADE_VERSIONS=("24.1." "25.0." )
 
@@ -165,6 +262,22 @@ COMMON_SERVICES_CM_DEDICATE_FILE_NAME="common-service-maps.yaml"
 COMMON_SERVICES_CM_DEDICATE_FILE="${PARENT_DIR}/descriptors/${COMMON_SERVICES_CM_DEDICATE_FILE_NAME}"
 COMMON_SERVICES_CM_DEDICATE_FILE_UPDATE="${PARENT_DIR}/descriptors/${COMMON_SERVICES_CM_DEDICATE_FILE_NAME_UPDATE}"
 
+#List of operators to be scale up or down
+CP4BA_OPERATOR_LIST="ibm-cp4a-operator ibm-content-operator icp4a-foundation-operator  ibm-ads-operator  ibm-cp4a-wfps-operator ibm-dpe-operator ibm-insights-engine-operator ibm-odm-operator ibm-pfs-operator ibm-workflow-operator"
+
+# CP4BA EDB default instance name
+EDB_INSTANCE_CP4BA_NAME="postgres-cp4ba"
+
+# set CLI_CMD var
+if which oc >/dev/null 2>&1; then
+    CLI_CMD=oc
+elif which kubectl >/dev/null 2>&1; then
+    CLI_CMD=kubectl
+else
+    echo -e  "\x1B[1;31mUnable to locate Kubernetes CLI or OpenShift CLI. You must install it to run this script.\x1B[0m" && \
+    exit 1
+fi
+
 function prop_upgrade_property_file() {
     grep "^${1}=" ${UPGRADE_DEPLOYMENT_PROPERTY_FILE}|cut -d'=' -f2
 }
@@ -177,10 +290,33 @@ function prop_ldap_property_file() {
     grep "^${1}=" ${LDAP_PROPERTY_FILE}|cut -d'"' -f2
 }
 
+function prop_ext_ldap_property_file() {
+    grep "^${1}=" ${EXTERNAL_LDAP_PROPERTY_FILE}|cut -d'"' -f2
+}
+
 function prop_user_profile_property_file() {
     grep "^${1}=" ${USER_PROFILE_PROPERTY_FILE}|cut -d'"' -f2
 }
 
+function prop_db_name_user_property_file() {
+    grep "^.*${1}=" ${DB_NAME_USER_PROPERTY_FILE}|cut -d'"' -f2
+}
+
+function prop_db_name_user_property_file_for_server_name() {
+    grep "^.*${1}=" ${DB_NAME_USER_PROPERTY_FILE}|cut -d'.' -f1
+}
+
+function prop_osdb_property_file() {
+    grep "^.*${1}=" ${DB_NAME_USER_PROPERTY_FILE}|cut -d'=' -f2
+}
+
+function prop_db_server_property_file() {
+    grep "^${1}=" ${DB_SERVER_INFO_PROPERTY_FILE}|cut -d'"' -f2
+}
+
+function prop_db_oracle_server_property_file() {
+    grep "^${1}=" ${DB_SERVER_INFO_PROPERTY_FILE}|cut -d'"' -f2
+}
 # set CLI_CMD var
 if which oc >/dev/null 2>&1; then
     CLI_CMD=oc
@@ -190,6 +326,7 @@ else
     echo -e  "\x1B[1;31mUnable to locate Kubernetes CLI or OpenShift CLI. You must install it to run this script.\x1B[0m" && \
     exit 1
 fi
+
 
 function set_global_env_vars() {
     unameOut="$(uname -s)"
@@ -478,7 +615,7 @@ function check_platform_version(){
     currentver=$(oc get nodes | awk 'NR==2{print $5}')
     requiredver="v1.17.1"
     if [ "$(printf '%s\n' "$requiredver" "$currentver" | sort -V | head -n1)" = "$requiredver" ]; then
-        PLATFORM_VERSION="4.4OrLater"  
+        PLATFORM_VERSION="4.4OrLater"
     else
         # PLATFORM_VERSION="3.11"
         PLATFORM_VERSION="4.4OrLater"
@@ -517,52 +654,6 @@ function check_cluster_login() {
 
 set_global_env_vars
 
-function save_log(){
-    local LOG_DIR="$CUR_DIR/$1"
-    LOG_FILE="$LOG_DIR/$2_$(date +'%Y%m%d%H%M%S').log"
-
-    if [[ ! -d $LOG_DIR ]]; then
-        mkdir -p "$LOG_DIR"
-    fi
-
-    # Create a named pipe
-    PIPE=$(mktemp -u)
-    mkfifo "$PIPE"
-
-    # Tee the output to both the log file and the terminal
-    tee "$LOG_FILE" < "$PIPE" &
-
-    # Redirect stdout and stderr to the named pipe
-    exec > "$PIPE" 2>&1
-
-    # Remove the named pipe
-    rm "$PIPE"
-
-}
-
-function cleanup_log() {
-    # Check if the log file already exists
-    if [[ -e $LOG_FILE ]]; then
-        # Remove ANSI escape sequences from log file
-        sed -E 's/\x1B\[[0-9;]+[A-Za-z]//g' "$LOG_FILE" > "$LOG_FILE.tmp" && mv "$LOG_FILE.tmp" "$LOG_FILE"
-    fi
-}
-
-## <https://jsw.ibm.com/browse/DBACLD-172803> - We are now asking user to use {xor} for special characters in password, so we need to use decode_xor_password to get the password decoded before validation.
-function decode_xor_password() {
-
-  local encoded=$1
-  local operator_project_name=$2
-  local operator_pod_name=$3
-  local was_home="/opt/ibm/securityUtility"
-  local class_path="${was_home}/plugins/com.ibm.ws.runtime.jar:${was_home}/lib/bootstrap.jar:${was_home}/plugins/com.ibm.ws.emf.jar:${was_home}/lib/ffdc.jar:${was_home}/plugins/org.eclipse.emf.ecore.jar:${was_home}/plugins/org.eclipse.emf.common.jar:${was_home}/glassfish-corba-omgapi-4.2.4.jar"
-  if [[ $encoded != "" ]] && [[ "$encoded" == *"{xor}"* ]]; then
-    local decoded=$( ${CLI_CMD} exec -i -n $operator_project_name $operator_pod_name -- bash -c "java -cp \"${class_path}\" com.ibm.ws.security.util.PasswordDecoder \"$encoded\"")
-    echo "$decoded" | grep -i 'decoded password == ' | awk '{print $8}' | sed -e 's/^"//' -e 's/"$//'
-  else
-    echo $encoded
-  fi
-}
 
 function allocate_operator_pvc(){
     # For dynamic storage classname
@@ -608,6 +699,108 @@ function allocate_operator_pvc(){
             echo -e "\x1B[1mDone\x1B[0m"
     fi
 }
+
+function save_log(){
+    local LOG_DIR="$CUR_DIR/$1"
+    LOG_FILE="$LOG_DIR/$2_$(date +'%Y%m%d%H%M%S').log"
+
+    if [[ ! -d $LOG_DIR ]]; then
+        mkdir -p "$LOG_DIR"
+    fi
+
+    # Create a named pipe
+    PIPE=$(mktemp -u)
+    mkfifo "$PIPE"
+
+    # Tee the output to both the log file and the terminal
+    tee "$LOG_FILE" < "$PIPE" &
+
+    # Redirect stdout and stderr to the named pipe
+    exec > "$PIPE" 2>&1
+
+    # Remove the named pipe
+    rm "$PIPE"
+
+}
+#function save_log1() {
+#    local LOG_DIR="$CUR_DIR/$1"
+#    LOG_FILE="$LOG_DIR/$2_$(date +'%Y%m%d%H%M%S').log"
+#
+#    if [[ ! -d $LOG_DIR ]]; then
+#        mkdir -p "$LOG_DIR"
+#    fi
+#
+#    # Redirect stdout and stderr directly to the log file
+#    exec > >(tee -a "$LOG_FILE") 2>&1
+#}
+
+function cleanup_log() {
+    # Check if the log file already exists
+    if [[ -e $LOG_FILE ]]; then
+        # Remove ANSI escape sequences from log file
+        sed -E 's/\x1B\[[0-9;]+[A-Za-z]//g' "$LOG_FILE" > "$LOG_FILE.tmp" && mv "$LOG_FILE.tmp" "$LOG_FILE"
+    fi
+}
+
+function decode_xor_password() {
+
+  local encoded=$1
+  local operator_project_name=$2
+  local operator_pod_name=$3
+  local was_home="/opt/ibm/securityUtility"
+  local class_path="${was_home}/plugins/com.ibm.ws.runtime.jar:${was_home}/lib/bootstrap.jar:${was_home}/plugins/com.ibm.ws.emf.jar:${was_home}/lib/ffdc.jar:${was_home}/plugins/org.eclipse.emf.ecore.jar:${was_home}/plugins/org.eclipse.emf.common.jar:${was_home}/glassfish-corba-omgapi-4.2.4.jar"
+  if [[ $encoded != "" ]] && [[ "$encoded" == *"{xor}"* ]]; then
+    local decoded=$( ${CLI_CMD} exec -i -n $operator_project_name $operator_pod_name -- bash -c "java -cp \"${class_path}\" com.ibm.ws.security.util.PasswordDecoder \"$encoded\"")
+    echo "$decoded" | grep -i 'decoded password == ' | awk '{print $8}' | sed -e 's/^"//' -e 's/"$//'
+  else
+    echo $encoded
+  fi
+}
+
+# Function to encode the certificate contents to a base64 string
+encode_crt_file_to_base64() {
+    local crt_file="$1"
+    if [[ ! -f "$crt_file" ]]; then
+        echo "File not found: $crt_file"
+        return 1
+    fi
+
+    # Read and base64 encode the .crt file
+    local machine_lower=$(echo "${machine}" | tr '[:upper:]' '[:lower:]')
+    if [[ "$machine_lower" == "linux" ]]; then
+        base64_encoded_content=$(cat "$crt_file" | base64 -w 0)
+    else
+        base64_encoded_content=$(cat "$crt_file" | base64 )
+    fi
+
+    echo "$base64_encoded_content"
+}
+
+function check_single_quotes_password() {
+    local temp_pwd=$1
+    local variable_name=$2
+    temp_pwd=$(sed -e 's/^"//' -e 's/"$//' <<<"$temp_pwd")
+    variable_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$variable_name")
+    if [[ $temp_pwd == *"'"* ]]; then
+        fail "Found single quotes (') in \"$variable_name\". Exiting..."
+        warning "DO NOT use special character single quotes (') in the password."
+        exit 1
+    fi
+}
+
+
+function check_single_quotes_password() {
+    local temp_pwd=$1
+    local variable_name=$2
+    temp_pwd=$(sed -e 's/^"//' -e 's/"$//' <<<"$temp_pwd")
+    variable_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$variable_name")
+    if [[ $temp_pwd == *"'"* ]]; then
+        fail "Found single quotes (') in \"$variable_name\". Exiting..."
+        warning "DO NOT use special character single quotes (') in the password."
+        exit 1
+    fi
+}
+
 # For https://jsw.ibm.com/browse/DBACLD-157020
 # Function that base64 encodes the password in the generated secret template and moves it to the data section of the template
 # We cant directy use the base64 value in the stringData field as when the secret template is applied the cluster automatically base64 encodes it again and this will result in a wrong password being used by the operator code
@@ -652,6 +845,170 @@ function update_secret_template_passwords(){
 
 
 
+# function to create a userpassword dictionary string to pass to the ldap validation jar
+# Sample format - username:testuser,password:testpassword;username:testuser2,password:;
+# All values are base64 encoded so that all special characters are parsed correctly
+function create_user_password_dictionary_string(){
+    usernames=("${!1}")
+    passwords=("${!2}")
+    output=""
+    # Loop through the arrays
+    for i in "${!usernames[@]}"; do
+        # Username is already encoded in the add_to_list function
+        username="${usernames[$i]}"
+        password="${passwords[$i]}"
+        
+        
+        # Check if the password is empty or not
+        if [ -n "$password" ]; then
+            # For https://jsw.ibm.com/browse/DBACLD-157019 where we want to make sure we consider if passwords are encoded
+            # If the value provided is base64 already we take the base64 value else we convert it to base64
+            # Check if the password starts with {Base64}
+            if [[ $password == "{Base64}"* ]]; then
+                encoded_password="${password#'{Base64}'}"
+            else
+                encoded_password=$(printf "$password" | base64)
+            fi
+        else
+            encoded_password=""
+        fi
+        
+        # Append to the output string
+        output="${output}username:${username},password:${encoded_password};"
+    done
+
+    # Print the final output
+    echo "$output"
+}
+
+# certain fields have the full bind dn , and i am extracting it to just get the username
+function extract_user_from_ldap_bind() {
+  local ldap_bind_dn="$1"
+  local display_name_attr="$2"  # LDAP_USER_DISPLAY_NAME_ATTR (e.g., cn or CN)
+
+  # Use sed to dynamically extract the value based on the attribute name (case-insensitive)
+  user=$(echo "$ldap_bind_dn" | sed -n "s/^${display_name_attr}=\([^,]*\).*/\1/ip")
+
+  echo "$user"
+}
+
+# function that processes all properties from the property files that are associated with an LDAP value
+# The function returns values that are passed in the appropriate format to the LDAPTest.jar for additional validation
+function ldap_validation_parameter_generator(){
+    ldap_group_basedn="$(prop_ldap_property_file LDAP_GROUP_BASE_DN)"
+    ldap_user_filter="$(prop_ldap_property_file LC_USER_FILTER)"
+    ldap_user_attribute="$(prop_ldap_property_file LDAP_USER_DISPLAY_NAME_ATTR)"
+    ldap_group_filter="$(prop_ldap_property_file LC_GROUP_FILTER)"
+    if [ -f "${USER_PROFILE_PROPERTY_FILE}" ]; then
+        ldap_admins_group_name="$(prop_user_profile_property_file CONTENT_INITIALIZATION.LDAP_ADMINS_GROUPS_NAME)"
+        cpe_obj_store_group_name="$(prop_user_profile_property_file CONTENT_INITIALIZATION.CPE_OBJ_STORE_ADMIN_USER_GROUPS)"
+        adp_service_user_name="$(extract_user_from_ldap_bind "$(prop_user_profile_property_file ADP.SERVICE_USER_NAME)" "$ldap_user_attribute")"
+        adp_service_user_name_base="$(extract_user_from_ldap_bind "$(prop_user_profile_property_file ADP.SERVICE_USER_NAME_BASE)" "$ldap_user_attribute")"
+        adp_service_user_name_ca="$(extract_user_from_ldap_bind "$(prop_user_profile_property_file ADP.SERVICE_USER_NAME_CA)" "$ldap_user_attribute")"
+        adp_env_owner_user_name="$(extract_user_from_ldap_bind "$(prop_user_profile_property_file ADP.ENV_OWNER_USER_NAME)" "$ldap_user_attribute")"
+    else
+        ldap_admins_group_name=""
+        cpe_obj_store_group_name=""
+        adp_service_user_name=""
+        adp_service_user_name_ca=""
+        adp_service_user_name_base=""
+        adp_env_owner_user_name=""
+    fi
+    ldap_user_list=()
+    ldap_password_list=()
+    ldap_group_list=()
+    ldap_user_password_list=()
+    # Function to add a string if it's not in the list
+    # if the value is null that means that the property is not in the property file and the functions skips that value
+    add_to_list() {
+        local value="$1"
+        local found=0
+        if [ "$value" ]; then
+            # Check if the user starts with {Base64}
+            # For https://jsw.ibm.com/browse/DBACLD-157019 where we want to make sure we consider if passwords are encoded
+            # If the value provided is base64 already we take the base64 value else we convert it to base64
+            if [[ $value == "{Base64}"* ]]; then
+                encoded_value="${value#'{Base64}'}"
+            else
+                encoded_value=$(printf "$value" | base64)
+            fi
+            # Loop through the array to check if the value already exists
+            for user in "${ldap_user_list[@]}"; do
+                if [[ "$user" == "$encoded_value" ]]; then
+                found=1
+                break
+                fi
+            done
+
+            # If the value was not found, add it to the list
+            if [[ $found -eq 0 ]]; then
+                ldap_user_list+=("$encoded_value")
+                return 0  # Indicates the value was added
+            fi
+        fi
+        return 1
+    }
+    # If a user processed is not a duplicate found, then for values that we have a password field we append it, else we append an empty string
+    if [ -f "${USER_PROFILE_PROPERTY_FILE}" ]; then
+        if add_to_list "$(prop_user_profile_property_file CONTENT.APPLOGIN_USER)"; then
+            ldap_password_list+=("$(prop_user_profile_property_file CONTENT.APPLOGIN_PASSWORD)")
+        fi
+        if add_to_list "$(prop_user_profile_property_file BAN.APPLOGIN_USER)"; then
+            ldap_password_list+=("$(prop_user_profile_property_file BAN.APPLOGIN_PASSWORD)")
+        fi
+        if add_to_list "$(prop_user_profile_property_file CONTENT_INITIALIZATION.LDAP_ADMIN_USER_NAME)"; then
+            ldap_password_list+=("")
+        fi
+        if add_to_list "$(prop_user_profile_property_file APP_ENGINE.ADMIN_USER)"; then
+            ldap_password_list+=("")
+        fi
+        if add_to_list "$(prop_user_profile_property_file APP_PLAYBACK.ADMIN_USER)"; then
+            ldap_password_list+=("")
+        fi
+        if add_to_list "$(prop_user_profile_property_file BASTUDIO.ADMIN_USER)"; then
+            ldap_password_list+=("")
+        fi
+        if add_to_list "$(prop_user_profile_property_file BAW_RUNTIME.ADMIN_USER)"; then
+            ldap_password_list+=("")
+        fi
+        if add_to_list "$adp_service_user_name"; then
+            ldap_password_list+=("")
+        fi
+        if add_to_list "$adp_service_user_name_ca"; then
+            ldap_password_list+=("")
+        fi
+        if add_to_list "$adp_service_user_name_base"; then
+            ldap_password_list+=("")
+        fi
+        if add_to_list "$adp_env_owner_user_name"; then
+            ldap_password_list+=("")
+        fi
+    fi
+    # collecting groups for the ldap group list
+    if [[ -n "$ldap_admins_group_name" ]]; then
+        # Convert the comma-separated values to an array
+        IFS=',' read -r -a values_array <<< "$ldap_admins_group_name"
+        for value in "${values_array[@]}"; do
+            ldap_group_list+=("$value")
+        done
+    fi
+    if [[ -n "$cpe_obj_store_group_name" ]]; then
+        # Convert the comma-separated values to an array
+        IFS=',' read -r -a values_array <<< "$cpe_obj_store_group_name"
+        for value in "${values_array[@]}"; do
+            ldap_group_list+=("$value")
+        done
+    fi
+
+    # Convert the space-separated list to a comma-separated string with unique values
+    final_ldap_group_list=$(echo "${ldap_group_list[@]}" | tr ' ' '\n' | sort -u | tr '\n' ',' | sed 's/,$//')
+
+    # creating the user password dictionary string
+    ldap_user_password_list=$(create_user_password_dictionary_string ldap_user_list[@] ldap_password_list[@])
+    
+    ldap_details=("$ldap_group_basedn" "$ldap_user_filter" "$ldap_group_filter" "$ldap_user_password_list" "$final_ldap_group_list")
+}
+
 # This function is used to display a latency warning based on the time taken for a DB/LDAP connection
 # Takes in 2 parameters
 # 1. time_taken which is used to display the latency and make comparisons using bc -l which allows for float point based comparisons
@@ -671,7 +1028,6 @@ function display_latency_warning() {
         echo "The latency exceeds 30ms for a simple $connection_type operation, which indicates potential for failures."
     fi
 }
-
 # This function checks if its a valid version during the course of upgrade
 # It looks at the current csv version and compares it to the minimum support upgraded versions stored in MINIMUM_SUPPORTED_UPGRADE_VERSIONS.
 # The version the operator should be in that channel and not equal to the CSV version of BAW Operator that the scripts are for.
@@ -768,75 +1124,19 @@ function load_properties_from_temp_file(){
 
 }
 
-
-# Function that loads certain variables from the temp property file
-#function load_property_before_generate(){
-#    if [[ ! -f $TEMPORARY_PROPERTY_FILE || ! -f $USER_PROFILE_PROPERTY_FILE ]]; then
-#        fail "Not Found existing property file under \"$PROPERTY_FILE_FOLDER\". Run \"cp4a-prerequisites.sh\" to complete prerequisites"
-#        exit 1
-#    fi
-#
-#    # load pattern into pattern_cr_arr
-#    pattern_list="$(prop_tmp_property_file PATTERN_LIST)"
-#    pattern_name_list="$(prop_tmp_property_file PATTERN_NAME_LIST)"
-#    optional_component_list="$(prop_tmp_property_file OPTION_COMPONENT_LIST)"
-#    optional_component_name_list="$(prop_tmp_property_file OPTION_COMPONENT_NAME_LIST)"
-#    foundation_list="$(prop_tmp_property_file FOUNDATION_LIST)"
-#
-#    # Loading the LDAP_FLAG that will help the script know if the ldap section in the CR is required or not
-#    # DBACLD-168779
-#
-#    selected_ldap_flag="$(prop_tmp_property_file SELECTED_LDAP_FLAG)"
-#
-#    OIFS=$IFS
-#    IFS=',' read -ra pattern_cr_arr <<< "$pattern_list"
-#    IFS=',' read -ra PATTERNS_CR_SELECTED <<< "$pattern_list"
-#    
-#    IFS=',' read -ra pattern_arr <<< "$pattern_name_list"
-#    IFS=',' read -ra optional_component_cr_arr <<< "$optional_component_list"
-#    IFS=',' read -ra optional_component_arr <<< "$optional_component_name_list"
-#    IFS=',' read -ra foundation_component_arr <<< "$foundation_list"    
-#    IFS=$OIFS
-#
-#    # load db_name_full_array and db_user_full_array
-#    #db_name_list="$(prop_tmp_property_file DB_NAME_LIST)"
-#    #db_user_list="$(prop_tmp_property_file DB_USER_LIST)"
-#    #db_user_pwd_list="$(prop_tmp_property_file DB_USER_PWD_LIST)"
-#
-#    #OIFS=$IFS
-#    #IFS=',' read -ra db_name_full_array <<< "$db_name_list"
-#    #IFS=',' read -ra db_user_full_array <<< "$db_user_list"
-#    #IFS=',' read -ra db_user_pwd_full_array <<< "$db_user_pwd_list"
-#    #IFS=$OIFS
-#
-#    # load db ldap type
-#    LDAP_TYPE="$(prop_tmp_property_file LDAP_TYPE)"
-#    #DB_TYPE="$(prop_tmp_property_file DB_TYPE)"
-#
-#    # load CONTENT_OS_NUMBER
-#    #content_os_number=$(prop_tmp_property_file CONTENT_OS_NUMBER)
-#
-#    # load DB_SERVER_NUMBER
-#    #db_server_number=$(prop_tmp_property_file DB_SERVER_NUMBER)
-#
-#    # load limited CPE storage support flag
-#    #CPE_FULL_STORAGE=$(prop_tmp_property_file CPE_FULL_STORAGE_ENABLED)
-#
-#    # load GPU enabled worker nodes flag
-#    #ENABLE_GPU_ARIA=$(prop_tmp_property_file ENABLE_GPU_ARIA_ENABLED)
-#    #nodelabel_key=$(prop_tmp_property_file NODE_LABEL_KEY)
-#    #nodelabel_value=$(prop_tmp_property_file NODE_LABEL_VALUE)
-#
-#    # load LDAP/DB required flag for wfps
-#    #LDAP_WFPS_AUTHORING=$(prop_tmp_property_file LDAP_WFPS_AUTHORING_FLAG)
-#    #EXTERNAL_DB_WFPS_AUTHORING=$(prop_tmp_property_file EXTERNAL_DB_WFPS_AUTHORING_FLAG)
-#
-#    # load fips enabled flag
-#    FIPS_ENABLED="false"
-#
-#    # load profile size  flag
-#    PROFILE_TYPE=$(prop_tmp_property_file PROFILE_SIZE_FLAG)   
-#}
+# This function is to generate a truststore password for DB and LDAP verification
+# DBACLD-167057
+function generate_truststore_password() {
+    local pwd_length="${1:-8}"
+    local pwd_charset="${2:-A-Za-z0-9}"
+    local machine_lower=$(echo "${machine}" | tr '[:upper:]' '[:lower:]')
+    if [[ "$machine_lower" == "linux" ]]; then
+        < /dev/urandom tr -dc "$pwd_charset" | head -c "$pwd_length"
+    else
+        < /dev/urandom tr -dc "$pwd_charset" | cut -c1-"$pwd_length"
+    fi
+    echo
+}
 
 # Function to update repository and tag sections in the CR with the staging repository and current sprint tag
 # This function is used by the baw-deployment.sh only in 
@@ -1060,7 +1360,6 @@ function prompt_to_continue() {
         esac
     done
 }
-
 
 # Function that retrieves the networktype and network cidr range
 # This function is used in the cp4a-clusteradmin-setup.sh for fresh install ( mode is "fresh_install")
