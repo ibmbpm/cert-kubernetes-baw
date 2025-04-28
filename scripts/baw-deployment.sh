@@ -18,20 +18,20 @@ source ${CUR_DIR}/helper/common.sh
 
 function show_help() {
     echo -e "Usage: "
-    echo -e "  ./cp4a-deployment.sh -m [modetype] -n <CP4BA_NAMESPACE>"
+    echo -e "  ./baw-deployment.sh -m [modetype] -n <BAW_NAMESPACE>"
     echo -e "  OR"
-    echo -e "  ./cp4a-deployment.sh -n <CP4BA_NAMESPACE>"
+    echo -e "  ./baw-deployment.sh -n <BAW_NAMESPACE>"
     echo "Options:"
     echo "  -h  Display the help"
     echo "  -m  Optional: The valid mode types are:[upgradeOperator], [upgradeOperatorStatus], [upgradeDeployment] and [upgradeDeploymentStatus]"
     # echo "  -s  The value of the update approval strategy. The valid values are: [automatic] and [manual]."
-    echo "  -n  Required: The target namespace of the CP4BA deployment.(If CP4BA is separate of operator and operand, the value is namespace of CP4BA operator)"
+    echo "  -n  Required: The target namespace of the BAW deployment.(If CP4BA is separate of operator and operand, the value is namespace of CP4BA operator)"
     echo "  -i  Optional: Operator image name, by default it is cp.icr.io/cp/cp4a/icp4a-operator:$CP4BA_RELEASE_BASE"
     echo "  -p  Optional: Pull secret to use to connect to the registry, by default it is ibm-entitlement-key"
     echo "  --enable-private-catalog Optional: Set this flag to let the script to switch CatalogSource from global to namespace scoped. Default is in openshift-marketplace namespace"
-    echo "  ${YELLOW_TEXT}* Running the script to create a custom resource file for new CP4BA deployment:${RESET_TEXT}"
+    echo "  ${YELLOW_TEXT}* Running the script to create a custom resource file for new BAW deployment:${RESET_TEXT}"
     echo "      - STEP 1: Run the script with \"-n <CP4BA_NAMESPACE>\"."
-    echo "  ${YELLOW_TEXT}* Running the script to upgrade a CP4BA deployment from 24.0.0 GA or 24.0.0-IFIX<xx> to $CP4BA_RELEASE_BASE GA/$CP4BA_RELEASE_BASE.X. You must run the modes in the following order:${RESET_TEXT}"
+    echo "  ${YELLOW_TEXT}* Running the script to upgrade a BAW deployment from 24.0.0 GA or 24.0.0-IFIX<xx> to $CP4BA_RELEASE_BASE GA/$CP4BA_RELEASE_BASE.X. You must run the modes in the following order:${RESET_TEXT}"
     echo "      - STEP 1 (Required): Run the script in [upgradeOperator] mode to upgrade CP4BA operators/migrate (Cluster-scoped -> Cluster-scoped [AllNamespaces] / Namespace-scoped -> Namespace-scoped) the IBM Cloud Pak foundational services and then shutdown all CP4BA operators before upgrade CP4BA deployment."
     echo "      - STEP 2 (Optional): Run the script in [upgradeOperatorStatus] mode to check that the upgrade of the CP4BA operator and its dependencies is successful."
     echo "      - STEP 3 (Required): Run the script in [upgradeDeployment] mode to upgrade the CP4BA deployment (The script will generate the new version custom resource, and you can choose review/modification it offline and apply it later or apply it by script without review/modification)."
@@ -154,7 +154,7 @@ parse_arguments "$@"
 #     exit 1
 # fi
 if [[ -z "$TARGET_PROJECT_NAME" ]]; then
-    echo -e "\x1B[1;31mPlease input value for \"-n <CP4BA_NAMESPACE>\" option.\n\x1B[0m"
+    echo -e "\x1B[1;31mPlease input value for \"-n <BAW_NAMESPACE>\" option.\n\x1B[0m"
     exit 1
 fi
 
