@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+# set -x
 ###############################################################################
 #
 # Licensed Materials - Property of IBM
@@ -2083,21 +2083,22 @@ function select_pattern(){
         #    foundation_4=("RR" "UMS" "AE" "BAS")           # Foundation for Business Automation Workflow and workstreams(Demo)
         #    foundation_5=("BAN" "RR" "AE" "BAS" "UMS")  # Foundation for IBM Automation Document Processing
         #else
-        options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow" "(a) Workflow Authoring" "(b) Workflow Runtime" "Automation Workstream Services" "IBM Automation Document Processing" "(a) Development Environment" "(b) Runtime Environment" "Workflow Process Service Authoring")
-        options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow" "workflow-authoring" "workflow-runtime" "workstreams" "document_processing" "document_processing_designer" "document_processing_runtime" "workflow-process-service")
-        foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
-        foundation_1=("BAN" "RR")                 # Foundation for Operational Decision Manager
-        foundation_2=("BAN" "RR" "UMS")     # Foundation for Automation Decision Services
-        foundation_3=("BAN" "RR" "UMS" "AE")     # Foundation for Business Automation Applications (full)
-        foundation_4=("BAN" "RR")           # Foundation for dummy
+        options=( "Business Automation Workflow Authoring" "Business Automation Workflow Runtime")
+        options_cr_val=("workflow-authoring" "workflow-runtime")
+        #foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
+        #foundation_1=("BAN" "RR")                 # Foundation for Operational Decision Manager
+        #foundation_2=("BAN" "RR" "UMS")     # Foundation for Automation Decision Services
+        #foundation_3=("BAN" "RR" "UMS" "AE")     # Foundation for Business Automation Applications (full)
+        #foundation_4=("BAN" "RR")           # Foundation for dummy
+        # TODO remove RR and UMS and ???
         foundation_5=("BAN" "RR" "UMS" "BAS")          # Foundation for Business Automation Workflow - Workflow Authoring (5a)
         foundation_6=("BAN" "RR" "UMS" "AE")           # Foundation for Business Automation Workflow - Workflow Runtime (5b)
-        foundation_7=("BAN" "RR" "UMS" "AE")           # Foundation for Automation Workstream Services (6)
-        foundation_8=("BAN" "RR")  # Foundation for IBM Automation Document Processing
-        foundation_9=("BAN" "RR" "AE" "BAS" "UMS")  # Foundation for IBM Automation Document Processing - 7a Development Environment
-        foundation_10=("BAN" "RR" "AE" "UMS")  # Foundation for IBM Automation Document Processing - 7b Runtime Environment
-        foundation_11=("BAS")           # Foundation for Workflow Process Service Authoring
-        foundation_12=("BAN" "RR" "UMS" "AE")           # Foundation for Business Automation Workflow and workstreams(5b+6)
+        #foundation_7=("BAN" "RR" "UMS" "AE")           # Foundation for Automation Workstream Services (6)
+        #foundation_8=("BAN" "RR")  # Foundation for IBM Automation Document Processing
+        #foundation_9=("BAN" "RR" "AE" "BAS" "UMS")  # Foundation for IBM Automation Document Processing - 7a Development Environment
+        #foundation_10=("BAN" "RR" "AE" "UMS")  # Foundation for IBM Automation Document Processing - 7b Runtime Environment
+        #foundation_11=("BAS")           # Foundation for Workflow Process Service Authoring
+        #foundation_12=("BAN" "RR" "UMS" "AE")           # Foundation for Business Automation Workflow and workstreams(5b+6)
         #fi
     else
         #if [[ "${DEPLOYMENT_TYPE}" == "starter" ]];
@@ -2111,31 +2112,32 @@ function select_pattern(){
         #    foundation_4=("RR" "AE" "BAS")           # Foundation for Business Automation Workflow and workstreams(Demo)
         #    foundation_5=("BAN" "RR" "AE" "BAS")  # Foundation for IBM Automation Document Processing
         #else
-        options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow" "(a) Workflow Authoring" "(b) Workflow Runtime" "Automation Workstream Services" "IBM Automation Document Processing" "(a) Development Environment" "(b) Runtime Environment" "Workflow Process Service Authoring")
-        options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow" "workflow-authoring" "workflow-runtime" "workstreams" "document_processing" "document_processing_designer" "document_processing_runtime" "workflow-process-service")
-        foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
-        foundation_1=("BAN" "RR")                 # Foundation for Operational Decision Manager
-        foundation_2=("BAN" "RR")     # Foundation for Automation Decision Services
-        foundation_3=("BAN" "RR" "AE")     # Foundation for Business Automation Applications (full)
-        foundation_4=("BAN" "RR")           # Foundation for dummy
+        options=("Business Automation Workflow Authoring" "Business Automation Workflow Runtime")
+        options_cr_val=("workflow-authoring" "workflow-runtime")
+        #foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
+        #foundation_1=("BAN" "RR")                 # Foundation for Operational Decision Manager
+        #foundation_2=("BAN" "RR")     # Foundation for Automation Decision Services
+        #foundation_3=("BAN" "RR" "AE")     # Foundation for Business Automation Applications (full)
+        #foundation_4=("BAN" "RR")           # Foundation for dummy
+        # TODO remove RR and ???
         foundation_5=("BAN" "RR" "BAS")           # Foundation for Business Automation Workflow - Workflow Authoring (5a)
         foundation_6=("BAN" "RR" "AE")           # Foundation for Business Automation Workflow - Workflow Runtime (5b)
-        foundation_7=("BAN" "RR" "AE")           # Foundation for Automation Workstream Services (6)
-        foundation_8=("BAN" "RR")  # Foundation for IBM Automation Document Processing
-        foundation_9=("BAN" "RR" "AE" "BAS")  # Foundation for IBM Automation Document Processing - 7a Development Environment
-        foundation_10=("BAN" "RR" "AE")  # Foundation for IBM Automation Document Processing - 7b Runtime Environment
-        foundation_11=("BAS")           # Foundation for Workflow Process Service Authoring
-        foundation_12=("BAN" "RR" "AE")           # Foundation for Business Automation Workflow and workstreams(5b+6)
+        #foundation_7=("BAN" "RR" "AE")           # Foundation for Automation Workstream Services (6)
+        #foundation_8=("BAN" "RR")  # Foundation for IBM Automation Document Processing
+        #foundation_9=("BAN" "RR" "AE" "BAS")  # Foundation for IBM Automation Document Processing - 7a Development Environment
+        #foundation_10=("BAN" "RR" "AE")  # Foundation for IBM Automation Document Processing - 7b Runtime Environment
+        #foundation_11=("BAS")           # Foundation for Workflow Process Service Authoring
+        #foundation_12=("BAN" "RR" "AE")           # Foundation for Business Automation Workflow and workstreams(5b+6)
         #fi
     fi
-    patter_ent_input_array=("1" "2" "3" "4" "5a" "5b" "5A" "5B" "6" "7a" "7b" "7A" "7B" "8" "5b,6" "5B,6" "5b, 6" "5B, 6" "5b 6" "5B 6")
+    patter_ent_input_array=("1" "2"")
     tips1="\x1B[1;31mTips\x1B[0m:\x1B[1m Press [ENTER] to accept the default (None of the capabilities is selected). If none of the capabilities is chosen, the script will exit.\x1B[0m"
     tips2="\x1B[1;31mTips\x1B[0m:\x1B[1m Press [ENTER] when you are done\x1B[0m"
 #    pattern_starter_tips="\x1B[1mInfo: Business Automation Navigator will be automatically installed in the environment as it is part of the Cloud Pak for Business Automation foundation platform. \n\nTips: After you make your first selection you will be able to make additional selections since you can combine multiple selections.\n\x1B[0m"
     pattern_production_tips="\x1B[1mInfo: Business Automation Navigator will be automatically installed in the environment as it is part of the Cloud Pak for Business Automation foundation platform. \n\nTips: After you make your first selection you will be able to make additional selections since you can combine multiple selections.\n\x1B[0m"
     baw_iaws_tips="\x1B[1mInfo: Note that Business Automation Workflow Authoring (5a) cannot be installed together with Automation Workstream Services (6). However, Business Automation Workflow Runtime (5b) can be installed together with Automation Workstream Services (6).\n\x1B[0m"
 #    linux_starter_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31mIBM Automation Document Processing (6) does NOT support a cluster running a Linux on Z (s390x) or Power (ppc64le) architecture.\n\x1B[0m"
-    linux_production_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31mIBM Automation Document Processing (7a/7b) does NOT support a cluster running a Linux on Z (s390x) or Power (ppc64le) architecture.\n\x1B[0m"
+    #linux_production_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31mIBM Automation Document Processing (7a/7b) does NOT support a cluster running a Linux on Z (s390x) or Power (ppc64le) architecture.\n\x1B[0m"
     content_deployed_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31m\"FileNet Content Manager\" can not be selected because one Content (Kind: content.icp4a.ibm.com) custom resource was deployed.\n\x1B[0m"
     indexof() {
         i=-1
