@@ -1,5 +1,5 @@
 #!/bin/bash
-# set -x
+ #set -x
 ###############################################################################
 #
 # Licensed Materials - Property of IBM
@@ -23,6 +23,7 @@ function show_help() {
     echo -e "  ./baw-deployment.sh -n <BAW_NAMESPACE>"
     echo "Options:"
     echo "  -h  Display the help"
+    # TODO
     echo "  -m  Optional: The valid mode types are:[upgradeOperator], [upgradeOperatorStatus], [upgradeDeployment] and [upgradeDeploymentStatus]"
     # echo "  -s  The value of the update approval strategy. The valid values are: [automatic] and [manual]."
     echo "  -n  Required: The target namespace of the BAW deployment.(If CP4BA is separate of operator and operand, the value is namespace of CP4BA operator)"
@@ -306,7 +307,7 @@ function prompt_license(){
                     case "$ans" in
                     "y"|"Y"|"yes"|"Yes"|"YES")
                         echo -e "Continuing...\n"
-                        # echo -e "\x1B[1;31mThe cp4a-deployment.sh can not work with existing Content CR together, exiting now...\x1B[0m\n"
+                        # echo -e "\x1B[1;31mThe baw-deployment.sh can not work with existing Content CR together, exiting now...\x1B[0m\n"
                         CONTENT_DEPLOYED="Yes"
                         break
                         ;;
@@ -1072,59 +1073,60 @@ EOF
         fi
 }
 
-function select_upgrade_mode_simple(){
-    UPGRADE_MODE=""
-    while [[ $UPGRADE_MODE == "" ]]; do
-        printf "\n"
-        options=("Cluster-scoped to Cluster-scoped" "Cluster-scoped to Namespace-scoped" "Namespace-scoped to Namespace-scoped")
-        tips=("This migration mode will first isolate the shared 3.x version of foundational services on the cluster, then install a new instance of foundational services version 4.6.2. Any data from the original foundational services will be copied to the new instance." "This migration mode will migrate a single shared instance of foundational services that is shared by all IBM Cloud Paks in the entire cluster, all of its core foundational services operators to the cluster-scope namespace will be upgraded v4.6.2 without creating new instances." "This migration mode will migrate a dedicated foundational services without creating any new instances of foundational services. This method should only be used if the foundational services you are migrating is only for IBM Cloud Pak for Business Automation.")
-        pros_tips=("The namespace-scoped foundational services for each Cloud Pak or CP4BA component." "The fewer resource required for a single shared instance of foundational services.")
-        cons_tips=("The more resource required for each namespace-scoped instance of IBM Cloud Pak foundational services." "It is not flexible for all Cloud Pak or CP4BA component to share same one instance of IBM Cloud Pak foundational services.")
+# This function is never called , so commenting it out
+#function select_upgrade_mode_simple(){
+#    UPGRADE_MODE=""
+#    while [[ $UPGRADE_MODE == "" ]]; do
+#        printf "\n"
+#        options=("Cluster-scoped to Cluster-scoped" "Cluster-scoped to Namespace-scoped" "Namespace-scoped to Namespace-scoped")
+#        tips=("This migration mode will first isolate the shared 3.x version of foundational services on the cluster, then install a new instance of foundational services version 4.6.2. Any data from the original foundational services will be copied to the new instance." "This migration mode will migrate a single shared instance of foundational services that is shared by all IBM Cloud Paks in the entire cluster, all of its core foundational services operators to the cluster-scope namespace will be upgraded v4.6.2 without creating new instances." "This migration mode will migrate a dedicated foundational services without creating any new instances of foundational services. This method should only be used if the foundational services you are migrating is only for IBM Cloud Pak for Business Automation.")
+#        pros_tips=("The namespace-scoped foundational services for each Cloud Pak or CP4BA component." "The fewer resource required for a single shared instance of foundational services.")
+#        cons_tips=("The more resource required for each namespace-scoped instance of IBM Cloud Pak foundational services." "It is not flexible for all Cloud Pak or CP4BA component to share same one instance of IBM Cloud Pak foundational services.")
 
-        echo -e "\x1B[1mWhich migration mode for the IBM Cloud Pak foundational services do you plan to migrate to? \x1B[0m${YELLOW_TEXT}(NOTES: This choice will decide to either use a private catalog (namespace-scoped) or a global catalog namespace (GCN) for Opensearch installation. Make sure you choose SAME MIGRATION MODE when rerun [upgradeOperator] for upgrade IBM Cloud Pak foundational services next.)${RESET_TEXT}\x1B[0m"
+#        echo -e "\x1B[1mWhich migration mode for the IBM Cloud Pak foundational services do you plan to migrate to? \x1B[0m${YELLOW_TEXT}(NOTES: This choice will decide to either use a private catalog (namespace-scoped) or a global catalog namespace (GCN) for Opensearch installation. Make sure you choose SAME MIGRATION MODE when rerun [upgradeOperator] for upgrade IBM Cloud Pak foundational services next.)${RESET_TEXT}\x1B[0m"
 
-        echo -e "${YELLOW_TEXT}1) Cluster-scoped to Cluster-scoped${RESET_TEXT}"
-        if [[ $RUNTIME_MODE == "upgradeOperator" ]]; then
-            echo -e "   ${YELLOW_TEXT}[Tips]${RESET_TEXT}: ${tips[1]}"
-            # echo -e "   ${GREEN_TEXT}[Pros]${RESET_TEXT}: ${pros_tips[1]}"
-            # echo -e "   ${RED_TEXT}[Cons]${RESET_TEXT}: ${cons_tips[1]}"
-        fi
+#        echo -e "${YELLOW_TEXT}1) Cluster-scoped to Cluster-scoped${RESET_TEXT}"
+#        if [[ $RUNTIME_MODE == "upgradeOperator" ]]; then
+#            echo -e "   ${YELLOW_TEXT}[Tips]${RESET_TEXT}: ${tips[1]}"
+#            # echo -e "   ${GREEN_TEXT}[Pros]${RESET_TEXT}: ${pros_tips[1]}"
+#            # echo -e "   ${RED_TEXT}[Cons]${RESET_TEXT}: ${cons_tips[1]}"
+#        fi
         # echo -e "${YELLOW_TEXT}2) Namespace-scoped to Namespace-scoped${RESET_TEXT}"
         # if [[ $RUNTIME_MODE == "upgradeOperator" ]]; then
         #     echo -e "   ${YELLOW_TEXT}[Tips]${RESET_TEXT}: ${tips[2]}"
         #     # echo -e "   ${GREEN_TEXT}[Pros]${RESET_TEXT}: ${pros_tips[0]}"
         #     # echo -e "   ${RED_TEXT}[Cons]${RESET_TEXT}: ${cons_tips[0]}"
         # fi
-        echo -e "${YELLOW_TEXT}2) Cluster-scoped to Namespace-scoped${RESET_TEXT}"
-        if [[ $RUNTIME_MODE == "upgradeOperator" ]]; then
-            echo -e "   ${YELLOW_TEXT}[Tips]${RESET_TEXT}: ${tips[0]}"
-            # echo -e "   ${GREEN_TEXT}[Pros]${RESET_TEXT}: ${pros_tips[0]}"
-            # echo -e "   ${RED_TEXT}[Cons]${RESET_TEXT}: ${cons_tips[0]}"
-        fi
+#        echo -e "${YELLOW_TEXT}2) Cluster-scoped to Namespace-scoped${RESET_TEXT}"
+#        if [[ $RUNTIME_MODE == "upgradeOperator" ]]; then
+#            echo -e "   ${YELLOW_TEXT}[Tips]${RESET_TEXT}: ${tips[0]}"
+#            # echo -e "   ${GREEN_TEXT}[Pros]${RESET_TEXT}: ${pros_tips[0]}"
+#            # echo -e "   ${RED_TEXT}[Cons]${RESET_TEXT}: ${cons_tips[0]}"
+#        fi
 
-        read -p "Enter your choice [1 or 2]: " choice
-        case $choice in
-            1)
-                UPGRADE_MODE="shared2shared"
-                ;;
+#        read -p "Enter your choice [1 or 2]: " choice
+#        case $choice in
+#            1)
+#                UPGRADE_MODE="shared2shared"
+#                ;;
             # 2)
             #     UPGRADE_MODE="dedicated2dedicated"
             #     ;;
-            2)
-                UPGRADE_MODE="shared2dedicated"
-                ;;
-            *)
-                echo "Invalid choice. Please select 1 or 2."
-                sleep 2
-                ;;
-        esac
-        if [[ ! -z $UPGRADE_MODE ]]; then
-            echo "You selected: ${options[$choice-1]}"
-            printf "\n"
-            sleep 2
-        fi
-    done
-}
+#            2)
+#                UPGRADE_MODE="shared2dedicated"
+#                ;;
+#            *)
+#                echo "Invalid choice. Please select 1 or 2."
+#                sleep 2
+#                ;;
+#        esac
+#        if [[ ! -z $UPGRADE_MODE ]]; then
+#            echo "You selected: ${options[$choice-1]}"
+#            printf "\n"
+#            sleep 2
+#        fi
+#    done
+#}
 
 function setup_opensearch(){
     mkdir -p ${TEMP_FOLDER} >/dev/null 2>&1
@@ -1910,7 +1912,7 @@ function containsTenantDB(){
     done
 }
 
-function get_baw_mode(){
+function get_baw_mode(){ #TODO
     if [[ "$SCRIPT_MODE" == "baw" || "$SCRIPT_MODE" == "baw-dev" ]]; then
        return 0
     else
@@ -1929,22 +1931,22 @@ function select_platform(){
         if [[ $DEPLOYMENT_TYPE == "production" ]]
         then
             if [[ "${SCRIPT_MODE}" == "OLM" ]]; then
-                options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud" "Other CNCF Kubernetes")
-                PS3='Enter a valid option [1 to 3]: '
+                options=( "Openshift Container Platform (OCP) - Private Cloud" "Other CNCF Kubernetes")
+                PS3='Enter a valid option [1 to 2]: '
             else
-                options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud" "Other CNCF Kubernetes")
-                PS3='Enter a valid option [1 to 3]: '
+                options=("Openshift Container Platform (OCP) - Private Cloud" "Other CNCF Kubernetes")
+                PS3='Enter a valid option [1 to 2]: '
             fi
         fi
         if [[ -z "${CP4BA_AUTO_PLATFORM}" ]]; then
             select opt in "${options[@]}"
             do
                 case $opt in
-                    "RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud")
-                        PLATFORM_SELECTED="ROKS"
-                        use_entitlement="yes"
-                        break
-                        ;;
+#                    "RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud")
+#                        PLATFORM_SELECTED="ROKS"
+#                        use_entitlement="yes"
+#                        break
+#                        ;;
                     "Openshift Container Platform (OCP) - Private Cloud")
                         PLATFORM_SELECTED="OCP"
                         use_entitlement="yes"
@@ -1968,7 +1970,7 @@ function select_platform(){
         #    options_var=("ROKS" "OCP")
         if [[ $DEPLOYMENT_TYPE == "production" ]]
         then
-            if [[ "${SCRIPT_MODE}" == "OLM" ]]; then
+            if [[ "${SCRIPT_MODE}" == "OLM" ]]; then + TODO remove ROKS
                 options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
                 options_var=("ROKS" "OCP")
             else
@@ -2091,8 +2093,8 @@ function select_pattern(){
         #foundation_3=("BAN" "RR" "UMS" "AE")     # Foundation for Business Automation Applications (full)
         #foundation_4=("BAN" "RR")           # Foundation for dummy
         # TODO remove RR and UMS and ???
-        foundation_5=("BAN" "RR" "UMS" "BAS")          # Foundation for Business Automation Workflow - Workflow Authoring (5a)
-        foundation_6=("BAN" "RR" "UMS" "AE")           # Foundation for Business Automation Workflow - Workflow Runtime (5b)
+        foundation_0=("BAN" "RR" "UMS" "BAS")          # Foundation for Business Automation Workflow - Workflow Authoring (5a)
+        foundation_1=("BAN" "RR" "UMS" "AE")           # Foundation for Business Automation Workflow - Workflow Runtime (5b)
         #foundation_7=("BAN" "RR" "UMS" "AE")           # Foundation for Automation Workstream Services (6)
         #foundation_8=("BAN" "RR")  # Foundation for IBM Automation Document Processing
         #foundation_9=("BAN" "RR" "AE" "BAS" "UMS")  # Foundation for IBM Automation Document Processing - 7a Development Environment
@@ -2120,8 +2122,8 @@ function select_pattern(){
         #foundation_3=("BAN" "RR" "AE")     # Foundation for Business Automation Applications (full)
         #foundation_4=("BAN" "RR")           # Foundation for dummy
         # TODO remove RR and ???
-        foundation_5=("BAN" "RR" "BAS")           # Foundation for Business Automation Workflow - Workflow Authoring (5a)
-        foundation_6=("BAN" "RR" "AE")           # Foundation for Business Automation Workflow - Workflow Runtime (5b)
+        foundation_0=("BAN" "RR" "BAS")           # Foundation for Business Automation Workflow - Workflow Authoring (5a)
+        foundation_1=("BAN" "RR" "AE")           # Foundation for Business Automation Workflow - Workflow Runtime (5b)
         #foundation_7=("BAN" "RR" "AE")           # Foundation for Automation Workstream Services (6)
         #foundation_8=("BAN" "RR")  # Foundation for IBM Automation Document Processing
         #foundation_9=("BAN" "RR" "AE" "BAS")  # Foundation for IBM Automation Document Processing - 7a Development Environment
@@ -2130,21 +2132,23 @@ function select_pattern(){
         #foundation_12=("BAN" "RR" "AE")           # Foundation for Business Automation Workflow and workstreams(5b+6)
         #fi
     fi
-    patter_ent_input_array=("1" "2"")
+    patter_ent_input_array=("1" "2")
     tips1="\x1B[1;31mTips\x1B[0m:\x1B[1m Press [ENTER] to accept the default (None of the capabilities is selected). If none of the capabilities is chosen, the script will exit.\x1B[0m"
     tips2="\x1B[1;31mTips\x1B[0m:\x1B[1m Press [ENTER] when you are done\x1B[0m"
 #    pattern_starter_tips="\x1B[1mInfo: Business Automation Navigator will be automatically installed in the environment as it is part of the Cloud Pak for Business Automation foundation platform. \n\nTips: After you make your first selection you will be able to make additional selections since you can combine multiple selections.\n\x1B[0m"
+    # TODO
     pattern_production_tips="\x1B[1mInfo: Business Automation Navigator will be automatically installed in the environment as it is part of the Cloud Pak for Business Automation foundation platform. \n\nTips: After you make your first selection you will be able to make additional selections since you can combine multiple selections.\n\x1B[0m"
-    baw_iaws_tips="\x1B[1mInfo: Note that Business Automation Workflow Authoring (5a) cannot be installed together with Automation Workstream Services (6). However, Business Automation Workflow Runtime (5b) can be installed together with Automation Workstream Services (6).\n\x1B[0m"
+    #baw_iaws_tips="\x1B[1mInfo: Note that Business Automation Workflow Authoring (5a) cannot be installed together with Automation Workstream Services (6). However, Business Automation Workflow Runtime (5b) can be installed together with Automation Workstream Services (6).\n\x1B[0m"
 #    linux_starter_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31mIBM Automation Document Processing (6) does NOT support a cluster running a Linux on Z (s390x) or Power (ppc64le) architecture.\n\x1B[0m"
     #linux_production_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31mIBM Automation Document Processing (7a/7b) does NOT support a cluster running a Linux on Z (s390x) or Power (ppc64le) architecture.\n\x1B[0m"
-    content_deployed_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31m\"FileNet Content Manager\" can not be selected because one Content (Kind: content.icp4a.ibm.com) custom resource was deployed.\n\x1B[0m"
+    #content_deployed_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31m\"FileNet Content Manager\" can not be selected because one Content (Kind: content.icp4a.ibm.com) custom resource was deployed.\n\x1B[0m"
     indexof() {
         i=-1
         for ((j=0;j<${#options_cr_val[@]};j++));
         do [ "${options_cr_val[$j]}" = "$1" ] && { i=$j; break; }
         done
         echo $i
+        echo $j
     }
     menu() {
         clear
@@ -2164,6 +2168,11 @@ function select_pattern(){
 #                fi
             if [[ $DEPLOYMENT_TYPE == "production" ]]
             then
+                echo "XXX1"
+                echo $i
+                echo "${options_cr_val[i]}"
+                echo  "${EXISTING_PATTERN_ARR[@]}"
+                echo "XXX2"
                 containsElement "${options_cr_val[i]}" "${EXISTING_PATTERN_ARR[@]}"
                 retVal=$?
                 if [[ !(" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-runtime") && !(" ${EXISTING_PATTERN_ARR[@]} " =~ "workstreams") ]]; then
@@ -2178,26 +2187,27 @@ function select_pattern(){
                 containsElement "document_processing_runtime" "${EXISTING_OPT_COMPONENT_ARR[@]}"
                 document_processing_runtime_Val=$?
                 if [[ $retVal -ne 0 ]]; then
+                    printf "$i"
                     case "$i" in
-                    "7") # for Automation Workstream Services
-                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" 6 "${options[i]}"  "${choices_pattern[i]}"
-                        ;;
-                    "8")
-                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" 7 "${options[i]}"  "${choices_pattern[i]}"
-                        printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "${choices_pattern[i+1]}"
-                        printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
-                        ;;
-                    "9") # for wfps
-                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" 8 "${options[i+2]}"  "${choices_pattern[i+2]}"
-                        ;;
+#                    "7") # for Automation Workstream Services
+#                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" 6 "${options[i]}"  "${choices_pattern[i]}"
+#                        ;;
+#                    "8")
+#                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" 7 "${options[i]}"  "${choices_pattern[i]}"
+#                        printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "${choices_pattern[i+1]}"
+#                        printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
+#                        ;;
+#                    "9") # for wfps
+#                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" 8 "${options[i+2]}"  "${choices_pattern[i+2]}"
+#                        ;;
                     "4") # 5 for Workflow Authoring, 6 for Workflow Runtime
                         printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
                         printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "${choices_pattern[i+1]}"
                         printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
                         ;;
-                    "0"|"1"|"2"|"3")
-                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
-                        ;;
+#                    "0"|"1"|"2"|"3")
+#                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
+#                        ;;
                     esac
                 else
                     if [[ "${choices_pattern[i]}" == "(To Be Uninstalled)" ]]; then
@@ -2232,7 +2242,7 @@ function select_pattern(){
                                 printf "%1d) %s \x1B[1m%s\x1B[0m\n" 6 "${options[i]}"  "(Installed)"
                             fi
                             ;;
-                        "4") # 5 for Workflow Authoring, 6 for Workflow Runtime
+                        "1") # 1 for Workflow Authoring, 2 for Workflow Runtime
                             if [[ ${choices_pattern[6]} == "(To Be Uninstalled)" && ${choices_pattern[7]} == "(To Be Uninstalled)" && ${choices_pattern[5]} == "" ]]; then
                                 printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "(To Be Uninstalled)"
                                 if [[ $baw_authoring_Val -eq 0 ]]; then
@@ -2299,9 +2309,9 @@ function select_pattern(){
         done
         if [[ "$msg" ]]; then echo "$msg"; fi
         printf "\n"
-        if [[ $DEPLOYMENT_TYPE == "production" ]]; then
-            echo -e "${baw_iaws_tips}"
-        fi
+#        if [[ $DEPLOYMENT_TYPE == "production" ]]; then
+#            echo -e "${baw_iaws_tips}"
+#        fi
 
         if [[ $DEPLOYMENT_TYPE == "production" ]]; then
             echo -e "${pattern_production_tips}"
@@ -2332,7 +2342,7 @@ function select_pattern(){
 #        prompt="Enter a valid option [1 to ${#options[@]}]: "
     if [[ $DEPLOYMENT_TYPE == "production" ]]
     then
-        prompt="Enter a valid option [1 to 4, 5a, 5b, 6, 7a, 7b, 8]: "
+        prompt="Enter a valid option [1, 2]: "
     fi
 
     while menu && read -rp "$prompt" num && [[ "$num" ]]; do
@@ -3843,54 +3853,54 @@ function select_ldap_type_for_wfps_authoring(){
         esac
     done
 }
+# This function is never called , so commenting it out
+#function select_upgrade_mode(){
+#    UPGRADE_MODE=""
+#    while [[ $UPGRADE_MODE == "" ]]; do
+#        printf "\n"
+#        options=("Cluster-scoped to Cluster-scoped" "Cluster-scoped to Namespace-scoped")
+#        tips=("This migration mode will first isolate the shared 3.x version of foundational services on the cluster, then install a new instance of foundational services version 4.6.2. Any data from the original foundational services will be copied to the new instance." "This migration mode will migrate a single shared instance of foundational services that is shared by all IBM Cloud Paks in the entire cluster, all of its core foundational services operators to the cluster-scope namespace will be upgraded to v4.6.2 without creating new instances.")
+#        pros_tips=("The namespace-scoped foundational services for each Cloud Pak or CP4BA component." "The fewer resource required for a single shared instance of foundational services.")
+#        cons_tips=("The more resource required for each namespace-scoped instance of IBM Cloud Pak foundational services." "It is not flexible for all Cloud Pak or CP4BA component to share same one instance of IBM Cloud Pak foundational services.")
 
-function select_upgrade_mode(){
-    UPGRADE_MODE=""
-    while [[ $UPGRADE_MODE == "" ]]; do
-        printf "\n"
-        options=("Cluster-scoped to Cluster-scoped" "Cluster-scoped to Namespace-scoped")
-        tips=("This migration mode will first isolate the shared 3.x version of foundational services on the cluster, then install a new instance of foundational services version 4.6.2. Any data from the original foundational services will be copied to the new instance." "This migration mode will migrate a single shared instance of foundational services that is shared by all IBM Cloud Paks in the entire cluster, all of its core foundational services operators to the cluster-scope namespace will be upgraded to v4.6.2 without creating new instances.")
-        pros_tips=("The namespace-scoped foundational services for each Cloud Pak or CP4BA component." "The fewer resource required for a single shared instance of foundational services.")
-        cons_tips=("The more resource required for each namespace-scoped instance of IBM Cloud Pak foundational services." "It is not flexible for all Cloud Pak or CP4BA component to share same one instance of IBM Cloud Pak foundational services.")
+#        if [[ $RUNTIME_MODE == "upgradeOperator" ]]; then
+#            echo -e "\x1B[1mWhich migration mode for the IBM Cloud Pak foundational services are you migrating to? \x1B[0m"
+#        elif [[ $RUNTIME_MODE == "upgradeDeployment" ]]; then
+#            echo -e "\x1B[1mWhich migration mode for the IBM Cloud Pak foundational services are you migrating to when run [upgradeOperator]? \x1B[0m"
+#        fi
+#        echo -e "${YELLOW_TEXT}1) Cluster-scoped to Cluster-scoped${RESET_TEXT}"
+#        if [[ $RUNTIME_MODE == "upgradeOperator" ]]; then
+#            echo -e "   ${YELLOW_TEXT}[Tips]${RESET_TEXT}: ${tips[1]}"
+#            echo -e "   ${GREEN_TEXT}[Pros]${RESET_TEXT}: ${pros_tips[1]}"
+#            echo -e "   ${RED_TEXT}[Cons]${RESET_TEXT}: ${cons_tips[1]}"
+#        fi
+#        echo -e "${YELLOW_TEXT}2) Cluster-scoped to Namespace-scoped (Recommended)${RESET_TEXT}"
+#        if [[ $RUNTIME_MODE == "upgradeOperator" ]]; then
+#            echo -e "   ${YELLOW_TEXT}[Tips]${RESET_TEXT}: ${tips[0]}"
+#            echo -e "   ${GREEN_TEXT}[Pros]${RESET_TEXT}: ${pros_tips[0]}"
+#            echo -e "   ${RED_TEXT}[Cons]${RESET_TEXT}: ${cons_tips[0]}"
+#        fi
 
-        if [[ $RUNTIME_MODE == "upgradeOperator" ]]; then
-            echo -e "\x1B[1mWhich migration mode for the IBM Cloud Pak foundational services are you migrating to? \x1B[0m"
-        elif [[ $RUNTIME_MODE == "upgradeDeployment" ]]; then
-            echo -e "\x1B[1mWhich migration mode for the IBM Cloud Pak foundational services are you migrating to when run [upgradeOperator]? \x1B[0m"
-        fi
-        echo -e "${YELLOW_TEXT}1) Cluster-scoped to Cluster-scoped${RESET_TEXT}"
-        if [[ $RUNTIME_MODE == "upgradeOperator" ]]; then
-            echo -e "   ${YELLOW_TEXT}[Tips]${RESET_TEXT}: ${tips[1]}"
-            echo -e "   ${GREEN_TEXT}[Pros]${RESET_TEXT}: ${pros_tips[1]}"
-            echo -e "   ${RED_TEXT}[Cons]${RESET_TEXT}: ${cons_tips[1]}"
-        fi
-        echo -e "${YELLOW_TEXT}2) Cluster-scoped to Namespace-scoped (Recommended)${RESET_TEXT}"
-        if [[ $RUNTIME_MODE == "upgradeOperator" ]]; then
-            echo -e "   ${YELLOW_TEXT}[Tips]${RESET_TEXT}: ${tips[0]}"
-            echo -e "   ${GREEN_TEXT}[Pros]${RESET_TEXT}: ${pros_tips[0]}"
-            echo -e "   ${RED_TEXT}[Cons]${RESET_TEXT}: ${cons_tips[0]}"
-        fi
-
-        read -p "Enter your choice [1 or 2]: " choice
-        case $choice in
-            1)
-                UPGRADE_MODE="shared2shared"
-                ;;
-            2)
-                UPGRADE_MODE="shared2dedicated"
-                ;;
-            *)
-                echo "Invalid choice. Please select 1 or 2."
-                sleep 2
-                ;;
-        esac
-        if [[ ! -z $UPGRADE_MODE ]]; then
-            echo "You selected: ${options[$choice-1]}"
-            printf "\n"
-            sleep 2
-        fi
-    done
-}
+#        read -p "Enter your choice [1 or 2]: " choice
+#        case $choice in
+#            1)
+#                UPGRADE_MODE="shared2shared"
+#                ;;
+#            2)
+#                UPGRADE_MODE="shared2dedicated"
+#                ;;
+#            *)
+#                echo "Invalid choice. Please select 1 or 2."
+#                sleep 2
+#                ;;
+#        esac
+#        if [[ ! -z $UPGRADE_MODE ]]; then
+#            echo "You selected: ${options[$choice-1]}"
+#            printf "\n"
+#            sleep 2
+#        fi
+#    done
+#}
 
 function select_restricted_internet_access(){
     printf "\n"
@@ -4004,23 +4014,23 @@ function set_ldap_type_content_pattern(){
     fi
 }
 
-function set_ldap_type_adp_pattern(){
-    if [[ $DEPLOYMENT_TYPE == "production" ]] ;
-    then
-        ${COPY_CMD} -rf ${ARIA_PATTERN_FILE_BAK} ${ARIA_PATTERN_FILE_TMP}
+#function set_ldap_type_adp_pattern(){
+#    if [[ $DEPLOYMENT_TYPE == "production" ]] ;
+#    then
+#        ${COPY_CMD} -rf ${ARIA_PATTERN_FILE_BAK} ${ARIA_PATTERN_FILE_TMP}
 
-        if [[ "$LDAP_TYPE" == "AD" ]]; then
-            content_start="$(grep -n "## The User script will uncomment" ${ARIA_PATTERN_FILE_TMP} | head -n 1 | cut -d: -f1)"
-        else
-            content_start="$(grep -n "## The User script will uncomment" ${ARIA_PATTERN_FILE_TMP} | head -n 1 | cut -d: -f1)"
-        fi
-        content_stop="$(tail -n +$content_start < ${ARIA_PATTERN_FILE_TMP} | grep -n "lc_group_filter:" | head -n1 | cut -d: -f1)"
-        content_stop=$(( $content_stop + $content_start + 2))
-        vi ${ARIA_PATTERN_FILE_TMP} -c ':'"${content_start}"','"${content_stop}"'d' -c ':wq' >/dev/null 2>&1
+#        if [[ "$LDAP_TYPE" == "AD" ]]; then
+#            content_start="$(grep -n "## The User script will uncomment" ${ARIA_PATTERN_FILE_TMP} | head -n 1 | cut -d: -f1)"
+#        else
+#            content_start="$(grep -n "## The User script will uncomment" ${ARIA_PATTERN_FILE_TMP} | head -n 1 | cut -d: -f1)"
+#        fi
+#        content_stop="$(tail -n +$content_start < ${ARIA_PATTERN_FILE_TMP} | grep -n "lc_group_filter:" | head -n1 | cut -d: -f1)"
+#        content_stop=$(( $content_stop + $content_start + 2))
+#        vi ${ARIA_PATTERN_FILE_TMP} -c ':'"${content_start}"','"${content_stop}"'d' -c ':wq' >/dev/null 2>&1
 
-        ${COPY_CMD} -rf ${ARIA_PATTERN_FILE_TMP} ${ARIA_PATTERN_FILE_BAK}
-    fi
-}
+#        ${COPY_CMD} -rf ${ARIA_PATTERN_FILE_TMP} ${ARIA_PATTERN_FILE_BAK}
+#    fi
+#}
 
 function set_ldap_type_workstreams_pattern(){
     if [[ $DEPLOYMENT_TYPE == "production" ]] ;
@@ -4488,7 +4498,7 @@ function clean_up_temp_file(){
 }
 
 function input_information(){
-    if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then #|| $DEPLOYMENT_TYPE == "starter" ]]; then
+    if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
         select_installation_type
     elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" ]]; then
         INSTALLATION_TYPE="new"
@@ -4540,9 +4550,9 @@ function input_information(){
         #if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "starter" ]]; then
         #    select_project
         #fi
-        check_ocp_version
+        check_ocp_version #TODO
         validate_docker_podman_cli
-        prepare_pattern_file
+        prepare_pattern_file #TODO remove unused pattern
         # select_baw_iaws_installation
     fi
 
@@ -4564,7 +4574,7 @@ function input_information(){
             PATTERNS_CR_SELECTED=($(echo "${pattern_cr_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
         fi
     else
-        select_baw_only
+        select_baw_only #TODO is this still an option
     fi
 
     if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
@@ -4954,7 +4964,7 @@ function merge_pattern(){
                         #    # fi
                         #    ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WORKFLOW_PATTERN_FILE_BAK}
                         #    ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.bastudio_configuration
-                        #fi
+                        fi
                     fi
                     break
                     ;;
@@ -4996,7 +5006,7 @@ function merge_pattern(){
                     #then
                     #    ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WORKFLOW_PATTERN_FILE_BAK}
                     #    ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.bastudio_configuration
-                    #fi
+                    fi
                     break
                     ;;
                 "workstreams")
@@ -5030,7 +5040,7 @@ function merge_pattern(){
                     #then
                     #    ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WW_PATTERN_FILE_BAK}
                     #    ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.application_engine_configuration
-                    #fi
+                    fi
                     break
                     ;;
                 "application")
@@ -5050,42 +5060,42 @@ function merge_pattern(){
                     ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${ADS_PATTERN_FILE_BAK}
                     break
                     ;;
-                "document_processing")
-                    set_ldap_type_adp_pattern
-                    set_aria_gpu
-                    if [[ $DEPLOYMENT_TYPE == "production" ]]; then
-                        if [[ $content_os_number -gt 0 && "${pattern_cr_arr[@]}" =~ "document_processing" && (! "${pattern_cr_arr[@]}" =~ "content") ]]; then
-                            set_object_store_adp_pattern
-                        else
-                            OS_DATASOURCE_NUMBER=$(grep "^      dc_common_os_datasource_name: " ${ARIA_PATTERN_FILE_BAK} | grep -Fn 'FNOS1DS'|cut -d':' -f1)
-                            if [[ -n $OS_DATASOURCE_NUMBER && $OS_DATASOURCE_NUMBER -gt 0 ]]; then
-                                OS_DATASOURCE_NUMBER=$(( OS_DATASOURCE_NUMBER - 1 ))
-                                ${YQ_CMD} d -i ${ARIA_PATTERN_FILE_BAK} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER]
-                            fi
-                            OS_DATASOURCE_NUMBER=$(grep "^          dc_os_datasource_name: " ${ARIA_PATTERN_FILE_BAK} | grep -Fn 'FNOS1DS'|cut -d':' -f1)
-                            if [[ -n $OS_DATASOURCE_NUMBER && $OS_DATASOURCE_NUMBER -gt 0 ]]; then
-                                OS_DATASOURCE_NUMBER=$(( OS_DATASOURCE_NUMBER - 1 ))
-                                ${YQ_CMD} d -i ${ARIA_PATTERN_FILE_BAK} spec.initialize_configuration.ic_obj_store_creation.object_stores.[$OS_DATASOURCE_NUMBER]
-                            fi
+#                "document_processing")
+#                    set_ldap_type_adp_pattern
+#                    set_aria_gpu
+#                    if [[ $DEPLOYMENT_TYPE == "production" ]]; then
+#                        if [[ $content_os_number -gt 0 && "${pattern_cr_arr[@]}" =~ "document_processing" && (! "${pattern_cr_arr[@]}" =~ "content") ]]; then
+#                            set_object_store_adp_pattern
+#                        else
+#                            OS_DATASOURCE_NUMBER=$(grep "^      dc_common_os_datasource_name: " ${ARIA_PATTERN_FILE_BAK} | grep -Fn 'FNOS1DS'|cut -d':' -f1)
+#                            if [[ -n $OS_DATASOURCE_NUMBER && $OS_DATASOURCE_NUMBER -gt 0 ]]; then
+#                                OS_DATASOURCE_NUMBER=$(( OS_DATASOURCE_NUMBER - 1 ))
+#                                ${YQ_CMD} d -i ${ARIA_PATTERN_FILE_BAK} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER]
+#                            fi
+#                            OS_DATASOURCE_NUMBER=$(grep "^          dc_os_datasource_name: " ${ARIA_PATTERN_FILE_BAK} | grep -Fn 'FNOS1DS'|cut -d':' -f1)
+#                            if [[ -n $OS_DATASOURCE_NUMBER && $OS_DATASOURCE_NUMBER -gt 0 ]]; then
+#                                OS_DATASOURCE_NUMBER=$(( OS_DATASOURCE_NUMBER - 1 ))
+#                                ${YQ_CMD} d -i ${ARIA_PATTERN_FILE_BAK} spec.initialize_configuration.ic_obj_store_creation.object_stores.[$OS_DATASOURCE_NUMBER]
+#                            fi
 
-                        fi
-                        if [[ "${pattern_cr_arr[@]}" =~ "document_processing_runtime" ]]; then
-                            ${SED_COMMAND} "s/  #ecm_configuration:/  ecm_configuration:/g" ${ARIA_PATTERN_FILE_BAK}
-                            ${SED_COMMAND} "s/  #  document_processing:/    document_processing:/g" ${ARIA_PATTERN_FILE_BAK}
-                            ${SED_COMMAND} "s/  #    cpds:/      cpds:/g" ${ARIA_PATTERN_FILE_BAK}
-                            ${SED_COMMAND} "s/  #      production_setting:/        production_setting:/g" ${ARIA_PATTERN_FILE_BAK}
-                            ${SED_COMMAND} "s/  #        repo_service_url: \"<Required>\"/          repo_service_url: \"<Required>\"/g" ${ARIA_PATTERN_FILE_BAK}
-                        fi
-                    fi
-                    ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${ARIA_PATTERN_FILE_BAK}
-                    break
-                    ;;
-                "document_processing_runtime")
-                    break
-                    ;;
-                "document_processing_designer")
-                    break
-                    ;;
+#                        fi
+#                        if [[ "${pattern_cr_arr[@]}" =~ "document_processing_runtime" ]]; then
+#                            ${SED_COMMAND} "s/  #ecm_configuration:/  ecm_configuration:/g" ${ARIA_PATTERN_FILE_BAK}
+#                            ${SED_COMMAND} "s/  #  document_processing:/    document_processing:/g" ${ARIA_PATTERN_FILE_BAK}
+#                            ${SED_COMMAND} "s/  #    cpds:/      cpds:/g" ${ARIA_PATTERN_FILE_BAK}
+#                            ${SED_COMMAND} "s/  #      production_setting:/        production_setting:/g" ${ARIA_PATTERN_FILE_BAK}
+#                            ${SED_COMMAND} "s/  #        repo_service_url: \"<Required>\"/          repo_service_url: \"<Required>\"/g" ${ARIA_PATTERN_FILE_BAK}
+#                        fi
+#                    fi
+#                    ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${ARIA_PATTERN_FILE_BAK}
+#                    break
+#                    ;;
+#                "document_processing_runtime")
+#                    break
+#                    ;;
+#                "document_processing_designer")
+#                    break
+#                    ;;
                 "workflow-process-service")
                     ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WFPS_AUTHOR_PATTERN_FILE_BAK}
                     break
