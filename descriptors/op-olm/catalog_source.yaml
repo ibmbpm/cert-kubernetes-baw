@@ -259,7 +259,7 @@ spec:
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-fncm-catalog@sha256:457954516779c20cb0b750a02c75d7dc99e884342a4a2b16afc896a02fb3512b
+  image: cp.stg.icr.io/cp/ibm-fncm-catalog@sha256:457954516779c20cb0b750a02c75d7dc99e884342a4a2b16afc896a02fb3512b
   secrets:
   - "ibm-entitlement-key"
   - "ibm-stg-entitlement-key"
