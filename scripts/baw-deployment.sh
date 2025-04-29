@@ -2185,7 +2185,6 @@ function select_patternNOTUSED(){
         do [ "${options_cr_val[$j]}" = "$1" ] && { i=$j; break; }
         done
         echo $i
-        echo $j
     }
     menu() {
         clear
@@ -2203,7 +2202,7 @@ function select_patternNOTUSED(){
                         printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "(Installed)"
                     fi
                 fi
-            if [[ $DEPLOYMENT_TYPE == "production" ]]
+            elif [[ $DEPLOYMENT_TYPE == "production" ]]
             then
                 containsElement "${options_cr_val[i]}" "${EXISTING_PATTERN_ARR[@]}"
                 retVal=$?
@@ -2219,7 +2218,6 @@ function select_patternNOTUSED(){
                 containsElement "document_processing_runtime" "${EXISTING_OPT_COMPONENT_ARR[@]}"
                 document_processing_runtime_Val=$?
                 if [[ $retVal -ne 0 ]]; then
-                    printf "$i"
                     case "$i" in
                     "7") # for Automation Workstream Services
                         printf "%1d) %s \x1B[1m%s\x1B[0m\n" 6 "${options[i]}"  "${choices_pattern[i]}"
@@ -2274,7 +2272,7 @@ function select_patternNOTUSED(){
                                 printf "%1d) %s \x1B[1m%s\x1B[0m\n" 6 "${options[i]}"  "(Installed)"
                             fi
                             ;;
-                        "1") # 1 for Workflow Authoring, 2 for Workflow Runtime
+                        "4") # 5 for Workflow Authoring, 2 for Workflow Runtime
                             if [[ ${choices_pattern[6]} == "(To Be Uninstalled)" && ${choices_pattern[7]} == "(To Be Uninstalled)" && ${choices_pattern[5]} == "" ]]; then
                                 printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "(To Be Uninstalled)"
                                 if [[ $baw_authoring_Val -eq 0 ]]; then
@@ -2372,7 +2370,7 @@ function select_patternNOTUSED(){
 
     if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
         prompt="Enter a valid option [1 to ${#options[@]}]: "
-    if [[ $DEPLOYMENT_TYPE == "production" ]]
+    elif [[ $DEPLOYMENT_TYPE == "production" ]]
     then
         prompt="Enter a valid option [1, 2]: "
     fi
@@ -2536,7 +2534,7 @@ function select_patternNOTUSED(){
         else
             if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
                 [[ "${choices_pattern[num]}" ]] && choices_pattern[num]="" || choices_pattern[num]="(To Be Uninstalled)"
-            if [[ $DEPLOYMENT_TYPE == "production" ]]
+            elif [[ $DEPLOYMENT_TYPE == "production" ]]
             then
                 case "$num" in
                 "5")
