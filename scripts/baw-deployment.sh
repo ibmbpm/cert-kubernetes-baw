@@ -1,5 +1,5 @@
 #!/bin/bash
- #set -x
+#set -x
 ###############################################################################
 #
 # Licensed Materials - Property of IBM
@@ -2060,8 +2060,48 @@ function check_ocp_version(){
         fi
     fi
 }
+function select_baw_pattern(){
+    pattern_arr=()
+    pattern_cr_arr=()
+    printf "\n"
+    echo -e "\x1B[1mSelect the IBM Business Automation Workflow capability to install: \x1B[0m"
+    COLUMNS=12
 
-function select_pattern(){
+    options=("Business Automation Workflow Authoring" "Business Automation Workflow Runtime")
+    PS3='Enter a valid option [1 to 2]: '
+    select opt in "${options[@]}"
+    do
+        case $opt in
+            "Business Automation Workflow Authoring")
+                pattern_arr=("Business Automation Workflow Authoring")
+                pattern_cr_arr=("workflow-authoring")
+                foundation_baw=("BAN" "BAS")
+                break
+                ;;
+            "Business Automation Workflow Runtime")
+                pattern_arr=("Business Automation Workflow Runtime")
+                pattern_cr_arr=("workflow-runtim")
+                foundation_baw=("BAN" "AE")
+                break
+                ;;
+            *) echo "invalid option $REPLY";;
+        esac
+    done
+
+    foundation_component_arr=( "${foundation_component_arr[@]}" "${foundation_baw[@]}" )
+    PATTERNS_CR_SELECTED=$( IFS=$','; echo "${pattern_cr_arr[*]}" )
+
+    FOUNDATION_CR_SELECTED=($(echo "${foundation_component_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+    # FOUNDATION_CR_SELECTED_LOWCASE=( "${FOUNDATION_CR_SELECTED[@],,}" )
+
+    x=0;while [ ${x} -lt ${#FOUNDATION_CR_SELECTED[*]} ] ; do FOUNDATION_CR_SELECTED_LOWCASE[$x]=$(tr [A-Z] [a-z] <<< ${FOUNDATION_CR_SELECTED[$x]}); let x++; done
+    FOUNDATION_DELETE_LIST=($(echo "${FOUNDATION_CR_SELECTED[@]}" "${FOUNDATION_FULL_ARR[@]}" | tr ' ' '\n' | sort | uniq -u))
+
+    PATTERNS_CR_SELECTED=($(echo "${pattern_cr_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+}
+
+# not used anymore
+function select_patternNOTUSED(){
 # This function support mutiple checkbox, if do not select anything, it will return None
 
     PATTERNS_SELECTED=""
@@ -2074,74 +2114,71 @@ function select_pattern(){
 
 
     if [[ "${PLATFORM_SELECTED}" == "other" ]]; then
-        #if [[ "${DEPLOYMENT_TYPE}" == "starter" ]];
-        #then
-        #    options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow Authoring and Automation Workstream Services" "IBM Automation Document Processing")
-        #    options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow-workstreams" "document_processing")
-        #    foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
-        #    foundation_1=("BAN" "RR")                # Foundation for Operational Decision Manager
-        #    foundation_2=("BAN" "RR" "UMS")     # Foundation for Automation Decision Services
-        #    foundation_3=("RR" "UMS" "BAS")     # Foundation for Business Automation Applications (full)
-        #    foundation_4=("RR" "UMS" "AE" "BAS")           # Foundation for Business Automation Workflow and workstreams(Demo)
-        #    foundation_5=("BAN" "RR" "AE" "BAS" "UMS")  # Foundation for IBM Automation Document Processing
-        #else
-        options=( "Business Automation Workflow Authoring" "Business Automation Workflow Runtime")
-        options_cr_val=("workflow-authoring" "workflow-runtime")
-        #foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
-        #foundation_1=("BAN" "RR")                 # Foundation for Operational Decision Manager
-        #foundation_2=("BAN" "RR" "UMS")     # Foundation for Automation Decision Services
-        #foundation_3=("BAN" "RR" "UMS" "AE")     # Foundation for Business Automation Applications (full)
-        #foundation_4=("BAN" "RR")           # Foundation for dummy
-        # TODO remove RR and UMS and ???
-        foundation_0=("BAN" "RR" "UMS" "BAS")          # Foundation for Business Automation Workflow - Workflow Authoring (5a)
-        foundation_1=("BAN" "RR" "UMS" "AE")           # Foundation for Business Automation Workflow - Workflow Runtime (5b)
-        #foundation_7=("BAN" "RR" "UMS" "AE")           # Foundation for Automation Workstream Services (6)
-        #foundation_8=("BAN" "RR")  # Foundation for IBM Automation Document Processing
-        #foundation_9=("BAN" "RR" "AE" "BAS" "UMS")  # Foundation for IBM Automation Document Processing - 7a Development Environment
-        #foundation_10=("BAN" "RR" "AE" "UMS")  # Foundation for IBM Automation Document Processing - 7b Runtime Environment
-        #foundation_11=("BAS")           # Foundation for Workflow Process Service Authoring
-        #foundation_12=("BAN" "RR" "UMS" "AE")           # Foundation for Business Automation Workflow and workstreams(5b+6)
-        #fi
+        if [[ "${DEPLOYMENT_TYPE}" == "starter" ]];
+        then
+            options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow Authoring and Automation Workstream Services" "IBM Automation Document Processing")
+            options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow-workstreams" "document_processing")
+            foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
+            foundation_1=("BAN" "RR")                # Foundation for Operational Decision Manager
+            foundation_2=("BAN" "RR" "UMS")     # Foundation for Automation Decision Services
+            foundation_3=("RR" "UMS" "BAS")     # Foundation for Business Automation Applications (full)
+            foundation_4=("RR" "UMS" "AE" "BAS")           # Foundation for Business Automation Workflow and workstreams(Demo)
+            foundation_5=("BAN" "RR" "AE" "BAS" "UMS")  # Foundation for IBM Automation Document Processing
+        else
+            options=( "Business Automation Workflow Authoring" "Business Automation Workflow Runtime")
+            options_cr_val=("workflow-authoring" "workflow-runtime")
+            foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
+            foundation_1=("BAN" "RR")                 # Foundation for Operational Decision Manager
+            foundation_2=("BAN" "RR" "UMS")     # Foundation for Automation Decision Services
+            foundation_3=("BAN" "RR" "UMS" "AE")     # Foundation for Business Automation Applications (full)
+            foundation_4=("BAN" "RR")           # Foundation for dummy
+            foundation_5=("BAN" "RR" "UMS" "BAS")          # Foundation for Business Automation Workflow - Workflow Authoring (5a)
+            foundation_6=("BAN" "RR" "UMS" "AE")           # Foundation for Business Automation Workflow - Workflow Runtime (5b)
+            foundation_7=("BAN" "RR" "UMS" "AE")           # Foundation for Automation Workstream Services (6)
+            foundation_8=("BAN" "RR")  # Foundation for IBM Automation Document Processing
+            foundation_9=("BAN" "RR" "AE" "BAS" "UMS")  # Foundation for IBM Automation Document Processing - 7a Development Environment
+            foundation_10=("BAN" "RR" "AE" "UMS")  # Foundation for IBM Automation Document Processing - 7b Runtime Environment
+            foundation_11=("BAS")           # Foundation for Workflow Process Service Authoring
+            foundation_12=("BAN" "RR" "UMS" "AE")           # Foundation for Business Automation Workflow and workstreams(5b+6)
+        fi
     else
-        #if [[ "${DEPLOYMENT_TYPE}" == "starter" ]];
-        #then
-        #    options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow Authoring and Automation Workstream Services" "IBM Automation Document Processing")
-        #    options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow-workstreams" "document_processing")
-        #    foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
-        #    foundation_1=("BAN" "RR")                # Foundation for Operational Decision Manager
-        #    foundation_2=("BAN" "RR")     # Foundation for Automation Decision Services
-        #    foundation_3=("RR" "BAS")     # Foundation for Business Automation Applications (full)
-        #    foundation_4=("RR" "AE" "BAS")           # Foundation for Business Automation Workflow and workstreams(Demo)
-        #    foundation_5=("BAN" "RR" "AE" "BAS")  # Foundation for IBM Automation Document Processing
-        #else
-        options=("Business Automation Workflow Authoring" "Business Automation Workflow Runtime")
-        options_cr_val=("workflow-authoring" "workflow-runtime")
-        #foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
-        #foundation_1=("BAN" "RR")                 # Foundation for Operational Decision Manager
-        #foundation_2=("BAN" "RR")     # Foundation for Automation Decision Services
-        #foundation_3=("BAN" "RR" "AE")     # Foundation for Business Automation Applications (full)
-        #foundation_4=("BAN" "RR")           # Foundation for dummy
-        # TODO remove RR and ???
-        foundation_0=("BAN" "RR" "BAS")           # Foundation for Business Automation Workflow - Workflow Authoring (5a)
-        foundation_1=("BAN" "RR" "AE")           # Foundation for Business Automation Workflow - Workflow Runtime (5b)
-        #foundation_7=("BAN" "RR" "AE")           # Foundation for Automation Workstream Services (6)
-        #foundation_8=("BAN" "RR")  # Foundation for IBM Automation Document Processing
-        #foundation_9=("BAN" "RR" "AE" "BAS")  # Foundation for IBM Automation Document Processing - 7a Development Environment
-        #foundation_10=("BAN" "RR" "AE")  # Foundation for IBM Automation Document Processing - 7b Runtime Environment
-        #foundation_11=("BAS")           # Foundation for Workflow Process Service Authoring
-        #foundation_12=("BAN" "RR" "AE")           # Foundation for Business Automation Workflow and workstreams(5b+6)
-        #fi
+        if [[ "${DEPLOYMENT_TYPE}" == "starter" ]];
+        then
+            options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow Authoring and Automation Workstream Services" "IBM Automation Document Processing")
+            options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow-workstreams" "document_processing")
+            foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
+            foundation_1=("BAN" "RR")                # Foundation for Operational Decision Manager
+            foundation_2=("BAN" "RR")     # Foundation for Automation Decision Services
+            foundation_3=("RR" "BAS")     # Foundation for Business Automation Applications (full)
+            foundation_4=("RR" "AE" "BAS")           # Foundation for Business Automation Workflow and workstreams(Demo)
+            foundation_5=("BAN" "RR" "AE" "BAS")  # Foundation for IBM Automation Document Processing
+        else
+            options=("Business Automation Workflow Authoring" "Business Automation Workflow Runtime")
+            options_cr_val=("workflow-authoring" "workflow-runtime")
+            foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
+            foundation_1=("BAN" "RR")                 # Foundation for Operational Decision Manager
+            foundation_2=("BAN" "RR")     # Foundation for Automation Decision Services
+            foundation_3=("BAN" "RR" "AE")     # Foundation for Business Automation Applications (full)
+            foundation_4=("BAN" "RR")           # Foundation for dummy
+            foundation_5=("BAN" "RR" "BAS")           # Foundation for Business Automation Workflow - Workflow Authoring (5a)
+            foundation_6=("BAN" "RR" "AE")           # Foundation for Business Automation Workflow - Workflow Runtime (5b)
+            foundation_7=("BAN" "RR" "AE")           # Foundation for Automation Workstream Services (6)
+            foundation_8=("BAN" "RR")  # Foundation for IBM Automation Document Processing
+            foundation_9=("BAN" "RR" "AE" "BAS")  # Foundation for IBM Automation Document Processing - 7a Development Environment
+            foundation_10=("BAN" "RR" "AE")  # Foundation for IBM Automation Document Processing - 7b Runtime Environment
+            foundation_11=("BAS")           # Foundation for Workflow Process Service Authoring
+            foundation_12=("BAN" "RR" "AE")           # Foundation for Business Automation Workflow and workstreams(5b+6)
+        fi
     fi
     patter_ent_input_array=("1" "2")
     tips1="\x1B[1;31mTips\x1B[0m:\x1B[1m Press [ENTER] to accept the default (None of the capabilities is selected). If none of the capabilities is chosen, the script will exit.\x1B[0m"
     tips2="\x1B[1;31mTips\x1B[0m:\x1B[1m Press [ENTER] when you are done\x1B[0m"
-#    pattern_starter_tips="\x1B[1mInfo: Business Automation Navigator will be automatically installed in the environment as it is part of the Cloud Pak for Business Automation foundation platform. \n\nTips: After you make your first selection you will be able to make additional selections since you can combine multiple selections.\n\x1B[0m"
-    # TODO
+    pattern_starter_tips="\x1B[1mInfo: Business Automation Navigator will be automatically installed in the environment as it is part of the Cloud Pak for Business Automation foundation platform. \n\nTips: After you make your first selection you will be able to make additional selections since you can combine multiple selections.\n\x1B[0m"
     pattern_production_tips="\x1B[1mInfo: Business Automation Navigator will be automatically installed in the environment as it is part of the Cloud Pak for Business Automation foundation platform. \n\nTips: After you make your first selection you will be able to make additional selections since you can combine multiple selections.\n\x1B[0m"
-    #baw_iaws_tips="\x1B[1mInfo: Note that Business Automation Workflow Authoring (5a) cannot be installed together with Automation Workstream Services (6). However, Business Automation Workflow Runtime (5b) can be installed together with Automation Workstream Services (6).\n\x1B[0m"
-#    linux_starter_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31mIBM Automation Document Processing (6) does NOT support a cluster running a Linux on Z (s390x) or Power (ppc64le) architecture.\n\x1B[0m"
-    #linux_production_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31mIBM Automation Document Processing (7a/7b) does NOT support a cluster running a Linux on Z (s390x) or Power (ppc64le) architecture.\n\x1B[0m"
-    #content_deployed_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31m\"FileNet Content Manager\" can not be selected because one Content (Kind: content.icp4a.ibm.com) custom resource was deployed.\n\x1B[0m"
+    baw_iaws_tips="\x1B[1mInfo: Note that Business Automation Workflow Authoring (5a) cannot be installed together with Automation Workstream Services (6). However, Business Automation Workflow Runtime (5b) can be installed together with Automation Workstream Services (6).\n\x1B[0m"
+    linux_starter_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31mIBM Automation Document Processing (6) does NOT support a cluster running a Linux on Z (s390x) or Power (ppc64le) architecture.\n\x1B[0m"
+    linux_production_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31mIBM Automation Document Processing (7a/7b) does NOT support a cluster running a Linux on Z (s390x) or Power (ppc64le) architecture.\n\x1B[0m"
+    content_deployed_tips="\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31m\"FileNet Content Manager\" can not be selected because one Content (Kind: content.icp4a.ibm.com) custom resource was deployed.\n\x1B[0m"
     indexof() {
         i=-1
         for ((j=0;j<${#options_cr_val[@]};j++));
@@ -2154,25 +2191,20 @@ function select_pattern(){
         clear
         echo -e "\x1B[1mSelect the Cloud Pak for Business Automation capability to install: \x1B[0m"
         for i in ${!options[@]}; do
-#            if [[ $DEPLOYMENT_TYPE == "starter" ]];then
-#                containsElement "${options_cr_val[i]}" "${EXISTING_PATTERN_ARR[@]}"
-#                retVal=$?
-#                if [ $retVal -ne 0 ]; then
-#                    printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
-#                else
-#                    if [[ "${choices_pattern[i]}" == "(To Be Uninstalled)" ]]; then
-#                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
-#                    else
-#                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "(Installed)"
-#                    fi
-#                fi
+            if [[ $DEPLOYMENT_TYPE == "starter" ]];then
+                containsElement "${options_cr_val[i]}" "${EXISTING_PATTERN_ARR[@]}"
+                retVal=$?
+                if [ $retVal -ne 0 ]; then
+                    printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
+                else
+                    if [[ "${choices_pattern[i]}" == "(To Be Uninstalled)" ]]; then
+                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
+                    else
+                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "(Installed)"
+                    fi
+                fi
             if [[ $DEPLOYMENT_TYPE == "production" ]]
             then
-                echo "XXX1"
-                echo $i
-                echo "${options_cr_val[i]}"
-                echo  "${EXISTING_PATTERN_ARR[@]}"
-                echo "XXX2"
                 containsElement "${options_cr_val[i]}" "${EXISTING_PATTERN_ARR[@]}"
                 retVal=$?
                 if [[ !(" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-runtime") && !(" ${EXISTING_PATTERN_ARR[@]} " =~ "workstreams") ]]; then
@@ -2189,25 +2221,25 @@ function select_pattern(){
                 if [[ $retVal -ne 0 ]]; then
                     printf "$i"
                     case "$i" in
-#                    "7") # for Automation Workstream Services
-#                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" 6 "${options[i]}"  "${choices_pattern[i]}"
-#                        ;;
-#                    "8")
-#                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" 7 "${options[i]}"  "${choices_pattern[i]}"
-#                        printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "${choices_pattern[i+1]}"
-#                        printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
-#                        ;;
-#                    "9") # for wfps
-#                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" 8 "${options[i+2]}"  "${choices_pattern[i+2]}"
-#                        ;;
+                    "7") # for Automation Workstream Services
+                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" 6 "${options[i]}"  "${choices_pattern[i]}"
+                        ;;
+                    "8")
+                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" 7 "${options[i]}"  "${choices_pattern[i]}"
+                        printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "${choices_pattern[i+1]}"
+                        printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
+                        ;;
+                    "9") # for wfps
+                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" 8 "${options[i+2]}"  "${choices_pattern[i+2]}"
+                        ;;
                     "4") # 5 for Workflow Authoring, 6 for Workflow Runtime
                         printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
                         printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "${choices_pattern[i+1]}"
                         printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
                         ;;
-#                    "0"|"1"|"2"|"3")
-#                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
-#                        ;;
+                    "0"|"1"|"2"|"3")
+                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
+                        ;;
                     esac
                 else
                     if [[ "${choices_pattern[i]}" == "(To Be Uninstalled)" ]]; then
@@ -2309,9 +2341,9 @@ function select_pattern(){
         done
         if [[ "$msg" ]]; then echo "$msg"; fi
         printf "\n"
-#        if [[ $DEPLOYMENT_TYPE == "production" ]]; then
-#            echo -e "${baw_iaws_tips}"
-#        fi
+        if [[ $DEPLOYMENT_TYPE == "production" ]]; then
+            echo -e "${baw_iaws_tips}"
+        fi
 
         if [[ $DEPLOYMENT_TYPE == "production" ]]; then
             echo -e "${pattern_production_tips}"
@@ -2319,9 +2351,9 @@ function select_pattern(){
             if [[ $CONTENT_DEPLOYED == "Yes" ]]; then
                 echo -e "${content_deployed_tips}"
             fi
-        #else
-        #    echo -e "${pattern_starter_tips}"
-        #    echo -e "${linux_starter_tips}"
+        else
+            echo -e "${pattern_starter_tips}"
+            echo -e "${linux_starter_tips}"
         fi
         # Show different tips according components select or unselect
         containsElement "(Selected)" "${choices_pattern[@]}"
@@ -2338,19 +2370,19 @@ function select_pattern(){
 # ##########################DEBUG############################
     }
 
-#    if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
-#        prompt="Enter a valid option [1 to ${#options[@]}]: "
+    if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
+        prompt="Enter a valid option [1 to ${#options[@]}]: "
     if [[ $DEPLOYMENT_TYPE == "production" ]]
     then
         prompt="Enter a valid option [1, 2]: "
     fi
 
     while menu && read -rp "$prompt" num && [[ "$num" ]]; do
-#        if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
-#            [[ "$num" != *[![:digit:]]* ]] &&
-#            (( num > 0 && num <= ${#options[@]} )) ||
-#            { msg="Invalid option: $num"; continue; }
-#            ((num--));
+        if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
+            [[ "$num" != *[![:digit:]]* ]] &&
+            (( num > 0 && num <= ${#options[@]} )) ||
+            { msg="Invalid option: $num"; continue; }
+            ((num--));
         if [[ $DEPLOYMENT_TYPE == "production" ]]
         then
             containsElement "${num}" "${patter_ent_input_array[@]}"
@@ -2502,8 +2534,8 @@ function select_pattern(){
                 fi
             fi
         else
-#            if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
-#                [[ "${choices_pattern[num]}" ]] && choices_pattern[num]="" || choices_pattern[num]="(To Be Uninstalled)"
+            if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
+                [[ "${choices_pattern[num]}" ]] && choices_pattern[num]="" || choices_pattern[num]="(To Be Uninstalled)"
             if [[ $DEPLOYMENT_TYPE == "production" ]]
             then
                 case "$num" in
@@ -4439,8 +4471,8 @@ function select_aca_tenant(){
     done
     printf "\n"
 }
-
-function select_baw_only(){
+# NOT USED ANYMORE
+function select_baw_only_NOTUSED(){
     pattern_arr=()
     pattern_cr_arr=()
     printf "\n"
@@ -4564,7 +4596,7 @@ function input_information(){
     if [[ "${INSTALL_BAW_ONLY}" == "No" ]];
     then
         if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
-            select_pattern
+            select_baw_pattern
         elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && $DEPLOYMENT_TYPE == "production" ]]; then
             FOUNDATION_CR_SELECTED=($(echo "${foundation_component_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
 
@@ -4573,8 +4605,8 @@ function input_information(){
 
             PATTERNS_CR_SELECTED=($(echo "${pattern_cr_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
         fi
-    else
-        select_baw_only #TODO is this still an option
+#    else
+#        select_baw_only
     fi
 
     if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
