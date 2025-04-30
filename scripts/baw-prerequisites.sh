@@ -1,5 +1,5 @@
 #!/bin/bash
-# set -x
+#set -x
 ###############################################################################
 #
 # Licensed Materials - Property of IBM
@@ -16,16 +16,16 @@ PARENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 source ${CUR_DIR}/helper/common.sh
 
 function show_help() {
-    echo -e "\nUsage: cp4a-prerequisites.sh -m [modetype] -n [cp4baNamespace]\n"
+    echo -e "\nUsage: baw-prerequisites.sh -m [modetype] -n [cp4baNamespace]\n"
     echo "Options:"
     echo "  -h  Display help"
     echo "  -m  The valid mode types are: [property], [generate], or [validate]"
-    echo "  -n  The target namespace of the CP4BA deployment."
-    echo "      STEP1: Run the script in [property] mode. Creates property files (DB/LDAP property file) with default values (database name/user)."
+    echo "  -n  The target namespace of the IBM Business Automation Workflow deployment."
+    echo "      STEP1: Run the script in [property] mode. It creates property files (DB/LDAP property file) with default values (database name/user)."
     echo "      STEP2: Modify the DB/LDAP/user property files with your values."
     echo "      STEP3: Run the script in [generate] mode. Generates the DB SQL statement files and YAML templates for the secrets based on the values in the property files."
     echo "      STEP4: Create the databases and secrets by using the modified DB SQL statement files and YAML templates for the secrets."
-    echo "      STEP5: Run the script in [validate] mode. Checks whether the databases and the secrets are created before you install CP4BA."
+    echo "      STEP5: Run the script in [validate] mode. Checks whether the databases and the secrets are created before you install BAW."
 }
 
 function parse_arguments() {
@@ -67,9 +67,12 @@ function parse_arguments() {
                 exit -1
                 ;;
             *)
+                # Check cluster login
+                check_cluster_login
+                # Check project name
                 isProjExists=`kubectl get namespace $TARGET_PROJECT_NAME --ignore-not-found | wc -l`  >/dev/null 2>&1
                 if [ $isProjExists -ne 2 ] ; then
-                    echo -e "\x1B[1;31mInvalid project name \"$TARGET_PROJECT_NAME\", please set a existing project name.\x1B[0m"
+                    echo -e "\x1B[1;31mInvalid namespace \"$TARGET_PROJECT_NAME\", please set a existing project name.\x1B[0m"
                     exit 1
                 fi
                 echo -n
@@ -102,7 +105,7 @@ if [[ -z "$TARGET_PROJECT_NAME" ]]; then
     exit 1
 fi
 
-save_log "cp4a-script-logs/project/$TARGET_PROJECT_NAME" "cp4a-prerequisites-log"
+save_log "baw-script-logs/project/$TARGET_PROJECT_NAME" "baw-prerequisites-log"
 trap cleanup_log EXIT
 IBM_LICENS="Accept"
 INSTALL_BAW_ONLY="No"
@@ -145,8 +148,8 @@ function prompt_license(){
     retVal_baw=$?
 
     if [[ $retVal_baw -eq 1 ]]; then
-        echo -e "\x1B[1;31mIMPORTANT: Review the IBM Cloud Pak for Business Automation license information here: \n\x1B[0m"
-        echo -e "\x1B[1;31mhttps://www14.software.ibm.com/cgi-bin/weblap/lap.pl?li_formnum=L-FNHF-F9RU7N\n\x1B[0m"
+        echo -e "\x1B[1;31mIMPORTANT: Review the IBM Business Automation Workflow license information here: \n\x1B[0m"
+        echo -e "\x1B[1;31mhttps://www.ibm.com/support/customer/csol/terms/?li=L-GPHE-W5RGSC\n\x1B[0m"
         INSTALL_BAW_ONLY="No"
     fi
 
@@ -155,7 +158,7 @@ function prompt_license(){
     printf "\n"
     while true; do
         if [[ $retVal_baw -eq 1 ]]; then
-            printf "\x1B[1mDo you accept the IBM Cloud Pak for Business Automation license (Yes/No, default: No): \x1B[0m"
+            printf "\x1B[1mDo you accept the IBM Business Automation Workflow license (Yes/No, default: No): \x1B[0m"
         fi
         read -rp "" ans
         case "$ans" in
@@ -172,7 +175,7 @@ function prompt_license(){
                 #     case "$ans" in
                 #     "y"|"Y"|"yes"|"Yes"|"YES")
                 #         printf "\n"
-                #         echo -e "\x1B[1;31mThe cp4a-deployment.sh can not work with existing Content CR together, exiting now...\x1B[0m\n"
+                #         echo -e "\x1B[1;31mThe baw-deployment.sh can not work with existing Content CR together, exiting now...\x1B[0m\n"
                 #         exit 1
 
                 #         ;;
@@ -186,7 +189,7 @@ function prompt_license(){
                 #     esac
                 # done
             # echo -e "*****************************************************"
-            # echo -e "**** Starting to prepare DB script for CP4BA ... ****"
+            # echo -e "**** Starting to prepare DB script for BAW ...   ****"
             # echo -e "*****************************************************"
             # sleep 2
             IBM_LICENS="Accept"
@@ -207,9 +210,9 @@ function prompt_license(){
 function validate_utility_tool_for_validation(){
     which kubectl &>/dev/null
     if [[ $? -ne 0 ]]; then
-        echo -e  "\x1B[1;31mUnable to locate Kubernetes CLI. You must install it to run this script.\x1B[0m" && \
+        echo -e  "\x1B[1;31mUnable to locate Kubernetes CLI. Kubernetes CLI must be installed to run this script.\x1B[0m" && \
         while true; do
-            printf "\x1B[1mDo you want install the Kubernetes CLI by the cp4a-prerequisites.sh script? (Yes/No): \x1B[0m"
+            printf "\x1B[1mDo you want install the Kubernetes CLI by the baw-prerequisites.sh script? (Yes/No): \x1B[0m"
             read -rp "" ans
             case "$ans" in
             "y"|"Y"|"yes"|"Yes"|"YES")
@@ -217,7 +220,7 @@ function validate_utility_tool_for_validation(){
                 break
                 ;;
             "n"|"N"|"no"|"No"|"NO")
-                info "Must install the Kubernetes CLI to continue the next validation"
+                info "Kubernetes CLI must be installed to continue the next validation"
                 exit 1
                 ;;
             *)
@@ -228,9 +231,9 @@ function validate_utility_tool_for_validation(){
     fi
     which java &>/dev/null
     if [[ $? -ne 0 ]]; then
-        echo -e  "\x1B[1;31mUnable to locate java. You must install it to run this script.\x1B[0m" && \
+        echo -e  "\x1B[1;31mUnable to locate java. IBM JRE or other JRE must be installed to run this script.\x1B[0m" && \
         while true; do
-            printf "\x1B[1mDo you want install the IBM JRE by the cp4a-prerequisites.sh script? (Yes/No): \x1B[0m"
+            printf "\x1B[1mDo you want install the IBM JRE by the baw-prerequisites.sh script? (Yes/No): \x1B[0m"
             read -rp "" ans
             case "$ans" in
             "y"|"Y"|"yes"|"Yes"|"YES")
@@ -238,7 +241,7 @@ function validate_utility_tool_for_validation(){
                 break
                 ;;
             "n"|"N"|"no"|"No"|"NO")
-                info "Must install the IBM JRE or other JRE to continue the next validation"
+                info "IBM JRE or other JRE must be installed to continue the next validation"
                 exit 1
                 ;;
             *)
@@ -249,9 +252,9 @@ function validate_utility_tool_for_validation(){
     else
         java -version &>/dev/null
         if [[ $? -ne 0 ]]; then
-            echo -e  "\x1B[1;31mUnable to locate a Java Runtime. You must install JRE to run this script.\x1B[0m" && \
+            echo -e  "\x1B[1;31mUnable to locate a Java Runtime. IBM JRE or other JRE must be installed to run this script.\x1B[0m" && \
             while true; do
-                printf "\x1B[1mDo you want install the IBM JRE by the cp4a-prerequisites.sh script? (Yes/No): \x1B[0m"
+                printf "\x1B[1mDo you want install the IBM JRE by the baw-prerequisites.sh script? (Yes/No): \x1B[0m"
                 read -rp "" ans
                 case "$ans" in
                 "y"|"Y"|"yes"|"Yes"|"YES")
@@ -259,7 +262,7 @@ function validate_utility_tool_for_validation(){
                     break
                     ;;
                 "n"|"N"|"no"|"No"|"NO")
-                    info "Must install the IBM JRE or other JRE to continue next validation"
+                    info "IBM JRE or other JRE must be installed to continue next validation"
                     exit 1
                     ;;
                 *)
@@ -276,16 +279,16 @@ function validate_utility_tool_for_validation(){
     else
         keytool -help &>/dev/null
         if [[ $? -ne 0 ]]; then
-            echo -e  "\x1B[1;31mUnable to locate keytool. You must install the IBM JRE or other JRE and add keytool in \"\$PATH\" to run this script\x1B[0m" && \
+            echo -e  "\x1B[1;31mUnable to locate keytool. IBM JRE or other JRE must be installed and add keytool in \"\$PATH\" to run this script\x1B[0m" && \
             exit 1
         fi
     fi
 
     which openssl &>/dev/null
     if [[ $? -ne 0 ]]; then
-        echo -e  "\x1B[1;31mUnable to locate openssl. You must install it to run this script.\x1B[0m" && \
+        echo -e  "\x1B[1;31mUnable to locate openssl. OpenSSL must be installed to run this script.\x1B[0m" && \
         while true; do
-            printf "\x1B[1mDo you want install the OpenSSL by the cp4a-prerequisites.sh script? (Yes/No): \x1B[0m"
+            printf "\x1B[1mDo you want install the OpenSSL by the baw-prerequisites.sh script? (Yes/No): \x1B[0m"
             read -rp "" ans
             case "$ans" in
             "y"|"Y"|"yes"|"Yes"|"YES")
@@ -293,7 +296,7 @@ function validate_utility_tool_for_validation(){
                 break
                 ;;
             "n"|"N"|"no"|"No"|"NO")
-                info "Must install the OpenSSL to continue next validation"
+                info "OpenSSL must be installed for the next validation"
                 exit 1
                 ;;
             *)
@@ -311,563 +314,6 @@ function containsElement(){
     return 1
 }
 
-
-function select_pattern(){
-# This function support mutiple checkbox, if do not select anything, it will return None
-
-    PATTERNS_SELECTED=""
-    choices_pattern=()
-    pattern_arr=()
-    pattern_cr_arr=()
-    AUTOMATION_SERVICE_ENABLE=""
-    AE_DATA_PERSISTENCE_ENABLE=""
-    CPE_FULL_STORAGE=""
-
-
-    if [[ "${PLATFORM_SELECTED}" == "other" ]]; then
-        if [[ "${DEPLOYMENT_TYPE}" == "starter" ]];
-        then
-            options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow Authoring and Automation Workstream Services" "IBM Automation Document Processing")
-            options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow-workstreams" "document_processing")
-            foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
-            foundation_1=("BAN" "RR")                # Foundation for Operational Decision Manager
-            foundation_2=("BAN" "RR" "UMS")     # Foundation for Automation Decision Services
-            foundation_3=("RR" "UMS" "BAS")     # Foundation for Business Automation Applications (full)
-            foundation_4=("RR" "UMS" "AE" "BAS")           # Foundation for Business Automation Workflow and workstreams(Demo)
-            foundation_5=("BAN" "RR" "AE" "BAS" "UMS")  # Foundation for IBM Automation Document Processing
-        else
-            options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow" "(a) Workflow Authoring" "(b) Workflow Runtime" "Automation Workstream Services" "IBM Automation Document Processing" "(a) Development Environment" "(b) Runtime Environment" "Workflow Process Service Authoring")
-            options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow" "workflow-authoring" "workflow-runtime" "workstreams" "document_processing" "document_processing_designer" "document_processing_runtime" "workflow-process-service")
-            foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
-            foundation_1=("BAN" "RR")                 # Foundation for Operational Decision Manager
-            foundation_2=("BAN" "RR" "UMS")     # Foundation for Automation Decision Services
-            foundation_3=("BAN" "RR" "UMS" "AE")     # Foundation for Business Automation Applications (full)
-            foundation_4=("BAN" "RR")           # Foundation for dummy
-            foundation_5=("BAN" "RR" "UMS" "BAS")          # Foundation for Business Automation Workflow - Workflow Authoring (5a)
-            foundation_6=("BAN" "RR" "UMS" "AE")           # Foundation for Business Automation Workflow - Workflow Runtime (5b)
-            foundation_7=("BAN" "RR" "UMS" "AE")           # Foundation for Automation Workstream Services (6)
-            foundation_8=("BAN" "RR")  # Foundation for IBM Automation Document Processing
-            foundation_9=("BAN" "RR" "AE" "BAS" "UMS")  # Foundation for IBM Automation Document Processing - 7a Development Environment
-            foundation_10=("BAN" "RR" "AE" "UMS")  # Foundation for IBM Automation Document Processing - 7b Runtime Environment
-            foundation_11=("BAS")           # Foundation for Workflow Process Service Authoring
-            foundation_12=("BAN" "RR" "UMS" "AE")           # Foundation for Business Automation Workflow and workstreams(5b+6)
-        fi
-    else
-        if [[ "${DEPLOYMENT_TYPE}" == "starter" ]];
-        then
-            options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow Authoring and Automation Workstream Services" "IBM Automation Document Processing")
-            options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow-workstreams" "document_processing")
-            foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
-            foundation_1=("BAN" "RR")                # Foundation for Operational Decision Manager
-            foundation_2=("BAN" "RR")     # Foundation for Automation Decision Services
-            foundation_3=("RR" "BAS")     # Foundation for Business Automation Applications (full)
-            foundation_4=("RR" "AE" "BAS")           # Foundation for Business Automation Workflow and workstreams(Demo)
-            foundation_5=("BAN" "RR" "AE" "BAS")  # Foundation for IBM Automation Document Processing
-        else
-            options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow" "(a) Workflow Authoring" "(b) Workflow Runtime" "Automation Workstream Services" "IBM Automation Document Processing" "(a) Development Environment" "(b) Runtime Environment" "Workflow Process Service Authoring")
-            options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow" "workflow-authoring" "workflow-runtime" "workstreams" "document_processing" "document_processing_designer" "document_processing_runtime" "workflow-process-service")
-            foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
-            foundation_1=("BAN" "RR")                 # Foundation for Operational Decision Manager
-            foundation_2=("BAN" "RR")     # Foundation for Automation Decision Services
-            foundation_3=("BAN" "RR" "AE")     # Foundation for Business Automation Applications (full)
-            foundation_4=("BAN" "RR")           # Foundation for dummy
-            foundation_5=("BAN" "RR" "BAS")           # Foundation for Business Automation Workflow - Workflow Authoring (5a)
-            foundation_6=("BAN" "RR" "AE")           # Foundation for Business Automation Workflow - Workflow Runtime (5b)
-            foundation_7=("BAN" "RR" "AE")           # Foundation for Automation Workstream Services (6)
-            foundation_8=("BAN" "RR")  # Foundation for IBM Automation Document Processing
-            foundation_9=("BAN" "RR" "AE" "BAS")  # Foundation for IBM Automation Document Processing - 7a Development Environment
-            foundation_10=("BAN" "RR" "AE")  # Foundation for IBM Automation Document Processing - 7b Runtime Environment
-            foundation_11=("BAS")           # Foundation for Workflow Process Service Authoring
-            foundation_12=("BAN" "RR" "AE")           # Foundation for Business Automation Workflow and workstreams(5b+6)
-        fi
-    fi
-    patter_ent_input_array=("1" "2" "3" "4" "5a" "5b" "5A" "5B" "6" "7a" "7b" "7A" "7B" "8" "5b,6" "5B,6" "5b, 6" "5B, 6" "5b 6" "5B 6")
-    tips1="\x1B[1;31mTips\x1B[0m:\x1B[1mPress [ENTER] to accept the default (None of the capabilities is selected)\x1B[0m"
-    tips2="\x1B[1;31mTips\x1B[0m:\x1B[1mPress [ENTER] when you are done\x1B[0m"
-    pattern_starter_tips="\x1B[1mInfo: Except pattern (4/5), Business Automation Navigator will be automatically installed in the environment as it is part of the Cloud Pak for Business Automation foundation platform. \n\nTips:  After you make your first selection you will be able to make additional selections since you can combine multiple selections.\n\x1B[0m"
-    pattern_production_tips="\x1B[1mInfo: Business Automation Navigator will be automatically installed in the environment as it is part of the Cloud Pak for Business Automation foundation platform. \n\nTips:  After you make your first selection you will be able to make additional selections since you can combine multiple selections.\n\x1B[0m"
-    baw_iaws_tips="\x1B[1mInfo: Note that Business Automation Workflow Authoring (5a) cannot be installed together with Automation Workstream Services (6). However, Business Automation Workflow Runtime (5b) can be installed together with Automation Workstream Services (6).\n\x1B[0m"
-    linux_starter_tips="\x1B[33;5mATTENTION: \x1B[0m\x1B[1;31mIBM Automation Document Processing (6) does NOT support a cluster running a Linux on Z (s390x)/Power architecture.\n\x1B[0m"
-    linux_production_tips="\x1B[33;5mATTENTION: \x1B[0m\x1B[1;31mIBM Automation Document Processing (7a/7b) does NOT support a cluster running a Linux on Z (s390x)/Power architecture.\n\x1B[0m"
-    indexof() {
-        i=-1
-        for ((j=0;j<${#options_cr_val[@]};j++));
-        do [ "${options_cr_val[$j]}" = "$1" ] && { i=$j; break; }
-        done
-        echo $i
-    }
-    menu() {
-        clear
-        echo -e "\x1B[1mSelect the Cloud Pak for Business Automation capability to install: \x1B[0m"
-        for i in ${!options[@]}; do
-            if [[ $DEPLOYMENT_TYPE == "starter" ]];then
-                containsElement "${options_cr_val[i]}" "${EXISTING_PATTERN_ARR[@]}"
-                retVal=$?
-                if [ $retVal -ne 0 ]; then
-                    printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
-                else
-                    if [[ "${choices_pattern[i]}" == "(To Be Uninstalled)" ]]; then
-                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
-                    else
-                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "(Installed)"
-                    fi
-                fi
-            elif [[ $DEPLOYMENT_TYPE == "production" ]]
-            then
-                containsElement "${options_cr_val[i]}" "${EXISTING_PATTERN_ARR[@]}"
-                retVal=$?
-                if [[ !(" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-runtime") && !(" ${EXISTING_PATTERN_ARR[@]} " =~ "workstreams") ]]; then
-                    wwVal=0
-                elif [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-runtime" && " ${EXISTING_PATTERN_ARR[@]} " =~ "workstreams" ]]; then
-                    wwVal=1
-                fi
-                containsElement "baw_authoring" "${EXISTING_OPT_COMPONENT_ARR[@]}"
-                baw_authoring_Val=$?
-                containsElement "document_processing_designer" "${EXISTING_OPT_COMPONENT_ARR[@]}"
-                document_processing_designer_Val=$?
-                containsElement "document_processing_runtime" "${EXISTING_OPT_COMPONENT_ARR[@]}"
-                document_processing_runtime_Val=$?
-                if [[ $retVal -ne 0 ]]; then
-                    case "$i" in
-                    "7") # for Automation Workstream Services
-                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" 6 "${options[i]}"  "${choices_pattern[i]}"
-                        ;;
-                    "8") # ADP
-                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" 7 "${options[i]}"  "${choices_pattern[i]}"
-                        printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "${choices_pattern[i+1]}"
-                        printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
-                        ;;
-                    "9") # for WfPS
-                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" 8 "${options[i+2]}"  "${choices_pattern[i+2]}"
-                        ;;
-                    "4") # 5 for Workflow Authoring, 6 for Workflow Runtime
-                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
-                        printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "${choices_pattern[i+1]}"
-                        printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
-                        ;;
-                    "0"|"1"|"2"|"3")
-                        printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
-                        ;;
-                    esac
-                else
-                    if [[ "${choices_pattern[i]}" == "(To Be Uninstalled)" ]]; then
-                        case "$i" in
-                        "7") # for Automation Workstream Services
-                            printf "%1d) %s \x1B[1m%s\x1B[0m\n" 6 "${options[i]}"  "${choices_pattern[i]}"
-                            ;;
-                        "4") # 5 for Workflow Authoring, 6 for Workflow Runtime
-                            printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
-                            printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "${choices_pattern[i+1]}"
-                            printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
-                            ;;
-                        "0"|"1"|"2"|"3"|"4")
-                            printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
-                            ;;
-                        "8") # 9 for Development Environment, 10 for Runtime Environment,
-                            # if [[ "${choices_pattern[i+1]}" == "(Selected)" || "${choices_pattern[i+2]}" == "(Selected)" ]]; then
-                            printf "%1d) %s \x1B[1m%s\x1B[0m\n" 7 "${options[i]}"  "${choices_pattern[i]}"
-                            printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "${choices_pattern[i+1]}"
-                            printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
-                            ;;
-                        esac
-                    else
-                        case "$i" in
-                        "7") # for Automation Workstream Services
-                            if [[ (${choices_pattern[6]} == "(To Be Uninstalled)" && ${choices_pattern[7]} == "(To Be Uninstalled)") ]]; then
-                                printf "%1d) %s \x1B[1m%s\x1B[0m\n" 6 "${options[i]}"  "${choices_pattern[i]}"
-                            else
-                                printf "%1d) %s \x1B[1m%s\x1B[0m\n" 6 "${options[i]}"  "(Installed)"
-                            fi
-                            ;;
-                        "4") # 5 for Workflow Authoring, 6 for Workflow Runtime
-                            if [[ ${choices_pattern[6]} == "(To Be Uninstalled)" && ${choices_pattern[7]} == "(To Be Uninstalled)" && ${choices_pattern[5]} == "" ]]; then
-                                printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "(To Be Uninstalled)"
-                                if [[ $baw_authoring_Val -eq 0 ]]; then
-                                    printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "${choices_pattern[i+1]}"
-                                    printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
-                                else
-                                    printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "${choices_pattern[i+1]}"
-                                    printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
-                                fi
-                            elif [[ ${choices_pattern[6]} == "(To Be Uninstalled)" && ${choices_pattern[7]} == "(To Be Uninstalled)" && ${choices_pattern[5]} == "(Selected)" ]]; then
-                                printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "${choices_pattern[i]}"
-                                printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "${choices_pattern[i+1]}"
-                                printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
-                            elif [[ $baw_authoring_Val -eq 0 && ${choices_pattern[5]} == "(To Be Uninstalled)" && ${choices_pattern[6]} != "" ]]; then
-                                printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"   "${choices_pattern[i]}"
-                                printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"   "${choices_pattern[i+1]}"
-                                printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
-                            elif [[ $baw_authoring_Val -eq 0 && ${choices_pattern[5]} == "(To Be Uninstalled)" && ${choices_pattern[6]} == "" ]]; then
-                                printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"   "(To Be Uninstalled)"
-                                printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"   "${choices_pattern[i+1]}"
-                                printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
-                            else
-                                printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"   "(Installed)"
-                                if [[ $baw_authoring_Val -eq 0 ]]; then
-                                    printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "(Installed)"
-                                    printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
-                                else
-                                    printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "${choices_pattern[i+1]}"
-                                    printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "(Installed)"
-                                fi
-                            fi
-                            ;;
-                        "0"|"1"|"2"|"3")
-                            printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "(Installed)"
-                            ;;
-                        "8")
-                            if [[ ${choices_pattern[9]} == "" && ${choices_pattern[10]} == "" ]]; then
-                                printf "%1d) %s \x1B[1m%s\x1B[0m\n" 7 "${options[i]}"  "(Installed)"
-                                if [[ $document_processing_designer_Val -eq 0 ]]; then
-                                    printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "(Installed)"
-                                    printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i]}"
-                                elif [[ $document_processing_runtime_Val -eq 0 ]]
-                                then
-                                    printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "${choices_pattern[i]}"
-                                    printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "(Installed)"
-                                fi
-                            elif [[ (${choices_pattern[9]} == "(To Be Uninstalled)" && ${choices_pattern[10]} == "(Selected)") || (${choices_pattern[9]} == "(Selected)" && ${choices_pattern[10]} == "(To Be Uninstalled)") ]]; then
-                                printf "%1d) %s \x1B[1m%s\x1B[0m\n" 7 "${options[i]}"  "(Selected)"
-                                printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "${choices_pattern[i+1]}"
-                                printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
-                            elif [[ (${choices_pattern[8]} == "(Selected)" && ${choices_pattern[9]} == "(To Be Uninstalled)") || (${choices_pattern[8]} == "(Selected)" && ${choices_pattern[10]} == "(To Be Uninstalled)") ]]; then
-                                printf "%1d) %s \x1B[1m%s\x1B[0m\n" 7 "${options[i]}"  "(To Be Uninstalled)"
-                                printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+1]}"  "${choices_pattern[i+1]}"
-                                printf "%s \x1B[1m%s\x1B[0m\n" "   ${options[i+2]}"  "${choices_pattern[i+2]}"
-                            fi
-                            ;;
-                        esac
-                   fi
-                fi
-            fi
-        done
-        if [[ "$msg" ]]; then echo "$msg"; fi
-        printf "\n"
-        if [[ $DEPLOYMENT_TYPE == "production" ]]; then
-            echo -e "${baw_iaws_tips}"
-        fi
-
-        if [[ $DEPLOYMENT_TYPE == "production" ]]; then
-            echo -e "${pattern_production_tips}"
-            echo -e "${linux_production_tips}"
-        else
-            echo -e "${pattern_starter_tips}"
-            echo -e "${linux_starter_tips}"
-        fi
-        # Show different tips according components select or unselect
-        containsElement "(Selected)" "${choices_pattern[@]}"
-        retVal=$?
-        if [ $retVal -ne 0 ]; then
-            echo -e "${tips1}"
-        else
-            echo -e "${tips2}"
-        fi
-# ##########################DEBUG############################
-#     for i in "${!choices_pattern[@]}"; do
-#         printf "%s\t%s\n" "$i" "${choices_pattern[$i]}"
-#     done
-# ##########################DEBUG############################
-    }
-
-    if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
-        prompt="Enter a valid option [1 to ${#options[@]}]: "
-    elif [[ $DEPLOYMENT_TYPE == "production" ]]
-    then
-        prompt="Enter a valid option [1 to 4, 5a, 5b, 6, 7a, 7b, 8]: "
-    fi
-
-    while menu && read -rp "$prompt" num && [[ "$num" ]]; do
-        if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
-            [[ "$num" != *[![:digit:]]* ]] &&
-            (( num > 0 && num <= ${#options[@]} )) ||
-            { msg="Invalid option: $num"; continue; }
-            ((num--));
-        elif [[ $DEPLOYMENT_TYPE == "production" ]]
-        then
-            containsElement "${num}" "${patter_ent_input_array[@]}"
-            inputretVal=$?
-            [[ "${inputretVal}" -eq 0 ]] ||
-            { msg="Invalid option: $num"; continue; }
-            case "$num" in
-            "5a"|"5A")
-                num=5
-                if [[ !(" ${EXISTING_PATTERN_ARR[@]} " =~ "workstreams") && !(" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow") ]]; then
-                    choices_pattern[6]=""
-                    choices_pattern[7]=""
-                elif [[ (" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-runtime" || " ${EXISTING_PATTERN_ARR[@]} " =~ "workstreams") && (${choices_pattern[6]} == "" || ${choices_pattern[7]} == "") ]]; then
-                    choices_pattern[5]="(Selected)"
-                elif [[ (" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-runtime") && (" ${EXISTING_PATTERN_ARR[@]} " =~ "workstreams") && (${choices_pattern[6]} == "(To Be Uninstalled)") && (${choices_pattern[7]} == "(To Be Uninstalled)") ]]; then
-                    num=5
-                elif [[ (" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-authoring") && ${choices_pattern[5]} == "(To Be Uninstalled)" && (${choices_pattern[6]} == "(Selected)" || ${choices_pattern[7]} == "(Selected)") ]]; then
-                    num=5
-                fi
-                ;;
-            "5b"|"5B")
-                num=6
-                if [[ !(" ${EXISTING_PATTERN_ARR[@]} " =~ "workstreams") && !(" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow") ]]; then
-
-                    choices_pattern[5]=""
-                elif [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-runtime" && " ${EXISTING_PATTERN_ARR[@]} " =~ "workstreams" && ${choices_pattern[5]} == "(Selected)" ]]; then
-
-                    choices_pattern[6]=""
-                elif [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-authoring" ]]; then
-                        if [[ ${choices_pattern[5]} == "(To Be Uninstalled)" ]]; then
-
-                            num=6
-                        elif [[ ${choices_pattern[5]} == "(Selected)" || ${choices_pattern[5]} == "" ]]; then
-                            choices_pattern[6]="(Selected)"
-                            # choices_pattern[7]=""
-                        fi
-                fi
-                ;;
-            6)
-                num=7
-                if [[ !(" ${EXISTING_PATTERN_ARR[@]} " =~ "workstreams") && !(" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow") ]]; then
-                    choices_pattern[5]=""
-                elif [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-authoring" ]]; then
-                        if [[ ${choices_pattern[5]} == "(To Be Uninstalled)" ]]; then
-                            num=7
-                        elif [[ ${choices_pattern[5]} == "(Selected)" || ${choices_pattern[5]} == "" ]]; then
-                            choices_pattern[7]="(Selected)"
-                            # choices_pattern[7]=""
-                        fi
-                fi
-                ;;
-            "5b,6"|"5B,6"|"5b, 6"|"5B, 6"|"5b 6"|"5B 6")
-                num=12
-                if [[ !(" ${EXISTING_PATTERN_ARR[@]} " =~ "workstreams") && !(" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow") ]]; then
-                    choices_pattern[5]=""
-                else
-                    if [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-authoring" || ${choices_pattern[5]} == "" ]]; then
-                        choices_pattern[6]="(Selected)"
-                        choices_pattern[7]="(Selected)"
-                    fi
-                fi
-                ;;
-            "1"|"2"|"3"|"4")
-                ((num--))
-                ;;
-            "7a"|"7A")
-                num=9
-                # choices_pattern[11]=""
-                if [[ !(" ${EXISTING_PATTERN_ARR[@]} " =~ "document_processing") ]]; then
-                    choices_pattern[10]=""
-                else
-                    if [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "document_processing" && " ${EXISTING_OPT_COMPONENT_ARR[@]} " =~ "document_processing_designer" && ${choices_pattern[10]} == "" ]]; then
-                        num=9
-                    elif [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "document_processing" && " ${EXISTING_OPT_COMPONENT_ARR[@]} " =~ "document_processing_designer" && ${choices_pattern[10]} == "(Selected)" ]]; then
-                        choices_pattern[9]=""
-                        choices_pattern[8]=""
-                    elif [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "document_processing" && " ${EXISTING_OPT_COMPONENT_ARR[@]} " =~ "document_processing_runtime" && ${choices_pattern[10]} == "" ]]; then
-                        choices_pattern[9]="(Selected)"
-                    fi
-                fi
-                ;;
-            "7b"|"7B")
-                num=10
-                # choices_pattern[11]=""
-                if [[ !(" ${EXISTING_PATTERN_ARR[@]} " =~ "document_processing") ]]; then
-                    choices_pattern[9]=""
-                else
-                    if [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "document_processing" && " ${EXISTING_OPT_COMPONENT_ARR[@]} " =~ "document_processing_runtime" && ${choices_pattern[9]} == "" ]]; then
-                        num=10
-                    elif [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "document_processing" && " ${EXISTING_OPT_COMPONENT_ARR[@]} " =~ "document_processing_runtime" && ${choices_pattern[9]} == "(Selected)" ]]; then
-                        choices_pattern[10]=""
-                        choices_pattern[8]=""
-                    elif [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "document_processing" && " ${EXISTING_OPT_COMPONENT_ARR[@]} " =~ "document_processing_designer" && ${choices_pattern[9]} == "" ]]; then
-                        choices_pattern[10]="(Selected)"
-                    fi
-                fi
-                ;;
-            "8")
-                num=11
-                # choices_pattern[10]=""
-                # choices_pattern[9]=""
-                # choices_pattern[8]=""
-                ;;
-            esac
-        else
-            echo "Deployment type is invalid."
-            exit 0
-        fi
-        containsElement "${options_cr_val[num]}" "${EXISTING_PATTERN_ARR[@]}"
-        retVal=$?
-        containsElement "baw_authoring" "${EXISTING_OPT_COMPONENT_ARR[@]}"
-        baw_authoring_Val=$?
-        if [[ !(" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-runtime") && !(" ${EXISTING_PATTERN_ARR[@]} " =~ "workstreams") ]]; then
-            wwVal=0
-        elif [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-runtime" && " ${EXISTING_PATTERN_ARR[@]} " =~ "workstreams" ]]; then
-            wwVal=1
-        fi
-
-        if [[ $retVal -ne 0 ]]; then
-            if [[ ($num -eq 12) && ($wwVal -eq 0) ]]; then
-                [[ "${choices_pattern[num]}" ]] && choices_pattern[num]="" || choices_pattern[num]="(Selected)"
-                [[ "${choices_pattern[num]}" ]] && choices_pattern[4]="(Selected)" || choices_pattern[4]=""
-                [[ "${choices_pattern[num]}" ]] && choices_pattern[6]="(Selected)" || choices_pattern[6]=""
-                [[ "${choices_pattern[num]}" ]] && choices_pattern[7]="(Selected)" || choices_pattern[7]=""
-            elif [[ ($num -eq 12) && ($wwVal -eq 1) ]]; then
-                if [[ ${choices_pattern[4]} == "(Selected)" && ${choices_pattern[5]} == "(Selected)" ]]; then
-                    choices_pattern[6]="(To Be Uninstalled)"
-                    choices_pattern[7]="(To Be Uninstalled)"
-                    choices_pattern[12]="(To Be Uninstalled)"
-                else
-                    [[ "${choices_pattern[num]}" ]] && choices_pattern[num]="" || choices_pattern[num]="(To Be Uninstalled)"
-                    [[ "${choices_pattern[num]}" ]] && choices_pattern[4]="(To Be Uninstalled)" || choices_pattern[4]=""
-                    [[ "${choices_pattern[num]}" ]] && choices_pattern[6]="(To Be Uninstalled)" || choices_pattern[6]=""
-                    [[ "${choices_pattern[num]}" ]] && choices_pattern[7]="(To Be Uninstalled)" || choices_pattern[7]=""
-                fi
-            else
-                [[ "${choices_pattern[num]}" ]] && choices_pattern[num]="" || choices_pattern[num]="(Selected)"
-            fi
-            if [[ $DEPLOYMENT_TYPE == "production" ]]; then
-                if [[ ${choices_pattern[5]} == "(Selected)" || ${choices_pattern[6]} == "(Selected)"  ]]; then
-                    choices_pattern[4]="(Selected)"
-                fi
-                if  [[ "${choices_pattern[5]}" == "" && "${choices_pattern[6]}" == "" ]]; then
-                    choices_pattern[4]=""
-                fi
-                if [[ ${choices_pattern[9]} == "(Selected)" || ${choices_pattern[10]} == "(Selected)"  ]]; then
-                    choices_pattern[8]="(Selected)"
-                fi
-                if  [[ "${choices_pattern[9]}" == "" && "${choices_pattern[10]}" == "" ]]; then
-                    choices_pattern[8]=""
-                fi
-            fi
-        else
-            if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
-                [[ "${choices_pattern[num]}" ]] && choices_pattern[num]="" || choices_pattern[num]="(To Be Uninstalled)"
-            elif [[ $DEPLOYMENT_TYPE == "production" ]]
-            then
-                case "$num" in
-                "5")
-                    if [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-authoring" && ("${choices_pattern[6]}" == "(Selected)" || "${choices_pattern[7]}" == "(Selected)") ]]; then
-                        choices_pattern[num]="(To Be Uninstalled)"
-                    else
-                        [[ "${choices_pattern[num]}" ]] && choices_pattern[num-1]="" || choices_pattern[num-1]="(To Be Uninstalled)"
-                        [[ "${choices_pattern[num]}" ]] && choices_pattern[num]="" || choices_pattern[num]="(To Be Uninstalled)"
-                    fi
-                    ;;
-                "6")
-                    if [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "workstreams" && "${choices_pattern[7]}" == "(To Be Uninstalled)" ]]; then
-                        if [[ "${choices_pattern[5]}" == "" ]]; then
-                            if [[ choices_pattern[num]="(To Be Uninstalled)" ]]; then
-                                choices_pattern[num]="(To Be Uninstalled)"
-                            else
-                                choices_pattern[num]=""
-                            fi
-                        elif [[ "${choices_pattern[5]}" == "(Selected)" ]]; then
-                            choices_pattern[num]="(To Be Uninstalled)"
-                        fi
-
-                        # choices_pattern[num-2]="(Installed)"
-                    elif  [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "workstreams" && "${choices_pattern[7]}" == "" && " ${EXISTING_PATTERN_ARR[@]} " =~ "workflow" && "${choices_pattern[6]}" == "" ]]; then
-                        choices_pattern[num]=""
-                    else
-                        [[ "${choices_pattern[num]}" ]] && choices_pattern[num-2]="" || choices_pattern[num-2]="(To Be Uninstalled)"
-                        [[ "${choices_pattern[num]}" ]] && choices_pattern[num]="" || choices_pattern[num]="(To Be Uninstalled)"
-                    fi
-                    ;;
-                "7")
-                    if [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-runtime" && "${choices_pattern[6]}" == "(To Be Uninstalled)" ]]; then
-                        if [[ "${choices_pattern[5]}" == "" ]]; then
-                            if [[ choices_pattern[num]="(To Be Uninstalled)" ]]; then
-                                choices_pattern[num]="(To Be Uninstalled)"
-                            else
-                                choices_pattern[num]=""
-                            fi
-                        elif [[ "${choices_pattern[5]}" == "(Selected)" ]]; then
-                            choices_pattern[num]="(To Be Uninstalled)"
-                        fi
-
-                        # choices_pattern[num-2]="(Installed)"
-                    elif  [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-runtime" && "${choices_pattern[7]}" == "" && " ${EXISTING_PATTERN_ARR[@]} " =~ "workflow" && "${choices_pattern[6]}" == "" ]]; then
-                        choices_pattern[num]=""
-                    else
-                        [[ "${choices_pattern[num]}" ]] && choices_pattern[num]="" || choices_pattern[num]="(To Be Uninstalled)"
-                    fi
-                    ;;
-                "9")
-                    if [[ ${choices_pattern[10]} == "(Selected)" ]]; then
-                        choices_pattern[8]="(Selected)"
-                    else
-                        [[ "${choices_pattern[num]}" ]] && choices_pattern[num-1]="" || choices_pattern[num-1]="(To Be Uninstalled)"
-                    fi
-                    [[ "${choices_pattern[num]}" ]] && choices_pattern[num]="" || choices_pattern[num]="(To Be Uninstalled)"
-                    ;;
-                "10")
-                    if [[ ${choices_pattern[9]} == "(Selected)" ]]; then
-                        choices_pattern[8]="(Selected)"
-                    else
-                        [[ "${choices_pattern[num]}" ]] && choices_pattern[num-2]="" || choices_pattern[num-2]="(To Be Uninstalled)"
-                    fi
-                    [[ "${choices_pattern[num]}" ]] && choices_pattern[num]="" || choices_pattern[num]="(To Be Uninstalled)"
-                    ;;
-                "0"|"1"|"2"|"3")
-                    [[ "${choices_pattern[num]}" ]] && choices_pattern[num]="" || choices_pattern[num]="(To Be Uninstalled)"
-                    ;;
-                esac
-            fi
-        fi
-    done
-
-    # echo "choices_pattern: ${choices_pattern[*]}"
-    # read -rsn1 -p"Press any key to continue (DEBUG MODEL)";echo
-    # Generate list of the pattern which will be installed or To Be Uninstalled
-    for i in ${!options[@]}; do
-        array_varname=foundation_$i[@]
-        containsElement "${options_cr_val[i]}" "${EXISTING_PATTERN_ARR[@]}"
-        retVal=$?
-        if [ $retVal -ne 0 ]; then
-            [[ "${choices_pattern[i]}" ]] && { pattern_arr=( "${pattern_arr[@]}" "${options[i]}" ); pattern_cr_arr=( "${pattern_cr_arr[@]}" "${options_cr_val[i]}" ); msg=""; }
-            [[ "${choices_pattern[i]}" ]] && { foundation_component_arr=( "${foundation_component_arr[@]}" "${!array_varname}" ); }
-        else
-            if [[ "${choices_pattern[i]}" == "(To Be Uninstalled)" ]]; then
-                pos=`indexof "${pattern_cr_arr[i]}"`
-                if [[ "$pos" != "-1" ]]; then
-                { pattern_cr_arr=(${pattern_cr_arr[@]:0:$pos} ${pattern_cr_arr[@]:$(($pos + 1))}); pattern_arr=(${pattern_arr[@]:0:$pos} ${pattern_arr[@]:$(($pos + 1))}); }
-
-                fi
-            else
-                { pattern_arr=( "${pattern_arr[@]}" "${options[i]}" ); pattern_cr_arr=( "${pattern_cr_arr[@]}" "${options_cr_val[i]}" ); msg=""; }
-                { foundation_component_arr=( "${foundation_component_arr[@]}" "${!array_varname}" ); }
-            fi
-        fi
-    done
-    # echo -e "$msg"
-
-    # 4Q: add workflow-workstream into pattern list when select both workflow-runtime and workstream
-    if [[ " ${pattern_cr_arr[@]} " =~ "workflow" && " ${pattern_cr_arr[@]} " =~ "workstreams" && "${DEPLOYMENT_TYPE}" == "production" ]]; then
-        pattern_cr_arr=( "${pattern_cr_arr[@]}" "workflow-workstreams" )
-        if [[ $PLATFORM_SELECTED == "other" ]]; then
-            foundation_ww=("BAN" "RR" "UMS" "AE")
-        else
-            foundation_ww=("BAN" "RR" "AE")
-        fi
-        foundation_component_arr=( "${foundation_component_arr[@]}" "${foundation_ww[@]}" )
-    fi
-
-    if [ "${#pattern_arr[@]}" -eq "0" ]; then
-        PATTERNS_SELECTED="None"
-        printf "\x1B[1;31mPlease select at least one capability, exiting... \n\x1B[0m"
-        exit 1
-    else
-        PATTERNS_SELECTED=$( IFS=$','; echo "${pattern_arr[*]}" )
-        PATTERNS_CR_SELECTED=$( IFS=$','; echo "${pattern_cr_arr[*]}" )
-
-    fi
-    if [[ "$DEPLOYMENT_TYPE" == "production" ]]; then
-        select_ae_data_persistence
-        AUTOMATION_SERVICE_ENABLE="No"
-    fi
-    # select_cpe_full_storage
-    FOUNDATION_CR_SELECTED=($(echo "${foundation_component_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
-
-    x=0;while [ ${x} -lt ${#FOUNDATION_CR_SELECTED[*]} ] ; do FOUNDATION_CR_SELECTED_LOWCASE[$x]=$(tr [A-Z] [a-z] <<< ${FOUNDATION_CR_SELECTED[$x]}); let x++; done
-    FOUNDATION_DELETE_LIST=($(echo "${FOUNDATION_CR_SELECTED[@]}" "${FOUNDATION_FULL_ARR[@]}" | tr ' ' '\n' | sort | uniq -u))
-
-    PATTERNS_CR_SELECTED=($(echo "${pattern_cr_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
-}
 
 function select_optional_component(){
 # This function support mutiple checkbox, if do not select anything, it will return
@@ -1493,6 +939,24 @@ function select_optional_component(){
                     optional_components_cr_list=()
                     break
                     ;;
+                "Business Automation Workflow Authoring")
+                    optional_components_list=("Data Collector and Data Indexer" "Exposed Kafka Services")
+                    optional_components_cr_list=("pfs" "kafka")
+                    show_optional_components
+                    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "cmis" )
+                    optional_components_list=()
+                    optional_components_cr_list=()
+                    break
+                    ;;
+                "Business Automation Workflow Runtime")
+                    optional_components_list=("Data Collector and Data Indexer" "Exposed Kafka Services")
+                    optional_components_cr_list=("pfs" "kafka")
+                    show_optional_components
+                    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "cmis" )
+                    optional_components_list=()
+                    optional_components_cr_list=()
+                    break
+                    ;;
             esac
         done
     done
@@ -1578,6 +1042,9 @@ function check_missing_quotes(){
         if [ ! -f "$input_file" ]; then
             continue
         fi
+        #<https://jsw.ibm.com/browse/DBACLD-170488> Remove the return character that sometimes gets added on a linux machine
+        tmp_file=$(mktemp)
+        sed $'s/\r//g' "$input_file" > "$tmp_file" && mv "$tmp_file" "$input_file"
         # Array to store incorrect entries
         incorrect_values=()
 
@@ -1622,8 +1089,25 @@ function check_missing_quotes(){
         fi
     done
     if [[ "$missing_quotes" == 1 ]] ; then
-        info "[NEXT_STEPS]: Reference the table above and ensure all values in all property files are enclosed in quotes and re-run cp4a-prerequisites.sh script in generate mode."
+        info "[NEXT_STEPS]: Reference the table above and ensure all values in all property files are enclosed in quotes and re-run baw-prerequisites.sh script in generate mode."
         exit 1
+    fi
+}
+
+## -- https://jsw.ibm.com/browse/DBACLD-172803 - Function created to improve code
+# Function to check for unfilled <Required> parameters, takes two arguments:
+# 1) The style of <Required> filed, e.g. {Base}<Required>, {xor}<Required>
+# 2) The property file name to check.
+function check_required_values(){
+    required_field=$1
+    property_file=$2
+    search_text="=\"${required_field}\""
+    value_empty=$(grep "${search_text}" "${property_file}" | wc -l)
+    if [ $value_empty -ne 0 ] ; then
+        #Extract ALL the parameter names and include them in a comma separated list to the error message when the parameters are not properly filled out.
+        parameter_name=$(grep "${search_text}" "${property_file}" | awk -F'=' '{print $1}'  | tr -d ' ' | paste -sd ',' -)
+        error "Found invalid value(s) \"$required_field\" for parameter \"$parameter_name\" in property file \"${property_file}\", please input the correct value."
+        empty_value_tag=1
     fi
 }
 
@@ -1632,28 +1116,21 @@ function check_property_file(){
     # For https://jsw.ibm.com/browse/DBACLD-161426
     check_missing_quotes
     local empty_value_tag=0
-    value_empty=`grep '="<Required>"' "${USER_PROFILE_PROPERTY_FILE}" | wc -l`  >/dev/null 2>&1
-    if [ $value_empty -ne 0 ] ; then
-        error "Found invalid value(s) \"<Required>\" in property file \"${USER_PROFILE_PROPERTY_FILE}\", please input the correct value."
-        empty_value_tag=1
-    fi
 
+    # Check <Required> values for baw_user_profile.property
+    check_required_values "<Required>" "${USER_PROFILE_PROPERTY_FILE}"
     ## --https://jsw.ibm.com/browse/DBACLD-158616 <- ## Check for missing "{Base64}<Required>" placeholders in the user profile property file and display an error message if not provided.>
-    value_empty=`grep '="{Base64}<Required>"' "${USER_PROFILE_PROPERTY_FILE}" | wc -l`  >/dev/null 2>&1
-    if [ $value_empty -ne 0 ] ; then
-        error "Found invalid value(s) \"{Base64}<Required>\" in property file \"${USER_PROFILE_PROPERTY_FILE}\", please input the correct value."
-        empty_value_tag=1
-    fi
+    check_required_values "{Base64}<Required>" "${USER_PROFILE_PROPERTY_FILE}"
+    ## -- https://jsw.ibm.com/browse/DBACLD-172803 - We are now asking user to use {xor} for special characters in password for some parameters, so we need to check if the "{xor}<Required>" is not filled out.
+    check_required_values "{xor}<Required>" "${USER_PROFILE_PROPERTY_FILE}"
 
-    value_empty=`grep '="<Required>"' "${DB_SERVER_INFO_PROPERTY_FILE}" | wc -l`  >/dev/null 2>&1
-    if [ $value_empty -ne 0 ] ; then
-        error "Found invalid value(s) \"<Required>\" in property file \"${DB_SERVER_INFO_PROPERTY_FILE}\", please input the correct value."
-        empty_value_tag=1
-    fi
+    # Check <Required> values for cp4ba_db_server.property 
+    check_required_values "<Required>" "${DB_SERVER_INFO_PROPERTY_FILE}"
 
     value_empty=`grep '^<DB_ALIAS_NAME>.' "${DB_NAME_USER_PROPERTY_FILE}" | wc -l`  >/dev/null 2>&1
     if [ $value_empty -ne 0 ] ; then
-        error "Please change prefix \"<DB_ALIAS_NAME>\" to assign database used by component to which database server or instance in property file \"${DB_NAME_USER_PROPERTY_FILE}\"."
+        parameter_name=$(grep '^<DB_ALIAS_NAME>.' "${DB_NAME_USER_PROPERTY_FILE}" | awk -F'=' '{print $1}'  | tr -d ' ' | paste -sd ',' -)
+        error "Please change prefix \"<DB_ALIAS_NAME>\" for parameter \"$parameter_name\" to assign database used by component to which database server or instance in property file \"${DB_NAME_USER_PROPERTY_FILE}\"."
         empty_value_tag=1
     fi
 
@@ -1677,49 +1154,41 @@ function check_property_file(){
         fi
     fi
 
-    value_empty=`grep '="<Required>"' "${DB_NAME_USER_PROPERTY_FILE}" | wc -l`  >/dev/null 2>&1
+    # Check <Required> values for baw_db_name_user.property 
+    check_required_values "<Required>" "${DB_NAME_USER_PROPERTY_FILE}"
+
+    ##--https://jsw.ibm.com/browse/DBACLD-168735 <- ## Ensure that only uncommented parameters trigger errors, while commented ones are ignored.
+    value_empty=`grep -E '^[[:space:]]*[^#[:space:]]+.*="<yourpassword>"' "${DB_NAME_USER_PROPERTY_FILE}" | wc -l`  >/dev/null 2>&1
     if [ $value_empty -ne 0 ] ; then
-        error "Found invalid value(s) \"<Required>\" in property file \"${DB_NAME_USER_PROPERTY_FILE}\", please input the correct value."
+        parameter_name=$(grep -E '^[[:space:]]*[^#[:space:]]+.*="<yourpassword>"' "${DB_NAME_USER_PROPERTY_FILE}" | awk -F'=' '{print $1}'  | tr -d ' ' | paste -sd ',' -)
+        error "Found invalid value(s) \"<yourpassword>\" for parameter \"$parameter_name\" in property file \"${DB_NAME_USER_PROPERTY_FILE}\", please input the correct value."
         empty_value_tag=1
     fi
 
-    value_empty=`grep -v '^# .*.CHOS_DB_USER_PASSWORD="<yourpassword>"' "${DB_NAME_USER_PROPERTY_FILE}" | grep '="<yourpassword>"' | wc -l`  >/dev/null 2>&1
+    ##--https://jsw.ibm.com/browse/DBACLD-168735 <- ## Ensure that only uncommented parameters trigger errors, while commented ones are ignored.
+    #Extract the parameter name and include it to the error message when the property not defined in the file.
+    value_empty=`grep -E '^[[:space:]]*[^#[:space:]]+.*="<youruser1>"' "${DB_NAME_USER_PROPERTY_FILE}" | wc -l`  >/dev/null 2>&1
     if [ $value_empty -ne 0 ] ; then
-        error "Found invalid value(s) \"<yourpassword>\" in property file \"${DB_NAME_USER_PROPERTY_FILE}\", please input the correct value."
-        empty_value_tag=1
-    fi
-
-    value_empty=`grep -v '^# .*.CHOS_DB_USER_NAME="<youruser1>"' "${DB_NAME_USER_PROPERTY_FILE}" | grep '="<youruser1>"' | wc -l`  >/dev/null 2>&1
-    if [ $value_empty -ne 0 ] ; then
-        error "Found invalid value(s) \"<youruser1>\" in property file \"${DB_NAME_USER_PROPERTY_FILE}\", please input the correct value."
+        parameter_name=$(grep -E '^[[:space:]]*[^#[:space:]]+.*="<youruser1>"' "${DB_NAME_USER_PROPERTY_FILE}" | awk -F'=' '{print $1}'  | tr -d ' ' | paste -sd ',' -)
+        error "Found invalid value(s) \"<youruser1>\" for parameter \"$parameter_name\" in property file \"${DB_NAME_USER_PROPERTY_FILE}\", please input the correct value."
         empty_value_tag=1
     fi
 
     ## --https://jsw.ibm.com/browse/DBACLD-158616 <- ## Check for missing "{Base64}<yourpassword>" placeholders in the user profile property file and display an error message if not provided.>
-    value_empty=`grep -v '^# .*.CHOS_DB_USER_NAME="{Base64}<yourpassword>"' "${DB_NAME_USER_PROPERTY_FILE}" | grep '="{Base64}<yourpassword>"' | wc -l`  >/dev/null 2>&1
+    value_empty=`grep -E '^[[:space:]]*[^#[:space:]]+.*="{Base64}<yourpassword>"' "${DB_NAME_USER_PROPERTY_FILE}" | wc -l`  >/dev/null 2>&1
     if [ $value_empty -ne 0 ] ; then
-        error "Found invalid value(s) \"{Base64}<yourpassword>\" in property file \"${DB_NAME_USER_PROPERTY_FILE}\", please input the correct value."
+        parameter_name=$(grep -E '^[[:space:]]*[^#[:space:]]+.*="{Base64}<yourpassword>"' "${DB_NAME_USER_PROPERTY_FILE}" | awk -F'=' '{print $1}'  | tr -d ' ' | paste -sd ',' -)
+        error "Found invalid value(s) \"{Base64}<yourpassword>\" for parameter \"$parameter_name\" in property file \"${DB_NAME_USER_PROPERTY_FILE}\", please input the correct value."
         empty_value_tag=1
     fi
 
-    value_empty=`grep '="<Required>"' "${LDAP_PROPERTY_FILE}" | wc -l`  >/dev/null 2>&1
-    if [ $value_empty -ne 0 ] ; then
-        error "Found invalid value(s) \"<Required>\" in property file \"${LDAP_PROPERTY_FILE}\", please input the correct value."
-        empty_value_tag=1
-    fi
-    ## --https://jsw.ibm.com/browse/DBACLD-158616 <- ## Check for missing "{Base64}<Required>" placeholders in the user profile property file and display an error message if not provided .>
-    value_empty=`grep '="{Base64}<Required>"' "${LDAP_PROPERTY_FILE}" | wc -l`  >/dev/null 2>&1
-    if [ $value_empty -ne 0 ] ; then
-        error "Found invalid value(s) \"{Base64}<Required>\" in property file \"${LDAP_PROPERTY_FILE}\", please input the correct value."
-        empty_value_tag=1
-    fi
+    # Check <Required> values for baw_LDAP.property 
+    check_required_values "<Required>" "${LDAP_PROPERTY_FILE}"
+    ## -- https://jsw.ibm.com/browse/DBACLD-172803 - We are now asking user to use {xor} for special characters in password for some parameters, so we need to check if the "{xor}<Required>" is not filled out.
+    check_required_values "{xor}<Required>" "${LDAP_PROPERTY_FILE}"
 
     if [[ $SET_EXT_LDAP == "Yes" ]]; then
-        value_empty=`grep '="<Required>"' "${EXTERNAL_LDAP_PROPERTY_FILE}" | wc -l`  >/dev/null 2>&1
-        if [ $value_empty -ne 0 ] ; then
-            error "Found invalid value(s) \"<Required>\" in property file \"${EXTERNAL_LDAP_PROPERTY_FILE}\", please input the correct value."
-            empty_value_tag=1
-        fi
+        check_required_values "<Required>" "${EXTERNAL_LDAP_PROPERTY_FILE}"
     fi
 
     # check prefix in db property is correct element of DB_SERVER_LIST
@@ -1805,18 +1274,18 @@ function check_property_file(){
             if [[ ${server_name:1:${#server_name}-2} =~ ^([0-9a-fA-F]{1,4}:).*[0-9a-fA-F]{1,4}$ ]]; then
                 # Regular expression to match IPv6 address format with square brackets
                 if [[ ! $server_name =~ ^\[(::|[0-9a-fA-F]{1,4}:.*(:[0-9a-fA-F]{1,4}))\]$ ]]; then
-                    error "the IPv6 address ${server_name} must be enclosed with square brackets ([...]) for the property DATABASE_SERVERNAME in the file \"${DB_SERVER_INFO_PROPERTY_FILE}\""
+                    error "The IPv6 address ${server_name} must be enclosed with square brackets ([...]) for the property DATABASE_SERVERNAME in the file \"${DB_SERVER_INFO_PROPERTY_FILE}\""
                     error_value_tag=1
                 fi
             elif [[ ${server_name:0:1} == "[" ]] ; then
                 # For IPv4 addresses, make sure they have not included brackets
-                error "the IPv4 address ${server_name} should NOT be enclosed with square brackets ([...]) for the property DATABASE_SERVERNAME in the file \"${DB_SERVER_INFO_PROPERTY_FILE}\""
+                error "The IPv4 address ${server_name} should NOT be enclosed with square brackets ([...]) for the property DATABASE_SERVERNAME in the file \"${DB_SERVER_INFO_PROPERTY_FILE}\""
                 error_value_tag=1
             fi
         else
             db_check=$(echo $db_type | tr '[:upper:]' '[:lower:]')
             if [[ $db_check != 'oracle' ]]; then
-                error "the value is NULL for the property DATABASE_SERVERNAME in the file \"${DB_SERVER_INFO_PROPERTY_FILE}\""
+                error "The value is NULL for the property DATABASE_SERVERNAME in the file \"${DB_SERVER_INFO_PROPERTY_FILE}\""
                 error_value_tag=1
             fi
         fi
@@ -1858,7 +1327,7 @@ function check_property_file(){
             if [[ ! -z $content_tmp_keystorepwd ]]; then
                 content_tmp_keystorepwd=$(sed -e 's/^"//' -e 's/"$//' <<<"$content_tmp_keystorepwd")
                 if [[ ${#content_tmp_keystorepwd} -lt 16 ]]; then
-                    fail "CONTENT.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled in cp4ba_user_profile.property."
+                    fail "CONTENT.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled in baw_user_profile.property."
                     error_value_tag=1
                 fi
             fi
@@ -1871,7 +1340,7 @@ function check_property_file(){
             if [[ ! -z $ban_tmp_keystorepwd ]]; then
                 ban_tmp_keystorepwd=$(sed -e 's/^"//' -e 's/"$//' <<<"$ban_tmp_keystorepwd")
                 if [[ ${#ban_tmp_keystorepwd} -lt 16 ]]; then
-                    fail "BAN.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled in cp4ba_user_profile.property."
+                    fail "BAN.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled in baw_user_profile.property."
                     error_value_tag=1
                 fi
             fi
@@ -1884,7 +1353,7 @@ function check_property_file(){
             if [[ ! -z $iccsap_tmp_keystorepwd ]]; then
                 iccsap_tmp_keystorepwd=$(sed -e 's/^"//' -e 's/"$//' <<<"$iccsap_tmp_keystorepwd")
                 if [[ ${#iccsap_tmp_keystorepwd} -lt 16 ]]; then
-                    fail "ICCSAP.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled in cp4ba_user_profile.property."
+                    fail "ICCSAP.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled in baw_user_profile.property."
                     error_value_tag=1
                 fi
             fi
@@ -1897,7 +1366,7 @@ function check_property_file(){
             if [[ ! -z $ier_tmp_keystorepwd ]]; then
                 ier_tmp_keystorepwd=$(sed -e 's/^"//' -e 's/"$//' <<<"$ier_tmp_keystorepwd")
                 if [[ ${#ier_tmp_keystorepwd} -lt 16 ]]; then
-                    fail "IER.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled in cp4ba_user_profile.property."
+                    fail "IER.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled in baw_user_profile.property."
                     error_value_tag=1
                 fi
             fi
@@ -1995,9 +1464,9 @@ function check_single_quotes_password() {
 
 function create_prerequisites() {
     rm -rf $SECRET_FILE_FOLDER
-    INFO "Generating YAML template for secret required by CP4BA deployment based on property file"
+    INFO "Generating YAML template for secret required by BAW deployment based on property file."
     printf "\n"
-    wait_msg "Creating YAML template for secret"
+    wait_msg "Creating YAML templates for secrets"
 
     if [[ ! ("${#pattern_cr_arr[@]}" -eq "1" && "${pattern_cr_arr[@]}" =~ "workflow-process-service" && $LDAP_WFPS_AUTHORING == "No") ]]; then
         # Create LDAP bind secret
@@ -2030,7 +1499,7 @@ function create_prerequisites() {
     # Create FNCM secret
     if [[ " ${pattern_cr_arr[@]}" =~ "workflow-runtime" || " ${pattern_cr_arr[@]}" =~ "workflow-authoring" || " ${pattern_cr_arr[@]}" =~ "workstreams" || " ${pattern_cr_arr[@]}" =~ "content" || " ${pattern_cr_arr[@]}" =~ "document_processing" || "${optional_component_cr_arr[@]}" =~ "ae_data_persistence" ]]; then
 
-        wait_msg "Creating ibm-fncm-secret secret YAML template for CP4BA"
+        wait_msg "Creating ibm-fncm-secret secret YAML template for BAW"
         # get server/instance for GCD
         tmp_gcd_db_servername="$(prop_db_name_user_property_file_for_server_name GCD_DB_USER_NAME)"
         tmp_gcd_db_servername=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_gcd_db_servername")
@@ -2293,10 +1762,10 @@ function create_prerequisites() {
         ${SED_COMMAND} '/^  osDBUsername/d' ${FNCM_SECRET_FILE}
         ${SED_COMMAND} '/^  osDBPassword/d' ${FNCM_SECRET_FILE}
 
-        success "Created ibm-fncm-secret secret YAML template for CP4BA\n"
+        success "ibm-fncm-secret secret YAML template for BAW has been created.\n"
         # If select ICCSAP
         if [[ " ${optional_component_cr_arr[@]} " =~ "iccsap" ]]; then
-            wait_msg "Creating ibm-iccsap-secret secret YAML template for CP4BA"
+            wait_msg "Creating ibm-iccsap-secret secret YAML template for BAW"
             create_fncm_iccsap_secret_template
 
             # replace keystorePassword for ICCSAP
@@ -2305,11 +1774,11 @@ function create_prerequisites() {
             # Function that updates the secret template with the base64 password
             update_secret_template_passwords "$tmp_dbuserpwd" "keystorePassword" "$FNCM_ICCSAP_SECRET_FILE"
 
-            success "Created ibm-iccsap-secret secret YAML template for CP4BA\n"
+            success "ibm-iccsap-secret secret YAML template for BAW has been created.\n"
         fi
         # If select ICC Archive
         if [[ " ${optional_component_cr_arr[@]} " =~ "css" ]]; then
-            wait_msg "Creating ibm-icc-secret secret YAML template for CP4BA"
+            wait_msg "Creating ibm-icc-secret secret YAML template for BAW"
             create_fncm_icc_secret_template
 
             # replace keystorePassword for ICCSAP
@@ -2320,12 +1789,12 @@ function create_prerequisites() {
             # For https://jsw.ibm.com/browse/DBACLD-157020
             # Function that updates the secret template with the base64 password
             update_secret_template_passwords "$tmp_archive_pwd" "archivePassword" "$FNCM_ICC_SECRET_FILE"
-            success "Created ibm-icc-secret secret YAML template for CP4BA\n"
+            success "ibm-icc-secret secret YAML template for BAW has been created.\n"
         fi
 
         # if select IER
         if [[ " ${optional_component_cr_arr[@]} " =~ "ier" ]]; then
-            wait_msg "Creating ibm-ier-secret secret YAML template for CP4BA"
+            wait_msg "Creating ibm-ier-secret secret YAML template for BAW"
             create_fncm_ier_secret_template
 
             # replace keystorePassword for IER
@@ -2334,14 +1803,14 @@ function create_prerequisites() {
             # Function that updates the secret template with the base64 password
             update_secret_template_passwords "$tmp_kestorepwd" "keystorePassword" "$FNCM_IER_SECRET_FILE"
 
-            success "Created ibm-ier-secret secret YAML template for CP4BA\n"
+            success "ibm-ier-secret secret YAML template for BAW has been created.\n"
         fi
     fi
 
     # Create BAN secret
     if [[ " ${foundation_component_arr[@]}" =~ "BAN" ]]; then
         if [[ ! (" ${pattern_cr_arr[@]} " =~ "workstreams" && "${#pattern_cr_arr[@]}" -eq "1") ]]; then
-            wait_msg "Creating ibm-ban-secret secret YAML template for CP4BA"
+            wait_msg "Creating ibm-ban-secret secret YAML template for BAW"
 
             # get server/instance for ICN
             tmp_dbservername="$(prop_db_name_user_property_file_for_server_name ICN_DB_USER_NAME)"
@@ -2412,15 +1881,22 @@ function create_prerequisites() {
                 # Function that updates the secret template with the base64 password
                 update_secret_template_passwords $tmp_dbuserpwd "navigatorDBPassword" "$BAN_SECRET_FILE"
             fi
-            success "Created ibm-ban-secret secret YAML template for CP4BA\n"
+            success "ibm-ban-secret secret YAML template for BAW has been created.\n"
         fi
     fi
     # create DPE DB secret
     if [[ " ${pattern_cr_arr[@]}" =~ "document_processing" ]]; then
         # get server/instance for DPE
         tmp_dbservername="$(prop_db_name_user_property_file_for_server_name ADP_BASE_DB_USER_NAME)"
+        tmp_dbservername=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbservername")
         check_dbserver_name_valid $tmp_dbservername "ADP_BASE_DB_USER_NAME"
-        if [[ $DB_TYPE != "oracle" ]]; then
+
+        # get db type for the db server
+        tmp_dbtype="$(prop_db_server_property_file $tmp_dbservername.DATABASE_TYPE)"
+        tmp_dbtype=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbtype")
+        tmp_dbtype=$(echo $tmp_dbtype | tr '[:upper:]' '[:lower:]')
+
+        if [[ $tmp_dbtype != "oracle" ]]; then
             tmp_dbname="$(prop_db_name_user_property_file ADP_BASE_DB_NAME)"
         else
             tmp_dbname="$(prop_db_name_user_property_file ADP_BASE_DB_USER_NAME)"
@@ -2430,7 +1906,7 @@ function create_prerequisites() {
         create_aca_db_secret_template
 
         # create ibm-adp-secret
-        create_adp_secret_template
+        create_adp_secret_template "$tmp_dbservername" 
 
         # replace serviceUser/servicePwd for ADP
         tmp_username="$(prop_user_profile_property_file ADP.SERVICE_USER_NAME)"
@@ -2465,31 +1941,36 @@ function create_prerequisites() {
         update_secret_template_passwords "$tmp_userpwd" "envOwnerPwd" "$ADP_SECRET_FILE"
         
 
-        # Applying user profile for ibm-adp-secret
-        tmp_mongo_flag="$(prop_user_profile_property_file ADP.USE_EXTERNAL_MONGODB)"
-        tmp_mongo_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_mongo_flag")
-        if [[ $tmp_mongo_flag == "Yes" || $tmp_mongo_flag == "YES" || $tmp_mongo_flag == "Y" || $tmp_mongo_flag == "True" || $tmp_mongo_flag == "true" ]]; then
-            # replace mongoUri/mongoUser/mongoPwd for ADP
-            tmp_mongo_uri="$(prop_user_profile_property_file ADP.EXTERNAL_MONGO_URI)"
-            tmp_username="$(prop_user_profile_property_file ADP.MONGO_USER_NAME)"
-            tmp_userpwd="$(prop_user_profile_property_file ADP.MONGO_USER_PASSWORD)"
-            ${YQ_CMD} w -i ${ADP_SECRET_FILE} stringData.mongoUri "$tmp_mongo_uri"
-            # ${SED_COMMAND} "s|# mongoUri:.*|mongoUri: \"$tmp_mongo_uri\"|g" ${ADP_SECRET_FILE}
-            ${YQ_CMD} w -i ${ADP_SECRET_FILE} stringData.mongoUser "$tmp_username"
-            # For https://jsw.ibm.com/browse/DBACLD-157020
-            # Function that updates the secret template with the base64 password
-            update_secret_template_passwords "$tmp_userpwd" "mongoPwd" "$ADP_SECRET_FILE" "mongoPwd"
-            ${SED_COMMAND} "s|'\"|\"|g" ${ADP_SECRET_FILE}
-            ${SED_COMMAND} "s|\"'|\"|g" ${ADP_SECRET_FILE}
-        # Using YQ to update the fields removes the commented section of the mongo parameters. Hence adding it back when mongo flag is no , if the mongo flag is yes this is not needed and the script will fill the template accordingly 
+        ### <https://jsw.ibm.com/browse/DBACLD-168161> - Added new section for ADP Gitgateway database username and password with base64 password
+        # replace adpggDBUsername/adpggDBPassword for ADPGG
+        tmp_username="$(prop_db_name_user_property_file ADP_GG_DB_USER_NAME)"
+        tmp_userpwd="$(prop_db_name_user_property_file ADP_GG_DB_USER_PASSWORD)"
+        ${YQ_CMD} w -i "${ADP_SECRET_FILE}" "stringData.adpggDBUsername" "$tmp_username"
+
+        # Get DB server for ADP GG
+        tmp_dbservername="$(prop_db_name_user_property_file_for_server_name ADP_GG_DB_USER_NAME)"
+        tmp_dbservername=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbservername")
+        check_dbserver_name_valid $tmp_dbservername "ADP_GG_DB_USER_NAME"
+
+        # Get DB type for ADP GG
+        tmp_dbtype="$(prop_db_server_property_file $tmp_dbservername.DATABASE_TYPE)"
+        tmp_dbtype=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbtype")
+        tmp_dbtype=$(echo $tmp_dbtype | tr '[:upper:]' '[:lower:]')
+
+        # Get PostgreSQL POSTGRESQL_SSL_CLIENT_SERVER
+        if [[ $tmp_dbtype == "postgresql" ]]; then
+            tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_db_server_property_file $tmp_dbservername.POSTGRESQL_SSL_CLIENT_SERVER)")
+            tmp_adpgg_postgresql_client_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
         else
-            ${SED_COMMAND} "/envOwnerUser:/a\\
-  # If you want to use your own Enterprise MongoDB instance in the environment,\\
-  # you must also include the mongoURI and your Mongo user and password values in the secret\\
-  # mongoUri: \"mongodb://mongo:<mongoPwd>@<mongo_database_hostname>:<mongo_database_port>/<mongo_database_name>?authSource=admin&connectTimeoutMS=3000\"\\
-  # mongoUser: \"<MONGO_USER>\"\\
-  # mongoPwd: \"<MONGO_PASSWORD>\"
-" "$ADP_SECRET_FILE"
+            tmp_adpgg_postgresql_client_flag="true"
+        fi
+
+        # when POSTGRESQL_SSL_CLIENT_SERVER is true, remove pwd from secret
+        if [[ $tmp_adpgg_postgresql_client_flag == "true" || $tmp_adpgg_postgresql_client_flag == "yes" || $tmp_adpgg_postgresql_client_flag == "y" ]]; then
+            ${SED_COMMAND} '/^[[:space:]]*adpggDBPassword/d' ${ADP_SECRET_FILE}
+        else
+            # Function that updates the secret template with the base64 password
+            update_secret_template_passwords "$tmp_userpwd" "adpggDBPassword" "$ADP_SECRET_FILE"
         fi
 
         if [[ " ${pattern_cr_arr[@]}" =~ "document_processing_designer" ]]; then
@@ -2943,24 +2424,82 @@ function create_prerequisites() {
             update_secret_template_passwords "$tmp_dbuserpwd" "password" "$BAW_AWS_SECRET_FILE"
         fi
     fi
+    
+    
+    # -- <https://jsw.ibm.com/browse/DBACLD-147652> [Story] - Create ads secret for DecisionDesigner and DecisionRuntime for external postgres db
+    ## -- <https://jsw.ibm.com/browse/DBACLD-153348> [Story] - Migration from Mongo to Postgres-edb for ADS
+    ### -- <https://jsw.ibm.com/browse/DBACLD-168160> [Bug] - Fixes issue with password not encoded in base64 and in data section. Combined the above two stories, since the two scenarios runs the exact same code.
+    # create ads secret for DecisionDesigner and DecisionRuntime
+    if [[ "${pattern_cr_arr[@]}" =~ "decisions_ads" ]]; then
+        # create secret for ADS Designer
+        if [[ "${optional_component_cr_arr[@]}" =~ "ads_designer" ]]; then
+            # get server/instance for ADS Designer
+            tmp_dbservername="$(prop_db_name_user_property_file_for_server_name ADS_DESIGNER_DB_NAME)"
+            tmp_dbservername=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbservername")
+            check_dbserver_name_valid $tmp_dbservername "ADS_DESIGNER_DB_NAME"
 
-    # create ads secret
-    if [[ " ${pattern_cr_arr[@]}" =~ "decisions_ads" ]]; then
-        tmp_mongo_flag="$(prop_user_profile_property_file ADS.USE_EXTERNAL_MONGODB)"
-        tmp_mongo_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_mongo_flag")
-        if [[ $tmp_mongo_flag == "Yes" || $tmp_mongo_flag == "YES" || $tmp_mongo_flag == "Y" || $tmp_mongo_flag == "True" || $tmp_mongo_flag == "true" ]]; then
-            create_ads_secret_template
-            # replace gitMongoUri/mongoHistoryUri/runtimeMongoUri for ADS
-            tmp_uri="$(prop_user_profile_property_file ADS.EXTERNAL_GIT_MONGO_URI)"
-            ${YQ_CMD} w -i ${ADS_SECRET_FILE} stringData.gitMongoUri "$tmp_uri"
-            tmp_uri="$(prop_user_profile_property_file ADS.EXTERNAL_MONGO_URI)"
-            ${YQ_CMD} w -i ${ADS_SECRET_FILE} stringData.mongoUri "$tmp_uri"
-            tmp_uri="$(prop_user_profile_property_file ADS.EXTERNAL_MONGO_HISTORY_URI)"
-            ${YQ_CMD} w -i ${ADS_SECRET_FILE} stringData.mongoHistoryUri "$tmp_uri"
-            tmp_uri="$(prop_user_profile_property_file ADS.EXTERNAL_RUNTIME_MONGO_URI)"
-            ${YQ_CMD} w -i ${ADS_SECRET_FILE} stringData.runtimeMongoUri "$tmp_uri"
-            ${SED_COMMAND} "s|'\"|\"|g" ${ADS_SECRET_FILE}
-            ${SED_COMMAND} "s|\"'|\"|g" ${ADS_SECRET_FILE}
+            # Get DB type for ADS Designer
+            tmp_dbtype="$(prop_db_server_property_file $tmp_dbservername.DATABASE_TYPE)"
+            tmp_dbtype=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbtype")
+            tmp_dbtype=$(echo $tmp_dbtype | tr '[:upper:]' '[:lower:]')
+
+            tmp_dbname="$(prop_db_name_user_property_file ADS_DESIGNER_DB_NAME)"
+            tmp_dbuser="$(prop_db_name_user_property_file ADS_DESIGNER_DB_USER_NAME)"
+            tmp_dbpass="$(prop_db_name_user_property_file ADS_DESIGNER_DB_USER_PASSWORD)"
+
+            create_ads_decisiondesigner_secret_template $tmp_dbname $tmp_dbservername
+            ${YQ_CMD} w -i ${ADS_DESIGNER_FILE} stringData.username "$tmp_dbuser"
+
+            # Get PostgreSQL POSTGRESQL_SSL_CLIENT_SERVER
+            if [[ $tmp_dbtype == "postgresql" ]]; then
+                tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_db_server_property_file $tmp_dbservername.POSTGRESQL_SSL_CLIENT_SERVER)")
+                tmp_postgresql_client_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
+            else
+                tmp_postgresql_client_flag="true"
+            fi
+
+            # when POSTGRESQL_SSL_CLIENT_SERVER is true, remove pwd from secret
+            if [[ $tmp_postgresql_client_flag == "true" || $tmp_postgresql_client_flag == "yes" || $tmp_postgresql_client_flag == "y" ]]; then
+                ${SED_COMMAND} '/^[[:space:]]*password/d' ${ADS_DESIGNER_FILE}
+            else
+                # Function that updates the secret template with the base64 password
+                update_secret_template_passwords "$tmp_dbpass" "password" "$ADS_DESIGNER_FILE"
+            fi
+        fi
+        # create secret for ADS Runtime
+        if [[ "${optional_component_cr_arr[@]}" =~ "ads_runtime" ]]; then
+            # get server/instance for ADS Runtime
+            tmp_dbservername="$(prop_db_name_user_property_file_for_server_name ADS_RUNTIME_DB_NAME)"
+            tmp_dbservername=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbservername")
+            check_dbserver_name_valid $tmp_dbservername "ADS_RUNTIME_DB_NAME"
+
+            # Get DB type for ADS Runtime
+            tmp_dbtype="$(prop_db_server_property_file $tmp_dbservername.DATABASE_TYPE)"
+            tmp_dbtype=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbtype")
+            tmp_dbtype=$(echo $tmp_dbtype | tr '[:upper:]' '[:lower:]')
+
+            tmp_dbname="$(prop_db_name_user_property_file ADS_RUNTIME_DB_NAME)"
+            tmp_dbuser="$(prop_db_name_user_property_file ADS_RUNTIME_DB_USER_NAME)"
+            tmp_dbpass="$(prop_db_name_user_property_file ADS_RUNTIME_DB_USER_PASSWORD)"
+
+            create_ads_decisionruntime_secret_template $tmp_dbname $tmp_dbservername
+            ${YQ_CMD} w -i ${ADS_RUNTIME_FILE} stringData.username "$tmp_dbuser"
+
+            # Get PostgreSQL POSTGRESQL_SSL_CLIENT_SERVER
+            if [[ $tmp_dbtype == "postgresql" ]]; then
+                tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_db_server_property_file $tmp_dbservername.POSTGRESQL_SSL_CLIENT_SERVER)")
+                tmp_postgresql_client_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
+            else
+                tmp_postgresql_client_flag="true"
+            fi
+
+            # when POSTGRESQL_SSL_CLIENT_SERVER is true, remove pwd from secret
+            if [[ $tmp_postgresql_client_flag == "true" || $tmp_postgresql_client_flag == "yes" || $tmp_postgresql_client_flag == "y" ]]; then
+                ${SED_COMMAND} '/^[[:space:]]*password/d' ${ADS_RUNTIME_FILE}
+            else
+                # Function that updates the secret template with the base64 password
+                update_secret_template_passwords "$tmp_dbpass" "password" "$ADS_RUNTIME_FILE"
+            fi
         fi
     fi
 
@@ -3062,7 +2601,7 @@ function create_prerequisites() {
                 break
                 ;;
             *)
-                fail "LDAP_SSL_ENABLED is not valid value in the \"cp4ba_LDAP.property\"! Exiting ..."
+                fail "LDAP_SSL_ENABLED is not valid value in the \"baw_LDAP.property\"! Exiting ..."
                 exit 1
                 ;;
             esac
@@ -3387,13 +2926,14 @@ function create_prerequisites() {
         msgB "* You have enabled BTS metastore external Postgres DB, please get \"<your-server-certification: root.crt>\" \"<your-client-certification: client.crt>\" \"<your-client-key: client.key>\" from your local or remote database server \"$im_external_db_host_name\", and copy them into folder \"$im_external_db_cert_folder\" before you create the secret for PostgreSQL database SSL"
     fi
 
-    msgB "* You can use this shell script to create the secret automatically (NOTE: In case separation of operators and operands is selected - SWITCH TO CP4BA DEPLOYMENT PROJECT): $CREATE_SECRET_SCRIPT_FILE"
-    msgB "* Create the databases and Kubernetes secrets manually based on your modified \"DB SQL statement file\" and \"YAML template for secret\".\n* And then run the  \"cp4a-prerequisites.sh -m validate\" command to verify that the databases and secrets are created correctly"
-    # msgB "And then run cp4a-prerequisites.sh -m validate script to validate prerequisites"
+    msgB "* You can use this shell script to create the secret automatically (NOTE: In case separation of operators and operands is selected - SWITCH TO BAW DEPLOYMENT PROJECT): $CREATE_SECRET_SCRIPT_FILE"
+    msgB "* Create the databases and Kubernetes secrets manually based on your modified \"DB SQL statement file\" and \"YAML template for secret\".\n* And then run the  \"baw-prerequisites.sh -m validate -n <namespace>\" command to verify that the databases and secrets are created correctly"
+    # msgB "And then run baw-prerequisites.sh -m validate script to validate prerequisites"
 }
 
 function create_temp_property_file(){
     # Convert pattern array to pattern list by common
+
     delim=""
     pattern_joined=""
     for item in "${PATTERNS_CR_SELECTED[@]}"; do
@@ -3575,10 +3115,10 @@ function create_property_file(){
 
     > ${DB_SERVER_INFO_PROPERTY_FILE}
     if (( db_server_number > 0 )); then
-    INFO "Creating database and LDAP property files for CP4BA"
+    INFO "Creating database and LDAP property files for BAW."
 
 
-    wait_msg "Creating DB Server property file for CP4BA"
+    wait_msg "Creating DB Server property file for BAW"
     # Assumption: all FNCM DB use same database server in phase1
     # > ${DB_SERVER_INFO_PROPERTY_FILE}
 
@@ -3618,7 +3158,7 @@ function create_property_file(){
         echo "####################################################" >> ${DB_SERVER_INFO_PROPERTY_FILE}
 
         for i in "${!GCDDB_COMMON_PROPERTY[@]}"; do
-            if [[ ($DB_TYPE == "db2" || $DB_TYPE == "db2HADR") && ${GCDDB_COMMON_PROPERTY[i]} != "GCD_DB_NAME" && ${GCDDB_COMMON_PROPERTY[i]} != "GCD_DB_USER_NAME" && ${GCDDB_COMMON_PROPERTY[i]} != "ORACLE_JDBC_URL" ]]; then
+            if [[ ($DB_TYPE == "db2"*) && ${GCDDB_COMMON_PROPERTY[i]} != "GCD_DB_NAME" && ${GCDDB_COMMON_PROPERTY[i]} != "GCD_DB_USER_NAME" && ${GCDDB_COMMON_PROPERTY[i]} != "ORACLE_JDBC_URL" ]]; then
                 echo "${GCDDB_PROPERTY_COMMENTS[i]}" >> ${DB_SERVER_INFO_PROPERTY_FILE}
                 echo "$item.${GCDDB_COMMON_PROPERTY[i]}=\"\"" >> ${DB_SERVER_INFO_PROPERTY_FILE}
                 echo "" >> "${DB_SERVER_INFO_PROPERTY_FILE}"
@@ -3633,13 +3173,22 @@ function create_property_file(){
             fi
         done
         # set default value
-        ${SED_COMMAND} "s|$item.DATABASE_TYPE=\"\"|$item.DATABASE_TYPE=\"${DB_TYPE}\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
+        # For db2HADR we are using this variable DB_TYPE in lowercase in the script but want to make sure in the property file it is db2HADR hence the special condition
+        if [[ $DB_TYPE == "db2hadr" ]]; then
+            ${SED_COMMAND} "s|$item.DATABASE_TYPE=\"\"|$item.DATABASE_TYPE=\""db2HADR"\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
+        # For db2rdsHADR we are using this variable DB_TYPE in lowercase in the script but want to make sure in the property file it is db2rdsHADR hence the special condition
+        # For DBACLD-163779
+        elif [[ $DB_TYPE == "db2rdshadr" ]]; then
+            ${SED_COMMAND} "s|$item.DATABASE_TYPE=\"\"|$item.DATABASE_TYPE=\""db2rdsHADR"\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
+        else
+            ${SED_COMMAND} "s|$item.DATABASE_TYPE=\"\"|$item.DATABASE_TYPE=\"${DB_TYPE}\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
+        fi
         ${SED_COMMAND} "s|$item.DATABASE_SSL_CERT_FILE_FOLDER=\"\"|$item.DATABASE_SSL_CERT_FILE_FOLDER=\"${DB_SSL_CERT_FOLDER}/$item\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
         ${SED_COMMAND} "s|<DB_SSL_CERT_FOLDER>|${DB_SSL_CERT_FOLDER}/$item|g" ${DB_SERVER_INFO_PROPERTY_FILE}
         ${SED_COMMAND} "s|$item.DATABASE_SSL_ENABLE=\"\"|$item.DATABASE_SSL_ENABLE=\"True\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
         ${SED_COMMAND} "s|$item.DATABASE_SSL_SECRET_NAME=\"\"|$item.DATABASE_SSL_SECRET_NAME=\"ibm-cp4ba-db-ssl-secret-for-${item_tmp}\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
 
-        # set default value for PostgreSQL EDB
+        # set default value for EDB Postgres
         if [[ $DB_TYPE == "postgresql-edb" ]]; then
             ${SED_COMMAND} "s|$item.DATABASE_SSL_SECRET_NAME=\"ibm-cp4ba-db-ssl-secret-for-${item_tmp}\"|$item.DATABASE_SSL_SECRET_NAME=\"\{{ meta.name }}-pg-client-cert-secret\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
             ${SED_COMMAND} "s|$item.DATABASE_SERVERNAME=\"\"|$item.DATABASE_SERVERNAME=\"postgres-cp4ba-rw.{{ meta.namespace }}.svc\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
@@ -3762,12 +3311,12 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
             fi
         fi
     done
-    success "Created the DB Server property file for CP4BA\n"
+    success "DB Server property file for BAW has been created.\n"
     fi
 
     > ${LDAP_PROPERTY_FILE}
     if [[ ! ("${#pattern_cr_arr[@]}" -eq "1" && "${pattern_cr_arr[@]}" =~ "workflow-process-service" && $LDAP_WFPS_AUTHORING == "No") ]]; then
-        wait_msg "Creating LDAP Server property file for CP4BA"
+        wait_msg "Creating LDAP Server property file for BAW"
 
         tip="## Property file for ${LDAP_TYPE} ##"
 
@@ -3818,11 +3367,11 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
             ${SED_COMMAND} "s|LC_USER_FILTER=\"\"|LC_USER_FILTER=\"(\&(cn=%v)(objectclass=person))\"|g" ${LDAP_PROPERTY_FILE}
             ${SED_COMMAND} "s|LC_GROUP_FILTER=\"\"|LC_GROUP_FILTER=\"(\&(cn=%v)(\|(objectclass=groupofnames)(objectclass=groupofuniquenames)(objectclass=groupofurls)))\"|g" ${LDAP_PROPERTY_FILE}
         fi
-        success "Created the LDAP Server property file for CP4BA\n"
+        success "LDAP Server property file for BAW has been created.\n"
     fi
     # Create external LDAP property file
     if [[ $SET_EXT_LDAP == "Yes" ]]; then
-        wait_msg "Creating external LDAP property file for CP4BA"
+        wait_msg "Creating external LDAP property file for BAW"
         mkdir -p $EXT_LDAP_SSL_CERT_FOLDER >/dev/null 2>&1
         > ${EXTERNAL_LDAP_PROPERTY_FILE}
         tip="## Property file for External LDAP ##"
@@ -3874,7 +3423,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
             ${SED_COMMAND} "s|LC_USER_FILTER=\"\"|LC_USER_FILTER=\"(\&(cn=%v)(objectclass=person))\"|g" ${EXTERNAL_LDAP_PROPERTY_FILE}
             ${SED_COMMAND} "s|LC_GROUP_FILTER=\"\"|LC_GROUP_FILTER=\"(\&(cn=%v)(\|(objectclass=groupofnames)(objectclass=groupofuniquenames)(objectclass=groupofurls)))\"|g" ${EXTERNAL_LDAP_PROPERTY_FILE}
         fi
-        success "Created the external LDAP property file for CP4BA\n"
+        success "External LDAP property file for BAW has been created.\n"
     else
         rm -rf ${EXTERNAL_LDAP_PROPERTY_FILE} >/dev/null 2>&1
     fi
@@ -3883,13 +3432,14 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
     > ${DB_NAME_USER_PROPERTY_FILE}
     if (( db_server_number > 0 )); then
     # create property file for database name and user
-    INFO "Creating property file for database name and user required by CP4BA"
+    INFO "Creating property file for database name and user required by BAW"
     # > ${DB_NAME_USER_PROPERTY_FILE}
         if (( db_server_number > 1 )); then
-        echo "==================================================================================================================" >> ${DB_NAME_USER_PROPERTY_FILE}
-        echo "NOTES: Please change the \"$DB_SERVER_PREFIX\" variable to assign each database to a database server or instance." >> ${DB_NAME_USER_PROPERTY_FILE}
-        echo "       The \"$DB_SERVER_PREFIX\" must be in [${db_server_array[*]}]" >> ${DB_NAME_USER_PROPERTY_FILE}
-        echo "==================================================================================================================" >> ${DB_NAME_USER_PROPERTY_FILE}
+        tip="## NOTES: Please change the \"$DB_SERVER_PREFIX\" variable to assign each database to a database server or instance. ##\n"
+        tip+="##        The \"$DB_SERVER_PREFIX\" must be in [${db_server_array[*]}] ##"
+        echo "#################################################################################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+        echo -e "$tip" >> "$DB_NAME_USER_PROPERTY_FILE"
+        echo "################################################################################################################# " >> ${DB_NAME_USER_PROPERTY_FILE}
         echo "" >> ${DB_NAME_USER_PROPERTY_FILE}
         fi
     fi
@@ -3899,8 +3449,8 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         DB_SERVER_PREFIX="${db_server_array[0]}"
     fi
 
-    # Add global property into user_profile for CP4BA
-    tip="##           USER Property for CP4BA               ##"
+    # Add global property into user_profile for BAW
+    tip="##           USER Property for BAW               ##"
     echo "####################################################" >> ${USER_PROFILE_PROPERTY_FILE}
     echo $tip >> ${USER_PROFILE_PROPERTY_FILE}
     echo "####################################################" >> ${USER_PROFILE_PROPERTY_FILE}
@@ -3938,23 +3488,23 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
     echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
     echo "## Enable/disable FIPS mode for the deployment (default value is \"false\")." >> ${USER_PROFILE_PROPERTY_FILE}
-    echo "## Note: If set as \"true\", in order to complete enablement of FIPS for CP4BA, please refer to \"FIPS wall\" configuration in IBM documentation." >> ${USER_PROFILE_PROPERTY_FILE}
+    echo "## Note: If set as \"true\", in order to complete enablement of FIPS for BAW, please refer to \"FIPS wall\" configuration in IBM documentation." >> ${USER_PROFILE_PROPERTY_FILE}
     echo "CP4BA.ENABLE_FIPS=\"$FIPS_ENABLED\"" >> ${USER_PROFILE_PROPERTY_FILE}
     echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
     echo "## Enable or disable egress access to external systems." >> ${USER_PROFILE_PROPERTY_FILE}
     echo "## true: All CP4A pods will not have access any external systems unless custom, curated egress network policy or polices with specific 'matchLabels' are created. Please refer to documentation for more detail." >> ${USER_PROFILE_PROPERTY_FILE}
     echo "## false: All CP4A pods will have unrestricted network access to external systems." >> ${USER_PROFILE_PROPERTY_FILE}
-    echo "CP4BA.ENABLE_RESTRICTED_INTERNET_ACCESS=\"$RESTRICTED_INTERNET_ACCESS\"" >> ${USER_PROFILE_PROPERTY_FILE}
+    echo "CP4BA.ENABLE_GENERATE_SAMPLE_NETWORK_POLICIES=\"$GENERATE_SAMPLE_NETWORK_POLICIES\"" >> ${USER_PROFILE_PROPERTY_FILE}
     echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
     if [[ $EXTERNAL_POSTGRESDB_FOR_IM == "true" ]]; then
         rm -rf $IM_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         mkdir -p $IM_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         echo "## Configuration for external Postgres DB as IM metastore DB." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## YOU NEED TO CREATE THIS POSTGRES DB BY YOURSELF FISTLY BEFORE APPLY CP4BA CUSTOM RESOURCE." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "## YOU NEED TO CREATE THIS POSTGRES DB BY YOURSELF FISTLY BEFORE APPLY BAW CUSTOM RESOURCE." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "## NOTES: " >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "##   YOU NEED TO CREATE THIS POSTGRES DB BY YOURSELF FISTLY BEFORE APPLY CP4BA CUSTOM RESOURCE." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "##   YOU NEED TO CREATE THIS POSTGRES DB BY YOURSELF FISTLY BEFORE APPLY BAW CUSTOM RESOURCE." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "##   1. Postgres version is 14.7 or higher and 16.x." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "##   2. Client certificate based authentication is configured on the DB server." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "##   3. Client certificate rotation is managed by the customer." >> ${USER_PROFILE_PROPERTY_FILE}
@@ -3991,9 +3541,9 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         rm -rf $ZEN_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         mkdir -p $ZEN_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         echo "## Configuration for external Postgres DB as Zen metastore DB." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## YOU NEED TO CREATE THIS POSTGRES DB BY YOURSELF FISTLY BEFORE APPLY CP4BA CUSTOM RESOURCE." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "## YOU NEED TO CREATE THIS POSTGRES DB BY YOURSELF FISTLY BEFORE APPLY BAW CUSTOM RESOURCE." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "## NOTES: " >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "##   YOU NEED TO CREATE THIS POSTGRES DB BY YOURSELF FISTLY BEFORE APPLY CP4BA CUSTOM RESOURCE." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "##   YOU NEED TO CREATE THIS POSTGRES DB BY YOURSELF FISTLY BEFORE APPLY BAW CUSTOM RESOURCE." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "##   1. Postgres version is 14.7 or higher and 16.x." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "##   2. Client certificate based authentication is configured on the DB server." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "##   3. Client certificate rotation is managed by the customer." >> ${USER_PROFILE_PROPERTY_FILE}
@@ -4049,9 +3599,9 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         rm -rf $BTS_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         mkdir -p $BTS_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         echo "## Configuration for external Postgres DB as BTS metastore DB." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## YOU NEED TO CREATE THIS POSTGRES DB BY YOURSELF FISTLY BEFORE APPLY CP4BA CUSTOM RESOURCE." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "## YOU NEED TO CREATE THIS POSTGRES DB BY YOURSELF FISTLY BEFORE APPLY BAW CUSTOM RESOURCE." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "## NOTES: " >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "##   YOU NEED TO CREATE THIS POSTGRES DB BY YOURSELF FISTLY BEFORE APPLY CP4BA CUSTOM RESOURCE." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "##   YOU NEED TO CREATE THIS POSTGRES DB BY YOURSELF FISTLY BEFORE APPLY BAW CUSTOM RESOURCE." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "##   1. Postgres version is 14.7 or higher and 16.x." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "##   2. Client certificate based authentication is configured on the DB server." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "##   3. Client certificate rotation is managed by the customer." >> ${USER_PROFILE_PROPERTY_FILE}
@@ -4092,7 +3642,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
     # Create DBNAME/DBUSER property file for GCDDB
     if [[ " ${pattern_cr_arr[@]}" =~ "workflow-runtime" || " ${pattern_cr_arr[@]}" =~ "workflow-authoring" || " ${pattern_cr_arr[@]}" =~ "workstreams" || " ${pattern_cr_arr[@]}" =~ "content" || " ${pattern_cr_arr[@]}" =~ "document_processing" || "${optional_component_cr_arr[@]}" =~ "ae_data_persistence" ]]; then
         wait_msg "Creating Property file for IBM FileNet Content Manager GCD"
-        tip="## FNCM's Property for GCD Database Name and User on ${DB_TYPE} type database ##"
+        tip="## Property for FNCM's GCD Database Name and User on ${DB_TYPE} type database ##"
         echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
         echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
         echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4108,13 +3658,13 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 fi
                 # if [[ $DB_TYPE == "db2" || $DB_TYPE == "postgresql" ]]; then
                 echo "## Provide database schema name. This parameter is optional. If not set, the schema name is the same as database user name." >> ${DB_NAME_USER_PROPERTY_FILE}
-                if [[ $DB_TYPE == "db2"  ]]; then
+                if [[ $DB_TYPE == "db2"* ]]; then
                     echo "## For DB2, the schema name is case-sensitive, and must be specified in uppercase characters." >> ${DB_NAME_USER_PROPERTY_FILE}
                 fi
                 echo "$DB_SERVER_PREFIX.GCD_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 # fi
             else
-                echo "## The designated name of the database on the PostgreSQL EDB for the GCD of P8Domain. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated name of the database on the EDB Postgres for the GCD of P8Domain. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.GCD_DB_NAME=\"gcddb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             fi
         fi
@@ -4124,7 +3674,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 echo "## Provide the user name of the database for the GCD of P8Domain. For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.GCD_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             else
-                echo "## The designated user name of the database on the PostgreSQL EDB for the GCD of P8Domain. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated user name of the database on the EDB Postgres for the GCD of P8Domain. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.GCD_DB_USER_NAME=\"gcduser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             fi
         else
@@ -4161,18 +3711,18 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
         # ltpaPassword/keystorePassword for FNCM
         echo "## Provide a string for ltpaPassword in the ibm-fncm-secret that will be used when creating the ltpakey." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## If password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text. (NOTES: CONTENT.LTPA_PASSWORD must same as BAN.LTPA_PASSWORD)" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "CONTENT.LTPA_PASSWORD=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "## If password has special characters then xor encoded with {xor} prefix, otherwise use plain text. (NOTES: CONTENT.LTPA_PASSWORD must match BAN.LTPA_PASSWORD)" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "CONTENT.LTPA_PASSWORD=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "## Provide a string for keystorePassword in the ibm-fncm-secret that will be used when creating the keystore." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## If password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text. (NOTES: CONTENT.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled.)" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "CONTENT.KEYSTORE_PASSWORD=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "## If password has special characters then xor encoded with {xor} prefix, otherwise use plain text. (NOTES: CONTENT.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled.)" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "CONTENT.KEYSTORE_PASSWORD=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
         # If select ICCSAP, add keystorePassword
         if [[ " ${optional_component_cr_arr[@]} " =~ "iccsap" ]]; then
             echo "## Provide a string for keystorePassword in the ibm-iccsap-secret that will be used when creating the keystore." >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "## If password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text. (NOTES: ICCSAP.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled.)" >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "ICCSAP.KEYSTORE_PASSWORD=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "## If password has special characters then xor encoded with {xor} prefix, otherwise use plain text. (NOTES: ICCSAP.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled.)" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "ICCSAP.KEYSTORE_PASSWORD=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
             echo "" >> ${USER_PROFILE_PROPERTY_FILE}
         fi
         # If select ICC Archive, add ARCHIVE_USERID/ARCHIVE_PASSWORD
@@ -4189,8 +3739,8 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         # if select IER
         if [[ " ${optional_component_cr_arr[@]} " =~ "ier" ]]; then
             echo "## Provide a string for keystorePassword in the ibm-ier-secret that will be used when creating the keystore." >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "## If password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text. (NOTES: IER.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled.)" >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "IER.KEYSTORE_PASSWORD=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "## If password has special characters then xor encoded with {xor} prefix, otherwise use plain text. (NOTES: IER.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled.)" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "IER.KEYSTORE_PASSWORD=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
             echo "" >> ${USER_PROFILE_PROPERTY_FILE}
         fi
 
@@ -4225,7 +3775,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
 
             # property for oc_cpe_obj_store_workflow_data_tbl_space
             echo "## Specify a table space for the workflow data." >> ${USER_PROFILE_PROPERTY_FILE}
-            if [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+            if [[ $DB_TYPE == "db2"* ]]; then
                 echo "CONTENT_INITIALIZATION.CPE_OBJ_STORE_WORKFLOW_DATA_TBL_SPACE=\"VWDATA_TS\"" >> ${USER_PROFILE_PROPERTY_FILE}
             elif [[ $DB_TYPE == "sqlserver" ]]; then
                 echo "CONTENT_INITIALIZATION.CPE_OBJ_STORE_WORKFLOW_DATA_TBL_SPACE=\"PRIMARY\"" >> ${USER_PROFILE_PROPERTY_FILE}
@@ -4251,13 +3801,13 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
             echo "CONTENT_INITIALIZATION.CPE_OBJ_STORE_WORKFLOW_PE_CONN_POINT_NAME=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
             echo "" >> ${USER_PROFILE_PROPERTY_FILE}
         fi
-        success "Created Property file for IBM FileNet Content Manager GCD\n"
+        success "Property file for IBM FileNet Content Manager GCD has been created.\n"
 
         # Create DBNAME/DBUSER property file for Object store
         if [[ " ${pattern_cr_arr[@]}" =~ "workflow-runtime" || " ${pattern_cr_arr[@]}" =~ "workflow-authoring" || " ${pattern_cr_arr[@]}" =~ "workstreams" || " ${pattern_cr_arr[@]}" =~ "content" || " ${pattern_cr_arr[@]}" =~ "document_processing" || "${optional_component_cr_arr[@]}" =~ "ae_data_persistence" ]]; then
 
             # INFO "Creating Property file for IBM FileNet Content Manager Object Store"
-            tip="## FNCM's Property for Object store Database Name and User on ${DB_TYPE} type database ##"
+            tip="## Property for FNCM's Object store Database Name and User on ${DB_TYPE} type database ##"
 
             echo "###################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
             echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4278,7 +3828,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                             fi
                             # if [[ $DB_TYPE == "db2" || $DB_TYPE == "postgresql" ]]; then
                             echo "## Provide database schema name. This parameter is optional. If not set, the schema name is the same as database user name." >> ${DB_NAME_USER_PROPERTY_FILE}
-                            if [[ $DB_TYPE == "db2"  ]]; then
+                            if [[ $DB_TYPE == "db2"* ]]; then
                                 echo "## For DB2, the schema name is case-sensitive, and must be specified in uppercase characters." >> ${DB_NAME_USER_PROPERTY_FILE}
                             fi
                             echo "$DB_SERVER_PREFIX.OS$((j+1))_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4295,7 +3845,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                             echo "## Provide the user name of the database for the Object Store of P8Domain. For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "$DB_SERVER_PREFIX.OS$((j+1))_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         else
-                            echo "## The designated name of the database on the PostgreSQL EDB for the Object Store of P8Domain. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                            echo "## The designated name of the database on the EDB Postgres for the Object Store of P8Domain. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "$DB_SERVER_PREFIX.OS$((j+1))_DB_NAME=\"os$((j+1))db\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "## The designated user name of the database for the Object Store of P8Domain. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "$DB_SERVER_PREFIX.OS$((j+1))_DB_USER_NAME=\"osuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4352,7 +3902,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                             fi
                             # if [[ $DB_TYPE == "db2" || $DB_TYPE == "postgresql" ]]; then
                             echo "## Provide database schema name. This parameter is optional. If not set, the schema name is the same as database user name." >> ${DB_NAME_USER_PROPERTY_FILE}
-                            if [[ $DB_TYPE == "db2"  ]]; then
+                            if [[ $DB_TYPE == "db2"* ]]; then
                                 echo "## For DB2, the schema name is case-sensitive, and must be specified in uppercase characters." >> ${DB_NAME_USER_PROPERTY_FILE}
                             fi
                             echo "$DB_SERVER_PREFIX.${BAW_AUTH_OS_ARR[i]}_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4370,7 +3920,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                             echo "$DB_SERVER_PREFIX.${BAW_AUTH_OS_ARR[i]}_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         else
                             tmp_db_name=$(echo ${BAW_AUTH_OS_ARR[i]} | tr '[:upper:]' '[:lower:]')
-                            echo "## The designated name of the database on the PostgreSQL EDB for the object store required by BAW authoring or BAW Runtime. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                            echo "## The designated name of the database on the EDB Postgres for the object store required by BAW authoring or BAW Runtime. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "$DB_SERVER_PREFIX.${BAW_AUTH_OS_ARR[i]}_DB_NAME=\"$tmp_db_name\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "## The designated user name for the object store database required by BAW authoring or BAW Runtime. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "$DB_SERVER_PREFIX.${BAW_AUTH_OS_ARR[i]}_DB_USER_NAME=\"osuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4417,7 +3967,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
 
                         # if [[ $DB_TYPE == "db2" || $DB_TYPE == "postgresql" ]]; then
                         echo "## Provide database schema name. This parameter is optional. If not set, the schema name is the same as database user name." >> ${DB_NAME_USER_PROPERTY_FILE}
-                        if [[ $DB_TYPE == "db2"  ]]; then
+                        if [[ $DB_TYPE == "db2"* ]]; then
                             echo "## For DB2, the schema name is case-sensitive, and must be specified in uppercase characters." >> ${DB_NAME_USER_PROPERTY_FILE}
                         fi
                         echo "# $DB_SERVER_PREFIX.CHOS_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4425,7 +3975,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                         echo "## Provide the user name for the object store database required by Case History when Case History Emitter is enabled. For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "# $DB_SERVER_PREFIX.CHOS_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                     else
-                        echo "## The designated name of the database on the PostgreSQL EDB for Case History when Case History Emitter is enabled. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                        echo "## The designated name of the database on the EDB Postgres for Case History when Case History Emitter is enabled. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "# $DB_SERVER_PREFIX.CHOS_DB_NAME=\"chos\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "## The designated user name for the object store database required by Case History when Case History Emitter is enabled. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "# $DB_SERVER_PREFIX.CHOS_DB_USER_NAME=\"osuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4445,7 +3995,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                     echo "# $DB_SERVER_PREFIX.CHOS_DB_USER_PASSWORD=\"osuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 fi
                 echo "" >> ${DB_NAME_USER_PROPERTY_FILE}
-                success "Created Property file for IBM FileNet Content Manager Object Store required by BAW authoring or BAW Runtime\n"
+                success "Property file for IBM FileNet Content Manager Object Store required by BAW authoring or BAW Runtime has been created.\n"
             fi
 
             # generate property for Object store required by AWS
@@ -4463,7 +4013,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                         fi
                         # if [[ $DB_TYPE == "db2" || $DB_TYPE == "postgresql" ]]; then
                         echo "## Provide database schema name. This parameter is optional. If not set, the schema name is the same as database user name." >> ${DB_NAME_USER_PROPERTY_FILE}
-                        if [[ $DB_TYPE == "db2"  ]]; then
+                        if [[ $DB_TYPE == "db2"* ]]; then
                             echo "## For DB2, the schema name is case-sensitive, and must be specified in uppercase characters." >> ${DB_NAME_USER_PROPERTY_FILE}
                         fi
                         echo "$DB_SERVER_PREFIX.AWSDOCS_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4480,7 +4030,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                         echo "## Provide the user name for the object store database required by AWS. For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "$DB_SERVER_PREFIX.AWSDOCS_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                     else
-                        echo "## The designated name of the database on the PostgreSQL EDB for the object store required by AWS. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                        echo "## The designated name of the database on the EDB Postgres for the object store required by AWS. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "$DB_SERVER_PREFIX.AWSDOCS_DB_NAME=\"awsdocs\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "## The designated user name for the object store database required by AWS. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "$DB_SERVER_PREFIX.AWSDOCS_DB_USER_NAME=\"osuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4512,7 +4062,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                     echo "$DB_SERVER_PREFIX.AWSDOCS_DB_USER_PASSWORD=\"osuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 fi
                 echo "" >> ${DB_NAME_USER_PROPERTY_FILE}
-                success "Created Property file for IBM FileNet Content Manager Object Store required by AWS\n"
+                success "Property file for IBM FileNet Content Manager Object Store required by AWS has been created.\n"
             fi
 
             # generate property for Object store required by ADP
@@ -4531,7 +4081,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
 
                         # if [[ $DB_TYPE == "db2" || $DB_TYPE == "postgresql" ]]; then
                         echo "## Provide database schema name. This parameter is optional. If not set, the schema name is the same as database user name." >> ${DB_NAME_USER_PROPERTY_FILE}
-                        if [[ $DB_TYPE == "db2"  ]]; then
+                        if [[ $DB_TYPE == "db2"*  ]]; then
                             echo "## For DB2, the schema name is case-sensitive, and must be specified in uppercase characters." >> ${DB_NAME_USER_PROPERTY_FILE}
                         fi
                         echo "$DB_SERVER_PREFIX.DEVOS_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4549,7 +4099,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                         echo "## Provide the user name for the object store database required by ADP. For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "$DB_SERVER_PREFIX.DEVOS_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                     else
-                        echo "## The designated name of the database on the PostgreSQL EDB for the object store required by ADP. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                        echo "## The designated name of the database on the EDB Postgres for the object store required by ADP. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "$DB_SERVER_PREFIX.DEVOS_DB_NAME=\"devos1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "## The designated user name for the object store database required by ADP. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "$DB_SERVER_PREFIX.DEVOS_DB_USER_NAME=\"osuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4580,7 +4130,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                     echo "$DB_SERVER_PREFIX.DEVOS_DB_USER_PASSWORD=\"osuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 fi
                 echo "" >> ${DB_NAME_USER_PROPERTY_FILE}
-                success "Created Property file for IBM FileNet Content Manager Object Store required by ADP\n"
+                success "Property file for IBM FileNet Content Manager Object Store required by ADP has been created.\n"
             fi
 
             # generate property for AE Data Persistent
@@ -4600,7 +4150,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
 
                             # if [[ $DB_TYPE == "db2" || $DB_TYPE == "postgresql" ]]; then
                             echo "## Provide database schema name. This parameter is optional. If not set, the schema name is the same as database user name." >> ${DB_NAME_USER_PROPERTY_FILE}
-                            if [[ $DB_TYPE == "db2"  ]]; then
+                            if [[ $DB_TYPE == "db2"* ]]; then
                                 echo "## For DB2, the schema name is case-sensitive, and must be specified in uppercase characters." >> ${DB_NAME_USER_PROPERTY_FILE}
                             fi
                             echo "$DB_SERVER_PREFIX.${AEOS[i]}_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4617,7 +4167,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                             echo "## Provide the user name of the database for the object store required by AE Data Persistent. For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "$DB_SERVER_PREFIX.${AEOS[i]}_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         else
-                            echo "## The designated name of the database on the PostgreSQL EDB for the object store required by AE Data Persistent. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                            echo "## The designated name of the database on the EDB Postgres for the object store required by AE Data Persistent. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "$DB_SERVER_PREFIX.${AEOS[i]}_DB_NAME=\"aeos\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "## The designated user name of the database for the object store required by AE Data Persistent. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "$DB_SERVER_PREFIX.${AEOS[i]}_DB_USER_NAME=\"osuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4647,7 +4197,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                         echo "## The designated password for the user of Object Store of P8Domain. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "$DB_SERVER_PREFIX.AEOS_DB_USER_PASSWORD=\"osuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                     fi
-                    success "Created Property file for IBM FileNet Content Manager Object Store required by AE Data Persistent"
+                    success "Property file for IBM FileNet Content Manager Object Store required by AE Data Persistent has been created.\n"
                 done
             fi
             echo "" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4664,7 +4214,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         if [[ ! (" ${pattern_cr_arr[@]} " =~ "workstreams" && "${#pattern_cr_arr[@]}" -eq "1") ]]; then
             wait_msg "Creating Property file for IBM Business Automation Navigator"
 
-            tip="## BAN's Property for ICN Database Name and User on ${DB_TYPE} type database ##"
+            tip="## Property for BAN's ICN Database Name and User on ${DB_TYPE} type database ##"
 
             echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
             echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4681,13 +4231,13 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
 
                     # if [[ $DB_TYPE == "db2" || $DB_TYPE == "postgresql" ]]; then
                     echo "## Provide database schema name. This parameter is optional. If not set, the schema name is the same as database user name." >> ${DB_NAME_USER_PROPERTY_FILE}
-                    if [[ $DB_TYPE == "db2"  ]]; then
+                    if [[ $DB_TYPE == "db2"* ]]; then
                         echo "## For DB2, the schema name is case-sensitive, and must be specified in uppercase characters." >> ${DB_NAME_USER_PROPERTY_FILE}
                     fi
                     echo "$DB_SERVER_PREFIX.ICN_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                     # fi
                 else
-                    echo "## The designated name of the database on the PostgreSQL EDB for ICN (Navigator). (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                    echo "## The designated name of the database on the EDB Postgres for ICN (Navigator). (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                     echo "$DB_SERVER_PREFIX.ICN_DB_NAME=\"icndb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 fi
             fi
@@ -4732,12 +4282,12 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
             echo "" >> ${USER_PROFILE_PROPERTY_FILE}
             # ltpaPassword/keystorePassword for BAN
             echo "## Provide a string for ltpaPassword in the ibm-ban-secret that will be used when creating the ltpakey." >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "## If password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text.(NOTES: BAN.LTPA_PASSWORD must same as CONTENT.LTPA_PASSWORD)" >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "BAN.LTPA_PASSWORD=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "## If password has special characters then xor encoded with {xor} prefix, otherwise use plain text.(NOTES: BAN.LTPA_PASSWORD must match CONTENT.LTPA_PASSWORD)" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "BAN.LTPA_PASSWORD=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
             echo "" >> ${USER_PROFILE_PROPERTY_FILE}
             echo "## Provide a string for keystorePassword in the ibm-ban-secret that will be used when creating the keystore." >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "## If password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text. (NOTES: BAN.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled.)" >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "BAN.KEYSTORE_PASSWORD=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "## If password has special characters then xor encoded with {xor} prefix, otherwise use plain text. (NOTES: BAN.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled.)" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "BAN.KEYSTORE_PASSWORD=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
             echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
             # jMailUsername/jMailPassword for BAN
@@ -4748,7 +4298,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
             echo "BAN.JMAIL_USER_PASSWORD=\"<Optional>\"" >> ${USER_PROFILE_PROPERTY_FILE}
             echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
-            success "Created Property file for IBM Business Automation Navigator\n"
+            success "Property file for IBM Business Automation Navigator has been created.\n"
         fi
     fi
     # Create DBNAME/DBUSER property file for ODM
@@ -4757,7 +4307,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
     if [[ $odm_Val -eq 0 ]]; then
         wait_msg "Creating Property file for IBM Operational Decision Manager"
 
-        tip="## ODM's Property for an external database Name and User on ${DB_TYPE} type database ##"
+        tip="## Property for  ODM's an external database Name and User on ${DB_TYPE} type database ##"
 
         echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
         echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4808,19 +4358,47 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
             echo "$DB_SERVER_PREFIX.ODM_DB_USER_PASSWORD=\"odmuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
         fi
         echo "" >> ${DB_NAME_USER_PROPERTY_FILE}
-        success "Created Property file for IBM Operational Decision Manager\n"
+        success "Property file for IBM Operational Decision Manager has been created.\n"
     fi
 
-
+    ### -- https://jsw.ibm.com/browse/DBACLD-153348 - <Migration from Mongo to Postgres-edb for ADP>
     # generate property for ADP
-    if [[ " ${pattern_cr_arr[@]}" =~ "document_processing" ]]; then
+    if [[ "${pattern_cr_arr[@]}" =~ "document_processing" ]]; then
         wait_msg "Creating Property file for IBM Automation Document Processing"
+        tip="## Processing's Property for Document Processing Engine (DPE) databases on ${DB_TYPE} type database ##"
+        #Generating property file ($DB_NAME_USER_PROPERTY_FILE) for ADP Gitgateway databases
+        if [[ $DB_TYPE = "postgresql-edb" ]]; then
+                tip="## Property for Document Processing Engine (DPE) databases required for Gitgateway ${DB_TYPE} type database ##"
+                echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database name for Automation Document Processing. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "$DB_SERVER_PREFIX.ADP_GG_DB_NAME=\"adpggdb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated user name of the database for Automation Document Processing. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "$DB_SERVER_PREFIX.ADP_GG_DB_USER_NAME=\"adpuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
 
-        tip="## Document Processing's Property for Document Processing Engine (DPE) databases on ${DB_TYPE} type database ##"
+                echo "## The designated password for the user of Automation Document Processing. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "$DB_SERVER_PREFIX.ADP_GG_DB_USER_PASSWORD=\"adpuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "" >> ${DB_NAME_USER_PROPERTY_FILE}
+        fi
 
-        echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
-        echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
-        echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+        ### -- https://jsw.ibm.com/browse/DBACLD-154816 - <Migration from Mongo to Postgres-edb for ADP>
+        #Generating property file ($DB_NAME_USER_PROPERTY_FILE) for ADP Gitgateway databases
+        if [[ $DB_TYPE == "db2"* ]]; then
+                tip="## Property for Document Processing Engine (DPE) databases required for Gitgateway ${DB_TYPE} type database ##"
+                echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database name for Automation Document Processing. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "$DB_SERVER_PREFIX.ADP_GG_DB_NAME=\"adpggdb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated user name of the database for Automation Document Processing. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "$DB_SERVER_PREFIX.ADP_GG_DB_USER_NAME=\"adpuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+
+                echo "## The designated password for the user of Automation Document Processing. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "$DB_SERVER_PREFIX.ADP_GG_DB_USER_PASSWORD=\"adpuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "" >> ${DB_NAME_USER_PROPERTY_FILE}
+        fi
+
         if [[ $DB_TYPE != "postgresql-edb" ]]; then
             echo "## Provide the database name for Document Processing Engine Base database. (For DB2, name must be 8 chars or less, no special chars.) For example: \"adpbase\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             echo "$DB_SERVER_PREFIX.ADP_BASE_DB_NAME=\"adpbase\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4840,7 +4418,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
             fi
             echo "$DB_SERVER_PREFIX.ADP_BASE_DB_USER_PASSWORD=\"{Base64}<yourpassword>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
         else
-            echo "## The designated database name on the PostgreSQL EDB for Document Processing Engine Base database. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## The designated database name on the EDB Postgres for Document Processing Engine Base database. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
             echo "$DB_SERVER_PREFIX.ADP_BASE_DB_NAME=\"adpbase\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             echo "## The designated user name for the Document Processing Engine Base database. Must be an existing user. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
             echo "$DB_SERVER_PREFIX.ADP_BASE_DB_USER_NAME=\"acauser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4868,7 +4446,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 echo "ADP_PROJECT_ONTOLOGY=\"ont1,ont1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             else
                 echo "## Important: The keys below for Document Processing Engine Project databases support comma-separated lists. The number of values should match in each comma-separated list." >> ${DB_NAME_USER_PROPERTY_FILE}
-                echo "## The designated database names on the PostgreSQL EDB for the Document Processing Engine Project databases. You need two databases per document processing project. Example: \"proj1,proj2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database names on the EDB Postgres for the Document Processing Engine Project databases. You need two databases per document processing project. Example: \"proj1,proj2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "ADP_PROJECT_DB_NAME=\"proj1,proj2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "## The designated database server(s) for the Document Processing Engine Project databases.  Must match the value of \"DB_SERVER_LIST\" defined in cp4ba_db_server.property. Example: \"DBSERVER1,DBSERVER2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "ADP_PROJECT_DB_SERVER=\"$DB_SERVER_PREFIX,$DB_SERVER_PREFIX\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4877,7 +4455,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 echo "## The designated passwords for the Document Processing Engine Project databases. Example: \"mypwd1,mypwd2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "ADP_PROJECT_DB_USER_PASSWORD=\"acauser,acauser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             fi
-        elif [[ " ${pattern_cr_arr[@]}" =~ "document_processing_runtime" ]]; then
+        elif [[ "${pattern_cr_arr[@]}" =~ "document_processing_runtime" ]]; then
             if [[ $DB_TYPE != "postgresql-edb" ]]; then
                 echo "## Important: The keys below for Document Processing Engine Project databases support comma-separated lists. The number of values should match in each comma-separated list." >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "## Provide the database name(s) for the Document Processing Engine Project database(s). You need one database per document processing project. This key supports comma-separated lists, example: \"proj1,proj2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4896,7 +4474,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 echo "ADP_PROJECT_ONTOLOGY=\"ont1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             else
                 echo "## Important: The keys below for Document Processing Engine Project databases support comma-separated lists. The number of values should match in each comma-separated list." >> ${DB_NAME_USER_PROPERTY_FILE}
-                echo "## The designated database name(s) on the PostgreSQL EDB for the Document Processing Engine Project database(s). You need one database per document processing project. This key supports comma-separated lists, example: \"proj1,proj2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database name(s) on the EDB Postgres for the Document Processing Engine Project database(s). You need one database per document processing project. This key supports comma-separated lists, example: \"proj1,proj2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "ADP_PROJECT_DB_NAME=\"proj1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "## The designated database server(s) for the Document Processing Engine Project databases.  Must match the value of \"DB_SERVER_LIST\" defined in cp4ba_db_server.property. Example: \"DBSERVER1,DBSERVER2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "ADP_PROJECT_DB_SERVER=\"$DB_SERVER_PREFIX\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4908,56 +4486,68 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         fi
         echo "" >> ${DB_NAME_USER_PROPERTY_FILE}
 
+        if [[ "$DB_TYPE" == "postgresql" ]]; then
+            wait_msg "Creating Property file for Automation Document Processing Git Gateway"
+
+            tip="## Property for ADP Git Gateway Database Name and User on ${DB_TYPE} type database ##"
+
+            echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## Provide the name of the database for ADS. For example: \"adpggdb\" (Notes: the database name must be lowercase)" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADP_GG_DB_NAME=\"adpggdb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADP_GG_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## Provide the user name of the database for the ADP Git Gateway of P8Domain. For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADP_GG_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## Provide the password (if password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text) of the database user for the ADS of P8Domain." >> ${DB_NAME_USER_PROPERTY_FILE}
+
+            # If FIPS chosen make sure the requirements are met
+            if [[ $FIPS_ENABLED == "true" ]]; then
+                echo "## Ensure the length of PostgreSQL DB password must be 16 characters or longer when FIPS enabled and only password authenticaion selected." >> ${DB_NAME_USER_PROPERTY_FILE}
+            fi
+
+            echo "$DB_SERVER_PREFIX.ADP_GG_DB_USER_PASSWORD=\"{Base64}<yourpassword>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "" >> ${DB_NAME_USER_PROPERTY_FILE}
+        fi
+
         # user profile for ADP
         tip="##       USER Property for ADP   ##"
         echo "####################################################" >> ${USER_PROFILE_PROPERTY_FILE}
         echo $tip >> ${USER_PROFILE_PROPERTY_FILE}
         echo "####################################################" >> ${USER_PROFILE_PROPERTY_FILE}
         # serviceUser/servicePwd for ADP
+	echo "## Fully Qualified Distinguished Name (FQDN) for the user is required for this setting." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "## Provide the service user name for ADP. For example: \"CN=sampleServiceUser,DC=sampleDC,DC=com\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "ADP.SERVICE_USER_NAME=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## Provide the service user password (if password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text) for ADP." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "ADP.SERVICE_USER_PASSWORD=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "## Provide the service user password (if password has special characters then xor encoded with {xor} prefix, otherwise use plain text) for ADP." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "ADP.SERVICE_USER_PASSWORD=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
         # serviceUserBas/servicePwdBas for ADP
+	echo "## Fully Qualified Distinguished Name (FQDN) for the user is required for this setting." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "## Provide the service base name for ADP. For example: \"CN=sampleBaseUser,DC=sampleDC,DC=com\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "ADP.SERVICE_USER_NAME_BASE=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## Provide the service base password (if password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text) for ADP." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "ADP.SERVICE_USER_PASSWORD_BASE=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "## Provide the service base password (if password has special characters then xor encoded with {xor} prefix, otherwise use plain text) for ADP." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "ADP.SERVICE_USER_PASSWORD_BASE=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
         # serviceUserCa/servicePwdCa for ADP
+	echo "## Fully Qualified Distinguished Name (FQDN) for the user is required for this setting." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "## Provide the service ca name for ADP. For example: \"CN=sampleCAUser,DC=sampleDC,DC=com\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "ADP.SERVICE_USER_NAME_CA=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## Provide the service ca password (if password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text) for ADP." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "ADP.SERVICE_USER_PASSWORD_CA=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "## Provide the service ca password (if password has special characters then xor encoded with {xor} prefix, otherwise use plain text) for ADP." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "ADP.SERVICE_USER_PASSWORD_CA=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
         # envOwnerUser/envOwnerPwd for ADP
+	echo "## Fully Qualified Distinguished Name (FQDN) for the user is required for this setting." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "## Provide the environment owner name for ADP. For example: \"CN=sampleOwnerUser,DC=sampleDC,DC=com\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "ADP.ENV_OWNER_USER_NAME=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## Provide the environment owner password (if password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text) for ADP." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "ADP.ENV_OWNER_USER_PASSWORD=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-
-        # Recommend to provide an external MongoDB for production deployments.
-        echo "## IMPORTANT: It is recommended to use an external Enterprise MongoDB instance in a production environment. The embedded MongoDB is provided for demo purposes only when set this value as \"No\". The default vaule is \"Yes\"." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "ADP.USE_EXTERNAL_MONGODB=\"Yes\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-
-        # mongoUri/mongoUser/mongoPwd for ADP
-        echo "## Provide the mongoURI, for example: \"mongodb://mongo:<mongoPwd>@<mongo_database_hostname>:<mongo_database_port>/<mongo_database_name>?authSource=admin&connectTimeoutMS=3000\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "ADP.EXTERNAL_MONGO_URI=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## Provide the user name for your own Enterprise MongoDB instance used by ADP. For example: \"admin\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "ADP.MONGO_USER_NAME=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## Provide the user password (if password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text) for your own Enterprise MongoDB instance used by ADP." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "ADP.MONGO_USER_PASSWORD=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "## Provide the environment owner password (if password has special characters then xor encoded with {xor} prefix, otherwise use plain text) for ADP." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "ADP.ENV_OWNER_USER_PASSWORD=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
         if [[ " ${pattern_cr_arr[@]}" =~ "document_processing_runtime" ]]; then
@@ -4966,8 +4556,9 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
             echo "## The repository service url." >> ${USER_PROFILE_PROPERTY_FILE}
             echo "## For a runtime environment update this value to point to your" >> ${USER_PROFILE_PROPERTY_FILE}
             echo "## development cdra environment URL (not service endpoint)." >> ${USER_PROFILE_PROPERTY_FILE}
-
-            echo "ADP.CPDS_REPO_SERVICE_URL=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "## https://<Authoring Environment's CPD (Zen) Route>/adp/cdra/cdapi. This value for CPDS_REPO_SERVICE_URL will set the repo_service_url: \"<Required>\" value in the generated CR. " >> ${USER_PROFILE_PROPERTY_FILE}
+            
+            echo "ADP.repo_service_url=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
             echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
             echo "## In 24.0.1, the feedback feature is enhanced to support 'distributed' for the 'runtime_type' parameter. The 'distributed' runtime type is only supported in the Runtime environment."  >> ${USER_PROFILE_PROPERTY_FILE}
@@ -5026,7 +4617,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
     if [[ " ${pattern_cr_arr[@]}" =~ "document_processing" || " ${pattern_cr_arr[@]}" =~ "application" ]]; then
         wait_msg "Creating Property file for Application Engine"
 
-        tip="## Application Engine's Property for Application Engine database required on ${DB_TYPE} type database ##"
+        tip="## Property for Application Engine database required on ${DB_TYPE} type database ##"
 
         echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
         echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -5041,15 +4632,15 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                     echo "## Provide the database name for runtime application engine. For example: \"AAEDB\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                     echo "$DB_SERVER_PREFIX.APP_ENGINE_DB_NAME=\"AAEDB\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 fi
-                if [[ $DB_TYPE == "db2" || $DB_TYPE == "postgresql" ]]; then
+                if [[ $DB_TYPE == "db2"*|| $DB_TYPE == "postgresql" ]]; then
                     echo "## Provide database schema name. This parameter is optional. If not set, the schema name is the same as database user name." >> ${DB_NAME_USER_PROPERTY_FILE}
-                    if [[ $DB_TYPE == "db2"  ]]; then
+                    if [[ $DB_TYPE == "db2"* ]]; then
                         echo "## For DB2, the schema name is case-sensitive, and must be specified in uppercase characters." >> ${DB_NAME_USER_PROPERTY_FILE}
                     fi
                     echo "$DB_SERVER_PREFIX.APP_ENGINE_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 fi
             else
-                echo "## The designated database name on the PostgreSQL EDB for runtime application engine. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database name on the EDB Postgres for runtime application engine. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.APP_ENGINE_DB_NAME=\"aaedb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             fi
         fi
@@ -5123,7 +4714,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         echo "APP_ENGINE.SESSION_REDIS_USERNAME=\"\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
-        success "Created Property file for Application Engine\n"
+        success "Property file for Application Engine has been created.\n"
     fi
 
     # # generate property for BAW Authoring
@@ -5158,7 +4749,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
     if [[ ( (! " ${pattern_cr_arr[@]}" =~ "workflow-workstreams") && " ${pattern_cr_arr[@]}" =~ "workflow-runtime" ) || " ${pattern_cr_arr[@]}" =~ "workflow-workstreams" ]]; then
         wait_msg "Creating Property file for IBM Business Automation Workflow Runtime"
 
-        tip="## Business Automation Workflow Runtime's Property for database on ${DB_TYPE} ##"
+        tip="## Property for Business Automation Workflow Runtime's database on ${DB_TYPE} ##"
 
         echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
         echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -5173,9 +4764,9 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                     echo "## Provide the database name for Business Automation Workflow Runtime. For example: \"BAWDB\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                     echo "$DB_SERVER_PREFIX.BAW_RUNTIME_DB_NAME=\"BAWDB\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 fi
-                if [[ $DB_TYPE == "db2" || $DB_TYPE == "postgresql" ]]; then
+                if [[ $DB_TYPE == "db2"* || $DB_TYPE == "postgresql" ]]; then
                     echo "## Provide database schema name. This parameter is optional. If not set, the schema name is the same as database user name." >> ${DB_NAME_USER_PROPERTY_FILE}
-                    if [[ $DB_TYPE == "db2"  ]]; then
+                    if [[ $DB_TYPE == "db2"*  ]]; then
                         echo "## For DB2, the schema name is case-sensitive, and must be specified in uppercase characters." >> ${DB_NAME_USER_PROPERTY_FILE}
                     fi
                     echo "$DB_SERVER_PREFIX.BAW_RUNTIME_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -5196,7 +4787,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 fi
                 echo "$DB_SERVER_PREFIX.BAW_RUNTIME_DB_USER_PASSWORD=\"{Base64}<yourpassword>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             else
-                echo "## The designated database name on the PostgreSQL EDB for Business Automation Workflow Runtime. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database name on the EDB Postgres for Business Automation Workflow Runtime. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.BAW_RUNTIME_DB_NAME=\"bawdb0\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "## The designated user name of the database for Business Automation Workflow Runtime. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.BAW_RUNTIME_DB_USER_NAME=\"bawuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -5238,14 +4829,14 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         echo "BAW_RUNTIME.ADMIN_USER=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
-        success "Created Property file for IBM Business Automation Workflow Runtime\n"
+        success "Property file for IBM Business Automation Workflow Runtime has been created.\n"
     fi
 
     # generate property for AWS
     if [[ ( (! " ${pattern_cr_arr[@]}" =~ "workflow-workstreams") && " ${pattern_cr_arr[@]}" =~ "workstreams" ) || " ${pattern_cr_arr[@]}" =~ "workflow-workstreams" ]]; then
         wait_msg "Creating Property file for IBM Automation Workstream Services"
 
-        tip="## Automation Workstream Services's Property for database on ${DB_TYPE} ##"
+        tip="## Property for Automation Workstream Services's database on ${DB_TYPE} ##"
 
         echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
         echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -5261,9 +4852,9 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                     echo "## Provide the database name for database required by Automation Workstream Services. For example: \"AWSDB\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                     echo "$DB_SERVER_PREFIX.AWS_DB_NAME=\"AWSDB\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 fi
-                if [[ $DB_TYPE == "db2" || $DB_TYPE == "postgresql" ]]; then
+                if [[ $DB_TYPE == "db2"* || $DB_TYPE == "postgresql" ]]; then
                     echo "## Provide database schema name. This parameter is optional. If not set, the schema name is the same as database user name." >> ${DB_NAME_USER_PROPERTY_FILE}
-                    if [[ $DB_TYPE == "db2"  ]]; then
+                    if [[ $DB_TYPE == "db2"* ]]; then
                         echo "## For DB2, the schema name is case-sensitive, and must be specified in uppercase characters." >> ${DB_NAME_USER_PROPERTY_FILE}
                     fi
                     echo "$DB_SERVER_PREFIX.AWS_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -5284,7 +4875,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 fi
                 echo "$DB_SERVER_PREFIX.AWS_DB_USER_PASSWORD=\"{Base64}<yourpassword>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             else
-                echo "## The designated database name for database on the PostgreSQL EDB required by Automation Workstream Services. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database name for database on the EDB Postgres required by Automation Workstream Services. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.AWS_DB_NAME=\"awsdb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "## The designated user name of the database for Automation Workstream Services. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.AWS_DB_USER_NAME=\"awsuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -5326,7 +4917,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         echo "AWS.ADMIN_USER=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
-        success "Created Property file for IBM Automation Workstream Services\n"
+        success "Property file for IBM Automation Workstream Services has been created.\n"
     fi
 
 
@@ -5349,9 +4940,9 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                     echo "$DB_SERVER_PREFIX.APP_PLAYBACK_DB_NAME=\"APPDB\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 fi
 
-                if [[ $DB_TYPE == "db2" || $DB_TYPE == "postgresql" ]]; then
+                if [[ $DB_TYPE == "db2"* || $DB_TYPE == "postgresql" ]]; then
                     echo "## Provide database schema name. This parameter is optional. If not set, the schema name is the same as database user name." >> ${DB_NAME_USER_PROPERTY_FILE}
-                    if [[ $DB_TYPE == "db2"  ]]; then
+                    if [[ $DB_TYPE == "db2"* ]]; then
                         echo "## For DB2, the schema name is case-sensitive, and must be specified in uppercase characters." >> ${DB_NAME_USER_PROPERTY_FILE}
                     fi
                     echo "$DB_SERVER_PREFIX.APP_PLAYBACK_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -5359,7 +4950,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 echo "## Provide the user name of the database for Application Engine Playback database . For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.APP_PLAYBACK_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             else
-                echo "## The designated database name on the PostgreSQL EDB for Application Engine Playback database . (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database name on the EDB Postgres for Application Engine Playback database . (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.APP_PLAYBACK_DB_NAME=\"appdb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "## The designated user name of the database for Application Engine Playback database . (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.APP_PLAYBACK_DB_USER_NAME=\"appuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -5423,13 +5014,49 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         echo "APP_PLAYBACK.SESSION_REDIS_USERNAME=\"\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
-        success "Created Property file for Application Playback Server\n"
+        success "Property file for Application Playback Server has been created.\n"
     fi
+
+### -- https://jsw.ibm.com/browse/DBACLD-153348 - <Migration from Mongo to Postgres-edb for ADS>
+# generate property for Automation Decision Services (ADS) database
+if [[ "${pattern_cr_arr[@]}" =~ "decisions_ads" && "$DB_TYPE" = "postgresql-edb" ]]; then
+    wait_msg "Creating Property file for Automation Decision Services"
+    # Generating property file ($DB_NAME_USER_PROPERTY_FILE) when Decision Designer as optional component for ADS
+    if [[ "${optional_component_arr[@]}" =~ "DecisionDesigner" ]]; then
+            tip="## Property for Automation Decision Services(ADS) with Decision Designer as optional component on ${DB_TYPE} type database ##"
+            echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## The designated database name on the Automation Decision Services(ADS) with Decision Designer as optional component. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_DESIGNER_DB_NAME=\"adsdesignerdb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## The designated user name of the database for Automation Decision Services(ADS). (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_DESIGNER_DB_USER_NAME=\"adsdesigner\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## The designated password for the user of Automation Decision Services(ADS). (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_DESIGNER_DB_USER_PASSWORD=\"adsdesigner\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "" >> ${DB_NAME_USER_PROPERTY_FILE}
+    fi
+
+    if [[ "${optional_component_arr[@]}" =~ "DecisionRuntime" ]]; then
+            tip="## Property for Automation Decision Services(ADS) with Decision Runtime as optional component on ${DB_TYPE} type database ##"
+            echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## The designated database name on the Automation Decision Services(ADS) with Decision Runtime as optional component. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_RUNTIME_DB_NAME=\"adsruntimedb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## The designated user name of the database for Automation Decision Services(ADS). (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_RUNTIME_DB_USER_NAME=\"adsruntime\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## The designated password for the user of Automation Decision Services(ADS). (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_RUNTIME_DB_USER_PASSWORD=\"adsruntime\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "" >> ${DB_NAME_USER_PROPERTY_FILE}
+    fi
+    success "Property file for Automation Decision Services has been created\n"
+fi
+
     # generate property for BAS
     if [[ " ${pattern_cr_arr[@]}" =~ "document_processing_designer" || "${pattern_cr_arr[@]}" =~ "workflow-authoring" || ( "${pattern_cr_arr[@]}" =~ "workflow-process-service" && $EXTERNAL_DB_WFPS_AUTHORING == "Yes") || " ${optional_component_cr_arr[@]}" =~ "app_designer" || " ${optional_component_cr_arr[@]}" =~ "ads_designer" ]]; then
         wait_msg "Creating Property file for IBM Business Automation Studio"
 
-        tip="## Business Automation Studio's Property for Studio database required on ${DB_TYPE} type database ##"
+        tip="## Property for Business Automation Studio's Studio database required on ${DB_TYPE} type database ##"
 
         echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
         echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -5444,9 +5071,9 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                     echo "## Provide the database name for Business Automation Studio database. For example: \"BASDB\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                     echo "$DB_SERVER_PREFIX.STUDIO_DB_NAME=\"BASDB\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 fi
-                if [[ $DB_TYPE == "db2" || $DB_TYPE == "postgresql" ]]; then
+                if [[ $DB_TYPE == "db2"* || $DB_TYPE == "postgresql" ]]; then
                     echo "## Provide database schema name. This parameter is optional. If not set, the schema name is the same as database user name." >> ${DB_NAME_USER_PROPERTY_FILE}
-                    if [[ $DB_TYPE == "db2"  ]]; then
+                    if [[ $DB_TYPE == "db2"*  ]]; then
                         echo "## For DB2, the schema name is case-sensitive, and must be specified in uppercase characters." >> ${DB_NAME_USER_PROPERTY_FILE}
                     fi
                     echo "$DB_SERVER_PREFIX.STUDIO_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -5454,7 +5081,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 echo "## Provide the user name of the database for the Business Automation Studio database. For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.STUDIO_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             else
-                echo "## The designated database name on the PostgreSQL EDB for Business Automation Studio database . (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database name on the EDB Postgres for Business Automation Studio database . (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.STUDIO_DB_NAME=\"basdb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "## The designated user name of the database for the Business Automation Studio database. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.STUDIO_DB_USER_NAME=\"basuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -5495,36 +5122,96 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
             echo "BASTUDIO.ADMIN_USER=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         fi
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-        success "Created Property file for IBM Business Automation Studio\n"
+        success "Property file for IBM Business Automation Studio has been created.\n"
     fi
 
-    if [[ " ${pattern_cr_arr[@]}" =~ "decisions_ads" ]]; then
-        # user profile for ADS
-        tip="##       USER Property for ADS   ##"
-        echo "####################################################" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo $tip >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "####################################################" >> ${USER_PROFILE_PROPERTY_FILE}
 
-        # gitMongoUri/mongoUri/mongoHistoryUri/runtimeMongoUri for ADS
-        echo "## Instantiating an external MongoDB is highly recommended for production use. Default value is \"Yes\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## If change it to \"No\", you must input an empty value \"\" to the other related parameters." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "ADS.USE_EXTERNAL_MONGODB=\"Yes\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+    # ADS is chosen as a component and need to use external postgres
+    if [[ " ${pattern_cr_arr[@]} " =~ " decisions_ads " && "$DB_TYPE" == "postgresql" ]]; then
+        wait_msg "Creating Property file for Automation Decision Services"
+        # Create sql scripts based on the chosen optional components
+        if [[ " ${optional_component_cr_arr[@]} " =~ " ads_designer " ]]; then
+            tip="## ADS's Property for ADS DESIGNER Database Name and User on ${DB_TYPE} type database ##"
+            echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## Provide the name of the database for ADS. For example: \"adsdesignerdb\" (Notes: the database name must be lowercase)" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_DESIGNER_DB_NAME=\"adsdesignerdb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## Provide the ADS DESIGNER schema name. Default is "ads". Provide a custom name if needed." >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_DESIGNER_DB_CURRENT_SCHEMA=\"ads\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## Provide the user name of the database for the ADS DESIGNER of P8Domain. For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_DESIGNER_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## Provide the password (if password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text) of the database user for the ADS of P8Domain." >> ${DB_NAME_USER_PROPERTY_FILE}
 
-        echo "## Provide the gitMongoUri, for example: \"mongodb+srv://<sampleDbUser>:<sampleDbPassword>@<mongodb0.example.com>:27017/ads-git?retryWrites=true&w=majority&authSource=admin\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "ADS.EXTERNAL_GIT_MONGO_URI=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## Provide the mongoURI, for example: \"mongodb+srv://<sampleDbUser>:<sampleDbPassword>@<mongodb1.example.com>:27017/ads?retryWrites=true&w=majority&authSource=admin\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "ADS.EXTERNAL_MONGO_URI=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## Provide the mongoHistoryUri, for example: \"mongodb+srv://<sampleDbUser>:<sampleDbPassword>@<mongodb1.example.com>:27017/ads-history?retryWrites=true&w=majority&authSource=admin\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "ADS.EXTERNAL_MONGO_HISTORY_URI=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## Provide the runtimeMongoUri, for example: \"mongodb+srv://<sampleDbUser>:<sampleDbPassword>@<mongodb1.example.com>:27017/ads-runtime-archive-metadata?retryWrites=true&w=majority&authSource=admin\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "ADS.EXTERNAL_RUNTIME_MONGO_URI=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+            # If FIPS chosen make sure the requirements are met
+            if [[ $FIPS_ENABLED == "true" ]]; then
+                echo "## Ensure the length of PostgreSQL DB password must be 16 characters or longer when FIPS enabled and only password authenticaion selected." >> ${DB_NAME_USER_PROPERTY_FILE}
+            fi
 
+            echo "$DB_SERVER_PREFIX.ADS_DESIGNER_DB_USER_PASSWORD=\"{Base64}<yourpassword>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "" >> ${DB_NAME_USER_PROPERTY_FILE}
+        fi
+
+        if [[ " ${optional_component_cr_arr[@]} " =~ " ads_runtime " ]]; then
+            tip="## ADS's Property for ADS RUNTIME Database Name and User on ${DB_TYPE} type database ##"
+            echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## Provide the name of the database for ADS. For example: \"adsruntimedb\" (Notes: the database name must be lowercase)" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_RUNTIME_DB_NAME=\"adsruntimedb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## Provide the ADS RUNTIME schema name. Default is "ads". Provide a custom name if needed." >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_RUNTIME_DB_CURRENT_SCHEMA=\"ads\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## Provide the user name of the database for the ADS RUNTIME of P8Domain. For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_RUNTIME_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## Provide the password (if password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text) of the database user for the ADS of P8Domain." >> ${DB_NAME_USER_PROPERTY_FILE}
+
+            if [[ $FIPS_ENABLED == "true" ]]; then
+                echo "## Ensure the length of PostgreSQL DB password must be 16 characters or longer when FIPS enabled and only password authenticaion selected." >> ${DB_NAME_USER_PROPERTY_FILE}
+            fi
+
+            echo "$DB_SERVER_PREFIX.ADS_RUNTIME_DB_USER_PASSWORD=\"{Base64}<yourpassword>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "" >> ${DB_NAME_USER_PROPERTY_FILE}
+        fi
     fi
+
+### -- https://jsw.ibm.com/browse/DBACLD-154816 - <Migration from Mongo to Postgres-edb for ADS>
+# generate property for Automation Decision Services (ADS) database if the database is db2/Oracle/MSSQL
+if [[ "${pattern_cr_arr[@]}" =~ "decisions_ads" && "$DB_TYPE" != "postgresql-edb" ]]; then
+    wait_msg "Creating Property file for Automation Decision Services"
+    # Generating property file ($DB_NAME_USER_PROPERTY_FILE) when Decision Designer as optional component for ADS
+    if [[ "${optional_component_arr[@]}" =~ "DecisionDesigner" ]]; then
+        if [[ $DB_TYPE == "db2"* || $DB_TYPE == "oracle" || $DB_TYPE == "sqlserver" ]]; then
+            tip="## Property for Automation Decision Services(ADS) with Decision Designer as optional component on ${DB_TYPE} type database ##"
+            echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## The designated database name on the Automation Decision Services(ADS) with Decision Designer as optional component. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_DESIGNER_DB_NAME=\"adsdesignerdb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## The designated user name of the database for Automation Decision Services(ADS). (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_DESIGNER_DB_USER_NAME=\"adsdesigner\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## The designated password for the user of Automation Decision Services(ADS). (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_DESIGNER_DB_USER_PASSWORD=\"adsdesigner\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "" >> ${DB_NAME_USER_PROPERTY_FILE}
+        fi
+    fi
+
+    if [[ "${optional_component_arr[@]}" =~ "DecisionRuntime" ]]; then
+        if [[ $DB_TYPE = "db2"* || $DB_TYPE = "oracle" || $DB_TYPE = "sqlserver" ]]; then
+            tip="## Property for Automation Decision Services(ADS) with Decision Runtime as optional component on ${DB_TYPE} type database ##"
+            echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo $tip >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "####################################################" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## The designated database name on the Automation Decision Services(ADS) with Decision Runtime as optional component. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_RUNTIME_DB_NAME=\"adsruntimedb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## The designated user name of the database for Automation Decision Services(ADS). (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_RUNTIME_DB_USER_NAME=\"adsruntime\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## The designated password for the user of Automation Decision Services(ADS). (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "$DB_SERVER_PREFIX.ADS_RUNTIME_DB_USER_PASSWORD=\"adsruntime\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "" >> ${DB_NAME_USER_PROPERTY_FILE}
+        fi
+    fi
+    success "Property file for Automation Decision Services has been created\n"
+fi
 
     # Create USER_PROFILE_PROPERTY for IM SCIM attribute mappings for SDS/MSAD
     set_scim_attr="true"
@@ -5545,11 +5232,11 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
             echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
             echo "## [NOTES:]" >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "## For information about SCIM parameters used by the CP4BA deployment, you can refer below link: " >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "## For information about SCIM parameters used by the BAW deployment, you can refer below link: " >> ${USER_PROFILE_PROPERTY_FILE}
             echo "## https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE?topic=parameters-ldap-configuration#ldap_kubernetes__scim." >> ${USER_PROFILE_PROPERTY_FILE}
             echo "## For information about LDAP attributes, you can use the ldapsearch tool or other LDAP browser utilitise." >> ${USER_PROFILE_PROPERTY_FILE}
             echo "## How to use ldapsearch tool to get LDAP attributes, you can refer below link: " >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "## https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.4?topic=users-updating-scim-ldap-attributes-mapping#about_ldap_attributes." >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "## https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.11?topic=users-updating-scim-ldap-attributes-mapping#about_ldap_attributes." >> ${USER_PROFILE_PROPERTY_FILE}
             echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
             if [[ $LDAP_TYPE == "AD" ]]; then
@@ -5725,12 +5412,14 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         ${SED_COMMAND} "s|=\"\"|=\"<Required>\"|g" ${DB_NAME_USER_PROPERTY_FILE}
         ${SED_COMMAND} "s|=\"\"|=\"<Required>\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
         #set DB2 HADR as optional
-        ${SED_COMMAND} "s|HADR_STANDBY_SERVERNAME=\"<Required>\"|HADR_STANDBY_SERVERNAME=\"<Optional>\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
-        ${SED_COMMAND} "s|HADR_STANDBY_PORT=\"<Required>\"|HADR_STANDBY_PORT=\"<Optional>\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
+        if [[ $DB_TYPE != "db2hadr" && $DB_TYPE != "db2rdshadr" ]]; then
+            ${SED_COMMAND} "s|HADR_STANDBY_SERVERNAME=\"<Required>\"|HADR_STANDBY_SERVERNAME=\"<Optional>\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
+            ${SED_COMMAND} "s|HADR_STANDBY_PORT=\"<Required>\"|HADR_STANDBY_PORT=\"<Optional>\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
+        fi
     fi
 
     if [[ ! ("${#pattern_cr_arr[@]}" -eq "1" && "${pattern_cr_arr[@]}" =~ "workflow-process-service" && $LDAP_WFPS_AUTHORING == "No") ]]; then
-        ${SED_COMMAND} "s|LDAP_BIND_DN_PASSWORD=\"\"|LDAP_BIND_DN_PASSWORD=\"{Base64}<Required>\"|g" ${LDAP_PROPERTY_FILE}
+        ${SED_COMMAND} "s|LDAP_BIND_DN_PASSWORD=\"\"|LDAP_BIND_DN_PASSWORD=\"{xor}<Required>\"|g" ${LDAP_PROPERTY_FILE}
         ${SED_COMMAND} "s|=\"\"|=\"<Required>\"|g" ${LDAP_PROPERTY_FILE}
         ${SED_COMMAND} 's/LC_AD_GC_HOST="<Required>"/LC_AD_GC_HOST=""/g' ${LDAP_PROPERTY_FILE}
         ${SED_COMMAND} 's/LC_AD_GC_PORT="<Required>"/LC_AD_GC_PORT=""/g' ${LDAP_PROPERTY_FILE}
@@ -5738,44 +5427,44 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
     fi
 
     if [[ $SET_EXT_LDAP == "Yes" ]]; then
-        ${SED_COMMAND} "s|LDAP_BIND_DN_PASSWORD=\"\"|LDAP_BIND_DN_PASSWORD=\"{Base64}<Required>\"|g" ${EXTERNAL_LDAP_PROPERTY_FILE}
+        ${SED_COMMAND} "s|LDAP_BIND_DN_PASSWORD=\"\"|LDAP_BIND_DN_PASSWORD=\"{xor}<Required>\"|g" ${EXTERNAL_LDAP_PROPERTY_FILE}
         ${SED_COMMAND} "s|=\"\"|=\"<Required>\"|g" ${EXTERNAL_LDAP_PROPERTY_FILE}
         ${SED_COMMAND} 's/LC_AD_GC_HOST="<Required>"/LC_AD_GC_HOST=""/g' ${EXTERNAL_LDAP_PROPERTY_FILE}
         ${SED_COMMAND} 's/LC_AD_GC_PORT="<Required>"/LC_AD_GC_PORT=""/g' ${EXTERNAL_LDAP_PROPERTY_FILE}
     fi
 
-    INFO "Created all property files for CP4BA"
+    INFO "Created all property files for Business Automation Workflow."
 
     # Show some tips for property file
     tips
     echo -e  "Enter the <Required> values in the property files under $PROPERTY_FILE_FOLDER"
-    msgRed   "The key name in the property file is created by the cp4a-prerequisites.sh and is NOT EDITABLE."
+    msgRed   "The key name in the property file is created by the baw-prerequisites.sh and is NOT EDITABLE."
     msgRed   "The value in the property file must be within double quotes."
-    msgRed   "The value for User/Password in [cp4ba_db_name_user.property] [cp4ba_user_profile.property] file should NOT include special characters: single quotation \"'\""
-    msgRed   "The value in [cp4ba_LDAP.property] or [cp4ba_External_LDAP.property] [cp4ba_user_profile.property] file should NOT include special character '\"'"
+    msgRed   "The value for User/Password in [baw_user_profile.property] file should NOT include special characters: single quotation \"'\""
+    msgRed   "The value in [baw_LDAP.property] or [baw_External_LDAP.property] [baw_user_profile.property] file should NOT include special character '\"'"
 
     if (( db_server_number > 0 )); then
-        echo -e  "\x1b[32m* [cp4ba_db_server.property]:\x1B[0m"
-        echo -e  "  - Properties for database server used by CP4BA deployment, such as DATABASE_SERVERNAME/DATABASE_PORT/DATABASE_SSL_ENABLE.\n"
+        echo -e  "\x1b[32m* [baw_db_server.property]:\x1B[0m"
+        echo -e  "  - Properties for database server used by BAW deployment, such as DATABASE_SERVERNAME/DATABASE_PORT/DATABASE_SSL_ENABLE.\n"
         echo -e  "  - The value of \"<DB_SERVER_LIST>\" is an alias for the database servers. The key supports comma-separated lists.\n"
 
-        echo -e  "\x1b[32m* [cp4ba_db_name_user.property]:\x1B[0m"
-        echo -e  "  - Properties for database name and user name required by each component of the CP4BA deployment, such as GCD_DB_NAME/GCD_DB_USER_NAME/GCD_DB_USER_PASSWORD.\n"
+        echo -e  "\x1b[32m* [baw_db_name_user.property]:\x1B[0m"
+        echo -e  "  - Properties for database name and user name required by each component of the BAW deployment, such as GCD_DB_NAME/GCD_DB_USER_NAME/GCD_DB_USER_PASSWORD.\n"
         echo -e  "  - Change the prefix \"<DB_ALIAS_NAME>\" to assign which database is used by the component.\n"
         echo -e  "  - The value of \"<DB_ALIAS_NAME>\" must match the value of <DB_SERVER_LIST> that is defined in \"<DB_SERVER_LIST>\" of \"cp4ba_db_server.property\".\n"
     fi
     if [[ ! ("${#pattern_cr_arr[@]}" -eq "1" && "${pattern_cr_arr[@]}" =~ "workflow-process-service" && $LDAP_WFPS_AUTHORING == "No") ]]; then
-        echo -e  "\x1b[32m* [cp4ba_LDAP.property]:\x1B[0m"
-        echo -e  "  - Properties for the LDAP server that is used by the CP4BA deployment, such as LDAP_SERVER/LDAP_PORT/LDAP_BASE_DN/LDAP_BIND_DN/LDAP_BIND_DN_PASSWORD.\n"
+        echo -e  "\x1b[32m* [baw_LDAP.property]:\x1B[0m"
+        echo -e  "  - Properties for the LDAP server that is used by the BAW deployment, such as LDAP_SERVER/LDAP_PORT/LDAP_BASE_DN/LDAP_BIND_DN/LDAP_BIND_DN_PASSWORD.\n"
         if [[ $SET_EXT_LDAP == "Yes" ]]; then
-            echo -e  "\x1b[32m* [cp4ba_External_LDAP.property]:\x1B[0m"
+            echo -e  "\x1b[32m* [baw_External_LDAP.property]:\x1B[0m"
             echo -e  "  - Properties for the External LDAP server that is used by External Share, such as LDAP_SERVER/LDAP_PORT/LDAP_BASE_DN/LDAP_BIND_DN/LDAP_BIND_DN_PASSWORD.\n"
         fi
     fi
 
-    echo -e  "\x1b[32m* [cp4ba_user_profile.property]:\x1B[0m"
-    echo -e  "  - Properties for the global value used by the CP4BA deployment, such as \"sc_deployment_license\".\n"
-    echo -e  "  - properties for the value used by each component of CP4BA, such as <APPLOGIN_USER>/<APPLOGIN_PASSWORD>\n"
+    echo -e  "\x1b[32m* [baw_user_profile.property]:\x1B[0m"
+    echo -e  "  - Properties for the global value used by the BAW deployment, such as \"sc_deployment_license\".\n"
+    echo -e  "  - properties for the value used by each component of BAW, such as <APPLOGIN_USER>/<APPLOGIN_PASSWORD>\n"
 }
 
 function select_storage_class(){
@@ -5864,6 +5553,21 @@ function load_property_before_generate(){
     # load db ldap type
     LDAP_TYPE="$(prop_tmp_property_file LDAP_TYPE)"
     DB_TYPE="$(prop_tmp_property_file DB_TYPE)"
+    # making sure the DB type is in lowercase
+    # For DBACLD-165328
+    DB_TYPE=$(echo "$DB_TYPE" | tr '[:upper:]' '[:lower:]')
+    # Default for IS_RDS is false
+    # For DBACLD-163779
+    IS_RDS=false
+    # For Database type DB2 DB2HADR and DB2 RDS the generate mode and validate mode are all identical and in the script taken care off using $DB_TYPE == "db2"
+    # Using a separate flag to determine if it is DB2 RDS solely so that different sql files are generated and the jar used for validate mode can accordingly add the additional parameters required
+    # For DBACLD-163779
+    if [[ $DB_TYPE == "db2"* ]]; then
+        if [[ $DB_TYPE == "db2rds"* ]]; then
+            IS_RDS=true
+        fi
+        DB_TYPE="db2"  
+    fi
 
     # load CONTENT_OS_NUMBER
     content_os_number=$(prop_tmp_property_file CONTENT_OS_NUMBER)
@@ -5884,10 +5588,80 @@ function create_db_script(){
     local db_name_full_array=()
     local db_user_full_array=()
     local db_user_pwd_full_array=()
-    INFO "Generating DB SQL Statement file required by CP4BA deployment based on property file"
+    INFO "Generating DB SQL Statement file required by BAW deployment based on property file"
     # Generate db2 sql statement file for FNCM
     rm -rf $DB_SCRIPT_FOLDER
     printf "\n"
+
+    echo "Patterns are: ${pattern_cr_arr[0]}"
+
+
+    # Create db script only if postgres is chosen as an external database
+    if [[ " ${pattern_cr_arr[@]} " =~ " decisions_ads " && "$DB_TYPE" == "postgresql" ]]; then
+
+        # Create db script for each optional components chosen
+
+        if [[ " ${optional_component_cr_arr[@]} " =~ " ads_designer " ]]; then
+            echo "Creating the DB SQL statement file for ADS DESIGNER database"
+            tmp_dbname="$(prop_db_name_user_property_file ADS_DESIGNER_DB_NAME)"
+            tmp_dbschemaname=""
+            tmp_db_current_schema_name="$(prop_db_name_user_property_file ADS_DESIGNER_DB_CURRENT_SCHEMA)"
+            # Remove leading and trailing spaces
+            tmp_db_current_schema_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_db_current_schema_name")
+
+            if [[ $tmp_db_current_schema_name != "<Optional>" && $tmp_db_current_schema_name != "" ]]; then
+                # db name should be lower case
+                tmp_db_current_schema_name=$(echo $tmp_db_current_schema_name | tr '[:upper:]' '[:lower:]')
+            fi
+
+            tmp_dbuser="$(prop_db_name_user_property_file ADS_DESIGNER_DB_USER_NAME)"
+            tmp_dbuserpwd="$(prop_db_name_user_property_file ADS_DESIGNER_DB_USER_PASSWORD)"
+            tmp_dbservername="$(prop_db_name_user_property_file_for_server_name ADS_DESIGNER_DB_USER_NAME)"
+
+            check_dbserver_name_valid $tmp_dbservername "ADS_DESIGNER_DB_USER_NAME"
+
+            if [[ "${tmp_dbuserpwd:0:8}" == "{Base64}"  ]]; then
+                # decode password and remove Base64 string
+                tmp_dbuserpwd=$(echo "$tmp_dbuserpwd" | sed -e "s/^{Base64}//" | base64 --decode)
+                check_single_quotes_password $tmp_dbuserpwd "ADS_DESIGNER_DB_USER_PASSWORD"
+            fi
+
+            create_adsdesignerdb_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername $tmp_db_current_schema_name
+
+            success "Created the DB SQL statement file for ADS DESIGNER database\n"
+        fi
+
+        if [[ " ${optional_component_cr_arr[@]} " =~ " ads_runtime " ]]; then
+            echo "Creating the DB SQL statement file for ADS Runtime database"
+            tmp_dbname="$(prop_db_name_user_property_file ADS_RUNTIME_DB_NAME)"
+            tmp_dbschemaname=""
+            tmp_db_current_schema_name="$(prop_db_name_user_property_file ADS_RUNTIME_DB_CURRENT_SCHEMA)"
+            # Remove leading and trailing spaces
+            tmp_db_current_schema_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_db_current_schema_name")
+
+            if [[ $tmp_db_current_schema_name != "<Optional>" && $tmp_db_current_schema_name != "" ]]; then
+                # db name should be lower case
+                tmp_db_current_schema_name=$(echo $tmp_db_current_schema_name | tr '[:upper:]' '[:lower:]')
+            fi
+
+            tmp_dbuser="$(prop_db_name_user_property_file ADS_RUNTIME_DB_USER_NAME)"
+            tmp_dbuserpwd="$(prop_db_name_user_property_file ADS_RUNTIME_DB_USER_PASSWORD)"
+            tmp_dbservername="$(prop_db_name_user_property_file_for_server_name ADS_RUNTIME_DB_USER_NAME)"
+
+            check_dbserver_name_valid $tmp_dbservername "ADS_RUNTIME_DB_USER_NAME"
+
+            if [[ "${tmp_dbuserpwd:0:8}" == "{Base64}"  ]]; then
+              # decode password and remove Base64 string
+                tmp_dbuserpwd=$(echo "$tmp_dbuserpwd" | sed -e "s/^{Base64}//" | base64 --decode)
+                check_single_quotes_password $tmp_dbuserpwd "ADS_RUNTIME_DB_USER_PASSWORD"
+            fi
+
+            create_adsruntimedb_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername $tmp_db_current_schema_name
+
+            success "Created the DB SQL statement file for ADS RUNTIME database\n"
+        fi
+    fi
+
 
     # Generate DB SQL for GCD
     if [[ " ${pattern_cr_arr[@]}" =~ "workflow-runtime" || " ${pattern_cr_arr[@]}" =~ "workflow-authoring" || " ${pattern_cr_arr[@]}" =~ "workstreams" || " ${pattern_cr_arr[@]}" =~ "content" || " ${pattern_cr_arr[@]}" =~ "document_processing" || "${optional_component_cr_arr[@]}" =~ "ae_data_persistence" ]]; then
@@ -5926,9 +5700,15 @@ function create_db_script(){
                     create_fncm_gcddb_sqlserver_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
                 elif [[ $DB_TYPE == "postgresql" ]]; then
                     create_fncm_gcddb_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername $tmp_dbschemaname
-                elif [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+                elif [[ $DB_TYPE == "db2" ]]; then
                     check_db2_name_valid $tmp_dbname $tmp_dbservername "GCD_DB_NAME"
-                    create_fncm_gcddb_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname
+                    # Calling a different function that will take care of creating the db2rds sql file
+                    # DBACLD-163779
+                    if [[ $IS_RDS == true ]]; then
+                        create_fncm_gcddb_db2rds_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "$tmp_dbschemaname" "$tmp_dbuserpwd"
+                    else
+                        create_fncm_gcddb_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname
+                    fi
                 fi
                 break
                 ;;
@@ -5951,7 +5731,7 @@ function create_db_script(){
         done
 
         # ${SED_COMMAND} "s|\"||g" $FNCM_DB_SCRIPT_FOLDER/$DB_TYPE/createGCDDB.sql
-        success "Created the DB SQL statement file for FNCM GCD database\n"
+        success "DB SQL statement file for FNCM GCD database has been created.\n"
     fi
 
    # Generate DB SQL for Objectstore
@@ -5959,6 +5739,7 @@ function create_db_script(){
         for ((j=1;j<=${content_os_number};j++))
         do
             wait_msg "Creating the DB SQL statement file for FNCM Object store database: os${j}db"
+            clear
 
             ## Retrieving the tables,index, and lob storage location from the properties files
             ## to be passed to the helper functions to create the sql files.
@@ -6015,9 +5796,17 @@ function create_db_script(){
                         ${SED_COMMAND} '/bulkadmin/d' $FNCM_DB_SCRIPT_FOLDER/$DB_TYPE/$tmp_dbservername/createOS${j}DB.sql
                     elif [[ $DB_TYPE == "postgresql" ]]; then
                         create_fncm_osdb_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername ${j} "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"
-                    elif [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+                    elif [[ $DB_TYPE == "db2" ]]; then
                         check_db2_name_valid $tmp_dbname $tmp_dbservername "OS${j}_DB_NAME"
-                        create_fncm_osdb_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername ${j} "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"
+                        # Calling a different function that will take care of creating the db2rds sql file
+                        # DBACLD-163779
+                        if [[ $IS_RDS == true ]]; then
+                            #echo "$tmp_dbname -- $tmp_dbuser --  $tmp_dbservername --- ${j} -- \"\" -- \"$tmp_dbschemaname\" --- \"$tmp_table_storage_location\" -- \"$tmp_index_storage_location\" -- \"$tmp_lob_storage_location\" --- \"$tmp_dbuserpwd\" "
+                            create_fncm_osdb_db2rds_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "${j}" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location" "$tmp_dbuserpwd"
+                        else
+                            create_fncm_osdb_db2_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "${j}" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"
+                        fi
+                        
                     fi
                     break
                     ;;
@@ -6040,7 +5829,7 @@ function create_db_script(){
             done
 
             # ${SED_COMMAND} "s|\"||g" $FNCM_DB_SCRIPT_FOLDER/$DB_TYPE/createOS${j}DB.sql
-            success "Created the DB SQL statement file for FNCM Object store database: os${j}db\n"
+            success "DB SQL statement file for FNCM Object store database: os${j}db has been created.\n"
         done
     fi
 
@@ -6081,9 +5870,16 @@ function create_db_script(){
                         create_ban_sqlserver_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
                     elif [[ $DB_TYPE == "postgresql" ]]; then
                         create_ban_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername $tmp_dbschemaname
-                    elif [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+                    elif [[ $DB_TYPE == "db2" ]]; then
                         check_db2_name_valid $tmp_dbname $tmp_dbservername "ICN_DB_NAME"
-                        create_ban_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname
+                        # Calling a different function that will take care of creating the db2rds sql file
+                        # DBACLD-163779
+                        if [[ $IS_RDS == true ]]; then
+                            create_ban_db2rds_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "$tmp_dbschemaname" "$tmp_dbuserpwd"
+                        else
+                            create_ban_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname                        
+                        fi
+
                     fi
                     break
                     ;;
@@ -6104,7 +5900,7 @@ function create_db_script(){
                     ;;
                 esac
             done
-            success "Created the DB SQL statement file for ICN database\n"
+            success "DB SQL statement file for ICN database has been created.\n"
         fi
     fi
 
@@ -6133,9 +5929,15 @@ function create_db_script(){
                     create_odm_sqlserver_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
                 elif [[ $DB_TYPE == "postgresql" ]]; then
                     create_odm_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
-                elif [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+                elif [[ $DB_TYPE == "db2" ]]; then
                     check_db2_name_valid $tmp_dbname $tmp_dbservername "ODM_DB_NAME"
-                    create_odm_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername
+                    # Calling a different function that will take care of creating the db2rds sql file
+                    # DBACLD-163779
+                    if [[ $IS_RDS == true ]]; then
+                        create_odm_db2rds_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname $tmp_dbuserpwd
+                    else
+                        create_odm_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername                        
+                    fi
                 fi
                 break
                 ;;
@@ -6156,7 +5958,7 @@ function create_db_script(){
                 ;;
             esac
         done
-        success "Created the DB SQL statement file for Operational Decision Manager database\n"
+        success "DB SQL statement file for Operational Decision Manager database has been created.\n"
     fi
 
     # Generate DB SQL for ObjectStore required by BAW Authoring or BAW Runtime/AWS
@@ -6202,7 +6004,7 @@ function create_db_script(){
                         else
                             create_fncm_osdb_oracle_sql_file $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername "" "" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"
                         fi
-                        success "Created the DB SQL statement file for BAW: ${BAW_AUTH_OS_ARR[i]}\n"
+                        success "DB SQL statement file for BAW: ${BAW_AUTH_OS_ARR[i]} has been created.\n"
                     done
 
                     # for case history
@@ -6221,7 +6023,7 @@ function create_db_script(){
                         fi
                         wait_msg "Creating the DB SQL statement file for Case History: $tmp_dbuser"
                         create_fncm_osdb_oracle_sql_file $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
-                        success "Created the DB SQL statement file for Case History: $tmp_dbuser\n"
+                        success "DB SQL statement file for Case History: $tmp_dbuser has been created.\n"
                     fi
                 fi
                 if [[ " ${pattern_cr_arr[@]}" =~ "workstreams" ]]; then
@@ -6332,13 +6134,26 @@ function create_db_script(){
                             else
                                 create_fncm_osdb_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername "" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"
                             fi
-                        elif [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+                        elif [[ $DB_TYPE == "db2" ]]; then
                             check_db2_name_valid $tmp_dbname $tmp_dbservername "${BAW_AUTH_OS_ARR[i]}_DB_NAME"
                             if [[ "${BAW_AUTH_OS_ARR[i]}" == "BAWTOS" ]]; then
                                 tmp_tablespace=$(prop_user_profile_property_file CONTENT_INITIALIZATION.CPE_OBJ_STORE_WORKFLOW_DATA_TBL_SPACE)
-                                create_fncm_osdb_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername "" $tmp_tablespace $tmp_dbschemaname "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"
+                                # Calling a different function that will take care of creating the db2rds sql file
+                                # DBACLD-163779
+                                if [[ $IS_RDS == true ]]; then
+                                    create_fncm_osdb_db2rds_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "" "$tmp_tablespace" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location" "$tmp_dbuserpwd"
+                                else
+                                    create_fncm_osdb_db2_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "" "$tmp_tablespace" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"                        
+                                fi
+                                
                             else
-                                create_fncm_osdb_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername "" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"
+                                # Calling a different function that will take care of creating the db2rds sql file
+                                # DBACLD-163779
+                                if [[ $IS_RDS == true ]]; then
+                                    create_fncm_osdb_db2rds_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location" "$tmp_dbuserpwd"
+                                else
+                                    create_fncm_osdb_db2_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"                      
+                                fi
                             fi
                         fi
                         success "Created the DB SQL statement file for BAW: ${BAW_AUTH_OS_ARR[i]}\n"
@@ -6381,9 +6196,15 @@ function create_db_script(){
                             ${SED_COMMAND} '/bulkadmin/d' $FNCM_DB_SCRIPT_FOLDER/$DB_TYPE/$tmp_dbservername/create$tmp_dbname.sql
                         elif [[ $DB_TYPE == "postgresql" ]]; then
                             create_fncm_osdb_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername "" "" $tmp_dbschemaname
-                        elif [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+                        elif [[ $DB_TYPE == "db2" ]]; then
                             check_db2_name_valid $tmp_dbname $tmp_dbservername "CHOS_DB_NAME"
-                            create_fncm_osdb_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername "" "" $tmp_dbschemaname
+                            # Calling a different function that will take care of creating the db2rds sql file
+                            # DBACLD-163779
+                            if [[ $IS_RDS == true ]]; then
+                                create_fncm_osdb_db2rds_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "" "" "$tmp_dbschemaname" "" "" "" "$tmp_dbuserpwd"
+                            else
+                                create_fncm_osdb_db2_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "" "" "$tmp_dbschemaname"                      
+                            fi
                         fi
                         success "Created the DB SQL statement file for Case History: $tmp_dbname\n"
                     fi
@@ -6393,7 +6214,7 @@ function create_db_script(){
                     tmp_dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbname")
 
                     tmp_dbschemaname=""
-                    if [[ $DB_TYPE == "postgresql" || $DB_TYPE == "db2" ]]; then
+                    if [[ $DB_TYPE == "postgresql" ]]; then
                         tmp_db_current_schema_name="$(prop_db_name_user_property_file AWSDOCS_DB_CURRENT_SCHEMA)"
                         tmp_db_current_schema_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_db_current_schema_name")
                         if [[ $tmp_db_current_schema_name != "<Optional>" && $tmp_db_current_schema_name != "" ]]; then
@@ -6444,18 +6265,25 @@ function create_db_script(){
                         ${SED_COMMAND} '/bulkadmin/d' $FNCM_DB_SCRIPT_FOLDER/$DB_TYPE/$tmp_dbservername/create$tmp_dbname.sql
                     elif [[ $DB_TYPE == "postgresql" ]]; then
                         create_fncm_osdb_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername "" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"
-                    elif [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+                    elif [[ $DB_TYPE == "db2" ]]; then
                         check_db2_name_valid $tmp_dbname $tmp_dbservername "AWSDOCS_DB_NAME"
-                        create_fncm_osdb_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername "" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"
+                        # Calling a different function that will take care of creating the db2rds sql file
+                        # DBACLD-163779
+                        if [[ $IS_RDS == true ]]; then
+                            create_fncm_osdb_db2rds_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location" "$tmp_dbuserpwd"
+                        else
+                            create_fncm_osdb_db2_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"                      
+                        fi
+                        
                     fi
-                    success "Created the DB SQL statement file for BAW: $tmp_dbname\n"
+                    success "DB SQL statement file for BAW: $tmp_dbname has been created.\n"
                 fi
                 if [[ " ${pattern_cr_arr[@]}" =~ "document_processing" ]]; then
                     tmp_dbname=$(prop_db_name_user_property_file DEVOS_DB_NAME)
                     tmp_dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbname")
 
                     tmp_dbschemaname=""
-                    if [[ $DB_TYPE == "postgresql" || $DB_TYPE == "db2" ]]; then
+                    if [[ $DB_TYPE == "postgresql" ]]; then
                         tmp_db_current_schema_name="$(prop_db_name_user_property_file DEVOS_DB_CURRENT_SCHEMA)"
                         tmp_db_current_schema_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_db_current_schema_name")
                         if [[ $tmp_db_current_schema_name != "<Optional>" && $tmp_db_current_schema_name != "" ]]; then
@@ -6504,11 +6332,18 @@ function create_db_script(){
                         ${SED_COMMAND} '/bulkadmin/d' $FNCM_DB_SCRIPT_FOLDER/$DB_TYPE/$tmp_dbservername/create$tmp_dbname.sql
                     elif [[ $DB_TYPE == "postgresql" ]]; then
                         create_fncm_osdb_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername "" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"
-                    elif [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+                    elif [[ $DB_TYPE == "db2" ]]; then
                         check_db2_name_valid $tmp_dbname $tmp_dbservername "DEVOS_DB_NAME"
-                        create_fncm_osdb_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername "" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"
+                        # Calling a different function that will take care of creating the db2rds sql file
+                        # DBACLD-163779
+                        if [[ $IS_RDS == true ]]; then
+                            create_fncm_osdb_db2rds_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location" "$tmp_dbuserpwd"
+                        else
+                            create_fncm_osdb_db2_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"                      
+                        fi
+                        
                     fi
-                    success "Created the DB SQL statement file for ADP: $tmp_dbname\n"
+                    success "DB SQL statement file for ADP: $tmp_dbname has been created.\n"
                 fi
                 break
                 ;;
@@ -6533,16 +6368,34 @@ function create_db_script(){
         db_user_pwd_full_array=(${db_user_pwd_full_array[@]} $base_dbuserpwd)
 
         wait_msg "Creating the DB SQL statement file for Document Processing Engine databases"
-        if [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+        if [[ $DB_TYPE == "db2" ]]; then
           check_db2_name_valid $base_dbname $base_dbservername "ADP_BASE_DB_NAME"
         fi
         # Create script for creating base database
-        create_adp_basedb_sql $base_dbname $base_dbuser $base_dbservername
-        # For DB2, there is separate SQL script for granting permissions on DB
-        if [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
-          grant_perms_adp_basedb_sql $base_dbname $base_dbuser $base_dbservername
+        # Calling a different function that will take care of creating the db2rds sql file
+        # DBACLD-163779
+        if [[ $IS_RDS == true ]]; then
+            create_adp_basedb_rds_sql "$base_dbname" "$base_dbuser" "$base_dbservername" "$base_dbuserpwd"
+        else
+            create_adp_basedb_sql $base_dbname $base_dbuser $base_dbservername
         fi
-        create_adp_basedb_tables_sql $base_dbname $base_dbuser $base_dbservername
+        # For DB2, there is separate SQL script for granting permissions on DB
+        if [[ $DB_TYPE == "db2" ]]; then
+            # Calling a different function that will take care of creating the db2rds sql file
+            # DBACLD-163779
+            if [[ $IS_RDS == true ]]; then
+                grant_perms_adp_basedb_rds_sql "$base_dbuser" "$base_dbservername"
+            else
+                grant_perms_adp_basedb_sql $base_dbname $base_dbuser $base_dbservername
+            fi
+        fi
+        if [[ $IS_RDS == true ]]; then
+            # Calling a different function that will take care of creating the db2rds sql file
+            # DBACLD-163779
+            create_adp_basedb_rds_tables_sql "$base_dbuser" "$base_dbservername"
+        else
+            create_adp_basedb_tables_sql $base_dbname $base_dbuser $base_dbservername
+        fi
         success "Created the DB SQL statement file for Document Processing Engine Base database: $base_dbname \n"
 
         tmp_dbname=$(prop_db_name_user_property_file ADP_PROJECT_DB_NAME)
@@ -6587,19 +6440,38 @@ function create_db_script(){
                 # echo "$tmp_dbname"; sleep 300
                 wait_msg "Creating the DB SQL statement files for Document Processing Engine Project databases: ${db_name_array[num]}"
                 # Create script to create tenant DB
-                if [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+                if [[ $DB_TYPE == "db2" ]]; then
                   check_db2_name_valid $tmp_dbname $tmp_dbservername "ADP_PROJECT_DB_NAME" ${j}
                 fi
-                create_adp_tenantdb_sql $tmp_dbname $tmp_dbuser $tmp_dbservername ${j}
-                # For DB2, there is separate SQL script for granting permissions on DB
-                if [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
-                   grant_perms_adp_tenantdb_sql $tmp_dbname $tmp_dbuser $tmp_dbservername ${j}
+                # Calling a different function that will take care of creating the db2rds sql file
+                # DBACLD-163779
+                if [[ $IS_RDS == true ]]; then
+                    create_adp_tenantdb_rds_sql "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "${j}" "$tmp_dbuserpwd"
+                else
+                    create_adp_tenantdb_sql $tmp_dbname $tmp_dbuser $tmp_dbservername ${j}
                 fi
-                # Create script to create tables in tenant DB
-                create_adp_tenantdb_tables_sql $tmp_dbname $tmp_dbuser $tmp_ontology $tmp_dbservername ${j}
-                # Create script for inserting tenant into base DB
-                create_adp_insert_tenant_sql $base_dbname $base_dbuser $tmp_dbname $tmp_dbuser $tmp_ontology $tmp_dbservername $db_ssl_flag ${j} $tmp_dbserver $tmp_dbport
-                success "Created the DB SQL statement files for Document Processing Engine Project databases: ${db_name_array[num]}\n"
+                # For DB2, there is separate SQL script for granting permissions on DB
+                if [[ $DB_TYPE == "db2" ]]; then
+                    # Calling a different function that will take care of creating the db2rds sql file
+                    # DBACLD-163779
+                    if [[ $IS_RDS == true ]]; then
+                        grant_perms_adp_tenantdb_rds_sql "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "${j}"
+                    else
+                        grant_perms_adp_tenantdb_sql $tmp_dbname $tmp_dbuser $tmp_dbservername ${j}
+                    fi
+                fi
+                
+                # Calling a different function that will take care of creating the db2rds sql file
+                # DBACLD-163779
+                # Create tables in tenant DB and inserting tenant into base DB
+                if [[ $IS_RDS == true ]]; then
+                    create_adp_tenantdb_tables_rds_sql "$tmp_dbname" "$tmp_dbuser" "$tmp_ontology" "$tmp_dbservername" "${j}"  
+                    create_adp_insert_tenant_rds_sql "$base_dbname" "$base_dbuser" "$tmp_dbname" "$tmp_dbuser" "$tmp_ontology" "$tmp_dbservername" "$db_ssl_flag" "${j}" "$tmp_dbserver" "$tmp_dbport"
+                else
+                    create_adp_tenantdb_tables_sql $tmp_dbname $tmp_dbuser $tmp_ontology $tmp_dbservername ${j}
+                    create_adp_insert_tenant_sql $base_dbname $base_dbuser $tmp_dbname $tmp_dbuser $tmp_ontology $tmp_dbservername $db_ssl_flag ${j} $tmp_dbserver $tmp_dbport
+                fi
+                success "DB SQL statement files for Document Processing Engine Project databases: ${db_name_array[num]} has been created.\n"
             done
         fi
 
@@ -6609,6 +6481,36 @@ function create_db_script(){
         fi
 
     fi
+
+    if [[ " ${pattern_cr_arr[@]} " =~ " document_processing " && "$DB_TYPE" == "postgresql" ]]; then
+            echo "Creating the DB SQL statement file for ADP GITGATEWAY database"
+            tmp_dbname="$(prop_db_name_user_property_file ADP_GG_DB_NAME)"
+            tmp_dbschemaname=""
+            tmp_db_current_schema_name="$(prop_db_name_user_property_file ADP_GG_DB_CURRENT_SCHEMA)"
+            # Remove leading and trailing spaces
+            tmp_db_current_schema_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_db_current_schema_name")
+
+            if [[ $tmp_db_current_schema_name != "<Optional>" && $tmp_db_current_schema_name != "" ]]; then
+                # db name should be lower case
+                tmp_db_current_schema_name=$(echo $tmp_db_current_schema_name | tr '[:upper:]' '[:lower:]')
+            fi
+
+            tmp_dbuser="$(prop_db_name_user_property_file ADP_GG_DB_USER_NAME)"
+            tmp_dbuserpwd="$(prop_db_name_user_property_file ADP_GG_DB_USER_PASSWORD)"
+            tmp_dbservername="$(prop_db_name_user_property_file_for_server_name ADP_GG_DB_USER_NAME)"
+
+            check_dbserver_name_valid $tmp_dbservername "ADP_GG_DB_USER_NAME"
+
+            if [[ "${tmp_dbuserpwd:0:8}" == "{Base64}"  ]]; then
+                # decode password and remove Base64 string
+                tmp_dbuserpwd=$(echo "$tmp_dbuserpwd" | sed -e "s/^{Base64}//" | base64 --decode)
+                check_single_quotes_password $tmp_dbuserpwd "ADP_GG_DB_USER_PASSWORD"
+            fi
+
+            create_adpggdb_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername $tmp_dbschemaname
+
+            success "Created the DB SQL statement file for ADP GITGATEWAY database\n"
+        fi
 
     # Generate DB SQL for AE data persistent
     if [[ " ${optional_component_cr_arr[@]}" =~ "ae_data_persistence" ]]; then
@@ -6682,57 +6584,24 @@ function create_db_script(){
                     ${SED_COMMAND} '/bulkadmin/d' $FNCM_DB_SCRIPT_FOLDER/$DB_TYPE/$tmp_dbservername/create$tmp_dbname.sql
                 elif [[ $DB_TYPE == "postgresql" ]]; then
                     create_fncm_osdb_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername "" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"
-                elif [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+                elif [[ $DB_TYPE == "db2" ]]; then
                     check_db2_name_valid $tmp_dbname $tmp_dbservername "AEOS_DB_NAME"
-                    create_fncm_osdb_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername "" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"
+                    # Calling a different function that will take care of creating the db2rds sql file
+                    # DBACLD-163779
+                    if [[ $IS_RDS == true ]]; then
+                        create_fncm_osdb_db2rds_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location" "$tmp_dbuserpwd"
+                    else
+                        create_fncm_osdb_db2_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "" "" "$tmp_dbschemaname" "$tmp_table_storage_location" "$tmp_index_storage_location" "$tmp_lob_storage_location"                     
+                    fi
+                    
                 fi
                 break
                 ;;
             esac
         done
-        success "Created the DB SQL statement file for Application Engine Data Persistent\n"
+        success "DB SQL statement file for Application Engine Data Persistent has been created.\n"
         # ${SED_COMMAND} "s|\"||g" $FNCM_DB_SCRIPT_FOLDER/$DB_TYPE/create${tmp_dbname}.sql
     fi
-
-    # # Generate DB SQL for BAW Authoring Database
-
-    # if [[ " ${pattern_cr_arr[@]}" =~ "workflow-authoring" ]]; then
-    #     wait_msg "Creating the DB SQL statement file for Business Automation Workflow database"
-    #     while true; do
-    #         case "$DB_TYPE" in
-    #         "db2"|"sqlserver"|"postgresql")
-    #             tmp_dbname="$(prop_db_name_user_property_file AUTHORING_DB_NAME)"
-    #             tmp_dbuser="$(prop_db_name_user_property_file AUTHORING_DB_USER_NAME)"
-    #             tmp_dbuserpwd="$(prop_db_name_user_property_file AUTHORING_DB_USER_PASSWORD)"
-    #             tmp_dbservername="$(prop_db_name_user_property_file_for_server_name AUTHORING_DB_USER_NAME)"
-    #             check_dbserver_name_valid $tmp_dbservername "AUTHORING_DB_USER_NAME"
-    #             db_name_full_array=(${db_name_full_array[@]} $tmp_dbname)
-    #             db_user_full_array=(${db_user_full_array[@]} $tmp_dbuser)
-    #             db_user_pwd_full_array=(${db_user_pwd_full_array[@]} $tmp_dbuserpwd)
-    #             if [[ $DB_TYPE == "sqlserver" ]]; then
-    #                 create_baw_db_sqlserver_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
-    #             elif [[ $DB_TYPE == "postgresql" ]]; then
-    #                 create_baw_db_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
-    #             elif [[ $DB_TYPE == "db2" ]]; then
-    #                 create_baw_db_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername
-    #             fi
-    #             break
-    #             ;;
-    #         "oracle")
-    #             tmp_dbuser="$(prop_db_name_user_property_file AUTHORING_DB_USER_NAME)"
-    #             tmp_dbuserpwd="$(prop_db_name_user_property_file AUTHORING_DB_USER_PASSWORD)"
-    #             tmp_dbservername="$(prop_db_name_user_property_file_for_server_name AUTHORING_DB_USER_NAME)"
-    #             check_dbserver_name_valid $tmp_dbservername "AUTHORING_DB_USER_NAME"
-    #             db_user_full_array=(${db_user_full_array[@]} $tmp_dbuser)
-    #             db_user_pwd_full_array=(${db_user_pwd_full_array[@]} $tmp_dbuserpwd)
-
-    #             create_baw_db_oracle_sql_file $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
-    #             break
-    #             ;;
-    #         esac
-    #     done
-    #     success "Created the DB SQL statement file for Business Automation Workflow database\n"
-    # fi
 
     # Generate DB SQL for BAW_INSTANCE1_DB_NAME and BAW_INSTANCE2_DB_NAME for BAW/AWS
 
@@ -6773,11 +6642,17 @@ function create_db_script(){
                         create_bawaws1_db_sqlserver_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
                     elif [[ $DB_TYPE == "postgresql" ]]; then
                         create_bawaws1_db_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername $tmp_dbschemaname
-                    elif [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+                    elif [[ $DB_TYPE == "db2" ]]; then
                         check_db2_name_valid $tmp_dbname $tmp_dbservername "BAW_RUNTIME_DB_NAME"
-                        create_bawaws1_db_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname
+                        # Calling a different function that will take care of creating the db2rds sql file
+                        # DBACLD-163779
+                        if [[ $IS_RDS == true ]]; then
+                            create_bawaws1_db_db2rds_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "$tmp_dbschemaname" "$tmp_dbuserpwd"
+                        else
+                            create_bawaws1_db_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname                    
+                        fi
                     fi
-                    success "Created the DB SQL statement file for Business Automation Workflow database instance1 required by BAW\n"
+                    success "DB SQL statement file for Business Automation Workflow database instance1 required by BAW has been created.\n"
 
                     tmp_dbuser="$(prop_db_name_user_property_file AWS_DB_USER_NAME)"
                     tmp_dbname="$(prop_db_name_user_property_file AWS_DB_NAME)"
@@ -6810,11 +6685,17 @@ function create_db_script(){
                         create_bawaws2_db_sqlserver_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
                     elif [[ $DB_TYPE == "postgresql" ]]; then
                         create_bawaws2_db_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername $tmp_dbschemaname
-                    elif [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+                    elif [[ $DB_TYPE == "db2" ]]; then
                         check_db2_name_valid $tmp_dbname $tmp_dbservername "AWS_DB_NAME"
-                        create_bawaws2_db_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname
+                        # Calling a different function that will take care of creating the db2rds sql file
+                        # DBACLD-163779
+                        if [[ $IS_RDS == true ]]; then
+                            create_bawaws2_db_db2rds_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "$tmp_dbschemaname" "$tmp_dbuserpwd"
+                        else
+                            create_bawaws2_db_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname                    
+                        fi
                     fi
-                    success "Created the DB SQL statement file for Business Automation Workflow database instance2 required by AWS\n"
+                    success "DB SQL statement file for Business Automation Workflow database instance2 required by AWS has been created.\n"
                 elif [[ " ${pattern_cr_arr[@]}" =~ "workflow-runtime" && (! " ${pattern_cr_arr[@]}" =~ "workflow-workstreams" ) ]]; then
                     tmp_dbuser="$(prop_db_name_user_property_file BAW_RUNTIME_DB_USER_NAME)"
                     tmp_dbname="$(prop_db_name_user_property_file BAW_RUNTIME_DB_NAME)"
@@ -6846,11 +6727,18 @@ function create_db_script(){
                         create_bawaws1_db_sqlserver_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
                     elif [[ $DB_TYPE == "postgresql" ]]; then
                         create_bawaws1_db_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername $tmp_dbschemaname
-                    elif [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+                    elif [[ $DB_TYPE == "db2" ]]; then
                         check_db2_name_valid $tmp_dbname $tmp_dbservername "BAW_RUNTIME_DB_NAME"
-                        create_bawaws1_db_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname
+                        # Calling a different function that will take care of creating the db2rds sql file
+                        # DBACLD-163779
+                        if [[ $IS_RDS == true ]]; then
+                            create_bawaws1_db_db2rds_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "$tmp_dbschemaname" "$tmp_dbuserpwd"
+                        else
+                            create_bawaws1_db_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname                   
+                        fi
+                        
                     fi
-                    success "Created the DB SQL statement file for database required by Business Automation Workflow Runtime\n"
+                    success "DB SQL statement file for database required by Business Automation Workflow Runtime has been created.\n"
                 elif [[ " ${pattern_cr_arr[@]}" =~ "workstreams" && (! " ${pattern_cr_arr[@]}" =~ "workflow-workstreams" ) ]]; then
                     tmp_dbuser="$(prop_db_name_user_property_file AWS_DB_USER_NAME)"
                     tmp_dbname="$(prop_db_name_user_property_file AWS_DB_NAME)"
@@ -6885,11 +6773,18 @@ function create_db_script(){
                         create_bawaws2_db_sqlserver_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
                     elif [[ $DB_TYPE == "postgresql" ]]; then
                         create_bawaws2_db_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername $tmp_dbschemaname
-                    elif [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+                    elif [[ $DB_TYPE == "db2" ]]; then
                         check_db2_name_valid $tmp_dbname $tmp_dbservername "AWS_DB_NAME"
-                        create_bawaws2_db_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname
+                        # Calling a different function that will take care of creating the db2rds sql file
+                        # DBACLD-163779
+                        if [[ $IS_RDS == true ]]; then
+                            create_bawaws2_db_db2rds_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "$tmp_dbschemaname" "$tmp_dbuserpwd"
+                        else
+                            create_bawaws2_db_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname                   
+                        fi
+                        
                     fi
-                    success "Created the DB SQL statement file for database required by Automation Workstream Services\n"
+                    success "DB SQL statement file for database required by Automation Workstream Services has been created.\n"
                 fi
                 break
                 ;;
@@ -6910,7 +6805,7 @@ function create_db_script(){
 
                     wait_msg "Creating the DB SQL statement file for Business Automation Workflow database instance1 required by BAW"
                     create_bawaws1_db_oracle_sql_file $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
-                    success "Created the DB SQL statement file for Business Automation Workflow database instance1 required by BAW\n"
+                    success "DB SQL statement file for Business Automation Workflow database instance1 required by BAW has been created.\n"
 
                     tmp_dbuser="$(prop_db_name_user_property_file AWS_DB_USER_NAME)"
                     tmp_dbuserpwd="$(prop_db_name_user_property_file AWS_DB_USER_PASSWORD)"
@@ -6927,7 +6822,7 @@ function create_db_script(){
 
                     wait_msg "Creating the DB SQL statement file for Business Automation Workflow database instance1 required by BAW"
                     create_bawaws2_db_oracle_sql_file $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
-                    success "Created the DB SQL statement file for Business Automation Workflow database instance1 required by BAW\n"
+                    success "DB SQL statement file for Business Automation Workflow database instance1 required by BAW has been created.\n"
                 elif [[ " ${pattern_cr_arr[@]}" =~ "workflow-runtime" && (! " ${pattern_cr_arr[@]}" =~ "workflow-workstreams" ) ]]; then
                     tmp_dbuser="$(prop_db_name_user_property_file BAW_RUNTIME_DB_USER_NAME)"
                     tmp_dbuserpwd="$(prop_db_name_user_property_file BAW_RUNTIME_DB_USER_PASSWORD)"
@@ -6945,7 +6840,7 @@ function create_db_script(){
 
                     wait_msg "Creating the DB SQL statement file for database required by Business Automation Workflow Runtime"
                     create_bawaws1_db_oracle_sql_file $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
-                    success "Created the DB SQL statement file for database required by Business Automation Workflow Runtime\n"
+                    success "DB SQL statement file for database required by Business Automation Workflow Runtime has been created.\n"
 
                 elif [[ " ${pattern_cr_arr[@]}" =~ "workstreams" && (! " ${pattern_cr_arr[@]}" =~ "workflow-workstreams" ) ]]; then
                     tmp_dbuser="$(prop_db_name_user_property_file AWS_DB_USER_NAME)"
@@ -6964,7 +6859,7 @@ function create_db_script(){
 
                     wait_msg "Creating the DB SQL statement file for database required by Business Automation Workflow Runtime"
                     create_bawaws2_db_oracle_sql_file $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
-                    success "Created the DB SQL statement file for database required by Business Automation Workflow Runtime\n"
+                    success "DB SQL statement file for database required by Business Automation Workflow Runtime has been created.\n"
 
                 fi
                 break
@@ -7011,9 +6906,16 @@ function create_db_script(){
                     create_bas_studio_db_sqlserver_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
                 elif [[ $DB_TYPE == "postgresql" ]]; then
                     create_bas_studio_db_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername $tmp_dbschemaname
-                elif [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+                elif [[ $DB_TYPE == "db2" ]]; then
                     check_db2_name_valid $tmp_dbname $tmp_dbservername "STUDIO_DB_NAME"
-                    create_bas_studio_db_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname
+                    # Calling a different function that will take care of creating the db2rds sql file
+                    # DBACLD-163779
+                    if [[ $IS_RDS == true ]]; then
+                        create_bas_studio_db_db2rds_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "$tmp_dbschemaname" "$tmp_dbuserpwd"
+                    else
+                        create_bas_studio_db_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname                   
+                    fi
+                    
                 fi
                 break
                 ;;
@@ -7036,7 +6938,7 @@ function create_db_script(){
                 ;;
             esac
         done
-        success "Created the DB SQL statement file for BAS Studio database\n"
+        success "DB SQL statement file for BAS Studio database has been created.\n"
     fi
 
     # Generate DB SQL for Application Engine Playback database
@@ -7076,9 +6978,16 @@ function create_db_script(){
                     create_ae_playback_db_sqlserver_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
                 elif [[ $DB_TYPE == "postgresql" ]]; then
                     create_ae_playback_db_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername $tmp_dbschemaname
-                elif [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+                elif [[ $DB_TYPE == "db2" ]]; then
                     check_db2_name_valid $tmp_dbname $tmp_dbservername "APP_PLAYBACK_DB_NAME"
-                    create_ae_playback_db_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname
+                    # Calling a different function that will take care of creating the db2rds sql file
+                    # DBACLD-163779
+                    if [[ $IS_RDS == true ]]; then
+                        create_ae_playback_db_db2rds_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "$tmp_dbschemaname" "$tmp_dbuserpwd"
+                    else
+                        create_ae_playback_db_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname                   
+                    fi
+                    
                 fi
                 break
                 ;;
@@ -7102,7 +7011,7 @@ function create_db_script(){
             esac
         done
 
-        success "Created the DB SQL statement file for Application Engine Playback database\n"
+        success "DB SQL statement file for Application Engine Playback database has been created.\n"
     fi
 
     # Generate DB SQL for Application Engine database
@@ -7142,9 +7051,16 @@ function create_db_script(){
                     create_baa_app_engine_db_sqlserver_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername
                 elif [[ $DB_TYPE == "postgresql" ]]; then
                     create_baa_app_engine_db_postgresql_sql_file $tmp_dbname $tmp_dbuser $tmp_dbuserpwd $tmp_dbservername $tmp_dbschemaname
-                elif [[ $DB_TYPE == "db2" || $DB_TYPE == "db2HADR" ]]; then
+                elif [[ $DB_TYPE == "db2" ]]; then
                     check_db2_name_valid $tmp_dbname $tmp_dbservername "APP_ENGINE_DB_NAME"
-                    create_baa_app_engine_db_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname
+                    # Calling a different function that will take care of creating the db2rds sql file
+                    # DBACLD-163779
+                    if [[ $IS_RDS == true ]]; then
+                        create_baa_app_engine_db_db2rds_sql_file "$tmp_dbname" "$tmp_dbuser" "$tmp_dbservername" "$tmp_dbschemaname" "$tmp_dbuserpwd"
+                    else
+                        create_baa_app_engine_db_db2_sql_file $tmp_dbname $tmp_dbuser $tmp_dbservername $tmp_dbschemaname                   
+                    fi
+                    
                 fi
                 break
                 ;;
@@ -7168,11 +7084,11 @@ function create_db_script(){
             esac
         done
         # ${SED_COMMAND} "s|\"||g" $BAS_DB_SCRIPT_FOLDER/$DB_TYPE/create_bas_playback_db.sql
-        success "Created the DB SQL statement file for Application Engine database\n"
+        success "DB SQL statement file for Application Engine database has been created.\n"
     fi
 
     tips ""
-    msgB "* The DB SQL statement files for CP4BA are created under directory ${DB_SCRIPT_FOLDER}. You can modify them or use the default setting to create the databases.\n(NOTES: DO NOT CHANGE DBNAME/DBUSER/DBPASSWORD DIRECTLY in the DB SQL statement files. CHANGE THEM IN THE PROPERTY FILES IF NEEDED, AND THEN RUN [-m generate] AGAIN)"
+    msgB "* The DB SQL statement files for BAW are created under directory ${DB_SCRIPT_FOLDER}. You can modify them or use the default setting to create the databases.\n(NOTES: DO NOT CHANGE DBNAME/DBUSER/DBPASSWORD DIRECTLY in the DB SQL statement files. CHANGE THEM IN THE PROPERTY FILES IF NEEDED, AND THEN RUN [-m generate] AGAIN)"
 
     # Output some additional messages for DPE Postgres files (if applicable)
     if [[ ! -z "$ca_db_pg_flag" && "$ca_db_pg_flag" = true ]]; then
@@ -7213,32 +7129,11 @@ function create_db_script(){
     echo "DB_USER_PWD_LIST=$db_user_pwd_joined" >> ${TEMPORARY_PROPERTY_FILE}
 }
 
-function select_ldap_type_for_wfps_authoring(){
-    info "LDAP configuration is not required for the IBM Workflow Process Service Authoring, but if you want to login with LDAP user, please select Yes. If you select No, you can do post actions with https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE?topic=cpbaf-business-automation-studio to add the LDAP connection manually after install."
-    while true; do
-        printf "\x1B[1mDo you want use the LDAP for the IBM Workflow Process Service Authoring? (Yes/No): \x1B[0m"
-        read -rp "" ans
-        case "$ans" in
-        "y"|"Y"|"yes"|"Yes"|"YES")
-            LDAP_WFPS_AUTHORING="Yes"
-            break
-            ;;
-        "n"|"N"|"no"|"No"|"NO")
-            LDAP_WFPS_AUTHORING="No"
-            break
-            ;;
-        *)
-            echo -e "Answer must be \"Yes\" or \"No\"\n"
-            ;;
-        esac
-    done
-}
-
 function select_external_postgresdb_for_im(){
     printf "\n"
     echo ""
     while true; do
-        printf "\x1B[1mDo you want to use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THIS POSTGRESQL DB BY YOURSELF FIRST BEFORE APPLY CP4BA CUSTOM RESOURCE${RESET_TEXT}. ${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=im-setting-up-external-postgresql-database-server#dbcreate${RESET_TEXT}] \x1B[1mas IM metastore DB for this CP4BA deployment?\x1B[0m ${YELLOW_TEXT}(Notes: IM service can use an external Postgres DB to store IM data. If select \"Yes\", IM service uses an external Postgres DB as IM metastore DB. If select \"No\", IM service uses an embedded cloud native postgresql DB as IM metastore DB.)${RESET_TEXT} (Yes/No, default: No): "
+        printf "\x1B[1mDo you want to use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THIS POSTGRESQL DB BY YOURSELF FIRST BEFORE APPLY BAW CUSTOM RESOURCE${RESET_TEXT}. ${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.11?topic=im-setting-up-external-edb-postgresql-database-server#dbcreate${RESET_TEXT}] \x1B[1mas IM metastore DB for this BAW deployment?\x1B[0m ${YELLOW_TEXT}(Notes: IM service can use an external Postgres DB to store IM data. If select \"Yes\", IM service uses an external Postgres DB as IM metastore DB. If select \"No\", IM service uses an embedded cloud native postgresql DB as IM metastore DB.)${RESET_TEXT} (Yes/No, default: No): "
         read -rp "" ans
         case "$ans" in
         "y"|"Y"|"yes"|"Yes"|"YES")
@@ -7260,7 +7155,7 @@ function select_external_postgresdb_for_zen(){
     printf "\n"
     echo ""
     while true; do
-        printf "\x1B[1mDo you want to use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THIS POSTGRESQL DB BY YOURSELF FIRST BEFORE APPLY CP4BA CUSTOM RESOURCE${RESET_TEXT}. ${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=im-setting-up-external-postgresql-database-server#dbcreate${RESET_TEXT}]\x1B[1m as Zen metastore DB for this CP4BA deployment?\x1B[0m ${YELLOW_TEXT}(Notes: Zen stores all metadata such as users, groups, service instances, vault integration, secret references in metastore DB. If select \"Yes\", Zen service uses an external Postgres DB as Zen metastore DB. If select \"No\", Zen service uses an embedded cloud native postgresql DB as Zen metastore DB )${RESET_TEXT} (Yes/No, default: No): "
+        printf "\x1B[1mDo you want to use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THIS POSTGRESQL DB BY YOURSELF FIRST BEFORE APPLY BAW CUSTOM RESOURCE${RESET_TEXT}. ${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.11?topic=im-setting-up-external-edb-postgresql-database-server#dbcreate${RESET_TEXT}]\x1B[1m as Zen metastore DB for this BAW deployment?\x1B[0m ${YELLOW_TEXT}(Notes: Zen stores all metadata such as users, groups, service instances, vault integration and secret references in metastore DB. If select \"Yes\", Zen service uses an external Postgres DB as Zen metastore DB. If select \"No\", Zen service uses an embedded cloud native postgresql DB as Zen metastore DB )${RESET_TEXT} (Yes/No, default: No): "
         read -rp "" ans
         case "$ans" in
         "y"|"Y"|"yes"|"Yes"|"YES")
@@ -7278,33 +7173,11 @@ function select_external_postgresdb_for_zen(){
     done
 }
 
-function select_external_postgresdb_for_bts(){
-    printf "\n"
-    echo ""
-    while true; do
-        printf "\x1B[1mDo you want to use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THIS POSTGRESQL DB BY YOURSELF FIRST BEFORE APPLY CP4BA CUSTOM RESOURCE${RESET_TEXT}, ${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.6?topic=service-external-database#configuring-an-external-database-with-the-bts-custom-resource${RESET_TEXT}]\x1B[1m as BTS metastore DB for this CP4BA deployment?\x1B[0m ${YELLOW_TEXT}(Notes: BTS service can use an external Postgres DB to store meta data. If select \"Yes\", BTS service uses an external Postgres DB as BTS metastore DB. If select \"No\", BTS service uses an embedded cloud native postgresql DB as BTS metastore DB )${RESET_TEXT} (Yes/No, default: No): "
-        read -rp "" ans
-        case "$ans" in
-        "y"|"Y"|"yes"|"Yes"|"YES")
-            EXTERNAL_POSTGRESDB_FOR_BTS="true"
-            break
-            ;;
-        "n"|"N"|"no"|"No"|"NO"|"")
-            EXTERNAL_POSTGRESDB_FOR_BTS="false"
-            break
-            ;;
-        *)
-            echo -e "Answer must be \"Yes\" or \"No\"\n"
-            ;;
-        esac
-    done
-}
-
 function select_external_cert_opensearch_kafka(){
     printf "\n"
     echo ""
     while true; do
-        printf "\x1B[1mDo you want to use an external certificate (root CA) for this Opensearch/Kafka deployment?\x1B[0m ${YELLOW_TEXT}(Notes: Opensearch/Kafka operator can consume external tls certificate. If select \"No\", CP4BA operator will creates leaf certificates based CP4BA's root CA )${RESET_TEXT} (Yes/No, default: No): "
+        printf "\x1B[1mDo you want to use an external certificate (root CA) for this Opensearch/Kafka deployment?\x1B[0m ${YELLOW_TEXT}(Notes: Opensearch/Kafka operator can consume external tls certificate. If select \"No\", BAW operator will create leaf certificates based on BAW's root CA )${RESET_TEXT} (Yes/No, default: No): "
         read -rp "" ans
         case "$ans" in
         "y"|"Y"|"yes"|"Yes"|"YES")
@@ -7323,19 +7196,19 @@ function select_external_cert_opensearch_kafka(){
 }
 
 
-function select_restricted_internet_access(){
+function generate_sample_network_policies(){
     printf "\n"
     echo ""
     while true; do
-        printf "\x1B[1mDo you want to restrict network egress to unknown external destination for this CP4BA deployment?\x1B[0m ${YELLOW_TEXT}(Notes: CP4BA $CP4BA_RELEASE_BASE prevents all network egress to unknown destinations by default. You can either (1) enable all egress or (2) accept the new default and create network policies to allow your specific communication targets as documented in the knowledge center.)${RESET_TEXT} (Yes/No, default: Yes): "
+        printf "\x1B[1mDo you want to generate the network policy templates for this BAW deployment?\x1B[0m ${YELLOW_TEXT}(Notes: The BAW operators does not install network policies automatically. If you want the operators to generate network policies from a set of templates, select Yes. You can install the network policies by running a script after the BAW Deployment is installed. If you select No, then no network policies will be generated.)${RESET_TEXT} (Yes/No, default: No):" 
         read -rp "" ans
         case "$ans" in
-        "y"|"Y"|"yes"|"Yes"|"YES"|"")
-            RESTRICTED_INTERNET_ACCESS="true"
+        "y"|"Y"|"yes"|"Yes"|"YES")
+            GENERATE_SAMPLE_NETWORK_POLICIES="true"
             break
             ;;
-        "n"|"N"|"no"|"No"|"NO")
-            RESTRICTED_INTERNET_ACCESS="false"
+        "n"|"N"|"no"|"No"|"NO"|"")
+            GENERATE_SAMPLE_NETWORK_POLICIES="false"
             break
             ;;
         *)
@@ -7360,7 +7233,7 @@ function select_project() {
             echo -e "\x1B[1;31mEnter a valid project name, project name should not be 'kube' or start with 'kube' \x1B[0m"
             TARGET_PROJECT_NAME=""
         else
-            isProjExists=`kubectl get namespace $TARGET_PROJECT_NAME --ignore-not-found | wc -l`  >/dev/null 2>&1
+            isProjExists=`kubectl get project $TARGET_PROJECT_NAME --ignore-not-found | wc -l`  >/dev/null 2>&1
 
             if [ "$isProjExists" -ne 2 ] ; then
                 echo -e "\x1B[1;31mInvalid project name, please enter a existing project name ...\x1B[0m"
@@ -7383,11 +7256,11 @@ function select_fips_enable(){
     all_fips_enabled_flag=$(${CLI_CMD} get configmap cp4ba-fips-status --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS -o jsonpath={.data.all-fips-enabled})
     if [ -z $all_fips_enabled_flag ]; then
         FIPS_ENABLED="false"
-        info "Not found configmap \"cp4ba-fips-status\" in the project \"$CP4BA_SERVICES_NS\". setting \"shared_configuration.enable_fips\" as \"false\" by default in the final custom resource."
+        info "Configmap \"cp4ba-fips-status\" not found in the project \"$CP4BA_SERVICES_NS\". setting \"shared_configuration.enable_fips\" as \"false\" by default in the final custom resource."
     elif [[ "$all_fips_enabled_flag" == "Yes" ]]; then
         printf "\n"
         while true; do
-            printf "\x1B[1mYour OCP cluster has FIPS enabled, do you want to enable FIPS with this CP4BA deployment？\x1B[0m${YELLOW_TEXT} (Notes: If you select \"Yes\", in order to complete enablement of FIPS for CP4BA, please refer to \"FIPS wall\" configuration in IBM documentation.)${RESET_TEXT} (Yes/No, default: No): "
+            printf "\x1B[1mYour OCP cluster has FIPS enabled, do you want to enable FIPS with this BAW deployment？\x1B[0m${YELLOW_TEXT} (Notes: If you select \"Yes\", in order to complete enablement of FIPS for BAW, please refer to \"FIPS wall\" configuration in IBM documentation.)${RESET_TEXT} (Yes/No, default: No): "
             read -rp "" ans
             case "$ans" in
             "y"|"Y"|"yes"|"Yes"|"YES")
@@ -7436,7 +7309,7 @@ function select_ldap_type(){
 function select_profile_type(){
     printf "\n"
     COLUMNS=12
-    echo -e "\x1B[1mPlease select the deployment profile (default: small).  Refer to the documentation in CP4BA Knowledge Center for details on profile.\x1B[0m"
+    echo -e "\x1B[1mPlease select the deployment profile (default: small).  Refer to the Business Automation Workflow Documentation for details on profile.\x1B[0m"
     options=("small" "medium" "large")
     if [ -z "$existing_profile_type" ]; then
         PS3='Enter a valid option [1 to 3]: '
@@ -7477,68 +7350,25 @@ function select_db_type(){
     printf "\n"
     COLUMNS=12
     echo -e "\x1B[1mWhat is the Database type that is used for this deployment? \x1B[0m"
-    if [[ " ${PATTERNS_CR_SELECTED[@]} " =~ "document_processing" ]]; then
-        # if [[ $PROFILE_TYPE == "small" ]]; then
-        options=("IBM Db2 Database" "PostgreSQL" "PostgreSQL EDB (deployed by CP4BA Operator)")
-        PS3='Enter a valid option [1 to 3]: '
-        # else
-        #     options=("IBM Db2 Database" "PostgreSQL")
-        #     PS3='Enter a valid option [1 to 2]: '
-        # fi
-    elif [[ " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-process-service" && "${#PATTERNS_CR_SELECTED[@]}" -eq "1" ]]; then
-        # if [[ $PROFILE_TYPE == "small" ]]; then
-        options=("PostgreSQL" "PostgreSQL EDB (deployed by CP4BA Operator)")
-        PS3='Enter a valid option [1 to 2]: '
-        # else
-        #     options=("PostgreSQL")
-        #     PS3='Enter a valid option [1 to 1]: '
-        # fi
-    elif [[ " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-process-service" && " ${PATTERNS_CR_SELECTED[@]} " =~ "decisions" && "${#PATTERNS_CR_SELECTED[@]}" -eq "2" ]]; then
-        # if [[ $PROFILE_TYPE == "small" ]]; then
-        options=("PostgreSQL" "PostgreSQL EDB (deployed by CP4BA Operator)")
-        PS3='Enter a valid option [1 to 2]: '
-        # else
-        #     options=("PostgreSQL")
-        #     PS3='Enter a valid option [1 to 1]: '
-        # fi
-    elif [[ " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-process-service" && " ${PATTERNS_CR_SELECTED[@]} " =~ "content" && "${#PATTERNS_CR_SELECTED[@]}" -eq "2" ]]; then
-        # if [[ $PROFILE_TYPE == "small" ]]; then
-        options=("PostgreSQL" "PostgreSQL EDB (deployed by CP4BA Operator)")
-        PS3='Enter a valid option [1 to 2]: '
-        # else
-        #     options=("PostgreSQL")
-        #     PS3='Enter a valid option [1 to 1]: '
-        # fi
-    elif [[ ("${PATTERNS_CR_SELECTED[@]}" =~ "workflow-authoring" || " ${optional_component_cr_arr[@]}" =~ "app_designer" || " ${optional_component_cr_arr[@]}" =~ "ads_designer") && " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-process-service" ]]; then
-        # if [[ $PROFILE_TYPE == "small" ]]; then
-        options=("IBM Db2 Database" "Oracle" "Microsoft SQL Server" "PostgreSQL" "PostgreSQL EDB (deployed by CP4BA Operator)")
-        PS3='Enter a valid option [1 to 5]: '
-        # else
-        #     options=("IBM Db2 Database" "Oracle" "Microsoft SQL Server" "PostgreSQL")
-        #     PS3='Enter a valid option [1 to 4]: '
-        # fi
-    elif [[ " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-process-service" && " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-runtime" && "${#PATTERNS_CR_SELECTED[@]}" -eq "3" ]]; then
-        # if [[ $PROFILE_TYPE == "small" ]]; then
-        options=("PostgreSQL" "PostgreSQL EDB (deployed by CP4BA Operator)")
-        PS3='Enter a valid option [1 to 2]: '
-        # else
-        #     options=("PostgreSQL")
-        #     PS3='Enter a valid option [1 to 1]: '
-        # fi
-    else
-        # if [[ $PROFILE_TYPE == "small" ]]; then
-        options=("IBM Db2 Database" "Oracle" "Microsoft SQL Server" "PostgreSQL" "PostgreSQL EDB (deployed by CP4BA Operator)")
-        PS3='Enter a valid option [1 to 5]: '
-        # else
-        #     options=("IBM Db2 Database" "Oracle" "Microsoft SQL Server" "PostgreSQL")
-        #     PS3='Enter a valid option [1 to 4]: '
-        # fi
-    fi
+    options=("IBM Db2 Database" "Oracle" "External PostgreSQL" "EDB Postgres (deployed by BAW operator)")
+    PS3='Enter a valid option [1 to 4]: '
     select opt in "${options[@]}"
     do
         case $opt in
             "IBM Db2 Database")
                 DB_TYPE="db2"
+                break
+                ;;
+            "IBM Db2 HADR")
+                DB_TYPE="db2hadr"
+                break
+                ;;
+            "IBM Db2 RDS")
+                DB_TYPE="db2rds"
+                break
+                ;;
+            "IBM Db2 RDS HADR")
+                DB_TYPE="db2rdshadr"
                 break
                 ;;
             "Oracle")
@@ -7549,11 +7379,11 @@ function select_db_type(){
                 DB_TYPE="sqlserver"
                 break
                 ;;
-            "PostgreSQL")
+            "External PostgreSQL")
                 DB_TYPE="postgresql"
                 break
                 ;;
-            "PostgreSQL EDB (deployed by CP4BA Operator)")
+            "EDB Postgres (deployed by BAW operator)")
                 DB_TYPE="postgresql-edb"
                 break
                 ;;
@@ -7597,135 +7427,33 @@ function set_external_ldap(){
 
 }
 
-function select_cpe_full_storage(){
-    if [[ " ${PATTERNS_CR_SELECTED[@]} " =~ "document_processing" ]]; then
-        printf "\n"
-        while true; do
-            printf "\x1B[1mDo you want limited CPE storage support? (Yes/No): \x1B[0m"
-            read -rp "" ans
-            case "$ans" in
-            "y"|"Y"|"yes"|"Yes"|"YES")
-                CPE_FULL_STORAGE="No"
-                break
-                ;;
-            "n"|"N"|"no"|"No"|"NO")
-                CPE_FULL_STORAGE="Yes"
-                break
-                ;;
-            *)
-                echo -e "Answer must be \"Yes\" or \"No\"\n"
-                ;;
-            esac
-        done
-    fi
-}
-
-
-function select_gpu_document_processing(){
-    printf "\n"
-    set_gpu_enabled=""
-    ENABLE_GPU_ARIA=""
-    while [[ $set_gpu_enabled == "" ]];
-    do
-        printf "\x1B[1mAre there GPU enabled worker nodes (Yes/No)? \x1B[0m"
-        read -rp "" set_gpu_enabled
-        case "$set_gpu_enabled" in
-        "y"|"Y"|"yes"|"Yes"|"YES")
-            ENABLE_GPU_ARIA="Yes"
-            break
-            ;;
-        "n"|"N"|"no"|"No"|"NO")
-            ENABLE_GPU_ARIA="No"
-            break
-            ;;
-        *)
-            echo -e "Answer must be \"Yes\" or \"No\"\n"
-            set_gpu_enabled=""
-            ENABLE_GPU_ARIA=""
-            ;;
-        esac
-    done
-    if [[ "${ENABLE_GPU_ARIA}" == "Yes" ]]; then
-        printf "\n"
-        printf "\x1B[1mWhat is the node label key used to identify the GPU worker node(s)? \x1B[0m"
-        nodelabel_key=""
-        while [[ $nodelabel_key == "" ]];
-        do
-            read -rp "" nodelabel_key
-            if [ -z "$nodelabel_key" ]; then
-            echo -e "\x1B[1;31mEnter the node label key.\x1B[0m"
-            fi
-        done
-
-        printf "\n"
-        printf "\x1B[1mWhat is the node label value used to identify the GPU worker node(s)? \x1B[0m"
-        nodelabel_value=""
-        while [[ $nodelabel_value == "" ]];
-        do
-            read -rp "" nodelabel_value
-            if [ -z "$nodelabel_value" ]; then
-            echo -e "\x1B[1;31mEnter the node label value.\x1B[0m"
-            fi
-        done
-    fi
-}
-
-function select_ae_data_persistence(){
-    if [[ " ${EXISTING_OPT_COMPONENT_ARR[@]} " =~ "ae_data_persistence" ]]; then
-        foundation_component_arr=( "${foundation_component_arr[@]}" "AE" )
-        AE_DATA_PERSISTENCE_ENABLE="Yes"
-    else
-        if [[ (" ${PATTERNS_CR_SELECTED[@]} " =~ "application") ]]; then
-            printf "\n"
-            while true; do
-                printf "\x1B[1mDo you want to enable Business Automation Application Data Persistence? (Yes/No, default: No): \x1B[0m"
-                read -rp "" ans
-                case "$ans" in
-                "y"|"Y"|"yes"|"Yes"|"YES")
-                    foundation_component_arr=( "${foundation_component_arr[@]}" "AE" )
-                    AE_DATA_PERSISTENCE_ENABLE="Yes"
-                    # optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "ae_data_persistence" )
-                    break
-                    ;;
-                "n"|"N"|"no"|"No"|"NO"|"")
-                    break
-                    ;;
-                *)
-                    echo -e "Answer must be \"Yes\" or \"No\"\n"
-                    ;;
-                esac
-            done
-        fi
-    fi
-}
-
-function select_baw_only(){
+function select_baw_pattern(){
     pattern_arr=()
     pattern_cr_arr=()
     printf "\n"
-    echo -e "\x1B[1mSelect the Cloud Pak for Business Automation capability to install: \x1B[0m"
+    echo -e "\x1B[1mSelect the IBM Business Automation Workflow capability to install: \x1B[0m"
     COLUMNS=12
 
-    options=("Business Automation Workflow")
-    PS3='Enter a valid option [1 to 1]: '
-
+    options=("Business Automation Workflow Authoring" "Business Automation Workflow Runtime")
+    PS3='Enter a valid option [1 to 2]: '
     select opt in "${options[@]}"
     do
         case $opt in
-            "Business Automation Workflow")
-                pattern_arr=("Business Automation Workflow")
-                pattern_cr_arr=("workflow")
+            "Business Automation Workflow Authoring")
+                pattern_arr=("Business Automation Workflow Authoring")
+                pattern_cr_arr=("workflow-authoring")
+                foundation_baw=("BAN" "BAS")
+                break
+                ;;
+            "Business Automation Workflow Runtime")
+                pattern_arr=("Business Automation Workflow Runtime")
+                pattern_cr_arr=("workflow-runtime")
+                foundation_baw=("BAN" "AE")
                 break
                 ;;
             *) echo "invalid option $REPLY";;
         esac
     done
-
-    if [[ $PLATFORM_SELECTED == "other" ]]; then
-        foundation_baw=("BAN" "RR" "UMS" "AE")
-    else
-        foundation_baw=("BAN" "RR" "AE")
-    fi
 
     foundation_component_arr=( "${foundation_component_arr[@]}" "${foundation_baw[@]}" )
     PATTERNS_CR_SELECTED=$( IFS=$','; echo "${pattern_cr_arr[*]}" )
@@ -7743,24 +7471,16 @@ function input_information(){
     EXISTING_OPT_COMPONENT_ARR=()
     EXISTING_PATTERN_ARR=()
     retVal_baw=1
-    # rm -rf $TEMPORARY_PROPERTY_FILE >/dev/null 2>&1
-    if [[ "${INSTALL_BAW_ONLY}" == "No" ]];
-    then
-        DEPLOYMENT_TYPE="production"
-        PLATFORM_SELECTED="OCP"
-        select_pattern
-    else
-        select_baw_only
-    fi
-    select_optional_component
-    # whether wfps authoring require LDAP
-    if [[ "${#pattern_cr_arr[@]}" -eq "1" && "${pattern_cr_arr[@]}" =~ "workflow-process-service" ]]; then
-        select_ldap_type_for_wfps_authoring
-    fi
+    rm -rf $TEMPORARY_PROPERTY_FILE >/dev/null 2>&1
+    DEPLOYMENT_TYPE="production"
+    select_platform
 
-    if [[ -z $LDAP_WFPS_AUTHORING || $LDAP_WFPS_AUTHORING == "Yes" ]]; then
-        select_ldap_type
-    fi
+    select_baw_pattern
+
+    select_optional_component
+
+    select_ldap_type
+
     select_storage_class
     select_profile_type
 
@@ -7779,45 +7499,60 @@ function input_information(){
     if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]]; then
         select_fips_enable
     fi
+    generate_sample_network_policies
 
-    if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]]; then
-        select_restricted_internet_access
+    ### <https://jsw.ibm.com/browse/DBACLD-170742> - We only prompt the user to ask if they want to use external PostgreSQL for Zen and IM when external PostgreSQL is selected.
+    if [[ $DB_TYPE == "postgresql" ]]; then
         select_external_postgresdb_for_im
         select_external_postgresdb_for_zen
-
-        # Create Secret/configMap for BTS metastore external Postgres DB
-        containsElement "decisions_ads" "${pattern_cr_arr[@]}"
-        ads_Val=$?
-
-        if [[ $ads_Val -eq 0 || " ${pattern_cr_arr[@]} " =~ "workflow-authoring" || " ${pattern_cr_arr[@]} " =~ "document_processing" || " ${pattern_cr_arr[@]} " =~ "application" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
-            select_external_postgresdb_for_bts
-        fi
-
-        if [[ " ${pattern_cr_arr[@]} " =~ "workflow-authoring" || " ${pattern_cr_arr[@]} " =~ "workflow-runtime" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
-            select_external_cert_opensearch_kafka
-        fi
+    else
+        EXTERNAL_POSTGRESDB_FOR_IM="false"
+        EXTERNAL_POSTGRESDB_FOR_ZEN="false"
     fi
 
-    # select_db_server_number
-    if [[ " ${pattern_cr_arr[@]}" =~ "content" || " ${pattern_cr_arr[@]}" =~ "document_processing" ]]; then
-        select_objectstore_number
-    fi
-
-    select_cpe_full_storage
-    containsElement "document_processing_designer" "${pattern_cr_arr[@]}"
-    retVal=$?
-    if [[ ( $retVal -eq 0 ) && "$DEPLOYMENT_TYPE" == "production" ]]; then
-        select_gpu_document_processing
-    fi
-
-    containsElement "document_processing" "${pattern_cr_arr[@]}"
-    retVal=$?
-    if [[ ( $retVal -eq 0 ) && "$DEPLOYMENT_TYPE" == "starter" ]]; then
-        select_gpu_document_processing
+    if [[ " ${pattern_cr_arr[@]} " =~ "workflow-authoring" || " ${pattern_cr_arr[@]} " =~ "workflow-runtime" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
+        select_external_cert_opensearch_kafka
     fi
 
     create_temp_property_file
 }
+
+# Function to select the platform type being used
+# This function is called by the input_information function
+function select_platform(){
+    printf "\n"
+    echo -e "\x1B[1mSelect the cloud platform to deploy: \x1B[0m"
+    COLUMNS=12
+    # options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud" "Other ( Certified Kubernetes Cloud Platform / CNCF)")
+    # PS3='Enter a valid option [1 to 3]: '
+
+    #Adding support for the other type of platform
+    # DBACLD-168151
+    otheroption="Other ( Rancher Kubernetes Engine (RKE) / VMware Tanzu Kubernetes Grid Integrated Edition (TKGI) )"
+    options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud" "$otheroption")
+    PS3='Enter a valid option [1 to 3]: '
+    select opt in "${options[@]}"
+    do
+        case $opt in
+            "RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud")
+                PLATFORM_SELECTED="ROKS"
+                use_entitlement="yes"
+                break
+                ;;
+            "Openshift Container Platform (OCP) - Private Cloud")
+                PLATFORM_SELECTED="OCP"
+                use_entitlement="yes"
+                break
+                ;;
+            "$otheroption")
+                PLATFORM_SELECTED="other"
+                break
+                ;;
+            *) echo "invalid option $REPLY";;
+        esac
+    done
+}
+
 
 function select_objectstore_number(){
     content_os_number=""
@@ -7835,7 +7570,7 @@ function select_objectstore_number(){
             printf "\x1B[1mHow many object stores will be deployed for the content pattern and how many additional object stores will be deployed for the document processing pattern? \x1B[0m"
         fi
 
-        if [[ " ${pattern_cr_arr[@]}" =~ "document_processing" && (! " ${pattern_cr_arr[@]}" =~ "content") ]]; then
+        if [[ " ${pattern_cr_arr[@]}" =~ "document_processing" ]]; then
             read -rp "" content_os_number
             [[ $content_os_number =~ ^[0-9]+$ ]] || { echo -e "\x1B[1;31mEnter a valid number [0 to 10]\x1B[0m"; continue; }
             if [ "$content_os_number" -ge 0 ] && [ "$content_os_number" -le 10 ]; then
@@ -7861,7 +7596,7 @@ function select_db_server_number(){
     db_server_number=""
     while true; do
         printf "\n"
-        printf "\x1B[1mHow many database servers or instances will be used for the CP4BA deployment? \x1B[0m"
+        printf "\x1B[1mHow many database servers or instances will be used for the BAW deployment? \x1B[0m"
         read -rp "" db_server_number
         [[ $db_server_number =~ ^[0-9]+$ ]] || { echo -e "\x1B[1;31mEnter a valid number [1 to 999]\x1B[0m"; continue; }
         if [ "$db_server_number" -ge 1 ] && [ "$db_server_number" -le 999 ]; then
@@ -7877,7 +7612,7 @@ function get_db_server_list(){
     local db_server_list_input=""
     while true; do
         printf "\n"
-        printf "\x1B[1mEnter the alias name(s) for the database server(s)/instance(s) to be used by the CP4BA deployment.\x1B[0m\n"
+        printf "\x1B[1mEnter the alias name(s) for the database server(s)/instance(s) to be used by the BAW deployment.\x1B[0m\n"
         echo -e "\x1B[1;31m(NOTE: NOT the host name of the database server, and CANNOT include a dot[.] character)\x1B[0m"
         echo -e "\x1B[1;31m(NOTE: This key supports comma-separated lists (for example: dbserver1,dbserver2,dbserver3)\x1B[0m"
         if [[ " ${pattern_cr_arr[@]}" =~ "document_processing" ]]; then
@@ -7958,14 +7693,14 @@ function generate_create_secret_script(){
         ${COPY_CMD} -rf ${CREATE_SECRET_SCRIPT_FILE_TMP} ${CREATE_SECRET_SCRIPT_FILE}
         chmod 755 $CREATE_SECRET_SCRIPT_FILE
     else
-        success "No secret is needed for selected configuration. Skipping this step."
+        success "No secret is needed for the selected configuration. Skipping this step."
         rm -f $CREATE_SECRET_SCRIPT_FILE
     fi  
 }
 
 
 function validate_secret_in_cluster(){
-    INFO "Checking the Kubernetes secret required by CP4BA existing in cluster or not"
+    INFO "Checking the Kubernetes secret required by Business Automation Workflow existing in cluster or not"
     local files=()
     SECRET_CREATE_PASSED="true"
     # Check if secret_template folder is created
@@ -7975,7 +7710,7 @@ function validate_secret_in_cluster(){
         do
             secret_name_tmp=`cat $item | ${YQ_CMD} r - metadata.name`
             if [ -z "$secret_name_tmp" ]; then
-                error "Not found secret name in YAML file: \"$item\"! Please check and fix it"
+                error "Secret name in YAML file not found: \"$item\"! Please check and fix it"
                 exit 1
             else
                 secret_name_tmp=$(sed -e 's/^"//' -e 's/"$//' <<<"$secret_name_tmp")
@@ -7983,27 +7718,27 @@ function validate_secret_in_cluster(){
                 if [[ $secret_name_tmp != "ibm-zen-metastore-edb-cm" && $secret_name_tmp != "im-datastore-edb-cm" && $secret_name_tmp != "ibm-bts-config-extension" && $secret_name_tmp != "cp4ba-tls-issuer" ]]; then
                     secret_exists=`kubectl get secret $secret_name_tmp -n "$CP4BA_SERVICES_NS" --ignore-not-found | wc -l`  >/dev/null 2>&1
                     if [ "$secret_exists" -ne 2 ] ; then
-                        error "Not found secret \"$secret_name_tmp\" in Kubernetes cluster! please create it first before deployment CP4BA"
+                        error "Secret \"$secret_name_tmp\" not found in Kubernetes cluster! please create it first before deployment BAW"
                         SECRET_CREATE_PASSED="false"
                     else
-                        success "Found secret \"$secret_name_tmp\" in Kubernetes cluster, PASSED!"
+                        success "Secret \"$secret_name_tmp\" found in Kubernetes cluster, PASSED!"
                     fi
                 else
                     if [[ $secret_name_tmp == "cp4ba-tls-issuer" ]]; then
                         secret_exists=`kubectl get Issuer $secret_name_tmp -n "$CP4BA_SERVICES_NS" --ignore-not-found | wc -l`  >/dev/null 2>&1
                         if [ "$secret_exists" -ne 2 ] ; then
-                            error "Not found Issuer \"$secret_name_tmp\" in Kubernetes cluster! please create it first before deployment CP4BA"
+                            error "Issuer \"$secret_name_tmp\" not found in Kubernetes cluster! please create it first before deployment BAW"
                             SECRET_CREATE_PASSED="false"
                         else
-                            success "Found Issuer \"$secret_name_tmp\" in Kubernetes cluster, PASSED!"
+                            success "Issuer \"$secret_name_tmp\" found in Kubernetes cluster, PASSED!"
                         fi
                     else
                         secret_exists=`kubectl get configmap $secret_name_tmp -n "$CP4BA_SERVICES_NS" --ignore-not-found | wc -l`  >/dev/null 2>&1
                         if [ "$secret_exists" -ne 2 ] ; then
-                            error "Not found configMap \"$secret_name_tmp\" in Kubernetes cluster! please create it first before deployment CP4BA"
+                            error "ConfigMap \"$secret_name_tmp\" not found in Kubernetes cluster! please create it first before deployment BAW"
                             SECRET_CREATE_PASSED="false"
                         else
-                            success "Found configMap \"$secret_name_tmp\" in Kubernetes cluster, PASSED!"
+                            success "ConfigMap \"$secret_name_tmp\" found in Kubernetes cluster, PASSED!"
                         fi
                     fi
                 fi
@@ -8025,16 +7760,16 @@ function validate_secret_in_cluster(){
                 secret_name_tmp=`cat $item | grep -oP '(?<=create secret generic ).*?(?=\s)' | tail -1`
             fi
             if [ -z "$secret_name_tmp" ]; then
-                error "Not found secret name in shell script file: \"$item\"! Please check and fix it"
+                error "Secret name in shell script file not found: \"$item\"! Please check and fix it"
                 exit 1
             else
                 secret_name_tmp=$(sed -e 's/^"//' -e 's/"$//' <<<"$secret_name_tmp")
                 secret_exists=`kubectl get secret $secret_name_tmp -n "$CP4BA_SERVICES_NS" --ignore-not-found | wc -l`  >/dev/null 2>&1
                 if [ "$secret_exists" -ne 2 ] ; then
-                    error "Not found secret \"$secret_name_tmp\" in Kubernetes cluster! please create it first before deployment CP4BA"
+                    error "Secret \"$secret_name_tmp\" not found in Kubernetes cluster! please create it first before deployment BAW"
                     SECRET_CREATE_PASSED="false"
                 else
-                    success "Found secret \"$secret_name_tmp\" in Kubernetes cluster, PASSED!"
+                    success "Secret \"$secret_name_tmp\" found in Kubernetes cluster, PASSED!"
                 fi
             fi
         done
@@ -8045,7 +7780,7 @@ function validate_secret_in_cluster(){
             INFO "All secrets created in Kubernetes cluster, PASSED!"
         fi
     else
-        success "No secret is needed for selected configuration. Skipping this step."
+        success "No secret is needed for the selected configuration. Skipping this step."
     fi
 }
 
@@ -8055,8 +7790,18 @@ function validate_prerequisites(){
     fips_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$fips_flag")
     fips_flag=$(echo $fips_flag | tr '[:upper:]' '[:lower:]')
 
+    # Set default values if variables are not set (DBACLD-170075 Allow customers to customize the country and language being passed to the jar files being used for validation in cp4a-prerequisites.sh)
+    CP4BA_AUTO_LANGUAGE=${CP4BA_AUTO_LANGUAGE:-"EN"}
+    CP4BA_AUTO_REGION=${CP4BA_AUTO_REGION:-"US"} #bug-170075
+
+    # Validate that both values are exactly two characters long
+    if [[ ${#CP4BA_AUTO_LANGUAGE} -ne 2 || ${#CP4BA_AUTO_REGION} -ne 2 ]]; then
+        echo "Error: CP4BA_AUTO_LANGUAGE and CP4BA_AUTO_REGION must each be exactly 2 characters long."
+        exit 1
+    fi
+
     # validate the storage class
-    INFO "Checking Slow/Medium/Fast/Block storage class required by CP4BA"
+    INFO "Checking Slow/Medium/Fast/Block storage class required by BAW"
     tmp_storage_classname=$(prop_user_profile_property_file CP4BA.SLOW_FILE_STORAGE_CLASSNAME)
     sample_pvc_name="cp4ba-test-slow-pvc-$RANDOM"
     verify_storage_class_valid $tmp_storage_classname "ReadWriteMany" $sample_pvc_name
@@ -8082,13 +7827,15 @@ function validate_prerequisites(){
 
     # Validate LDAP connection for CP4BA
     if [[ ! ("${#pattern_cr_arr[@]}" -eq "1" && "${pattern_cr_arr[@]}" =~ "workflow-process-service" && $LDAP_WFPS_AUTHORING == "No") ]]; then
-        INFO "Checking LDAP connection required by CP4BA"
+        INFO "Checking LDAP connection required by BAW"
         tmp_servername="$(prop_ldap_property_file LDAP_SERVER)"
         tmp_serverport="$(prop_ldap_property_file LDAP_PORT)"
         tmp_basdn="$(prop_ldap_property_file LDAP_BASE_DN)"
         tmp_ldapssl="$(prop_ldap_property_file LDAP_SSL_ENABLED)"
-        tmp_user=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l name=ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapUsername | base64 --decode`
-        tmp_userpwd=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l name=ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapPassword | base64 --decode`
+        tmp_user=$( $CLI_CMD get secret -n "$CP4BA_SERVICES_NS" -l name=ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapUsername | base64 --decode )
+        ## <https://jsw.ibm.com/browse/DBACLD-172803> - We are now asking user to use {xor} for special characters in password, so we need to use decode_xor_password to get the password decoded before validation.
+        cp4a_operator=$( $CLI_CMD get pods -l name=ibm-cp4a-operator --no-headers --ignore-not-found -n $TARGET_PROJECT_NAME | awk '{print $1}' )
+        tmp_userpwd=$( decode_xor_password $( $CLI_CMD get secret -n "$CP4BA_SERVICES_NS" -l name=ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapPassword | base64 --decode ) $TARGET_PROJECT_NAME $cp4a_operator | sed  's/\$/\\$/g' )
 
         tmp_servername=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_servername")
         tmp_serverport=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_serverport")
@@ -8099,13 +7846,14 @@ function validate_prerequisites(){
         tmp_userpwd=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_userpwd")
 
         #This function processes and sets all parameters needed for the LDAP validation functions performed by the jar
-        ldap_return_details=$(ldap_validation_parameter_generator)
-        # Parse the output into variables
-        tmp_ldap_group_basedn=$(echo $ldap_return_details | awk '{print $1}')
-        tmp_ldap_user_filter=$(echo $ldap_return_details | awk '{print $2}')
-        tmp_ldap_group_filter=$(echo $ldap_return_details | awk '{print $3}')
-        tmp_ldap_user_password_list=$(echo $ldap_return_details | awk '{print $4}')
-        tmp_ldap_group_list=$(echo $ldap_return_details | awk '{print $5}')
+        ldap_validation_parameter_generator
+        #ldap_details is a array created which has all required details for additional parameters required to be passed to the LDAP JAR
+        #DBACLD-159742
+        tmp_ldap_group_basedn=${ldap_details[0]}
+        tmp_ldap_user_filter=${ldap_details[1]}
+        tmp_ldap_group_filter=${ldap_details[2]}
+        tmp_ldap_user_password_list=${ldap_details[3]}
+        tmp_ldap_group_list=${ldap_details[4]}
 
         verify_ldap_connection "$tmp_servername" "$tmp_serverport" "$tmp_basdn" "$tmp_user" "$tmp_userpwd" "$tmp_ldapssl" "$tmp_ldap_group_basedn" "$tmp_ldap_user_filter" "$tmp_ldap_group_filter" "$tmp_ldap_user_password_list" "$tmp_ldap_group_list"
 
@@ -8116,8 +7864,10 @@ function validate_prerequisites(){
             tmp_serverport="$(prop_ext_ldap_property_file LDAP_PORT)"
             tmp_basdn="$(prop_ext_ldap_property_file LDAP_BASE_DN)"
             tmp_ldapssl="$(prop_ext_ldap_property_file LDAP_SSL_ENABLED)"
-            tmp_user=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l name=ext-ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapUsername | base64 --decode`
-            tmp_userpwd=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l name=ext-ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapPassword | base64 --decode`
+            tmp_user=$( $CLI_CMD get secret -n "$CP4BA_SERVICES_NS" -l name=ext-ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapUsername | base64 --decode )
+            ## <https://jsw.ibm.com/browse/DBACLD-172803> - We are now asking user to use {xor} for special characters in password, so we need to use decode_xor_password to get the password decoded before validation.
+            cp4a_operator=$( $CLI_CMD get pods -l name=ibm-cp4a-operator --no-headers --ignore-not-found -n $TARGET_PROJECT_NAME | awk '{print $1}' )
+            tmp_userpwd=$( decode_xor_password $( $CLI_CMD get secret -n "$CP4BA_SERVICES_NS" -l name=ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapPassword | base64 --decode ) $TARGET_PROJECT_NAME $cp4a_operator | sed  's/\$/\\$/g' )
 
             tmp_servername=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_servername")
             tmp_serverport=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_serverport")
@@ -8135,7 +7885,7 @@ function validate_prerequisites(){
     # Validate DB connection for CP4BA
     if [[ $DB_TYPE != "postgresql-edb" ]]; then
 
-        INFO "Checking DB connection required by CP4BA"
+        INFO "Checking DB connection required by Business Automation Workflow"
 
         # check db connection for GCDDB
         if [[ " ${pattern_cr_arr[@]}" =~ "workflow-runtime" || " ${pattern_cr_arr[@]}" =~ "workflow-authoring" || " ${pattern_cr_arr[@]}" =~ "workstreams" || " ${pattern_cr_arr[@]}" =~ "content" || " ${pattern_cr_arr[@]}" =~ "document_processing" || "${optional_component_cr_arr[@]}" =~ "ae_data_persistence" ]]; then
@@ -8362,6 +8112,20 @@ function validate_prerequisites(){
                 if [[ $DB_TYPE != "postgresql-edb" ]]; then
                     verify_db_connection "${tmp_dbname}" "${tmp_dbusername}" "${tmp_dbuserpassword}" "${tmp_dbserver}"
                 fi
+            fi
+        fi
+
+        # check db connection for ADP GitGateway
+        if [[ "${pattern_cr_arr[@]}" =~ "document_processing" ]]; then
+            if [[ $DB_TYPE == "postgresql" ]]; then
+                tmp_dbname="$(prop_db_name_user_property_file ADP_GG_DB_NAME)"
+                tmp_dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbname")
+
+                tmp_dbserver=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=ibm-adp-secret -o yaml | ${YQ_CMD} r - items.[0].metadata.labels.db-server`
+                tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=ibm-adp-secret -o yaml | ${YQ_CMD} r - items.[0].data.adpggDBUsername | base64 --decode`
+                tmp_dbuserpassword=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=ibm-adp-secret -o yaml | ${YQ_CMD} r - items.[0].data.adpggDBPassword | base64 --decode`
+
+                verify_db_connection "${tmp_dbname}" "${tmp_dbusername}" "${tmp_dbuserpassword}" "${tmp_dbserver}"
             fi
         fi
 
@@ -8626,6 +8390,33 @@ function validate_prerequisites(){
                 fi
             fi
         fi
+        # check db connection for ADS Designer
+        if [[ "${pattern_cr_arr[@]}" =~ "decisions_ads" && "${optional_component_cr_arr[@]}" =~ "ads_designer" ]]; then
+            if [[ $DB_TYPE == "postgresql" ]]; then
+                tmp_dbname="$(prop_db_name_user_property_file ADS_DESIGNER_DB_NAME)"
+                tmp_dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbname")
+
+                tmp_dbserver=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=${tmp_dbname} -o yaml | ${YQ_CMD} r - items.[0].metadata.labels.db-server`
+                tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=${tmp_dbname} -o yaml | ${YQ_CMD} r - items.[0].data.username | base64 --decode`
+                tmp_dbuserpassword=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=${tmp_dbname} -o yaml | ${YQ_CMD} r - items.[0].data.password | base64 --decode`
+
+                verify_db_connection "${tmp_dbname}" "${tmp_dbusername}" "${tmp_dbuserpassword}" "${tmp_dbserver}"
+            fi
+        fi
+
+        # check db connection for ADS Runtime
+        if [[ "${pattern_cr_arr[@]}" =~ "decisions_ads" && "${optional_component_cr_arr[@]}" =~ "ads_runtime" ]]; then
+            if [[ $DB_TYPE == "postgresql" ]]; then
+                tmp_dbname="$(prop_db_name_user_property_file ADS_RUNTIME_DB_NAME)"
+                tmp_dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbname")
+
+                tmp_dbserver=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=${tmp_dbname} -o yaml | ${YQ_CMD} r - items.[0].metadata.labels.db-server`
+                tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=${tmp_dbname} -o yaml | ${YQ_CMD} r - items.[0].data.username | base64 --decode`
+                tmp_dbuserpassword=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=${tmp_dbname} -o yaml | ${YQ_CMD} r - items.[0].data.password | base64 --decode`
+
+                verify_db_connection "${tmp_dbname}" "${tmp_dbusername}" "${tmp_dbuserpassword}" "${tmp_dbserver}"
+            fi
+        fi
     fi
 
     # Check db connection for im/zen/bts external postgresql db
@@ -8658,24 +8449,16 @@ function validate_prerequisites(){
         rm -rf ${im_external_db_cert_folder}/clientkey.pk8 2>&1 </dev/null
         openssl pkcs8 -topk8 -outform DER -in $postgres_clientkeyfile -out ${im_external_db_cert_folder}/clientkey.pk8 -nocrypt 2>&1 </dev/null
 
-        output=$(java -Dsemeru.fips=$fips_flag -Duser.language=en -Duser.country=US -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${im_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
+        output=$(java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${im_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
         retVal_verify_db_tmp=$?
         connection_time=$(echo $output | awk -F 'Round Trip time: ' '{print $2}' | awk '{print $1}')
         if [[ ! -z $connection_time ]]; then
-            echo "Latency: $connection_time ms"
-            # Check if elapsed time is greater than 10 ms using awk
-            if [[ $(awk 'BEGIN { print ("'$connection_time'" < 10) }') -eq 1 ]]; then
-            echo "The latency is less than 10ms, which is acceptable performance for a simple DB operation."
-            elif [[ $(awk 'BEGIN { print ("'$connection_time'" > 10 && "'$connection_time'" < 30) }') -eq 1 ]]; then
-            echo "The latency is between 10ms and 30ms, which exceeds acceptable performance of 10 ms for a simple DB operation, but the service is still accessible."
-            elif [[ $(awk 'BEGIN { print ("'$connection_time'" > 30) }') -eq 1 ]]; then
-            echo "The latency exceeds 30ms for a simple DB operation, which indicates potential for failures."
-            fi
+            display_latency_warning $connection_time "Database"
         fi
 
         [[ retVal_verify_db_tmp -ne 0 ]] && \
-        warning "Execute: java -Dsemeru.fips=$fips_flag -Duser.language=en -Duser.country=US -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${im_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
-        fail "Unable to connect to database \"$dbname\" on database server \"$dbserver\", please check configuration again."
+        warning "Execute: java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${im_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
+        fail "Unable to connect to database \"$dbname\" on database server \"$dbserver\", please check the configuration again."
         [[ retVal_verify_db_tmp -eq 0 ]] && \
         success "Checked DB connection for \"$dbname\" on database server \"$dbserver\", PASSED!"
     fi
@@ -8706,24 +8489,16 @@ function validate_prerequisites(){
         rm -rf ${zen_external_db_cert_folder}/clientkey.pk8 2>&1 </dev/null
         openssl pkcs8 -topk8 -outform DER -in $postgres_clientkeyfile -out ${zen_external_db_cert_folder}/clientkey.pk8 -nocrypt 2>&1 </dev/null
 
-        output=$(java -Dsemeru.fips=$fips_flag -Duser.language=en -Duser.country=US -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${zen_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
+        output=$(java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${zen_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
         retVal_verify_db_tmp=$?
         connection_time=$(echo $output | awk -F 'Round Trip time: ' '{print $2}' | awk '{print $1}')
         if [[ ! -z $connection_time ]]; then
-            echo "Latency: $connection_time ms"
-            # Check if elapsed time is greater than 10 ms using awk
-            if [[ $(awk 'BEGIN { print ("'$connection_time'" < 10) }') -eq 1 ]]; then
-            echo "The latency is less than 10ms, which is acceptable performance for a simple DB operation."
-            elif [[ $(awk 'BEGIN { print ("'$connection_time'" > 10 && "'$connection_time'" < 30) }') -eq 1 ]]; then
-            echo "The latency is between 10ms and 30ms, which exceeds acceptable performance of 10 ms for a simple DB operation, but the service is still accessible."
-            elif [[ $(awk 'BEGIN { print ("'$connection_time'" > 30) }') -eq 1 ]]; then
-            echo "The latency exceeds 30ms for a simple DB operation, which indicates potential for failures."
-            fi
+            display_latency_warning $connection_time "Database"
         fi
 
         [[ retVal_verify_db_tmp -ne 0 ]] && \
-        warning "Execute: java -Dsemeru.fips=$fips_flag -Duser.language=en -Duser.country=US -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${zen_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
-        fail "Unable to connect to database \"$dbname\" on database server \"$dbserver\", please check configuration again."
+        warning "Execute: java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${zen_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
+        fail "Unable to connect to database \"$dbname\" on database server \"$dbserver\", please check the configuration again."
         [[ retVal_verify_db_tmp -eq 0 ]] && \
         success "Checked DB connection for \"$dbname\" on database server \"$dbserver\", PASSED!"
     fi
@@ -8754,30 +8529,22 @@ function validate_prerequisites(){
         rm -rf ${bts_external_db_cert_folder}/clientkey.pk8 2>&1 </dev/null
         openssl pkcs8 -topk8 -outform DER -in $postgres_clientkeyfile -out ${bts_external_db_cert_folder}/clientkey.pk8 -nocrypt 2>&1 </dev/null
 
-        output=$(java -Dsemeru.fips=$fips_flag -Duser.language=en -Duser.country=US -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${bts_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
+        output=$(java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${bts_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
         retVal_verify_db_tmp=$?
         connection_time=$(echo $output | awk -F 'Round Trip time: ' '{print $2}' | awk '{print $1}')
         if [[ ! -z $connection_time ]]; then
-            echo "Latency: $connection_time ms"
-            # Check if elapsed time is greater than 10 ms using awk
-            if [[ $(awk 'BEGIN { print ("'$connection_time'" < 10) }') -eq 1 ]]; then
-            echo "The latency is less than 10ms, which is acceptable performance for a simple DB operation."
-            elif [[ $(awk 'BEGIN { print ("'$connection_time'" > 10 && "'$connection_time'" < 30) }') -eq 1 ]]; then
-            echo "The latency is between 10ms and 30ms, which exceeds acceptable performance of 10 ms for a simple DB operation, but the service is still accessible."
-            elif [[ $(awk 'BEGIN { print ("'$connection_time'" > 30) }') -eq 1 ]]; then
-            echo "The latency exceeds 30ms for a simple DB operation, which indicates potential for failures."
-            fi
+            display_latency_warning $connection_time "Database"
         fi
 
         [[ retVal_verify_db_tmp -ne 0 ]] && \
-        warning "Execute: java -Dsemeru.fips=$fips_flag -Duser.language=en -Duser.country=US -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${bts_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
-        fail "Unable to connect to database \"$dbname\" on database server \"$dbserver\", please check configuration again."
+        warning "Execute: java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${bts_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
+        fail "Unable to connect to database \"$dbname\" on database server \"$dbserver\", please check the configuration again."
         [[ retVal_verify_db_tmp -eq 0 ]] && \
         success "Checked DB connection for \"$dbname\" on database server \"$dbserver\", PASSED!"
     fi
 
-    info "If all prerequisites check PASSED, you can run cp4a-deployment to deploy CP4BA. Otherwise, please check configuration again."
-    info "After CP4BA is deployed, please refer to documentation for post-deployment steps."
+    info "If all prerequisites check PASSED, you can run cp4a-deployment to deploy CP4BA. Otherwise, please check the configuration again."
+    info "After BAW is deployed, please refer to the documentation for post-deployment steps."
 }
 
 ################################################
@@ -8820,6 +8587,11 @@ if [[ $RUNTIME_MODE == "generate" ]]; then
             # Import function for DB Script
             source ${CUR_DIR}/helper/database-sql/${DB_TYPE}/odm/create-odm-dbscript.sh
 
+            # Import function for DB Script
+            if [[ $DB_TYPE == "postgresql" ]]; then
+                source ${CUR_DIR}/helper/database-sql/${DB_TYPE}/ads/create-ads-dbscript.sh
+            fi
+
             if [[ $DB_TYPE == "postgresql" || $DB_TYPE == "db2" ]]; then
             # Import function for DB Script
                 source ${CUR_DIR}/helper/database-sql/${DB_TYPE}/adp/create-adp-dbscript.sh
@@ -8840,7 +8612,7 @@ fi
 
 if [[ $RUNTIME_MODE == "validate" ]]; then
     echo  "*****************************************************"
-    echo  "Validating the prerequisites before you install CP4BA"
+    echo  "Validating the prerequisites before you install BAW"
     echo  "*****************************************************"
     check_cp4ba_separate_operand $TARGET_PROJECT_NAME
     validate_utility_tool_for_validation
