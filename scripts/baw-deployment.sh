@@ -26,22 +26,22 @@ function show_help() {
     # TODO
     echo "  -m  Optional: The valid mode types are:[upgradeOperator], [upgradeOperatorStatus], [upgradeDeployment] and [upgradeDeploymentStatus]"
     # echo "  -s  The value of the update approval strategy. The valid values are: [automatic] and [manual]."
-    echo "  -n  Required: The target namespace of the BAW deployment.(If CP4BA is separate of operator and operand, the value is namespace of CP4BA operator)"
+    echo "  -n  Required: The target namespace of the BAW deployment.(If BAW is separate of operator and operand, the value is namespace of BAW operator)"
     echo "  -i  Optional: Operator image name, by default it is cp.icr.io/cp/cp4a/icp4a-operator:$CP4BA_RELEASE_BASE"
     echo "  -p  Optional: Pull secret to use to connect to the registry, by default it is ibm-entitlement-key"
     echo "  --enable-private-catalog Optional: Set this flag to let the script to switch CatalogSource from global to namespace scoped. Default is in openshift-marketplace namespace"
     echo "  ${YELLOW_TEXT}* Running the script to create a custom resource file for new BAW deployment:${RESET_TEXT}"
-    echo "      - STEP 1: Run the script with \"-n <CP4BA_NAMESPACE>\"."
+    echo "      - STEP 1: Run the script with \"-n <BAW_NAMESPACE>\"."
     echo "  ${YELLOW_TEXT}* Running the script to upgrade a BAW deployment from 24.0.0 GA or 24.0.0-IFIX<xx> to $CP4BA_RELEASE_BASE GA/$CP4BA_RELEASE_BASE.X. You must run the modes in the following order:${RESET_TEXT}"
-    echo "      - STEP 1 (Required): Run the script in [upgradeOperator] mode to upgrade CP4BA operators/migrate (Cluster-scoped -> Cluster-scoped [AllNamespaces] / Namespace-scoped -> Namespace-scoped) the IBM Cloud Pak foundational services and then shutdown all CP4BA operators before upgrade CP4BA deployment."
-    echo "      - STEP 2 (Optional): Run the script in [upgradeOperatorStatus] mode to check that the upgrade of the CP4BA operator and its dependencies is successful."
-    echo "      - STEP 3 (Required): Run the script in [upgradeDeployment] mode to upgrade the CP4BA deployment (The script will generate the new version custom resource, and you can choose review/modification it offline and apply it later or apply it by script without review/modification)."
-    echo "      - STEP 4 (Required): Run the script in [upgradeDeploymentStatus] mode to start necessary CP4BA operators to upgrade the dependent service (zenService) firslty and then start up all CP4BA operators to complete upgrade of the CP4BA deployment, meanwhile, it will check that the upgrade of the CP4BA deployment is successful."
-    # echo "      - STEP 5 (Required): Run the script in [upgradePostconfig] mode to show the configuration post CP4BA deployment upgrade."
-    echo "  ${YELLOW_TEXT}* Running the script to upgrade a CP4BA deployment from $CP4BA_RELEASE_BASE GA/$CP4BA_RELEASE_BASE.X to $CP4BA_RELEASE_BASE.X. You must run the modes in the following order:${RESET_TEXT}"
-    echo "      - STEP 1 (Required): Run the script in [upgradeOperator] mode to upgrade the IBM Cloud Pak foundational services/CP4BA operators and then shutdown all CP4BA operators before upgrade CP4BA deployment."
-    echo "      - STEP 2 (Optional): Run the script in [upgradeOperatorStatus] mode to check that the upgrade of the CP4BA operator and its dependencies is successful."
-    echo "      - STEP 3 (Required): Run the script in [upgradeDeploymentStatus] mode to start necessary CP4BA operators to upgrade the dependent service (zenService) firslty and then start up all CP4BA operators to complete upgrade of the CP4BA deployment, meanwhile, it will check that the upgrade of the CP4BA deployment is successful."
+    echo "      - STEP 1 (Required): Run the script in [upgradeOperator] mode to upgrade BAW operators/migrate (Cluster-scoped -> Cluster-scoped [AllNamespaces] / Namespace-scoped -> Namespace-scoped) the IBM Cloud Pak foundational services and then shutdown all BAW operators before upgrade BAW deployment."
+    echo "      - STEP 2 (Optional): Run the script in [upgradecho "${options_cr_val}"eOperatorStatus] mode to check that the upgrade of the BAW operator and its dependencies is successful."
+    echo "      - STEP 3 (Required): Run the script in [upgradeDeployment] mode to upgrade the BAW deployment (The script will generate the new version custom resource, and you can choose review/modification it offline and apply it later or apply it by script without review/modification)."
+    echo "      - STEP 4 (Required): Run the script in [upgradeDeploymentStatus] mode to start necessary BAW operators to upgrade the dependent service (zenService) firslty and then start up all BAW operators to complete upgrade of the BAW deployment, meanwhile, it will check that the upgrade of the BAW deployment is successful."
+    # echo "      - STEP 5 (Required): Run the script in [upgradePostconfig] mode to show the configuration post BAW deployment upgrade."
+    echo "  ${YELLOW_TEXT}* Running the script to upgrade a BAW deployment from $CP4BA_RELEASE_BASE GA/$CP4BA_RELEASE_BASE.X to $CP4BA_RELEASE_BASE.X. You must run the modes in the following order:${RESET_TEXT}"
+    echo "      - STEP 1 (Required): Run the script in [upgradeOperator] mode to upgrade the IBM Cloud Pak foundational services/BAW operators and then shutdown all BAW operators before upgrade BAW deployment."
+    echo "      - STEP 2 (Optional): Run the script in [upgradeOperatorStatus] mode to check that the upgrade of the BAW operator and its dependencies is successful."
+    echo "      - STEP 3 (Required): Run the script in [upgradeDeploymentStatus] mode to start necessary BAW operators to upgrade the dependent service (zenService) firslty and then start up all BAW operators to complete upgrade of the BAW deployment, meanwhile, it will check that the upgrade of the BAW deployment is successful."
 
 }
 
@@ -54,7 +54,7 @@ function parse_arguments() {
                 echo "Invalid option: -m requires an argument"
                 exit 1
             fi
-            RUNTIME_MODE=$1
+            RUNTIME_MODE=$1 #TODO
             if [[ $RUNTIME_MODE == "upgradeOperator" || $RUNTIME_MODE == "upgradeOperatorStatus" || $RUNTIME_MODE == "upgradeDeployment" || $RUNTIME_MODE == "upgradeDeploymentStatus" ]]; then
                 echo -n
             else
@@ -129,12 +129,12 @@ function parse_arguments() {
         review)
         SCRIPT_MODE="review"
         ;;
-        baw-dev)
-        SCRIPT_MODE="baw-dev"
-        ;;
-        baw)
-        SCRIPT_MODE="baw"
-        ;;
+        #baw-dev)
+        #SCRIPT_MODE="baw-dev"
+        #;;
+        #baw)
+        #SCRIPT_MODE="baw"
+        #;;
         #This is an internal flag that allow direct upgrade from the upgrade_blocked_versions list to 24.0.1. This flag can be used to skip logic that related to skip version upgrade.
         allow_direct_upgrade)
         ALLOW_DIRECT_UPGRADE=1
@@ -168,7 +168,7 @@ source ${CUR_DIR}/helper/cp4ba-property.sh
 DOCKER_RES_SECRET_NAME="ibm-entitlement-key"
 DOCKER_REG_USER=""
 
-if [[ "$SCRIPT_MODE" == "baw-dev" || "$SCRIPT_MODE" == "dev" || "$SCRIPT_MODE" == "review" ]] # During dev, OLM uses stage image repo
+if [[ "$SCRIPT_MODE" == "dev" || "$SCRIPT_MODE" == "review" ]] # During dev, OLM uses stage image repo
 then
     DOCKER_REG_SERVER="cp.stg.icr.io"
     if [[ -z $2 ]]; then
@@ -268,22 +268,21 @@ POST_UPGRADE_CPE_TRUSTSTORE_PATH="/shared/tls/truststore/pkcs12/${POST_UPGRADE_T
 function prompt_license(){
     clear
 
-    get_baw_mode
-    retVal_baw=$?
-    if [[ $retVal_baw -eq 1 ]]; then
-        echo -e "\x1B[1;31mIMPORTANT: Review the IBM Cloud Pak for Business Automation license information here: \n\x1B[0m"
-        echo -e "\x1B[1;31mhttps://www.ibm.com/support/customer/csol/terms/?id=L-MAXV-9HY9ZD&lc=en\n\x1B[0m"
-        INSTALL_BAW_ONLY="No"
-    fi
+    #get_baw_mode
+    retVal_baw=1
+    #if [[ $retVal_baw -eq 1 ]]; then
+    echo -e "\x1B[1;31mIMPORTANT: Review the IBM Business Automation Workflow license information here: \n\x1B[0m"
+    echo -e "\x1B[1;31mhttps://www.ibm.com/support/customer/csol/terms/?id=L-GPHE-W5RGSC&lc=en\n\x1B[0m"
+    #INSTALL_BAW_ONLY="No"
+    #fi
 
     prompt_press_any_key_to_continue
-
     printf "\n"
     while true; do
         if [[ $retVal_baw -eq 1 ]]; then
-            printf "\x1B[1mDo you accept the IBM Cloud Pak for Business Automation license (Yes/No, default: No): \x1B[0m"
+            printf "\x1B[1mDo you accept the IBM Business Automation Workflow license (Yes/No, default: No): \x1B[0m"
         fi
-        if  [[ $CP4BA_LICENSE_ACCEPT == "Accept" || $CP4BA_LICENSE_ACCEPT == "accept" || $CP4BA_LICENSE_ACCEPT == "ACCEPT"   ]]; then
+        if  [[ $BAW_LICENSE_ACCEPT == "Accept" || $BAW_LICENSE_ACCEPT == "accept" || $BAW_LICENSE_ACCEPT == "ACCEPT"   ]]; then
             ans='Yes'
             IBM_LICENS='Accept'
         else
@@ -341,7 +340,7 @@ function create_configmap_os_migration(){
     # info "Creating ibm-cp4ba-os-migration-status configMap for this CP4BA deployment in the project \"$CP4BA_SERVICES_NS\"."
 
     mkdir -p ${TEMP_FOLDER} >/dev/null 2>&1
-cat << EOF > ${TEMP_FOLDER}/ibm-cp4ba-os-migration-status-configmap.yaml
+cat << EOF > ${TEMP_FOLDER}/ibm-cp4ba-os-migration-status-configmap.yaml  #TODO?????
 # YAML template for ibm-cp4ba-os-migration-status
 ---
 kind: ConfigMap
@@ -355,10 +354,10 @@ EOF
     ${CLI_CMD} delete -f ${TEMP_FOLDER}/ibm-cp4ba-os-migration-status-configmap.yaml >/dev/null 2>&1
     ${CLI_CMD} apply -f ${TEMP_FOLDER}/ibm-cp4ba-os-migration-status-configmap.yaml >/dev/null 2>&1
     if [ $? -eq 0 ]; then
-        # success "Created ibm-cp4ba-os-migration-status configMap for this CP4BA deployment in the project \"$CP4BA_SERVICES_NS\"."
+        # success "Created ibm-cp4ba-os-migration-status configMap for this BAW deployment in the project \"$CP4BA_SERVICES_NS\"."
         sleep 1
     else
-        warning "Failed to create ibm-cp4ba-os-migration-status configMap for this CP4BA deployment in the project \"$CP4BA_SERVICES_NS\"!"
+        warning "Failed to create ibm-cp4ba-os-migration-status configMap for this BAW deployment in the project \"$CP4BA_SERVICES_NS\"!"
         exit 1
     fi
 }
@@ -1074,59 +1073,59 @@ EOF
 }
 
 # This function is never called , so commenting it out
-#function select_upgrade_mode_simple(){
-#    UPGRADE_MODE=""
-#    while [[ $UPGRADE_MODE == "" ]]; do
-#        printf "\n"
-#        options=("Cluster-scoped to Cluster-scoped" "Cluster-scoped to Namespace-scoped" "Namespace-scoped to Namespace-scoped")
-#        tips=("This migration mode will first isolate the shared 3.x version of foundational services on the cluster, then install a new instance of foundational services version 4.6.2. Any data from the original foundational services will be copied to the new instance." "This migration mode will migrate a single shared instance of foundational services that is shared by all IBM Cloud Paks in the entire cluster, all of its core foundational services operators to the cluster-scope namespace will be upgraded v4.6.2 without creating new instances." "This migration mode will migrate a dedicated foundational services without creating any new instances of foundational services. This method should only be used if the foundational services you are migrating is only for IBM Cloud Pak for Business Automation.")
-#        pros_tips=("The namespace-scoped foundational services for each Cloud Pak or CP4BA component." "The fewer resource required for a single shared instance of foundational services.")
-#        cons_tips=("The more resource required for each namespace-scoped instance of IBM Cloud Pak foundational services." "It is not flexible for all Cloud Pak or CP4BA component to share same one instance of IBM Cloud Pak foundational services.")
+function select_upgrade_mode_simpleNOTUSED(){
+    UPGRADE_MODE=""
+    while [[ $UPGRADE_MODE == "" ]]; do
+        printf "\n"
+        options=("Cluster-scoped to Cluster-scoped" "Cluster-scoped to Namespace-scoped" "Namespace-scoped to Namespace-scoped")
+        tips=("This migration mode will first isolate the shared 3.x version of foundational services on the cluster, then install a new instance of foundational services version 4.6.2. Any data from the original foundational services will be copied to the new instance." "This migration mode will migrate a single shared instance of foundational services that is shared by all IBM Cloud Paks in the entire cluster, all of its core foundational services operators to the cluster-scope namespace will be upgraded v4.6.2 without creating new instances." "This migration mode will migrate a dedicated foundational services without creating any new instances of foundational services. This method should only be used if the foundational services you are migrating is only for IBM Cloud Pak for Business Automation.")
+        pros_tips=("The namespace-scoped foundational services for each Cloud Pak or CP4BA component." "The fewer resource required for a single shared instance of foundational services.")
+        cons_tips=("The more resource required for each namespace-scoped instance of IBM Cloud Pak foundational services." "It is not flexible for all Cloud Pak or CP4BA component to share same one instance of IBM Cloud Pak foundational services.")
 
-#        echo -e "\x1B[1mWhich migration mode for the IBM Cloud Pak foundational services do you plan to migrate to? \x1B[0m${YELLOW_TEXT}(NOTES: This choice will decide to either use a private catalog (namespace-scoped) or a global catalog namespace (GCN) for Opensearch installation. Make sure you choose SAME MIGRATION MODE when rerun [upgradeOperator] for upgrade IBM Cloud Pak foundational services next.)${RESET_TEXT}\x1B[0m"
+        echo -e "\x1B[1mWhich migration mode for the IBM Cloud Pak foundational services do you plan to migrate to? \x1B[0m${YELLOW_TEXT}(NOTES: This choice will decide to either use a private catalog (namespace-scoped) or a global catalog namespace (GCN) for Opensearch installation. Make sure you choose SAME MIGRATION MODE when rerun [upgradeOperator] for upgrade IBM Cloud Pak foundational services next.)${RESET_TEXT}\x1B[0m"
 
-#        echo -e "${YELLOW_TEXT}1) Cluster-scoped to Cluster-scoped${RESET_TEXT}"
-#        if [[ $RUNTIME_MODE == "upgradeOperator" ]]; then
-#            echo -e "   ${YELLOW_TEXT}[Tips]${RESET_TEXT}: ${tips[1]}"
-#            # echo -e "   ${GREEN_TEXT}[Pros]${RESET_TEXT}: ${pros_tips[1]}"
-#            # echo -e "   ${RED_TEXT}[Cons]${RESET_TEXT}: ${cons_tips[1]}"
-#        fi
+        echo -e "${YELLOW_TEXT}1) Cluster-scoped to Cluster-scoped${RESET_TEXT}"
+        if [[ $RUNTIME_MODE == "upgradeOperator" ]]; then
+            echo -e "   ${YELLOW_TEXT}[Tips]${RESET_TEXT}: ${tips[1]}"
+            # echo -e "   ${GREEN_TEXT}[Pros]${RESET_TEXT}: ${pros_tips[1]}"
+            # echo -e "   ${RED_TEXT}[Cons]${RESET_TEXT}: ${cons_tips[1]}"
+        fi
         # echo -e "${YELLOW_TEXT}2) Namespace-scoped to Namespace-scoped${RESET_TEXT}"
         # if [[ $RUNTIME_MODE == "upgradeOperator" ]]; then
         #     echo -e "   ${YELLOW_TEXT}[Tips]${RESET_TEXT}: ${tips[2]}"
         #     # echo -e "   ${GREEN_TEXT}[Pros]${RESET_TEXT}: ${pros_tips[0]}"
         #     # echo -e "   ${RED_TEXT}[Cons]${RESET_TEXT}: ${cons_tips[0]}"
         # fi
-#        echo -e "${YELLOW_TEXT}2) Cluster-scoped to Namespace-scoped${RESET_TEXT}"
-#        if [[ $RUNTIME_MODE == "upgradeOperator" ]]; then
-#            echo -e "   ${YELLOW_TEXT}[Tips]${RESET_TEXT}: ${tips[0]}"
-#            # echo -e "   ${GREEN_TEXT}[Pros]${RESET_TEXT}: ${pros_tips[0]}"
-#            # echo -e "   ${RED_TEXT}[Cons]${RESET_TEXT}: ${cons_tips[0]}"
-#        fi
+        echo -e "${YELLOW_TEXT}2) Cluster-scoped to Namespace-scoped${RESET_TEXT}"
+        if [[ $RUNTIME_MODE == "upgradeOperator" ]]; then
+            echo -e "   ${YELLOW_TEXT}[Tips]${RESET_TEXT}: ${tips[0]}"
+            # echo -e "   ${GREEN_TEXT}[Pros]${RESET_TEXT}: ${pros_tips[0]}"
+            # echo -e "   ${RED_TEXT}[Cons]${RESET_TEXT}: ${cons_tips[0]}"
+        fi
 
-#        read -p "Enter your choice [1 or 2]: " choice
-#        case $choice in
-#            1)
-#                UPGRADE_MODE="shared2shared"
-#                ;;
+        read -p "Enter your choice [1 or 2]: " choice
+        case $choice in
+            1)
+                UPGRADE_MODE="shared2shared"
+                ;;
             # 2)
             #     UPGRADE_MODE="dedicated2dedicated"
             #     ;;
-#            2)
-#                UPGRADE_MODE="shared2dedicated"
-#                ;;
-#            *)
-#                echo "Invalid choice. Please select 1 or 2."
-#                sleep 2
-#                ;;
-#        esac
-#        if [[ ! -z $UPGRADE_MODE ]]; then
-#            echo "You selected: ${options[$choice-1]}"
-#            printf "\n"
-#            sleep 2
-#        fi
-#    done
-#}
+            2)
+                UPGRADE_MODE="shared2dedicated"
+                ;;
+            *)
+                echo "Invalid choice. Please select 1 or 2."
+                sleep 2
+                ;;
+        esac
+        if [[ ! -z $UPGRADE_MODE ]]; then
+            echo "You selected: ${options[$choice-1]}"
+            printf "\n"
+            sleep 2
+        fi
+    done
+}
 
 function setup_opensearch(){
     mkdir -p ${TEMP_FOLDER} >/dev/null 2>&1
@@ -1912,7 +1911,7 @@ function containsTenantDB(){
     done
 }
 
-function get_baw_mode(){ #TODO
+function get_baw_modeNOTUSED(){
     if [[ "$SCRIPT_MODE" == "baw" || "$SCRIPT_MODE" == "baw-dev" ]]; then
        return 0
     else
@@ -2125,8 +2124,8 @@ function select_patternNOTUSED(){
             foundation_4=("RR" "UMS" "AE" "BAS")           # Foundation for Business Automation Workflow and workstreams(Demo)
             foundation_5=("BAN" "RR" "AE" "BAS" "UMS")  # Foundation for IBM Automation Document Processing
         else
-            options=( "Business Automation Workflow Authoring" "Business Automation Workflow Runtime")
-            options_cr_val=("workflow-authoring" "workflow-runtime")
+            options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow" "(a) Workflow Authoring" "(b) Workflow Runtime" "Automation Workstream Services" "IBM Automation Document Processing" "(a) Development Environment" "(b) Runtime Environment" "Workflow Process Service Authoring")
+            options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow" "workflow-authoring" "workflow-runtime" "workstreams" "document_processing" "document_processing_designer" "document_processing_runtime" "workflow-process-service")
             foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
             foundation_1=("BAN" "RR")                 # Foundation for Operational Decision Manager
             foundation_2=("BAN" "RR" "UMS")     # Foundation for Automation Decision Services
@@ -2153,8 +2152,8 @@ function select_patternNOTUSED(){
             foundation_4=("RR" "AE" "BAS")           # Foundation for Business Automation Workflow and workstreams(Demo)
             foundation_5=("BAN" "RR" "AE" "BAS")  # Foundation for IBM Automation Document Processing
         else
-            options=("Business Automation Workflow Authoring" "Business Automation Workflow Runtime")
-            options_cr_val=("workflow-authoring" "workflow-runtime")
+            options=("FileNet Content Manager" "Operational Decision Manager" "Automation Decision Services" "Business Automation Application" "Business Automation Workflow" "(a) Workflow Authoring" "(b) Workflow Runtime" "Automation Workstream Services" "IBM Automation Document Processing" "(a) Development Environment" "(b) Runtime Environment" "Workflow Process Service Authoring")
+            options_cr_val=("content" "decisions" "decisions_ads" "application" "workflow" "workflow-authoring" "workflow-runtime" "workstreams" "document_processing" "document_processing_designer" "document_processing_runtime" "workflow-process-service")
             foundation_0=("BAN" "RR")                 # Foundation for FileNet Content Manager
             foundation_1=("BAN" "RR")                 # Foundation for Operational Decision Manager
             foundation_2=("BAN" "RR")     # Foundation for Automation Decision Services
@@ -2170,7 +2169,7 @@ function select_patternNOTUSED(){
             foundation_12=("BAN" "RR" "AE")           # Foundation for Business Automation Workflow and workstreams(5b+6)
         fi
     fi
-    patter_ent_input_array=("1" "2")
+    patter_ent_input_array=("1" "2" "3" "4" "5a" "5b" "5A" "5B" "6" "7a" "7b" "7A" "7B" "8" "5b,6" "5B,6" "5b, 6" "5B, 6" "5b 6" "5B 6")
     tips1="\x1B[1;31mTips\x1B[0m:\x1B[1m Press [ENTER] to accept the default (None of the capabilities is selected). If none of the capabilities is chosen, the script will exit.\x1B[0m"
     tips2="\x1B[1;31mTips\x1B[0m:\x1B[1m Press [ENTER] when you are done\x1B[0m"
     pattern_starter_tips="\x1B[1mInfo: Business Automation Navigator will be automatically installed in the environment as it is part of the Cloud Pak for Business Automation foundation platform. \n\nTips: After you make your first selection you will be able to make additional selections since you can combine multiple selections.\n\x1B[0m"
@@ -2184,8 +2183,8 @@ function select_patternNOTUSED(){
         for ((j=0;j<${#options_cr_val[@]};j++));
         do [ "${options_cr_val[$j]}" = "$1" ] && { i=$j; break; }
         done
-        echo $i
     }
+
     menu() {
         clear
         echo -e "\x1B[1mSelect the Cloud Pak for Business Automation capability to install: \x1B[0m"
@@ -2272,7 +2271,7 @@ function select_patternNOTUSED(){
                                 printf "%1d) %s \x1B[1m%s\x1B[0m\n" 6 "${options[i]}"  "(Installed)"
                             fi
                             ;;
-                        "4") # 5 for Workflow Authoring, 2 for Workflow Runtime
+                        "4") # 5 for Workflow Authoring, 6 for Workflow Runtime
                             if [[ ${choices_pattern[6]} == "(To Be Uninstalled)" && ${choices_pattern[7]} == "(To Be Uninstalled)" && ${choices_pattern[5]} == "" ]]; then
                                 printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${options[i]}"  "(To Be Uninstalled)"
                                 if [[ $baw_authoring_Val -eq 0 ]]; then
@@ -2372,7 +2371,7 @@ function select_patternNOTUSED(){
         prompt="Enter a valid option [1 to ${#options[@]}]: "
     elif [[ $DEPLOYMENT_TYPE == "production" ]]
     then
-        prompt="Enter a valid option [1, 2]: "
+        prompt="Enter a valid option [1 to 4, 5a, 5b, 6, 7a, 7b, 8]: "
     fi
 
     while menu && read -rp "$prompt" num && [[ "$num" ]]; do
@@ -2381,7 +2380,7 @@ function select_patternNOTUSED(){
             (( num > 0 && num <= ${#options[@]} )) ||
             { msg="Invalid option: $num"; continue; }
             ((num--));
-        if [[ $DEPLOYMENT_TYPE == "production" ]]
+        elif [[ $DEPLOYMENT_TYPE == "production" ]]
         then
             containsElement "${num}" "${patter_ent_input_array[@]}"
             inputretVal=$?
@@ -2493,7 +2492,6 @@ function select_patternNOTUSED(){
         elif [[ " ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-runtime" && " ${EXISTING_PATTERN_ARR[@]} " =~ "workstreams" ]]; then
             wwVal=1
         fi
-
         if [[ $retVal -ne 0 ]]; then
             if [[ ($num -eq 12) && ($wwVal -eq 0) ]]; then
                 [[ "${choices_pattern[num]}" ]] && choices_pattern[num]="" || choices_pattern[num]="(Selected)"
@@ -2512,6 +2510,7 @@ function select_patternNOTUSED(){
                     [[ "${choices_pattern[num]}" ]] && choices_pattern[7]="(To Be Uninstalled)" || choices_pattern[7]=""
                 fi
             else
+                echo "${choices_pattern[num]}"
                 [[ "${choices_pattern[num]}" ]] && choices_pattern[num]="" || choices_pattern[num]="(Selected)"
             fi
             if [[ $DEPLOYMENT_TYPE == "production" ]]; then
@@ -2608,9 +2607,9 @@ function select_patternNOTUSED(){
         fi
     done
 
-    # echo "choices_pattern: ${choices_pattern[*]}"
     # read -rsn1 -p"Press any key to continue (DEBUG MODEL)";echo
     # Generate list of the pattern which will be installed or To Be Uninstalled
+    echo "${!options[@]}"
     for i in ${!options[@]}; do
         array_varname=foundation_$i[@]
         containsElement "${options_cr_val[i]}" "${EXISTING_PATTERN_ARR[@]}"
@@ -2632,6 +2631,9 @@ function select_patternNOTUSED(){
         fi
     done
     echo -e "$msg"
+    echo "VVVVVVV1"
+    echo "${foundation_component_arr[@]}"
+    echo "${pattern_cr_arr[@]}"
 
     # 4Q: add workflow-workstream into pattern list when select both workflow-runtime and workstream
     if [[ " ${pattern_cr_arr[@]} " =~ "workflow" && " ${pattern_cr_arr[@]} " =~ "workstreams" && "${DEPLOYMENT_TYPE}" == "production" ]]; then
@@ -2664,6 +2666,15 @@ function select_patternNOTUSED(){
     FOUNDATION_DELETE_LIST=($(echo "${FOUNDATION_CR_SELECTED[@]}" "${FOUNDATION_FULL_ARR[@]}" | tr ' ' '\n' | sort | uniq -u))
 
     PATTERNS_CR_SELECTED=($(echo "${pattern_cr_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+
+    echo "VVVVVVV2"
+    echo "${foundation_component_arr[@]}"
+    echo "${pattern_cr_arr[@]}"
+    echo "FOUNDATION_CR_SELECTED:$FOUNDATION_CR_SELECTED"
+    echo "FOUNDATION_FULL_ARR:$FOUNDATION_FULL_ARR"
+    echo "FOUNDATION_DELETE_LIST:$FOUNDATION_DELETE_LIST"
+    echo "!PATTERNS_CR_SELECTED:$PATTERNS_CR_SELECTED"
+
 }
 
 function select_optional_component(){
@@ -2693,7 +2704,6 @@ function select_optional_component(){
         #fi
         application_tips_demo="\x1B[1mTips:\x1B[0m Application Designer is typically required if you are deploying a development or test environment.\nThis feature will automatically install Business Automation Studio, if not already present.  \n\nMake your selection or press enter to proceed. \n"
         application_tips_ent="\x1B[1mTips:\x1B[0m Application Designer is typically required if you are deploying a development or test environment.\nThis feature will automatically install Business Automation Studio, if not already present. \n\nApplication Engine is automatically installed in the environment.  \n\nMake your selection or press enter to proceed. \n"
-
         indexof() {
             i=-1
             for ((j=0;j<${#optional_component_cr_arr[@]};j++));
@@ -3029,6 +3039,7 @@ function select_optional_component(){
 
         fi
     }
+
     for item_pattern in "${pattern_arr[@]}"; do
         while true; do
             case $item_pattern in
@@ -3154,6 +3165,26 @@ function select_optional_component(){
                     # if [[ ! ((" ${pattern_cr_arr[@]} " =~ "workflow-runtime" && "${#pattern_cr_arr[@]}" -eq "2") || (" ${pattern_cr_arr[@]} " =~ "workflow-runtime" && " ${pattern_cr_arr[@]} " =~ "workstreams" && "${#pattern_cr_arr[@]}" -eq "4")) ]]; then
                     #     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "ae_data_persistence" )
                     # fi
+                    optional_components_list=()
+                    optional_components_cr_list=()
+                    break
+                    ;;
+                "Business Automation Workflow Authoring")
+                    optional_components_list=( "Data Collector and Data Indexer" "Exposed Kafka Services")
+                    optional_components_cr_list=( "pfs" "kafka")
+                    show_optional_components
+                    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "cmis" )
+                    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "baw_authoring" )
+                    optional_components_list=()
+                    optional_components_cr_list=()
+                    break
+                    ;;
+                "Business Automation Workflow Runtime")
+
+                    optional_components_list=( "Exposed Kafka Services" "Exposed OpenSearch")
+                    optional_components_cr_list=("kafka" "opensearch")
+                    show_optional_components
+                    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "cmis" )
                     optional_components_list=()
                     optional_components_cr_list=()
                     break
@@ -3304,6 +3335,7 @@ function select_optional_component(){
     if [[ $retVal_ext_ldap -eq 0 && "${DEPLOYMENT_TYPE}" == "production" ]];then
         set_external_ldap
     fi
+
 }
 
 function get_local_registry_password(){
@@ -4591,11 +4623,12 @@ function input_information(){
         prompt_press_any_key_to_continue "install new pattern"
     fi
 
-    if [[ "${INSTALL_BAW_ONLY}" == "No" ]];
-    then
+#    if [[ "${INSTALL_BAW_ONLY}" == "No" ]];  # TODO
+#    then
         if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+            #select_patternNOTUSED
             select_baw_pattern
-        elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && $DEPLOYMENT_TYPE == "production" ]]; then
+        elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && $DEPLOYMENT_TYPE == "production" ]]; then  #TODO
             FOUNDATION_CR_SELECTED=($(echo "${foundation_component_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
 
             x=0;while [ ${x} -lt ${#FOUNDATION_CR_SELECTED[*]} ] ; do FOUNDATION_CR_SELECTED_LOWCASE[$x]=$(tr [A-Z] [a-z] <<< ${FOUNDATION_CR_SELECTED[$x]}); let x++; done
@@ -4604,8 +4637,8 @@ function input_information(){
             PATTERNS_CR_SELECTED=($(echo "${pattern_cr_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
         fi
 #    else
-#        select_baw_only
-    fi
+#       select_baw_only
+#    fi
 
     if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
         select_optional_component
@@ -4977,7 +5010,7 @@ function merge_pattern(){
                     ;;
                 "workflow")
                     # set_ldap_type_workflow_pattern
-                    if [[ "${INSTALL_BAW_ONLY}" == "Yes" ]]; then
+#                    if [[ "${INSTALL_BAW_ONLY}" == "Yes" ]]; then TODO
                         # ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.baw_configuration
                         if [[ $DEPLOYMENT_TYPE == "production" ]];then
                             # if [[ $INSTALLATION_TYPE == "existing" && (" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow") ]]; then
@@ -4995,7 +5028,7 @@ function merge_pattern(){
                         #    ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WORKFLOW_PATTERN_FILE_BAK}
                         #    ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.bastudio_configuration
                         fi
-                    fi
+ #                   fi
                     break
                     ;;
                 "workflow-authoring")
@@ -8258,12 +8291,12 @@ function apply_pattern_cr(){
     fi
 
     # ${COPY_CMD} -rf ${CP4A_PATTERN_FILE_TMP} ${CP4A_PATTERN_FILE_BAK}
-    if [[ "$SCRIPT_MODE" == "baw-dev" || "$SCRIPT_MODE" == "dev" || "$SCRIPT_MODE" == "review" ]]; then
+    if [[ "$SCRIPT_MODE" == "dev" || "$SCRIPT_MODE" == "review" ]]; then
         ${SED_COMMAND} "s|tag: \"${IMAGE_TAG_FINAL}\"|tag: \"${IMAGE_TAG_DEV}\"|g" ${CP4A_PATTERN_FILE_TMP}
         ${SED_COMMAND} "s|tag: ${IMAGE_TAG_FINAL}|tag: \"${IMAGE_TAG_DEV}\"|g" ${CP4A_PATTERN_FILE_TMP}
     fi
 
-    if [[ "$IMAGE_TAG_DEV" != "$IMAGE_TAG_FINAL" && ("$SCRIPT_MODE" == "baw-dev" || "$SCRIPT_MODE" == "dev" || "$SCRIPT_MODE" == "review") ]]; then
+    if [[ "$IMAGE_TAG_DEV" != "$IMAGE_TAG_FINAL" && ( "$SCRIPT_MODE" == "dev" || "$SCRIPT_MODE" == "review") ]]; then
         ${SED_COMMAND} "/cp\/cp4a\/fncm\/cpe/{n;s/tag:.*/tag: \"${IMAGE_TAG_DEV}\"/;}" ${CP4A_PATTERN_FILE_TMP}
         ${SED_COMMAND} "/cp\/cp4a\/fncm\/css/{n;s/tag:.*/tag: \"${IMAGE_TAG_DEV}\"/;}" ${CP4A_PATTERN_FILE_TMP}
         ${SED_COMMAND} "/cp\/cp4a\/fncm\/graphql/{n;s/tag:.*/tag: \"${IMAGE_TAG_DEV}\"/;}" ${CP4A_PATTERN_FILE_TMP}
@@ -8437,7 +8470,7 @@ function apply_pattern_cr(){
         # For https://jsw.ibm.com/browse/DBACLD-160661 where we have added remediation steps on how to recreate the configmap
         fail "You NEED to first create the \"ibm-cp4ba-common-config\" configMap in the project (namespace) where you want to deploy or upgrade CP4BA operands (i.e., runtime pods)."
         info "${YELLOW_TEXT}- [NEXT-STEPS]${RESET_TEXT}"
-        echo "  - STEP 1 ${RED_TEXT}(Required)${RESET_TEXT}:${GREEN_TEXT} # Execute the cp4a-clusteradmin-setup.sh script with the \"-fix_configmap\" option to re-create the missing \"ibm-cp4ba-common-config\" configMap in the target namespace.For additional information refer to the Troubleshooting page in the Upgrade Section of the Knowledge Center.${RESET_TEXT}"
+        echo "  - STEP 1 ${RED_TEXT}(Required)${RESET_TEXT}:${GREEN_TEXT} # Execute the baw-clusteradmin-setup.sh script with the \"-fix_configmap\" option to re-create the missing \"ibm-cp4ba-common-config\" configMap in the target namespace.For additional information refer to the Troubleshooting page in the Upgrade Section of the Knowledge Center.${RESET_TEXT}"
         exit 1
     fi
 
@@ -8485,8 +8518,8 @@ function apply_pattern_cr(){
     #    fi
     if  [[ "$DEPLOYMENT_TYPE" == "production" && "$INSTALLATION_TYPE" == "new" && "$DEPLOYMENT_WITH_PROPERTY" == "Yes" ]]
     then
-        ## CP4BA_APPLY_CR is going to be a environment variable to apply the CR for silent install.
-        if [[ "$CP4BA_APPLY_CR" == "Yes" || "$CP4BA_APPLY_CR" == "YES" || "$CP4BA_APPLY_CR" == "yes" || "$CP4BA_APPLY_CR" == "True"  || "$CP4BA_APPLY_CR" == "TRUE"  || "$CP4BA_APPLY_CR" == "true" ]]; then
+        ## BAW_APPLY_CR is going to be a environment variable to apply the CR for silent install.
+        if [[ "$BAW_APPLY_CR" == "Yes" || "$BAW_APPLY_CR" == "YES" || "$BAW_APPLY_CR" == "yes" || "$BAW_APPLY_CR" == "True"  || "$BAW_APPLY_CR" == "TRUE"  || "$BAW_APPLY_CR" == "true" ]]; then
            echo -e "\x1B[1mInstalling the selected Cloud Pak capability...\x1B[0m"
            echo -e "${CP4A_PATTERN_FILE_BAK}"
            APPLY_CUSTOM_RESOURCE_CMD="${CLI_CMD} apply -f ${CP4A_PATTERN_FILE_BAK} -n $CP4BA_SERVICES_NS"
@@ -8520,10 +8553,10 @@ function apply_pattern_cr(){
 function show_summary_pattern_selected(){
     printf "\n"
     echo -e "\x1B[1m*******************************************************\x1B[0m"
-    echo -e "\x1B[1m            Summary of CP4BA capabilities              \x1B[0m"
+    echo -e "\x1B[1m Summary of IBM Business Automation Workflow capabilities\x1B[0m"
     echo -e "\x1B[1m*******************************************************\x1B[0m"
 
-    echo -e "\x1B[1;31m1. Cloud Pak capability to deploy: \x1B[0m"
+    echo -e "\x1B[1;31m1. IBM Business Automation Workflow capability to deploy: \x1B[0m"
     if [ "${#pattern_arr[@]}" -eq "0" ]; then
         printf '   * %s\n' "None"
     else
@@ -8615,7 +8648,7 @@ function show_summary_pattern_selected(){
         done
     fi
     echo -e "\x1B[1m*******************************************************\x1B[0m"
-    info "Above CP4BA capabilities is already selected in the cp4a-prerequisites.sh script"
+    info "Above IBM Business Automation Workflow capabilities is already selected in the baw-prerequisites.sh script"
     prompt_press_any_key_to_continue
 }
 
@@ -8972,13 +9005,13 @@ function cncf_install(){
 ################################################
 #### Begin - Main step for install operator ####
 ################################################
-save_log "cp4a-script-logs/project/$TARGET_PROJECT_NAME" "cp4a-deployment-log"
+save_log "cp4a-script-logs/project/$TARGET_PROJECT_NAME" "baw-deployment-log"
 trap cleanup_log EXIT
 
 # Import upgrade upgrade_check_version.sh script
 source ${CUR_DIR}/helper/upgrade/upgrade_check_status.sh
 
-if [[ ($SCRIPT_MODE == "" && $RUNTIME_MODE == "") || ($SCRIPT_MODE == "dev" && $RUNTIME_MODE == "") || ($SCRIPT_MODE == "review" && $RUNTIME_MODE == "") || ($SCRIPT_MODE == "baw-dev" && $RUNTIME_MODE == "") ]]
+if [[ ($SCRIPT_MODE == "" && $RUNTIME_MODE == "") || ($SCRIPT_MODE == "dev" && $RUNTIME_MODE == "") || ($SCRIPT_MODE == "review" && $RUNTIME_MODE == "") ]]
 then
     prompt_license
 
@@ -9059,7 +9092,7 @@ then
                                 get_jdbc_url
                             fi
                         else
-                            info "Please run cp4a-prerequisites.sh to modify CP4BA capability"
+                            info "Please run baw-prerequisites.sh to modify BAW capability"
                             prompt_press_any_key_to_continue
                         fi
                         break
@@ -9071,7 +9104,7 @@ then
                                 get_jdbc_url
                             fi
                         else
-                            info "Please run cp4a-prerequisites.sh to modify optional components"
+                            info "Please run baw-prerequisites.sh to modify optional components"
                             prompt_press_any_key_to_continue
                         fi
                         break
@@ -9080,7 +9113,7 @@ then
                         if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
                             get_storage_class_name
                         else
-                            info "Please run cp4a-prerequisites.sh to modify storage class name"
+                            info "Please run baw-prerequisites.sh to modify storage class name"
                             prompt_press_any_key_to_continue
                         fi
                         break
@@ -9173,7 +9206,7 @@ else
 fi
 ############## Start - Migration CPfs mode and upgrade CP4BA Operators ##############
 
-if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
+if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then  #TODO
     upgrade_operator_project_name=$TARGET_PROJECT_NAME
 
     # check current cp4ba version
