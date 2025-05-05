@@ -16,7 +16,7 @@ metadata:
     app.kubernetes.io/instance: ibm-dba
     app.kubernetes.io/managed-by: ibm-dba
     app.kubernetes.io/name: ibm-dba
-    release: 24.0.1
+    release: 25.0.0
 spec:
 
   ## MUST exist, used to accept ibm license, valid value only can be "accept"
@@ -40,7 +40,8 @@ spec:
   ######################################################################################################################
 
   shared_configuration:
-
+    ## This is an optional parameter, If the user installing cp4ba in a CNCF cluster and they selected the parameter sc_deployment_platform as "OCP" then the possible values for this parameter is: ARO or ROSA.
+    sc_deployment_ocp_platform:
     ## CP4A patterns or capabilities to be deployed. This CR represents Operational Decision Manager "decisions" pattern
     ## that brings Decision Center, Rule Execution Server and Decision Runtime, based on the user specification in the
     ## sc_optional_components specification
@@ -125,7 +126,7 @@ spec:
     ## Provide the common database configuration for Decision Center and Decision Server
     dc_odm_datasource:
       ## Provide the database type from your infrastructure.
-      ## The possible values are "db2" / "postgresql" / "sqlserver" / "oracle".
+      ## The possible values are "db2" / "db2HADR" / "postgresql" / "sqlserver" / "oracle".
       dc_database_type: "<Required>"
       ## Provide the database server name or IP address of the database server.
       database_servername: "<Required>"
@@ -209,7 +210,7 @@ spec:
     # Allow to specify which version of ODM you want to deploy.
     # Supported version > 19.0.2
     # If omitted the latest version will be used.
-    version: 24.0.0
+    version: 25.0.0
     
     audit_logging:
       # Enable or disable audit logging for the ODM component
@@ -222,7 +223,7 @@ spec:
 
     image:
       # Specify to override the tag docker images in case of an interim fix.
-      tag: "24.0.1"
+      tag: "25.0.0"
       # Specify the pull policy for the Docker images. See Kuberntes documentation for more inforations.
       # Possible values : IfNotPresent, Always, Never
       pullPolicy: IfNotPresent
