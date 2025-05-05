@@ -135,7 +135,7 @@ function check_cert_manager() {
 
     # If any of these exist, proceed with installation
     if [[ -n "$CERT_MANAGER_CONFIGS" || -n "$SUBSCRIPTION_EXISTS" || -n "$CSV_NAME" ]]; then
-        info "Cert Manager components detected. The BAW deployment will use the existing Cert Manager available.Proceeding with installation..."
+        info "Cert Manager components detected. The BAW deployment will use the existing Cert Manager available. Proceeding with installation..."
         existing_cert_manager=true
         
     else

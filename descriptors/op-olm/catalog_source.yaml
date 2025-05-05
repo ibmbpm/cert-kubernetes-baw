@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: cp.stg.icr.io/cp/ibm-cp-automation-catalog@sha256:b79c459fd4f57dd5bd43f59cfebce763a9f497a20dbddd0422243fa1aa1f23e1
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:b79c459fd4f57dd5bd43f59cfebce763a9f497a20dbddd0422243fa1aa1f23e1
   secrets:
   - "ibm-entitlement-key"
   - "ibm-stg-entitlement-key"
@@ -60,7 +60,7 @@ spec:
   displayName: IBM CS Opencontent Opensearch Catalog
   publisher: IBM
   sourceType: grpc
-  image: cp.stg.icr.io/cp/opencontent-ibm-opensearch-operator-catalog:devel-main
+  image: icr.io/cpopen/opencontent-ibm-opensearch-operator-catalog:devel-main
   secrets:
   - "ibm-entitlement-key"
   - "ibm-stg-entitlement-key"
@@ -259,7 +259,7 @@ spec:
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
-  image: cp.stg.icr.io/cp/ibm-fncm-catalog@sha256:457954516779c20cb0b750a02c75d7dc99e884342a4a2b16afc896a02fb3512b
+  image: icr.io/cpopen/ibm-fncm-catalog@sha256:457954516779c20cb0b750a02c75d7dc99e884342a4a2b16afc896a02fb3512b
   secrets:
   - "ibm-entitlement-key"
   - "ibm-stg-entitlement-key"
