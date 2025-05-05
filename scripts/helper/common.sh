@@ -1274,10 +1274,10 @@ function validate_namespace() {
     printf "\n"
     #read -p "Enter the name for an existing project (namespace): " TARGET_PROJECT_NAME
     if [[ "$TARGET_PROJECT_NAME" == openshift* ]]; then
-        error  "\x1B[1;31mEnter a valid project name, project name should not be 'openshift' or start with 'openshift' \x1B[0m"
+        error  "\x1B[1;31mEnter a valid namespace name, namespace name should not be 'openshift' or start with 'openshift' \x1B[0m"
         exit
     elif [[ "$TARGET_PROJECT_NAME" == kube* ]]; then
-        error "\x1B[1;31mEnter a valid project name, project name should not be 'kube' or start with 'kube' \x1B[0m"
+        error "\x1B[1;31mEnter a valid namespace name, namespace name should not be 'kube' or start with 'kube' \x1B[0m"
         exit
     else
         check_cluster_login
