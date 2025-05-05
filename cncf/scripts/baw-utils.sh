@@ -137,7 +137,7 @@ function create_all_catalog_sources(){
         # For dev mode the image for the catalog source has to be in cp.stg.icr.io and a secrets field has to be added
         if [[ "$dev" == true ]]; then
             # temporarily adding ibm-zen-operator-catalog because as of March 13th 2025 zen has not GAed
-            if [[ "$name" == "ibm-cp4a-operator-catalog" ]]; then
+            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-opensearch-operator-catalog" || "$name" == "ibm-fncm-operator-catalog" ]]; then
                 ${YQ_CMD} w -i "$catalog_source_file_name" -d "$((doc_index - 1))"  "spec.secrets[+]" "ibm-staging-entitlement-key"
                 # Extract the current image value
                 current_image=$(${YQ_CMD} r -d "$((doc_index - 1))" "$catalog_source_file_name" 'spec.image')
@@ -255,7 +255,7 @@ function is_sub_exist() {
 function patch_csv() {
     local csv_prefix=$1
     local namespace=$2
-    local max_retries=10
+    local max_retries=20
     local retry_delay=20
     # Function to find a CSV that starts with the given prefix
     function get_csv_by_prefix() {
@@ -289,12 +289,12 @@ function patch_csv() {
 
     # Transform the image path
     updated_image=$(echo "$image" | sed -E 's|^icr.io/cpopen/|cp.stg.icr.io/cp/|')
-    if [[ "$csv_name" == "ibm-ba-insights-engine-operator"* ]]; then
-        ${CLI_CMD} scale deployment $(${CLI_CMD} get deployments -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep '^ibm-bai-insights-engine-operator') --replicas=0
-    fi
-    if [[ "$csv_name" == "ibm-bai-foundation-operator"* ]]; then
-        ${CLI_CMD} scale deployment $(${CLI_CMD} get deployments -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep '^ibm-bai-foundation-operator') --replicas=0
-    fi
+    #if [[ "$csv_name" == "ibm-ba-insights-engine-operator"* ]]; then
+    #    ${CLI_CMD} scale deployment $(${CLI_CMD} get deployments -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep '^ibm-bai-insights-engine-operator') --replicas=0
+    #fi
+    #if [[ "$csv_name" == "ibm-bai-foundation-operator"* ]]; then
+    #    ${CLI_CMD} scale deployment $(${CLI_CMD} get deployments -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep '^ibm-bai-foundation-operator') --replicas=0
+    #fi
 
     sleep 5
     # Patch the CSV with the new image
@@ -314,34 +314,51 @@ function patch_csv() {
     }
     ]"
 
+    ${CLI_CMD} delete deployment $csv_prefix
     success "The $csv_name CSV has been patched successfully!"
 }
 
-# Function to create the BAI-Standalone Operator subscription.
+# Function to create the BAW-Standalone Operator subscription.
 # Uses the file in descriptors folder 
-function create_bai_subscription() {
+function create_baw_subscription() {
     local namespace=$1
     local channel=$2
     local dev_mode=$3
     subscription_file_name=${TEMP_FOLDER}/subscription.yaml
     cp ${SUBSCRIPTION_FILENAME} ${subscription_file_name}
-    ${SED_COMMAND} "s/REPLACE_NAMESPACE/$bai_namespace/g" ${subscription_file_name}
-    ${SED_COMMAND} "s/openshift-marketplace/$bai_namespace/g" ${subscription_file_name}
+    ${SED_COMMAND} "s/REPLACE_NAMESPACE/$baw_namespace/g" ${subscription_file_name}
+    ${SED_COMMAND} "s/openshift-marketplace/$baw_namespace/g" ${subscription_file_name}
     printf "\n"
-    info "Creating BAI subscription ..."
+    info "Creating BAW subscription ..."
     ${CLI_CMD} apply -f ${subscription_file_name}
     if [[ $? -ne 0 ]]; then
-        error "BAI Operator subscription could not be created."
+        error "BAW Operator subscription could not be created."
     fi
 
     printf "\n"
-    info "Waiting for BAI subscription to become active."
-    patch_csv "ibm-bai-insights-engine-operator" $namespace
-    patch_csv "ibm-bai-foundation-operator" $namespace
+    info "Waiting for BAW subscription to become active."
 
-    wait_for_operator "${namespace}" "ibm-bai-insights-engine-operator"
+    patch_csv "ibm-content-operator" $namespace
+    patch_csv "ibm-cp4a-operator" $namespace
+    patch_csv "ibm-cp4a-wfps-operator" $namespace
+    patch_csv "ibm-dpe-operator" $namespace
+    patch_csv "ibm-insights-engine-operator" $namespace
+    patch_csv "ibm-odm-operator" $namespace
+    patch_csv "ibm-pfs-operator" $namespace
+    patch_csv "ibm-workflow-operator" $namespace
+    patch_csv "icp4a-foundation-operator" $namespace
+
     wait_for_operator "${namespace}" "ibm-common-service-operator"
     wait_for_operator "${namespace}" "operand-deployment-lifecycle-manager"
+    wait_for_operator "${namespace}" "ibm-content-operator"
+    wait_for_operator "${namespace}" "ibm-cp4a-operator"
+    wait_for_operator "${namespace}" "ibm-cp4a-wfps-operator"
+    wait_for_operator "${namespace}" "ibm-dpe-operator"
+    wait_for_operator "${namespace}" "ibm-insights-engine-operator"
+    wait_for_operator "${namespace}" "ibm-odm-operator"
+    wait_for_operator "${namespace}" "ibm-pfs-operator"
+    wait_for_operator "${namespace}" "ibm-workflow-operator"
+    wait_for_operator "${namespace}" "icp4a-foundation-operator"
 }
 
 # Function to create the IBM Licensing Operator subscription.

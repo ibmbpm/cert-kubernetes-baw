@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+#set -x
 ###############################################################################
 #
 # Licensed Materials - Property of IBM
@@ -396,7 +396,12 @@ function select_project(){
         ${SED_COMMAND} "/name: ibm-cert-manager-catalog/{n;s/namespace: .*/namespace: $CERT_MANAGER_PROJECT/;}" ${OLM_CATALOG_TMP}
         # replace openshift-marketplace for ibm-licensing-catalog with ibm-licensing
         ${SED_COMMAND} "/name: ibm-licensing-catalog/{n;s/namespace: .*/namespace: $LICENSE_MANAGER_PROJECT/;}" ${OLM_CATALOG_TMP}
-    fi    
+    fi
+    if [[ $RUNTIME_MODE == "dev" ]];then
+        sed -i 's|icr.io\cpopen\ibm-cp-automation-catalog|stg.cp.icr.io\cp\ibm-cp-automation-catalog|g' ${OLM_CATALOG_TMP}
+        sed -i 's|icr.io\cpopen\ibm-opensearch-operator-catalog|stg.cp.icr.io\cp\ibm-opensearch-operator-catalog|g' ${OLM_CATALOG_TMP}
+        sed -i 's|icr.io\cpopen\ibm-fncm-operator-catalog|stg.cp.icr.io\cp\ibm-fncm-operator-catalog|g' ${OLM_CATALOG_TMP}
+    fi
 }
 
 function set_separate_operator_project(){
@@ -496,7 +501,7 @@ function create_common_service_configmap(){
     # https://jsw.ibm.com/browse/DBACLD-173602
     local network_type_value=$3
     local network_cidr_value=$4
-    info "Creating ibm-cp4ba-common-config configMap for this IBM Business Automation Insights deployment in the project \"$project_name_cs_service\""
+    info "Creating ibm-cp4ba-common-config configMap for this IBM Business Automation Workflow deployment in the project \"$project_name_cs_service\""
     mkdir -p $TEMP_FOLDER >/dev/null 2>&1
 
 cat << EOF > ${TEMP_FOLDER}/ibm-cp4ba-common-config-configmap.yaml
@@ -1729,18 +1734,20 @@ function select_platform(){
         #Adding support for the other type of platform
         # DBACLD-168151
         otherOption="Other ( Rancher Kubernetes Engine (RKE) / VMware Tanzu Kubernetes Grid Integrated Edition (TKGI) )"
-      options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
+      options=("Openshift Container Platform (OCP) - Private Cloud")
       PS3='Enter a valid option [1 to 2]: '
         # For airgap deployment only ROKS and OCP is supported
         if [[ $AIRGAP_INSTALL == "Yes" ]]; then
-            options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
+            #options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
+            options=("Openshift Container Platform (OCP) - Private Cloud" "$otherOption")
             PS3='Enter a valid option [1 to 2]: '
         else
             #Adding support for the other type of platform
             # DBACLD-168151
             otherOption="Other ( Rancher Kubernetes Engine (RKE) / VMware Tanzu Kubernetes Grid Integrated Edition (TKGI) )"
-            options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud" "$otherOption")
-            PS3='Enter a valid option [1 to 3]: '
+            #options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud" "$otherOption")
+            options=("Openshift Container Platform (OCP) - Private Cloud" "$otherOption")
+            PS3='Enter a valid option [1 to 2]: '
         fi
 
         # if [[ "${SCRIPT_MODE}" == "OLM" ]]; then
