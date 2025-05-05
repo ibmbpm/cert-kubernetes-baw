@@ -2,7 +2,7 @@
 ##
 ##Licensed Materials - Property of IBM
 ##
-##(C) Copyright IBM Corp. 2022, 2023. All Rights Reserved.
+##(C) Copyright IBM Corp. 2022, 2025. All Rights Reserved.
 ##
 ##US Government Users Restricted Rights - Use, duplication or
 ##disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
@@ -16,9 +16,9 @@ metadata:
     app.kubernetes.io/instance: ibm-dba
     app.kubernetes.io/managed-by: ibm-dba
     app.kubernetes.io/name: ibm-dba
-    release: 24.0.1
+    release: 25.0.0
 spec:
-  appVersion: 24.0.1
+  appVersion: 25.0.0
 
   ## MUST exist, used to accept ibm license, valid value only can be "accept"
   ibm_license: ""
@@ -56,31 +56,17 @@ spec:
 
     ## Enable/disable ECM (FNCM) / BAN initialization (e.g., creation of P8 domain, creation/configuration of object stores,
     ## creation/configuration of CSS servers, and initialization of Navigator (ICN)).  If the "initialize_configuration" section
-    ## is defined with the required parameters in the CR (below) and sc_content_initialization is set to "true" (or the parameter doesn't exist), then the initialization will occur.
-    ## However, if sc_content_initialization is set to "false", then the initialization will not occur (even with the "initialize_configuration" section defined)
+    ## is defined with the required parameters in the CR (below) and sc_content_initialization is set to "true", then the initialization will occur.
+    ## However, if sc_content_initialization is set to "false" (or the parameter doesn't exist), then the initialization will not occur (even with the "initialize_configuration" section defined)
     ## For Workflow Authoring, by default sc_content_initialization is set to "true" with "initialize_configuration"section filled.
     ## If you already initialized content or want to upgrade, please set sc_content_initialization to "false" before you apply the CR.
     sc_content_initialization: true
 
-    sc_egress_configuration:
-      ## Required. Enable or disable egress access to external systems.
-      ## If "sc_restricted_internet_access" is defined and has no value set, then default will be "true".
-      ## If "sc_restricted_internet_access" is not defined (e.g., in the case of upgrade, the existing CR will not have sc_restricted_internet_access), then "sc_restricted_internet_access" will be "false"
-      sc_restricted_internet_access: true
-      ## Optional.  Kubernetes API server namespace(s) (comma separated) to be used for egress network policy when `sc_restricted_internet_access: true` and `sc_deployment_platform: "other"`.
-      ## "{}" can also be used as a value.  It is equivalent to all namespaces (eg: namespaceSelector:{})
-      ## Default are "openshift-kube-apiserver", "openshift-apiserver" for OCP and ROKS.
-      sc_api_namespace:
-      ## Optional.  Kubernetes API server port(s) (comma separated) to be used for egress network policy when `sc_restricted_internet_access: true` and `sc_deployment_platform: "other"`.
-      ## Default are 443,6443 for OCP and ROKS
-      sc_api_port:
-      ## Optional.  Kubernetes DNS service namespace(s) (comma separated) to be used for egress network policy when `sc_restricted_internet_access: true` and `sc_deployment_platform: "other"`.
-      ## "{}" can also be used as a value.  It is equivalent to all namespaces (eg: namespaceSelector:{})
-      ## Default is "openshift-dns" for OCP and ROKS
-      sc_dns_namespace:
-      ## Optional.  Kubernetes DNS service port(s) (comma separated) to be used for egress network policy when `sc_restricted_internet_access: true` and `sc_deployment_platform: "other"`.
-      ## Default are 53,5353 for OCP and ROKS
-      sc_dns_port:
+    ## Staring with CP4BA 25.0.0, the operators are no longer creating network policies automatically due to a change in the security requirements where the permissions to create network policies have been removed.
+    ## The optional parameter to enable/disable the creation of sample network policy templates for CP4BA components.  If the parameter is not defined, then the default value is "false".
+    ## Set this flag to "true" if you plan to have restricted network policies in CP4BA namespaces so that the operators can create sample network policy templates for CP4BA components.
+    ## Please refer to the CP4BA documentation for more information about how to retrieve and apply the sample network policy templates.
+    sc_generate_sample_network_policies: false
 
     ## For ROKS, this is used to enable the creation of ingresses. The default value is "false", which routes will be created.
     sc_ingress_enable: false
@@ -89,21 +75,6 @@ spec:
     ## By default, the sc_is_multiple_az parameter is set to false. When the value is set to true, the pods of the CP4BA deployment are spread across your user-defined topology domains.
     ## The pod API includes a spec.topologySpreadConstraints field, which is used by the CP4BA operator to configure it.
     sc_is_multiple_az: false
-
-    ## Audit logging configuration for CP4BA components. The default value is "false".  If set to "true", then the audit logging will be enabled for all the CP4BA components.
-    ## These settings can be overridden at the component level by setting the "audit_logging" parameter in the component configuration such as ecm_configuration, ads_configuration, etc...
-    ## NOTE: Not all components support audit logging in 24.0.1 release.  Please refer to KC for more information.
-    sc_audit_logging:
-      # Enable or disable audit logging for all CP4BA components
-      enabled: false
-      # The audit log directory size.  The default value is "150Mi".  The value should be in the format of "<number><unit>".  The valid units are "Ki", "Mi", "Gi", "Ti", "Pi", "Ei".
-      # This log directory will be mounted as an ephemeral storage volume in the CP4BA components' pods.
-      audit_log_dir_size: '150Mi'
-
-      # The number of audit log files to keep.  The default value is "5". Increasing this value will increase the number of audit log files kept. You may want to increase the audit_log_dir_size if you increase this value.
-      rolling_max_files: 5
-      # The maximum size of each audit log file.  The default value is "20Mi".  The value should be in the format of "<number><unit>".  The valid units are "Ki", "Mi", "Gi", "Ti", "Pi", "Ei". You may want to increase the audit_log_dir_size if you increase this value.
-      rolling_max_size: '20Mi'
 
   ## The beginning section of database configuration for CP4A
   datasource_configuration:
@@ -118,7 +89,7 @@ spec:
       ## Operator will now have a capability to automatically provision an EDBPostgres instance upon request for Production/Enterprise deployment
       ## If you want PostgresDB to be created for a GCD database, set this parameter to true
       dc_use_postgres: false
-      ## Provide the database type from your infrastructure.  The possible values are "db2" or "db2HADR" or "oracle" or "postgresql".
+      ## Provide the database type from your infrastructure.  The possible values are "db2" or "db2HADR" or "db2rds" or "db2rdsHADR" or "oracle" or "postgresql".
       dc_database_type: "<Required>"
       ## The GCD non-XA datasource name.  The default value is "FNGCDDS".
       dc_common_gcd_datasource_name: "FNGCDDS"
@@ -148,7 +119,7 @@ spec:
       dc_hadr_max_retries_for_client_reroute: 3
     ## The database configuration for the document object store (DOCS) datasource for CPE
     dc_os_datasources:
-    ## Object store for BAW DOCS Provide the database type from your infrastructure.  The possible values are "db2" or "db2HADR" or "oracle" or "postgresql".  This should be the same as the GCD configuration above.
+    ## Object store for BAW DOCS Provide the database type from your infrastructure.  The possible values are "db2" or "db2HADR" or "db2rds" or "db2rdsHADR" or "oracle" or "postgresql".  This should be the same as the GCD configuration above.
     - dc_database_type: "<Required>"
       ## Operator will now have a capability to automatically provision an EDBPostgres instance upon request for Production/Enterprise deployment
       ## If you want PostgresDB to be created for an OS database, set this parameter to true

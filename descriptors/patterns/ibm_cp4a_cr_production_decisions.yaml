@@ -17,9 +17,9 @@ metadata:
     app.kubernetes.io/instance: ibm-dba
     app.kubernetes.io/managed-by: ibm-dba
     app.kubernetes.io/name: ibm-dba
-    release: 24.0.1
+    release: 25.0.0
 spec:
-  appVersion: 24.0.1
+  appVersion: 25.0.0
 
   ## MUST exist, used to accept ibm license, valid value only can be "accept"
   ibm_license: ""
@@ -42,7 +42,6 @@ spec:
   ######################################################################################################################
 
   shared_configuration:
-
     ## CP4A patterns or capabilities to be deployed. This CR represents Operational Decsision Manage "decisions" pattern
     ## that brings Decision Center, Rule Execution Server and Decision Runner, based on the user specification in the
     ## sc_optional_components specification
