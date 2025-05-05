@@ -75,17 +75,17 @@ function parse_arguments() {
                 exit -1
                 ;;
             "openshift"*)
-                echo -e "\x1B[1;31mEnter a valid project name, project name should not be 'openshift' or start with 'openshift' \x1B[0m"
+                echo -e "\x1B[1;31mEnter a valid namespace name, namespace name should not be 'openshift' or start with 'openshift' \x1B[0m"
                 exit -1
                 ;;
             "kube"*)
-                echo -e "\x1B[1;31mEnter a valid project name, project name should not be 'kube' or start with 'kube' \x1B[0m"
+                echo -e "\x1B[1;31mEnter a valid namespace name, namespace name should not be 'kube' or start with 'kube' \x1B[0m"
                 exit -1
                 ;;
             *)
                 isProjExists=`${CLI_CMD} get namespace $TARGET_PROJECT_NAME --ignore-not-found | wc -l`  >/dev/null 2>&1
                 if [ $isProjExists -ne 2 ] ; then
-                    echo -e "\x1B[1;31mInvalid project name \"$TARGET_PROJECT_NAME\", please set a valid name...\x1B[0m"
+                    echo -e "\x1B[1;31mInvalid namespace name \"$TARGET_PROJECT_NAME\", please set a valid name...\x1B[0m"
                     exit 1
                 fi
                 echo -n
@@ -357,7 +357,7 @@ EOF
         # success "Created ibm-cp4ba-os-migration-status configMap for this BAW deployment in the project \"$CP4BA_SERVICES_NS\"."
         sleep 1
     else
-        warning "Failed to create ibm-cp4ba-os-migration-status configMap for this BAW deployment in the project \"$CP4BA_SERVICES_NS\"!"
+        warning "Failed to create ibm-cp4ba-os-migration-status configMap for this BAW deployment in the namespace \"$CP4BA_SERVICES_NS\"!"
         exit 1
     fi
 }
@@ -376,7 +376,7 @@ function show_tips_es_to_os_migration(){
         OPENSEARCH_URL=$(${CLI_CMD} get route opensearch-route -n $CP4BA_SERVICES_NS --no-headers --ignore-not-found -o jsonpath='{.spec.host}')
         OPENSEARCH_PASSWORD=$(${CLI_CMD} get secret opensearch-ibm-elasticsearch-cred-secret -n $CP4BA_SERVICES_NS --no-headers --ignore-not-found -o jsonpath='{.data.elastic}' | base64 -d)
     else
-        fail "Not found Elasticsearch custom resource in the project \"$CP4BA_SERVICES_NS\"."
+        fail "Not found Elasticsearch custom resource in the namespace \"$CP4BA_SERVICES_NS\"."
     fi
     printf "\n"
     echo -e "\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1;31mYou need to complete migration from Elasticsearch to Opensearch first before upgrade CP4BA.\n\x1B[0m"
@@ -457,7 +457,7 @@ function show_tips_es_to_os_migration(){
         if [[ -z $INSIGHTS_ENGINE_CR ]]; then
             INSIGHTS_ENGINE_CR=$(${CLI_CMD} get insightsengines.insightsengine.automation.ibm.com --no-headers --ignore-not-found -n ${TARGET_PROJECT_NAME} -o name)
             if [[ -z $INSIGHTS_ENGINE_CR ]]; then
-                error "Not found insightsengines custom resource instance in the project \"${TARGET_PROJECT_NAME}\"."
+                error "Not found insightsengines custom resource instance in the namespace \"${TARGET_PROJECT_NAME}\"."
             fi
             # exit 1
         fi
@@ -620,7 +620,7 @@ function select_private_catalog_opensearch(){
 
 function setup_opensearch_catalog(){
 # Create catalog source for Opensearch
-    info "Creating ibm-cs-opensearch-catalog CatalogSource for Opensearch in the project \"$OPENSEARCH_CATALOG_NS\"."
+    info "Creating ibm-cs-opensearch-catalog CatalogSource for Opensearch in the namespace \"$OPENSEARCH_CATALOG_NS\"."
     OLM_CATALOG=${PARENT_DIR}/descriptors/op-olm/catalog_source.yaml
     local LINE_NUM=$(grep -E '^  image: icr\.io/cpopen/opencontent-elasticsearch-operator-catalog@sha256:[0-9a-f]+' $OLM_CATALOG)
     local CURRENT_DIGEST=$(echo $LINE_NUM | sed -E 's/^.*@sha256:([0-9a-f]+).*$/\1/')
@@ -645,14 +645,14 @@ EOF
     # ${CLI_CMD} delete -f ${TEMP_FOLDER}/ibm-cp4ba-os-catalog-source.yaml >/dev/null 2>&1
     ${CLI_CMD} apply -f ${TEMP_FOLDER}/ibm-cp4ba-os-catalog-source.yaml >/dev/null 2>&1
     if [ $? -eq 0 ]; then
-        success "Created ibm-cs-opensearch-catalog CatalogSource for Opensearch in the project \"$OPENSEARCH_CATALOG_NS\"."
+        success "Created ibm-cs-opensearch-catalog CatalogSource for Opensearch in the namespace \"$OPENSEARCH_CATALOG_NS\"."
         sleep 3
     else
-        warning "Failed to create ibm-cs-opensearch-catalog CatalogSource for Opensearch in the project \"$OPENSEARCH_CATALOG_NS\"!"
+        warning "Failed to create ibm-cs-opensearch-catalog CatalogSource for Opensearch in the namespace \"$OPENSEARCH_CATALOG_NS\"!"
         exit 1
     fi
 
-    info "Checking Opensearch operator catalog pod ready or not in the project \"$OPENSEARCH_CATALOG_NS\""
+    info "Checking Opensearch operator catalog pod ready or not in the namespace \"$OPENSEARCH_CATALOG_NS\""
     maxRetry=10
     for ((retry=0;retry<=${maxRetry};retry++)); do
         opensearch_catalog_pod_name=$(${CLI_CMD} get pod -l=olm.catalogSource=ibm-cs-opensearch-catalog -n $OPENSEARCH_CATALOG_NS -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}')
@@ -661,7 +661,7 @@ EOF
             if [[ $retry -eq ${maxRetry} ]]; then
                 printf "\n"
                 if [[ -z $opensearch_catalog_pod_name ]]; then
-                    warning "Timeout waiting for ibm-cs-opensearch-catalog catalog pod to be ready in the project \"$OPENSEARCH_CATALOG_NS\""
+                    warning "Timeout waiting for ibm-cs-opensearch-catalog catalog pod to be ready in the namespace \"$OPENSEARCH_CATALOG_NS\""
                  fi
                 exit 1
             else
@@ -670,7 +670,7 @@ EOF
                 continue
             fi
         else
-            success "Opensearch operator catalog pod to be ready in the project \"$OPENSEARCH_CATALOG_NS\"!"
+            success "Opensearch operator catalog pod to be ready in the namespace \"$OPENSEARCH_CATALOG_NS\"!"
             break
         fi
     done
@@ -680,7 +680,7 @@ function setup_opensearch_subscription(){
     local operator_project_name=$1
     operator_project_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$operator_project_name")
 # Create Opensearch subscription
-    info "Creating ibm-elasticsearch-operator Subscription for Opensearch in the project \"$operator_project_name\"."
+    info "Creating ibm-elasticsearch-operator Subscription for Opensearch in the namespace \"$operator_project_name\"."
 
 cat << EOF > ${TEMP_FOLDER}/ibm-cp4ba-os-subscription.yaml
 apiVersion: operators.coreos.com/v1alpha1
@@ -714,7 +714,7 @@ EOF
     fi
 
 
-    info "Checking Opensearch operator pod ready or not in the project \"$operator_project_name\""
+    info "Checking Opensearch operator pod ready or not in the namespace \"$operator_project_name\""
     maxRetry=50
     for ((retry=0;retry<=${maxRetry};retry++)); do
         opensearch_pod_name=$(${CLI_CMD} get pod -l=name=ibm-cloudpakopen-elasticsearch-operator -n $operator_project_name -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}')
@@ -723,7 +723,7 @@ EOF
             if [[ $retry -eq ${maxRetry} ]]; then
                 printf "\n"
                 if [[ -z $opensearch_pod_name ]]; then
-                    warning "Timeout waiting for Opensearch operator pod to be ready in the project \"$operator_project_name\""
+                    warning "Timeout waiting for Opensearch operator pod to be ready in the namespace \"$operator_project_name\""
                  fi
                 exit 1
             else
@@ -732,7 +732,7 @@ EOF
                 continue
             fi
         else
-            success "Opensearch operator pod to be ready in the project \"$operator_project_name\"!"
+            success "Opensearch operator pod to be ready in the namespace \"$operator_project_name\"!"
             msg "Pod: $opensearch_pod_name"
             break
         fi
@@ -741,7 +741,7 @@ EOF
 
 function setup_opensearch_issuer(){
 # Create Issuer for Opensearch
-    info "Creating opensearch-tls-issuer Issuer for Opensearch in the project \"$CP4BA_SERVICES_NS\"."
+    info "Creating opensearch-tls-issuer Issuer for Opensearch in the namespace \"$CP4BA_SERVICES_NS\"."
     if [[ -z $cp4ba_root_ca_secret_name || $cp4ba_root_ca_secret_name == *"meta.name"* ]]; then
         cp4ba_root_ca_secret_name="${cp4ba_cr_metaname}-root-ca"
     fi
@@ -759,20 +759,20 @@ EOF
     # ${CLI_CMD} delete -f ${TEMP_FOLDER}/ibm-cp4ba-os-issuer.yaml >/dev/null 2>&1
     ${CLI_CMD} apply -f ${TEMP_FOLDER}/ibm-cp4ba-os-issuer.yaml >/dev/null 2>&1
     if [ $? -eq 0 ]; then
-        success "Created opensearch-tls-issuer Issuer for Opensearch in the project \"$CP4BA_SERVICES_NS\"."
+        success "Created opensearch-tls-issuer Issuer for Opensearch in the namespace \"$CP4BA_SERVICES_NS\"."
         sleep 3
     else
-        warning "Failed to create opensearch-tls-issuer Issuer for Opensearch in the project \"$CP4BA_SERVICES_NS\"!"
+        warning "Failed to create opensearch-tls-issuer Issuer for Opensearch in the namespace \"$CP4BA_SERVICES_NS\"!"
         exit 1
     fi
 }
 
 function setup_opensearch_cr(){
 # Create ElasticsearchCluster
-    info "Creating Opensearch cluster in the project \"$CP4BA_SERVICES_NS\"."
+    info "Creating Opensearch cluster in the namespace \"$CP4BA_SERVICES_NS\"."
     sa_scc_mcs=$(${CLI_CMD} get namespace $CP4BA_SERVICES_NS --no-headers --ignore-not-found -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.mcs}')
     if [ -z $sa_scc_mcs ]; then
-        fail "Can NOT get value for \"sa.scc.mcs\" from the attribute of project \"$CP4BA_SERVICES_NS\"."
+        fail "Can NOT get value for \"sa.scc.mcs\" from the attribute of namespace \"$CP4BA_SERVICES_NS\"."
         exit 1
     fi
 
@@ -783,24 +783,24 @@ function setup_opensearch_cr(){
 
         es_storage_class_node=$(${CLI_CMD} get elasticsearch.elastic.automation.ibm.com $elasticsearch_cr_name -n $CP4BA_SERVICES_NS -o yaml | ${YQ_CMD} r - spec.nodegroupspecs.[0].storage.class)
         if [ -z $es_storage_class_node ]; then
-            fail "Can NOT get value for \"storage.class\" from the existing Elasticsearch custom resource \"$elasticsearch_cr_name\" in the project \"$CP4BA_SERVICES_NS\"."
+            fail "Can NOT get value for \"storage.class\" from the existing Elasticsearch custom resource \"$elasticsearch_cr_name\" in the namespace \"$CP4BA_SERVICES_NS\"."
             exit 1
         fi
 
         es_storage_size_node=$(${CLI_CMD} get elasticsearch.elastic.automation.ibm.com $elasticsearch_cr_name -n $CP4BA_SERVICES_NS -o yaml | ${YQ_CMD} r - spec.nodegroupspecs.[0].storage.size)
         if [ -z $es_storage_size_node ]; then
-            fail "Can NOT get value for \"storage.size\" from the existing Elasticsearch custom resource \"$elasticsearch_cr_name\" in the project \"$CP4BA_SERVICES_NS\"."
+            fail "Can NOT get value for \"storage.size\" from the existing Elasticsearch custom resource \"$elasticsearch_cr_name\" in the namespace \"$CP4BA_SERVICES_NS\"."
             exit 1
         fi
         es_storage_class_snapshot=$(${CLI_CMD} get elasticsearch.elastic.automation.ibm.com $elasticsearch_cr_name -n $CP4BA_SERVICES_NS -o yaml | ${YQ_CMD} r - spec.snapshotStores.[0].storage.class)
         if [ -z $es_storage_class_snapshot ]; then
-            fail "Can NOT get value for \"storage.class\" from the existing Elasticsearch custom resource \"$elasticsearch_cr_name\" in the project \"$CP4BA_SERVICES_NS\"."
+            fail "Can NOT get value for \"storage.class\" from the existing Elasticsearch custom resource \"$elasticsearch_cr_name\" in the namespace \"$CP4BA_SERVICES_NS\"."
             exit 1
         fi
 
         es_storage_size_snapshot=$(${CLI_CMD} get elasticsearch.elastic.automation.ibm.com $elasticsearch_cr_name -n $CP4BA_SERVICES_NS -o yaml | ${YQ_CMD} r - spec.snapshotStores.[0].storage.size)
         if [ -z $es_storage_size_snapshot ]; then
-            fail "Can NOT get value for \"storage.size\" from the existing Elasticsearch custom resource \"$elasticsearch_cr_name\" in the project \"$CP4BA_SERVICES_NS\"."
+            fail "Can NOT get value for \"storage.size\" from the existing Elasticsearch custom resource \"$elasticsearch_cr_name\" in the namespace \"$CP4BA_SERVICES_NS\"."
             exit 1
         fi
 
@@ -808,7 +808,7 @@ function setup_opensearch_cr(){
 
         es_route_hostname=$(${CLI_CMD} get Route ${elasticsearch_cr_name}-es -n $CP4BA_SERVICES_NS -o yaml | ${YQ_CMD} r - spec.host)
     else
-        fail "Not found Elasticsearch custom resource in the project \"$CP4BA_SERVICES_NS\"."
+        fail "Not found Elasticsearch custom resource in the namespace \"$CP4BA_SERVICES_NS\"."
         exit 1
     fi
     # setting profile type
@@ -952,14 +952,14 @@ spec:
 EOF
     ${CLI_CMD} apply -f ${TEMP_FOLDER}/ibm-cp4ba-os-cluster.yaml >/dev/null 2>&1
     if [ $? -eq 0 ]; then
-        success "Created Opensearch cluster in the project \"$CP4BA_SERVICES_NS\"."
+        success "Created Opensearch cluster in the namespace \"$CP4BA_SERVICES_NS\"."
         sleep 3
     else
-        warning "Failed to create Opensearch cluster in the project \"$CP4BA_SERVICES_NS\"!"
+        warning "Failed to create Opensearch cluster in the namespace \"$CP4BA_SERVICES_NS\"!"
         exit 1
     fi
 
-    info "Checking Opensearch cluster pod ready or not in the project \"$CP4BA_SERVICES_NS\""
+    info "Checking Opensearch cluster pod ready or not in the namespace \"$CP4BA_SERVICES_NS\""
     maxRetry=50
     for ((podnum=0;podnum<=2;podnum++)); do
         for ((retry=0;retry<=${maxRetry};retry++)); do
@@ -968,7 +968,7 @@ EOF
                 if [[ $retry -eq ${maxRetry} ]]; then
                     printf "\n"
                     if [[ -z $opensearch_pod_name ]]; then
-                        warning "Timeout waiting for Opensearch cluster pod to be ready in the project \"$CP4BA_SERVICES_NS\""
+                        warning "Timeout waiting for Opensearch cluster pod to be ready in the namespace \"$CP4BA_SERVICES_NS\""
                     fi
                     exit 1
                 else
@@ -980,17 +980,17 @@ EOF
                 break
             fi
         done
-        success "Opensearch cluster pod-${podnum} ready in the project \"$CP4BA_SERVICES_NS\"!"
+        success "Opensearch cluster pod-${podnum} ready in the namespace \"$CP4BA_SERVICES_NS\"!"
         msg "Pod: $opensearch_pod_name"
     done
 }
 
 function setup_opensearch_route(){
 # Creat route for Opensearch
-    info "Creating opensearch-route Route for Opensearch in the project \"$CP4BA_SERVICES_NS\"."
+    info "Creating opensearch-route Route for Opensearch in the namespace \"$CP4BA_SERVICES_NS\"."
     openshift_hostname=$(${CLI_CMD} get IngressController default -n openshift-ingress-operator --no-headers --ignore-not-found -o jsonpath='{.status.domain}')
     if [ -z $openshift_hostname ]; then
-        fail "Can NOT get value for \"openshift_ingress_domain.status.domain\" for project \"openshift-ingress-operator\"."
+        fail "Can NOT get value for \"openshift_ingress_domain.status.domain\" for namespace \"openshift-ingress-operator\"."
         exit 1
     fi
 cat << EOF > ${TEMP_FOLDER}/ibm-cp4ba-os-route.yaml
@@ -1602,7 +1602,7 @@ function set_script_mode(){
 }
 
 function validate_kube_oc_cli(){
-    if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]]; then
+    if  [[ $PLATFORM_SELECTED == "OCP" ]]; then
         which oc &>/dev/null
         [[ $? -ne 0 ]] && \
         echo -e  "\x1B[1;31mUnable to locate an OpenShift CLI. You must install it to run this script.\x1B[0m" && \
@@ -1714,23 +1714,23 @@ function select_project() {
     do
         printf "\n"
         echo -e "\x1B[1mWhere do you want to deploy Cloud Pak for Business Automation?\x1B[0m"
-        read -p "Enter the name for an existing project (namespace): " TARGET_PROJECT_NAME
+        read -p "Enter the name for an existing namespace: " TARGET_PROJECT_NAME
         if [ -z "$TARGET_PROJECT_NAME" ]; then
-            echo -e "\x1B[1;31mEnter a valid project name, project name can not be blank\x1B[0m"
+            echo -e "\x1B[1;31mEnter a valid namespace name, namespace name can not be blank\x1B[0m"
         elif [[ "$TARGET_PROJECT_NAME" == openshift* ]]; then
-            echo -e "\x1B[1;31mEnter a valid project name, project name should not be 'openshift' or start with 'openshift' \x1B[0m"
+            echo -e "\x1B[1;31mEnter a valid namespace name, namespace name should not be 'openshift' or start with 'openshift' \x1B[0m"
             TARGET_PROJECT_NAME=""
         elif [[ "$TARGET_PROJECT_NAME" == kube* ]]; then
-            echo -e "\x1B[1;31mEnter a valid project name, project name should not be 'kube' or start with 'kube' \x1B[0m"
+            echo -e "\x1B[1;31mEnter a valid namespace name, namespace name should not be 'kube' or start with 'kube' \x1B[0m"
             TARGET_PROJECT_NAME=""
         else
-            isProjExists=`${CLI_CMD} get project $TARGET_PROJECT_NAME --ignore-not-found | wc -l`  >/dev/null 2>&1
+            isProjExists=`${CLI_CMD} get namespace $TARGET_PROJECT_NAME --ignore-not-found | wc -l`  >/dev/null 2>&1
 
             if [ "$isProjExists" -ne 2 ] ; then
-                echo -e "\x1B[1;31mInvalid project name, please enter a existing project name ...\x1B[0m"
+                echo -e "\x1B[1;31mInvalid namespace name, please enter a existing namespace name ...\x1B[0m"
                 TARGET_PROJECT_NAME=""
             else
-                echo -e "\x1B[1mUsing project ${TARGET_PROJECT_NAME}...\x1B[0m"
+                echo -e "\x1B[1mUsing namespace ${TARGET_PROJECT_NAME}...\x1B[0m"
             fi
         fi
     done
@@ -1969,13 +1969,15 @@ function select_platform(){
         #    options_var=("ROKS" "OCP")
         if [[ $DEPLOYMENT_TYPE == "production" ]]
         then
-            if [[ "${SCRIPT_MODE}" == "OLM" ]]; then + TODO remove ROKS
-                options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
-                options_var=("ROKS" "OCP")
-            else
-                options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
-                options_var=("ROKS" "OCP")
-            fi
+            options=("Openshift Container Platform (OCP) - Private Cloud")
+            options_var=("OCP")
+#            if [[ "${SCRIPT_MODE}" == "OLM" ]]; then
+#                options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
+#                options_var=("ROKS" "OCP")
+#            else
+#                options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
+#                options_var=("ROKS" "OCP")
+#            fi
         fi
         for i in ${!options_var[@]}; do
             if [[ "${options_var[i]}" == "$existing_platform_type" ]]; then
@@ -1983,13 +1985,13 @@ function select_platform(){
             else
                 printf "%1d) %s\n" $((i+1)) "${options[i]}"
             fi
-        done
+        done #TODO
         echo -e "\x1B[1;31mExisting platform type found in CR: \"$existing_platform_type\"\x1B[0m"
         # echo -e "\x1B[1;31mDo not need to select again.\n\x1B[0m"
         prompt_press_any_key_to_continue
     fi
 
-    if [[ "$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS" ]]; then
+    if [[ "$PLATFORM_SELECTED" == "OCP" ]]; then
         CLI_CMD=oc
     elif [[ "$PLATFORM_SELECTED" == "other" ]]
     then
@@ -2040,7 +2042,7 @@ function select_platform(){
 }
 
 function check_ocp_version(){
-    if [[ ${PLATFORM_SELECTED} == "OCP" || ${PLATFORM_SELECTED} == "ROKS" ]];then
+    if [[ ${PLATFORM_SELECTED} == "OCP" ]];then
         temp_ver=`${CLI_CMD} version | grep v[1-9]\.[1-9][0-9] | tail -n1`
         if [[ $temp_ver == *"Kubernetes Version"* ]]; then
             currentver="${temp_ver:20:7}"
@@ -2079,7 +2081,7 @@ function select_baw_pattern(){
                 ;;
             "Business Automation Workflow Runtime")
                 pattern_arr=("Business Automation Workflow Runtime")
-                pattern_cr_arr=("workflow-runtim")
+                pattern_cr_arr=("workflow-runtime")
                 foundation_baw=("BAN" "AE")
                 break
                 ;;
@@ -3433,7 +3435,7 @@ function get_entitlement_registry(){
         "n"|"N"|"no"|"No"|"NO"|"")
             use_entitlement="no"
             DOCKER_REG_KEY="None"
-            if [[ "$PLATFORM_SELECTED" == "ROKS" || "$PLATFORM_SELECTED" == "OCP" ]]; then
+            if [["$PLATFORM_SELECTED" == "OCP" ]]; then
                 printf "\n"
                 printf "\x1B[1;31m\"${PLATFORM_SELECTED}\" only supports the Entitlement Registry, exiting...\n\x1B[0m"
                 exit 1
@@ -3563,7 +3565,7 @@ function get_storage_class_name(){
     #        fi
     #    done
     #    fi
-    if [[ ($DEPLOYMENT_TYPE == "production" && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "other")) || $PLATFORM_SELECTED == "ROKS" ]]
+    if [[ ($DEPLOYMENT_TYPE == "production" && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "other")) ]]
     then
         printf "\x1B[1mTo provision the persistent volumes and volume claims\n\x1B[0m"
         while [[ $sc_slow_file_storage_classname == "" ]] # While get slow storage clase name
@@ -3592,7 +3594,7 @@ function get_storage_class_name(){
                echo -e "\x1B[1;31mEnter a valid file storage classname(RWX)\x1B[0m"
             fi
         done
-        if [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]]; then
+        if [[ $PLATFORM_SELECTED == "OCP" ]]; then
         while [[ $block_storage_class_name == "" ]] # While get block storage clase name
         do
             printf "\x1B[1mplease enter the block storage classname for Zen(RWO): \x1B[0m"
@@ -4582,7 +4584,7 @@ function input_information(){
             select_profile_type
         fi
         select_platform
-        if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "production" && "$USE_DEFAULT_IAM_ADMIN" == "" && "$NON_DEFAULT_IAM_ADMIN" == "" ]]; then
+        if [[ ("$PLATFORM_SELECTED" == "OCP") && "$DEPLOYMENT_TYPE" == "production" && "$USE_DEFAULT_IAM_ADMIN" == "" && "$NON_DEFAULT_IAM_ADMIN" == "" ]]; then
             select_iam_default_admin
         fi
         #if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "starter" ]]; then
@@ -4606,7 +4608,7 @@ function input_information(){
             select_profile_type
         fi
         select_platform
-        if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "production" && "$USE_DEFAULT_IAM_ADMIN" == "" && "$NON_DEFAULT_IAM_ADMIN" == "" ]]; then
+        if [[ ("$PLATFORM_SELECTED" == "OCP") && "$DEPLOYMENT_TYPE" == "production" && "$USE_DEFAULT_IAM_ADMIN" == "" && "$NON_DEFAULT_IAM_ADMIN" == "" ]]; then
             select_iam_default_admin
         fi
         #if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "starter" ]]; then
@@ -4682,13 +4684,13 @@ function input_information(){
 
         # Select FIPS enable or not
 
-        if  [[ ("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No") && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
+        if  [[ ("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No") && ($PLATFORM_SELECTED == "OCP" ) ]]; then
             select_fips_enable
         #elif [[ "$DEPLOYMENT_TYPE" == "starter" ]]; then
         #    FIPS_ENABLED="false"
         fi
 
-        if  [[  ("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No") && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
+        if  [[  ("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No") && ($PLATFORM_SELECTED == "OCP") ]]; then
             select_restricted_internet_access
         #elif [[ "$DEPLOYMENT_TYPE" == "starter" ]]; then
         #    # For starter deployment, always set sc_restricted_internet_access: true
@@ -4980,6 +4982,7 @@ function merge_pattern(){
 
     # ${COPY_CMD} -rf ${CP4A_PATTERN_FILE_BAK} ${CP4A_PATTERN_FILE_TMP}
     set_ldap_type_foundation
+
     for item in "${PATTERNS_CR_SELECTED[@]}"; do
         while true; do
             case $item in
@@ -5436,7 +5439,7 @@ function get_existing_pattern_name(){
             esac
 
             case "${existing_platform_type}" in
-                ROKS*)     PLATFORM_SELECTED="ROKS";;
+                #ROKS*)     PLATFORM_SELECTED="ROKS";;
                 OCP*)    PLATFORM_SELECTED="OCP";;
                 *)
                     echo -e "\x1B[1;31mNot valid platform type found in CR, exiting....\n\x1B[0m"
@@ -7968,7 +7971,7 @@ function apply_pattern_cr(){
         echo ""
     else
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.sc_deployment_hostname_suffix "$existing_infra_name"
-        if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]];
+        if  [[ $PLATFORM_SELECTED == "OCP" ]];
         then
             ${SED_COMMAND} "s|sc_deployment_hostname_suffix:.*|sc_deployment_hostname_suffix: \"{{ meta.namespace }}.${INFRA_NAME}\"|g" ${CP4A_PATTERN_FILE_TMP}
         else
@@ -7992,13 +7995,13 @@ function apply_pattern_cr(){
     fi
 
     # Set fips_enable
-    if  [[ (("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No")) && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
+    if  [[ (("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No")) && ($PLATFORM_SELECTED == "OCP") ]]; then
         if [[ $FIPS_ENABLED == "true" ]]; then
             ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.enable_fips "true"
         else
             ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.enable_fips "false"
         fi
-    elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
+    elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && ($PLATFORM_SELECTED == "OCP") ]]; then
          fips_flag="$(prop_user_profile_property_file CP4BA.ENABLE_FIPS)"
         fips_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$fips_flag")
         fips_flag=$(echo $fips_flag | tr '[:upper:]' '[:lower:]')
@@ -8012,13 +8015,13 @@ function apply_pattern_cr(){
     fi
 
     # Set sc_restricted_internet_access
-    if  [[ (("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No")) && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
+    if  [[ (("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No")) && ($PLATFORM_SELECTED == "OCP") ]]; then
         if [[ $RESTRICTED_INTERNET_ACCESS == "true" ]]; then
             ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.sc_egress_configuration.sc_restricted_internet_access "true"
         else
             ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.sc_egress_configuration.sc_restricted_internet_access "false"
         fi
-    elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
+    elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && ($PLATFORM_SELECTED == "OCP" ) ]]; then
         restricted_flag="$(prop_user_profile_property_file CP4BA.ENABLE_RESTRICTED_INTERNET_ACCESS)"
         restricted_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$restricted_flag")
         restricted_flag=$(echo $restricted_flag | tr '[:upper:]' '[:lower:]')
@@ -8034,11 +8037,11 @@ function apply_pattern_cr(){
     fi
 
     # Set sc_dynamic_storage_classname
-    if [[ "$PLATFORM_SELECTED" == "ROKS" ]]; then
-        ${SED_COMMAND} "s|sc_dynamic_storage_classname:.*|sc_dynamic_storage_classname: \"${FAST_STORAGE_CLASS_NAME}\"|g" ${CP4A_PATTERN_FILE_TMP}
-    else
-        ${SED_COMMAND} "s|sc_dynamic_storage_classname:.*|sc_dynamic_storage_classname: \"${STORAGE_CLASS_NAME}\"|g" ${CP4A_PATTERN_FILE_TMP}
-    fi
+    #if [[ "$PLATFORM_SELECTED" == "ROKS" ]]; then
+    #    ${SED_COMMAND} "s|sc_dynamic_storage_classname:.*|sc_dynamic_storage_classname: \"${FAST_STORAGE_CLASS_NAME}\"|g" ${CP4A_PATTERN_FILE_TMP}
+    #else
+    ${SED_COMMAND} "s|sc_dynamic_storage_classname:.*|sc_dynamic_storage_classname: \"${STORAGE_CLASS_NAME}\"|g" ${CP4A_PATTERN_FILE_TMP}
+    #fi
     ${SED_COMMAND} "s|sc_slow_file_storage_classname:.*|sc_slow_file_storage_classname: \"${SLOW_STORAGE_CLASS_NAME}\"|g" ${CP4A_PATTERN_FILE_TMP}
     ${SED_COMMAND} "s|sc_medium_file_storage_classname:.*|sc_medium_file_storage_classname: \"${MEDIUM_STORAGE_CLASS_NAME}\"|g" ${CP4A_PATTERN_FILE_TMP}
     ${SED_COMMAND} "s|sc_fast_file_storage_classname:.*|sc_fast_file_storage_classname: \"${FAST_STORAGE_CLASS_NAME}\"|g" ${CP4A_PATTERN_FILE_TMP}
@@ -8061,7 +8064,7 @@ function apply_pattern_cr(){
     fi
 
     # set the sc_iam.default_admin_username
-    if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "production" && "$USE_DEFAULT_IAM_ADMIN" == "No" ]]; then
+    if [[ ("$PLATFORM_SELECTED" == "OCP" ) && "$DEPLOYMENT_TYPE" == "production" && "$USE_DEFAULT_IAM_ADMIN" == "No" ]]; then
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.sc_iam.default_admin_username "\"$NON_DEFAULT_IAM_ADMIN\""
     fi
 
@@ -8468,7 +8471,7 @@ function apply_pattern_cr(){
     else
         warning "ibm-cp4ba-common-config configmap was not found in the project \"$CP4BA_SERVICES_NS\"."
         # For https://jsw.ibm.com/browse/DBACLD-160661 where we have added remediation steps on how to recreate the configmap
-        fail "You NEED to first create the \"ibm-cp4ba-common-config\" configMap in the project (namespace) where you want to deploy or upgrade CP4BA operands (i.e., runtime pods)."
+        fail "You NEED to first create the \"ibm-cp4ba-common-config\" configMap in the namespace where you want to deploy or upgrade CP4BA operands (i.e., runtime pods)."
         info "${YELLOW_TEXT}- [NEXT-STEPS]${RESET_TEXT}"
         echo "  - STEP 1 ${RED_TEXT}(Required)${RESET_TEXT}:${GREEN_TEXT} # Execute the baw-clusteradmin-setup.sh script with the \"-fix_configmap\" option to re-create the missing \"ibm-cp4ba-common-config\" configMap in the target namespace.For additional information refer to the Troubleshooting page in the Upgrade Section of the Knowledge Center.${RESET_TEXT}"
         exit 1
@@ -8757,7 +8760,7 @@ function show_summary(){
         # echo -e "\x1B[1;31m5. Docker registry password: ${LOCAL_REGISTRY_PWD}\x1B[0m"
         echo -e "\x1B[1;31m6. Docker registry password:\x1B[0m" # not show plaintext password
     fi
-    if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]];
+    if  [[ $PLATFORM_SELECTED == "OCP" ]];
     then
         if [ -z "$existing_infra_name" ]; then
             #if  [[ $DEPLOYMENT_TYPE == "starter" && $PLATFORM_SELECTED == "OCP" ]];
@@ -8778,9 +8781,9 @@ function show_summary(){
         else
             if  [[ $PLATFORM_SELECTED == "OCP" ]]; then
                 echo -e "\x1B[1;31m3. OCP Infrastructure Node:\x1B[0m ${INFRA_NAME}"
-            elif [[ $PLATFORM_SELECTED == "ROKS" ]]
-            then
-                echo -e "\x1B[1;31m3. ROKS Infrastructure Node:\x1B[0m ${INFRA_NAME}"
+            #elif [[ $PLATFORM_SELECTED == "ROKS" ]]
+            #then
+            #    echo -e "\x1B[1;31m3. ROKS Infrastructure Node:\x1B[0m ${INFRA_NAME}"
             fi
             #if  [[ $DEPLOYMENT_TYPE == "starter" && $PLATFORM_SELECTED == "OCP" ]];
             #then
@@ -8819,7 +8822,7 @@ function show_summary(){
         if [[ $PLATFORM_SELECTED == "other" ]]; then
             echo -e "\x1B[1;31m8. URL to zip file for JDBC and/or ICCSAP drivers:\x1B[0m ${CP4BA_JDBC_URL}"
         fi
-        if [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]]; then
+        if [[ $PLATFORM_SELECTED == "OCP" ]]; then
             echo -e "\x1B[1;31m4. Block storage classname(RWO):\x1B[0m ${BLOCK_STORAGE_CLASS_NAME}"
             echo -e "\x1B[1;31m5. URL to zip file for JDBC and/or ICCSAP drivers:\x1B[0m ${CP4BA_JDBC_URL}"
         fi
@@ -9073,7 +9076,7 @@ then
                 show_summary
                 printf "\n"
 
-                if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]];
+                if  [[ $PLATFORM_SELECTED == "OCP" ]];
                 then
                     printf "\x1B[1mEnter the number from 1 to 5 that you want to change: \x1B[0m"
                 else
@@ -9081,7 +9084,7 @@ then
                 fi
 
                 read -rp "" ans
-                if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]];
+                if  [[ $PLATFORM_SELECTED == "OCP" ]];
                 then
                     case "$ans" in
                     "1")
