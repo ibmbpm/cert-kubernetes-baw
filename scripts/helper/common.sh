@@ -631,17 +631,15 @@ function check_platform_version(){
 function check_cluster_login() {
     local oc_login=true
     local kubectl_login=true
-    if [[ "$CLI_CMD" == "oc" ]]; then
+    if which oc >/dev/null 2>&1; then
         oc whoami >/dev/null 2>&1
         if [ $? -gt 0 ]; then
-            warning "Not able to login to a cluster using oc command. Please login to a cluster before running this script."
             oc_login=false
         fi
     fi
-    if [[ "$CLI_CMD" == "kubectl" ]]; then
+    if which kubectl >/dev/null 2>&1; then
         kubectl auth whoami >/dev/null 2>&1
         if [ $? -gt 0 ]; then
-            warning "Not able to login to a cluster using kubectl command. Please login to a cluster before running this script."
             kubectl_login=false
         fi
     fi
