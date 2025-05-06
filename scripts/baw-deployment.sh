@@ -1601,7 +1601,7 @@ function load_property_before_generate(){
     # load db ldap type
     LDAP_TYPE="$(prop_tmp_property_file LDAP_TYPE)"
     DB_TYPE="$(prop_tmp_property_file DB_TYPE)"
-    
+
     # making sure the DB type is in lowercase
     DB_TYPE=$(echo "$DB_TYPE" | tr '[:upper:]' '[:lower:]')
     # For Database type DB2 DB2HADR and DB2 RDS the generate mode and validate mode are all identical and in the script taken care off using $DB_TYPE == "db2"
@@ -3908,7 +3908,7 @@ function generate_sample_network_policies(){
     printf "\n"
     echo ""
     while true; do
-        printf "\x1B[1mDo you want to generate the network policy templates for this CP4BA deployment?\x1B[0m ${YELLOW_TEXT}(Notes: Starting from $CP4BA_RELEASE_BASE, the CP4BA operators no longer install network policies automatically. If you want the operators to generate network policies from a set of templates, select Yes. You can install the network policies by running a script after the CP4BA Deployment is installed. If you select No, then no network policies will be generated.)${RESET_TEXT} (Yes/No, default: No):" 
+        printf "\x1B[1mDo you want to generate the network policy templates for this CP4BA deployment?\x1B[0m ${YELLOW_TEXT}(Notes: Starting from $CP4BA_RELEASE_BASE, the CP4BA operators no longer install network policies automatically. If you want the operators to generate network policies from a set of templates, select Yes. You can install the network policies by running a script after the CP4BA Deployment is installed. If you select No, then no network policies will be generated.)${RESET_TEXT} (Yes/No, default: No):"
         read -rp "" ans
         case "$ans" in
         "y"|"Y"|"yes"|"Yes"|"YES")
@@ -5084,7 +5084,7 @@ function merge_pattern(){
                         fi
                         if [[ "${pattern_cr_arr[@]}" =~ "document_processing_runtime" ]]; then
                             ${SED_COMMAND} "s/  #ecm_configuration:/  ecm_configuration:/g" ${ARIA_PATTERN_FILE_BAK}
-                            ${SED_COMMAND} "s/  #  document_processing:/    document_processing:/g" ${ARIA_PATTERN_FILE_BAK} 
+                            ${SED_COMMAND} "s/  #  document_processing:/    document_processing:/g" ${ARIA_PATTERN_FILE_BAK}
                             if [[ $DB_TYPE = "postgresql-edb" ]]; then
                                 # Add ibm_adp_secret under document_processing
                                 ${SED_COMMAND} "s/  #    ibm_adp_secret: ibm-adp-secret/      ibm_adp_secret: \"ibm-adp-secret\"/g" ${ARIA_PATTERN_FILE_BAK}
@@ -5308,7 +5308,7 @@ function get_existing_pattern_name(){
                 # Loop through the keys and values of spec.content_optional_components which will give us the list of optional components selected
                 optional_components_section=$(${YQ_CMD} r "$existing_pattern_cr_name" "spec.content_optional_components")
                 while IFS=: read -r key value; do
-                    key=$(echo "$key" | xargs)       
+                    key=$(echo "$key" | xargs)
                     value=$(echo "$value" | xargs)
                     if [[ "$value" == "true" ]]; then
                         if [[ -n "$existing_opt_component_list" ]]; then
@@ -5347,7 +5347,7 @@ function get_existing_pattern_name(){
                         fi
                     done
                 fi
-                
+
                 key_value=$(${YQ_CMD} r $existing_pattern_cr_name 'spec.shared_configuration.sc_optional_components' 2>/dev/null)
                 if [[ "$key_value" ]]; then
                     existing_opt_component_list=`cat $existing_pattern_cr_name | ${YQ_CMD} r - spec.shared_configuration.sc_optional_components`
@@ -5368,7 +5368,7 @@ function get_existing_pattern_name(){
                             existing_opt_component_list+="$key"
                         fi
                     done <<< "$optional_components_section"
-                fi 
+                fi
             fi
             existing_platform_type=`cat $existing_pattern_cr_name | ${YQ_CMD} r - spec.shared_configuration.sc_deployment_platform`
             existing_profile_type=`cat $existing_pattern_cr_name | ${YQ_CMD} r - spec.shared_configuration.sc_deployment_profile_size`
@@ -5726,7 +5726,7 @@ function sync_property_into_final_cr(){
         if [[ $DB_TYPE == "postgresql" ]]; then
             tmp_gcd_db_name=$(echo $tmp_gcd_db_name | tr '[:upper:]' '[:lower:]')
         fi
-        
+
         #https://jsw.ibm.com/browse/DBACLD-158651 << Make ssl_secret_name empty when dc_ssl_enabled value is False>>
         # Initialize the isfalse variable to validate spec.datasource_configuration.dc_ssl_enabled is true or false
         isfalse=false
@@ -6355,7 +6355,7 @@ function sync_property_into_final_cr(){
                 tmp_os_db_name=$(echo $tmp_os_db_name | tr '[:upper:]' '[:lower:]')
             fi
             #https://jsw.ibm.com/browse/DBACLD-158651 << Make ssl_secret_name empty when dc_ssl_enabled value is False>>
-            # Initialize the isfalse variable to validate dc_ssl_enabled is true or false for DEVOS1 
+            # Initialize the isfalse variable to validate dc_ssl_enabled is true or false for DEVOS1
             isfalse=false
             for i in "${!OSDB_CR_MAPPING[@]}"; do
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} "spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].${OSDB_CR_MAPPING[i]}" "\"$(prop_db_server_property_file $tmp_os_db_servername.${OSDB_COMMON_PROPERTY[i]})\""
@@ -6639,13 +6639,13 @@ function sync_property_into_final_cr(){
             if [[ $DB_TYPE == "postgresql" ]]; then
                 tmp_icn_db_name=$(echo $tmp_icn_db_name | tr '[:upper:]' '[:lower:]')
             fi
-            
+
             #https://jsw.ibm.com/browse/DBACLD-158651 << Make ssl_secret_name empty when dc_ssl_enabled value is False>>
             # Initialize the isfalse variable to validate dc_ssl_enabled is true or false
             isfalse=false
             for i in "${!ICNDB_CR_MAPPING[@]}"; do
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} "${ICNDB_CR_MAPPING[i]}" "\"$(prop_db_server_property_file $tmp_icn_db_servername.${ICNDB_COMMON_PROPERTY[i]})\""
-                # Check if we are updating spec.datasource_configuration.dc_ssl_enabled value is false    
+                # Check if we are updating spec.datasource_configuration.dc_ssl_enabled value is false
                 if [ "${ICNDB_CR_MAPPING[i]}" == "spec.datasource_configuration.dc_ssl_enabled" ] && [[ "$(prop_db_server_property_file $tmp_icn_db_servername.${ICNDB_COMMON_PROPERTY[i]})" =~ ^[fF]alse$ ]]; then
                     isfalse=true
                 fi
@@ -6816,7 +6816,7 @@ function sync_property_into_final_cr(){
         fi
 
         tmp_baw_runtime_db_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_baw_runtime_db_name")
-        
+
         #https://jsw.ibm.com/browse/DBACLD-158651 << Make ssl_secret_name empty when dc_ssl_enabled value is False>>
         # Initialize the isfalse variable to validate dc_ssl_enabled is true or false for BAWDB
         isfalse=false
@@ -6835,7 +6835,7 @@ function sync_property_into_final_cr(){
                 fi
             fi
         done
-        
+
         # For DBACLD-155445 where we need to use the namespace value passed to find the secret name and populate the CR accordingly
         tmp_secret_name=`kubectl get secret -l db-name=${tmp_baw_runtime_db_name} -o yaml -n $CP4BA_SERVICES_NS | ${YQ_CMD} r - items.[0].metadata.name`
 
@@ -7167,7 +7167,7 @@ function sync_property_into_final_cr(){
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_ads_designer_datasource.database_name "\"$tmp_ads_designer_db_name\""
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_ads_designer_datasource.database_port "\"$tmp_ads_designer_db_port\""
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_ads_designer_datasource.database_instance_secret "\"ibm-ads-designer-database\""
-            
+
                 # Checking if SSL is enable
                 tmp_ads_designer_ssl_flag="$(prop_db_server_property_file $tmp_ads_designer_db_servername_prefix.DATABASE_SSL_ENABLE)"
                 tmp_ads_designer_ssl_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_ads_designer_ssl_flag")
@@ -7208,7 +7208,7 @@ function sync_property_into_final_cr(){
                 fi
             fi
         fi
-        
+
         # Applying values for ADS Runtime into final CR
         if [[ "${optional_component_arr[@]}" =~ "DecisionRuntime" ]]; then
 
@@ -7323,7 +7323,7 @@ function sync_property_into_final_cr(){
                     # Applying SSL related values into final CR
                     ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_adp_datasource.database_ssl_secret_name "\"$tmp_adp_gg_db_ssl_secret\""
                 fi
-                        
+
             # Applying customized schema for ADP into final CR
             tmp_adp_gg_schema_name=$(prop_db_name_user_property_file ADP_GG_DB_SCHEMA)
             tmp_adp_gg_schema_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_adp_gg_schema_name")
@@ -7341,7 +7341,7 @@ function sync_property_into_final_cr(){
     fi
 
     ### -- https://jsw.ibm.com/browse/DBACLD-153348 - <Migration from Mongo to Postgres-edb for ADS>
-    # Check if the required pattern is present in pattern_cr_arr for decisions_ads 
+    # Check if the required pattern is present in pattern_cr_arr for decisions_ads
     if [[ "${pattern_cr_arr[@]}" =~ "decisions_ads" ]]; then
 
         # Set database names for ADS Designer and ADS Runtime
@@ -7394,15 +7394,15 @@ function sync_property_into_final_cr(){
          ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_adp_datasource.database_servername "\"postgres-cp4ba-rw.{{ meta.namespace }}.svc\""
          ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_adp_datasource.database_name "\"$tmp_dbname\""
          ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_adp_datasource.database_port "\"5432\""
-         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_adp_datasource.database_ssl_secret_name "\"{{ meta.name }}-pg-client-cert-secret\"" 
+         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_adp_datasource.database_ssl_secret_name "\"{{ meta.name }}-pg-client-cert-secret\""
         fi
     fi
 
     ### -- https://jsw.ibm.com/browse/DBACLD-154816 - <Migration from Mongo to Postgres-edb for ADS>
-    # Check if the required pattern is present in pattern_cr_arr for decisions_ads if select db2 
+    # Check if the required pattern is present in pattern_cr_arr for decisions_ads if select db2
     if [[ "${pattern_cr_arr[@]}" =~ "decisions_ads" ]]; then
 
-        # Set database names for ADS Designer and ADS Runtime 
+        # Set database names for ADS Designer and ADS Runtime
         tmp_dbname_designer="$(prop_db_name_user_property_file ADS_DESIGNER_DB_NAME)"
         tmp_dbname_runtime="$(prop_db_name_user_property_file ADS_RUNTIME_DB_NAME)"
 
@@ -7437,7 +7437,7 @@ function sync_property_into_final_cr(){
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_ads_runtime_datasource.ssl_secret_name "\"{{ meta.name }}-pg-client-cert-secret\""
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_ads_runtime_datasource.database_instance_secret "\"ibm-ads-runtime-database\""
             fi
-        fi  
+        fi
     fi
 
     ### -- https://jsw.ibm.com/browse/DBACLD-154816 - <Migration from Mongo to Postgres-edb for ADP>
@@ -7453,7 +7453,7 @@ function sync_property_into_final_cr(){
          ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_adp_datasource.database_servername "\"postgres-cp4ba-rw.{{ meta.namespace }}.svc\""
          ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_adp_datasource.database_name "\"$tmp_dbname\""
          ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_adp_datasource.database_port "\"5432\""
-         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_adp_datasource.database_ssl_secret_name "\"{{ meta.name }}-pg-client-cert-secret\"" 
+         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_adp_datasource.database_ssl_secret_name "\"{{ meta.name }}-pg-client-cert-secret\""
         fi
     fi
 
@@ -7619,7 +7619,7 @@ function sync_property_into_final_cr(){
             tmp_app_db_name="$(prop_db_name_user_property_file APP_PLAYBACK_DB_NAME)"
         fi
         tmp_app_db_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_app_db_name")
-        
+
         #https://jsw.ibm.com/browse/DBACLD-158651 << Make ssl_secret_name empty when dc_ssl_enabled value is False>>
         # Initialize the isfalse variable to validate dc_ssl_enabled is true or false for Playback
         isfalse=false
@@ -7713,7 +7713,7 @@ function sync_property_into_final_cr(){
             tmp_ae_db_name="$(prop_db_name_user_property_file APP_ENGINE_DB_NAME)"
         fi
         tmp_ae_db_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_ae_db_name")
-        
+
         #https://jsw.ibm.com/browse/DBACLD-158651 << Make ssl_secret_name empty when dc_ssl_enabled value is False>>
         # Initialize the isfalse variable to validate dc_ssl_enabled is true or false for AAE
         isfalse=false
@@ -8042,7 +8042,7 @@ function apply_pattern_cr(){
         delim=","
     done
 
-    
+
     merge_pattern
     merge_optional_components
     set_foundation_components
@@ -9238,7 +9238,7 @@ function shutdown_operator(){
     # scale down CP4BA operators base on the CP4BA_OPERATOR_LIST defined in common.sh
     local project_name=$1
     for operator in $CP4BA_OPERATOR_LIST; do
-        
+
         if [[ $operator == "ibm-ads-operator" || $operator == "ibm-cp4a-wfps-operator" || $operator == "ibm-insights-engine-operator" ]]; then
             info "Scaling down \"$operator\" operator"
             kubectl scale --replicas=0 deployment $operator -n $project_name >/dev/null 2>&1
@@ -9317,7 +9317,7 @@ function patch_elasticsearch_cr(){
     else
         info " Manually patch the Elasticsearch Cluster by executing \" ${CLI_CMD} patch ElasticsearchCluster $elasticsearch_cr_name -n $cr_namespace --type=merge -p '{\"spec\": {\"quiesce\":true}}' \" "
         printf "\n"
-    
+
     fi
 }
 #DBACLD-166863: This function determines the UPGRADE_MODE
@@ -9413,7 +9413,7 @@ function determine_upgrade_mode () {
         else
             info "IBM Cloud Pak foundational services is working in \"Namespace-scoped\"."
             UPGRADE_MODE="dedicated2dedicated"
-        fi 
+        fi
     fi
 
 }
@@ -9421,7 +9421,7 @@ function determine_upgrade_mode () {
 ################################################
 #### Begin - Main step for install operator ####
 ################################################
-save_log "cp4a-script-logs/project/$TARGET_PROJECT_NAME" "baw-deployment-log"
+save_log "baw-script-logs/project/$TARGET_PROJECT_NAME" "baw-deployment-log"
 trap cleanup_log EXIT
 
 # Import upgrade upgrade_check_version.sh script
@@ -9697,7 +9697,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then  #TODO
     fi
     ################## End - Apply third-party WORKAROUND ####################
 
-    ################## Start of workaround for https://jsw.ibm.com/browse/DBACLD-167061  
+    ################## Start of workaround for https://jsw.ibm.com/browse/DBACLD-167061
     # We're setting spec.enableSuperuserAccess to true for our postgres-cp4ba edb instance
     info "Determinig if EnterpriseDB PostgreSQL \"$EDB_INSTANCE_CP4BA_NAME\" is installed for IBM Cloud Pak for Business Automation."
     edb_instance_cp4ba_cr=$( ${CLI_CMD} get cluster.postgresql.k8s.enterprisedb.io -n $CP4BA_SERVICES_NS --no-headers --ignore-not-found $EDB_INSTANCE_CP4BA_NAME | awk '{print $1}' )
@@ -9713,7 +9713,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then  #TODO
       else
         info "The EnterpriseDB PostgreSQL instance \"$EDB_INSTANCE_CP4BA_NAME\" already as the field \"enableSuperuserAccess\" set to true."
       fi
-    else 
+    else
       info "Unable to find EnterpriseDB PostgreSQL instance \"$EDB_INSTANCE_CP4BA_NAME\""
       info "If the EnterpriseDB PostgreSQL instance \"$EDB_INSTANCE_CP4BA_NAME\" exists, execute the command: "
       info "${CLI_CMD} patch cluster.postgresql.k8s.enterprisedb.io  $EDB_INSTANCE_CP4BA_NAME -n $CP4BA_SERVICES_NS --type=merge -p '{\"spec\": {\"enableSuperuserAccess\":true}}'"
@@ -10271,7 +10271,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then  #TODO
     # The previous condition if [[ $cp4a_operator_csv_version != "$CP4BA_RELEASE_BASE" ]]; will not work for an upgrade from 24.0.0 IF001 to 24.0.1 since the csv version of 24.0.0 IF001 is the same as the release base of 24.0.1
     # Updated this condition to use the is_ifix_to_ifix_upgrade flag which can correctly detect if it is an n-1 to n upgrade or ifix to ifix upgrade
     if [[ "$is_ifix_to_ifix_upgrade" == "false" ]]; then
- 
+
         if [[ "$ALLOW_DIRECT_UPGRADE" == 1 ]]; then # Only execute this block when it's a skip-version upgrade.
             # In 24.0.0, only merge bai.json into yaml but not call savepoint RestAPI because that savepoint should be done during migration from ES to OS
             if [[ $RERUN_UPGRADE_DEPLOYMENT == "Yes" ]]; then
@@ -10535,11 +10535,11 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then  #TODO
                         else
                             fail "Could not find \"${UPGRADE_DEPLOYMENT_CR}/bai.json\" for Flink savepoint."
                             msg "Fetch Flink job savepoints for the recovery path using above REST API manually, then place the JSON file (bai.json) under the directory \"${TEMP_FOLDER}/\""
-                        fi 
+                        fi
                     fi
                 fi # End of checking for bai.json for ICP4ACluster CR
             fi
-        fi #  End of block for skip-version upgrade. This is BAI related block when $ALLOW_DIRECT_UPGRADE =1 
+        fi #  End of block for skip-version upgrade. This is BAI related block when $ALLOW_DIRECT_UPGRADE =1
         # In 24.0.0, follow the flow of migration from  Elasticsearch to Opensearch, the bai savepoint creation already done before upgrade CP4BA
         # So do not rerun savepoint. But need to covert bai json into UPGRADE_DEPLOYMENT_BAI_TMP for next upgradeDeployment mode.
         # Keep below logic for future IFIX to IFX upgrade.  Setting the RUN_BAI_SAVEPOINT="No" which will skip the savepoint creation in IFIX to IFIX upgrade
@@ -11550,7 +11550,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then  #TODO
             fi
             # # Sourcing the message.sh to use the displayUpgradeOperatorMessage
             source ${CUR_DIR}/helper/messages.sh $COMMON_SERVICES_SCRIPT_FOLDER
-             # Can be skipped for 24.0.0 to 24.0.1 upgrade since the csv version will NOT be 21.3.x or 22.2.x.  Only execute when allow_direct_upgrade flag is 1 
+             # Can be skipped for 24.0.0 to 24.0.1 upgrade since the csv version will NOT be 21.3.x or 22.2.x.  Only execute when allow_direct_upgrade flag is 1
             if [[ ("$cp4a_operator_csv_version" == "21.3."* || "$cp4a_operator_csv_version" == "22.2."* ) && ("$ALLOW_DIRECT_UPGRADE" == 1) ]]; then
                 info "Starting to migrate IBM Cloud Pak foundational services from 3.x to $CS_OPERATOR_VERSION"
 
@@ -11568,7 +11568,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then  #TODO
                     msg "All arguments passed into the CPfs script: $COMMON_SERVICES_SCRIPT_FOLDER/migrate_tenant.sh --operator-namespace $TARGET_PROJECT_NAME --services-namespace $TARGET_PROJECT_NAME --cert-manager-source ibm-cert-manager-catalog --enable-licensing --yq \"$CPFS_YQ_PATH\" -c $CS_CHANNEL_VERSION -s $CS_CATALOG_VERSION --license-accept --enable-private-catalog"
                     # switch catalog from GCN to private
                     $COMMON_SERVICES_SCRIPT_FOLDER/migrate_tenant.sh --operator-namespace $TARGET_PROJECT_NAME --services-namespace $TARGET_PROJECT_NAME --cert-manager-source ibm-cert-manager-catalog --enable-licensing --yq "$CPFS_YQ_PATH" -c $CS_CHANNEL_VERSION -s $CS_CATALOG_VERSION --license-accept --enable-private-catalog
-                    if [ $? -ne 0 ]; then                        
+                    if [ $? -ne 0 ]; then
                         TMP_MESSAGE="Failed to execute command: $COMMON_SERVICES_SCRIPT_FOLDER/migrate_tenant.sh --operator-namespace $TARGET_PROJECT_NAME --services-namespace $TARGET_PROJECT_NAME --cert-manager-source ibm-cert-manager-catalog --enable-licensing --yq \"$CPFS_YQ_PATH\" -c $CS_CHANNEL_VERSION -s $CS_CATALOG_VERSION --license-accept --enable-private-catalog"
                         #source ${CUR_DIR}/helper/messages.sh
                         displayUpgradeOperatorMessage "$TMP_MESSAGE" $TARGET_PROJECT_NAME $cp4a_operator_csv_version
@@ -11887,11 +11887,11 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then  #TODO
                         displayUpgradeOperatorMessage "$TMP_MESSAGE" $TARGET_PROJECT_NAME $cp4a_operator_csv_version
                         exit 1
                     fi
-                    
+
                     # set --service-namespace property to CP4BA_SERVICES_NS when it's seperation of duty
                     if [[ $SEPARATE_OPERAND_FLAG == "Yes" ]]; then
                         TMP_SERVICES_NAMESPACE=$CP4BA_SERVICES_NS
-                    
+
                     # set --service-namespace property to TARGET_PROJECT_NAME when it's not seperation of duty
                     else
                         TMP_SERVICES_NAMESPACE=$TARGET_PROJECT_NAME
@@ -11905,7 +11905,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then  #TODO
                         displayUpgradeOperatorMessage "$TMP_MESSAGE" $TARGET_PROJECT_NAME $cp4a_operator_csv_version
                         exit 1
                     fi
-             
+
                 # This is still a valid scenario in 24.0.0 upgrading to 24.0.1.
                 elif [[ $UPGRADE_MODE == "shared2shared" && $ALL_NAMESPACE_FLAG == "Yes" ]]; then
                     # It is not recommended to install 23.0.2 in all namespace. but script keep coverage for it
@@ -12154,7 +12154,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperatorStatus" ]; then
     check_cp4ba_operator_version $TARGET_PROJECT_NAME $ALLOW_DIRECT_UPGRADE
 
     # Check whether the CP4BA is separation of operators and operands.
-    
+
     check_cp4ba_separate_operand $TARGET_PROJECT_NAME
 
     UPGRADE_DEPLOYMENT_FOLDER=${CUR_DIR}/cp4ba-upgrade/project/$CP4BA_SERVICES_NS
@@ -12199,7 +12199,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperatorStatus" ]; then
             cp4ba_original_csv_ver_for_upgrade_script=$tmp_csv_val
         fi
     fi
-        
+
     if [[ ! -z $ibm_cp4ba_content_shared_info_cm ]]; then
         tmp_csv_val=$(${CLI_CMD} get configmap ibm-cp4ba-content-shared-info -n $CP4BA_SERVICES_NS -o jsonpath='{.data.cp4ba_original_csv_ver_for_upgrade_script}')
         if [[ ! -z $tmp_csv_val ]]; then
@@ -12318,14 +12318,14 @@ if [ "$RUNTIME_MODE" == "upgradeDeployment" ]; then
             cp4ba_original_csv_ver_for_upgrade_script=$tmp_csv_val
         fi
     fi
-        
+
     if [[ ! -z $ibm_cp4ba_content_shared_info_cm ]]; then
         tmp_csv_val=$(${CLI_CMD} get configmap ibm-cp4ba-content-shared-info -n $CP4BA_SERVICES_NS -o jsonpath='{.data.cp4ba_original_csv_ver_for_upgrade_script}')
         if [[ ! -z $tmp_csv_val ]]; then
             cp4ba_original_csv_ver_for_upgrade_script=$tmp_csv_val
         fi
     fi
-    
+
     #exit if CSV version is 25.0.*, upgradedeployment is not required if the original CSV version is 25.0.*
     if [[ "$cp4ba_original_csv_ver_for_upgrade_script" == "$CP4BA_RELEASE_BASE_MAJOR_VERSION"* ]]; then
         warning "DO NOT NEED to run [upgradeDeployment] mode for upgrading from ${CP4BA_RELEASE_BASE}GA/${CP4BA_RELEASE_BASE}.X to ${CP4BA_RELEASE_BASE}.X"
@@ -12661,7 +12661,7 @@ if [[ "$RUNTIME_MODE" == "upgradeDeploymentStatus" ]]; then
             cp4ba_original_csv_ver_for_upgrade_script=$tmp_csv_val
         fi
     fi
-        
+
     if [[ ! -z $ibm_cp4ba_content_shared_info_cm ]]; then
         tmp_csv_val=$(${CLI_CMD} get configmap ibm-cp4ba-content-shared-info -n $CP4BA_SERVICES_NS -o jsonpath='{.data.cp4ba_original_csv_ver_for_upgrade_script}')
         if [[ ! -z $tmp_csv_val ]]; then
