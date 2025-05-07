@@ -18,13 +18,12 @@ source ${CUR_DIR}/helper/common.sh
 
 function show_help() {
     echo -e "Usage: "
-    echo -e "  ./baw-deployment.sh -m [modetype] -n <BAW_NAMESPACE>"
-    echo -e "  OR"
+    #echo -e "  ./baw-deployment.sh -m [modetype] -n <BAW_NAMESPACE>"
+    #echo -e "  OR"
     echo -e "  ./baw-deployment.sh -n <BAW_NAMESPACE>"
     echo "Options:"
     echo "  -h  Display the help"
-    # TODO
-    echo "  -m  Optional: The valid mode types are:[upgradeOperator], [upgradeOperatorStatus], [upgradeDeployment] and [upgradeDeploymentStatus]"
+    #echo "  -m  Optional: The valid mode types are:[upgradeOperator], [upgradeOperatorStatus], [upgradeDeployment] and [upgradeDeploymentStatus]"
     # echo "  -s  The value of the update approval strategy. The valid values are: [automatic] and [manual]."
     echo "  -n  Required: The target namespace of the BAW deployment.(If BAW is separate of operator and operand, the value is namespace of BAW operator)"
     echo "  -i  Optional: Operator image name, by default it is cp.icr.io/cp/cp4a/icp4a-operator:$CP4BA_RELEASE_BASE"
@@ -32,16 +31,16 @@ function show_help() {
     echo "  --enable-private-catalog Optional: Set this flag to let the script to switch CatalogSource from global to namespace scoped. Default is in openshift-marketplace namespace"
     echo "  ${YELLOW_TEXT}* Running the script to create a custom resource file for new BAW deployment:${RESET_TEXT}"
     echo "      - STEP 1: Run the script with \"-n <BAW_NAMESPACE>\"."
-    echo "  ${YELLOW_TEXT}* Running the script to upgrade a BAW deployment from 24.0.0 GA or 24.0.0-IFIX<xx> to $CP4BA_RELEASE_BASE GA/$CP4BA_RELEASE_BASE.X. You must run the modes in the following order:${RESET_TEXT}"
-    echo "      - STEP 1 (Required): Run the script in [upgradeOperator] mode to upgrade BAW operators/migrate (Cluster-scoped -> Cluster-scoped [AllNamespaces] / Namespace-scoped -> Namespace-scoped) the IBM Cloud Pak foundational services and then shutdown all BAW operators before upgrade BAW deployment."
-    echo "      - STEP 2 (Optional): Run the script in [upgradecho "${options_cr_val}"eOperatorStatus] mode to check that the upgrade of the BAW operator and its dependencies is successful."
-    echo "      - STEP 3 (Required): Run the script in [upgradeDeployment] mode to upgrade the BAW deployment (The script will generate the new version custom resource, and you can choose review/modification it offline and apply it later or apply it by script without review/modification)."
-    echo "      - STEP 4 (Required): Run the script in [upgradeDeploymentStatus] mode to start necessary BAW operators to upgrade the dependent service (zenService) firslty and then start up all BAW operators to complete upgrade of the BAW deployment, meanwhile, it will check that the upgrade of the BAW deployment is successful."
+    #echo "  ${YELLOW_TEXT}* Running the script to upgrade a BAW deployment from 24.0.0 GA or 24.0.0-IFIX<xx> to $CP4BA_RELEASE_BASE GA/$CP4BA_RELEASE_BASE.X. You must run the modes in the following order:${RESET_TEXT}"
+    #echo "      - STEP 1 (Required): Run the script in [upgradeOperator] mode to upgrade BAW operators/migrate (Cluster-scoped -> Cluster-scoped [AllNamespaces] / Namespace-scoped -> Namespace-scoped) the IBM Cloud Pak foundational services and then shutdown all BAW operators before upgrade BAW deployment."
+    #echo "      - STEP 2 (Optional): Run the script in [upgradecho "${options_cr_val}"eOperatorStatus] mode to check that the upgrade of the BAW operator and its dependencies is successful."
+    #echo "      - STEP 3 (Required): Run the script in [upgradeDeployment] mode to upgrade the BAW deployment (The script will generate the new version custom resource, and you can choose review/modification it offline and apply it later or apply it by script without review/modification)."
+    #echo "      - STEP 4 (Required): Run the script in [upgradeDeploymentStatus] mode to start necessary BAW operators to upgrade the dependent service (zenService) firslty and then start up all BAW operators to complete upgrade of the BAW deployment, meanwhile, it will check that the upgrade of the BAW deployment is successful."
     # echo "      - STEP 5 (Required): Run the script in [upgradePostconfig] mode to show the configuration post BAW deployment upgrade."
-    echo "  ${YELLOW_TEXT}* Running the script to upgrade a BAW deployment from $CP4BA_RELEASE_BASE GA/$CP4BA_RELEASE_BASE.X to $CP4BA_RELEASE_BASE.X. You must run the modes in the following order:${RESET_TEXT}"
-    echo "      - STEP 1 (Required): Run the script in [upgradeOperator] mode to upgrade the IBM Cloud Pak foundational services/BAW operators and then shutdown all BAW operators before upgrade BAW deployment."
-    echo "      - STEP 2 (Optional): Run the script in [upgradeOperatorStatus] mode to check that the upgrade of the BAW operator and its dependencies is successful."
-    echo "      - STEP 3 (Required): Run the script in [upgradeDeploymentStatus] mode to start necessary BAW operators to upgrade the dependent service (zenService) firslty and then start up all BAW operators to complete upgrade of the BAW deployment, meanwhile, it will check that the upgrade of the BAW deployment is successful."
+    #echo "  ${YELLOW_TEXT}* Running the script to upgrade a BAW deployment from $CP4BA_RELEASE_BASE GA/$CP4BA_RELEASE_BASE.X to $CP4BA_RELEASE_BASE.X. You must run the modes in the following order:${RESET_TEXT}"
+    #echo "      - STEP 1 (Required): Run the script in [upgradeOperator] mode to upgrade the IBM Cloud Pak foundational services/BAW operators and then shutdown all BAW operators before upgrade BAW deployment."
+    #echo "      - STEP 2 (Optional): Run the script in [upgradeOperatorStatus] mode to check that the upgrade of the BAW operator and its dependencies is successful."
+    #echo "      - STEP 3 (Required): Run the script in [upgradeDeploymentStatus] mode to start necessary BAW operators to upgrade the dependent service (zenService) firslty and then start up all BAW operators to complete upgrade of the BAW deployment, meanwhile, it will check that the upgrade of the BAW deployment is successful."
 
 }
 
@@ -54,7 +53,7 @@ function parse_arguments() {
                 echo "Invalid option: -m flag requires an argument"
                 exit 1
             fi
-            RUNTIME_MODE=$1 #TODO
+            #RUNTIME_MODE=$1 CURRENTLY NOT SUPPORTED
             if [[ $RUNTIME_MODE == "upgradeOperator" || $RUNTIME_MODE == "upgradeOperatorStatus" || $RUNTIME_MODE == "upgradeDeployment" || $RUNTIME_MODE == "upgradeDeploymentStatus" ]]; then
                 echo -n
             else
@@ -294,35 +293,36 @@ function prompt_license(){
         case "$ans" in
         "y"|"Y"|"yes"|"Yes"|"YES")
                 printf "\n"
-                while true; do
-                    if [[ $retVal_baw -eq 0 ]]; then
-                        printf "\n"
-                    fi
-                    if [[ $retVal_baw -eq 1 ]]; then
-                        printf "\x1B[1mDid you deploy Content CR (CRD: contents.icp4a.ibm.com) in current cluster? (Yes/No, default: No): \x1B[0m"
-                    fi
-                    if  [[ $CONTENT_CR_EXISTS == "" ]]; then
-                        read -rp "" ans
-                    else
-                        ans=$CONTENT_CR_EXISTS
-                    fi
-                    case "$ans" in
-                    "y"|"Y"|"yes"|"Yes"|"YES")
-                        echo -e "Continuing...\n"
-                        # echo -e "\x1B[1;31mThe baw-deployment.sh can not work with existing Content CR together, exiting now...\x1B[0m\n"
-                        CONTENT_DEPLOYED="Yes"
-                        break
-                        ;;
-                    "n"|"N"|"no"|"No"|"NO"|"")
-                        echo -e "Continuing...\n"
-                        CONTENT_DEPLOYED="No"
-                        break
-                        ;;
-                    *)
-                        echo -e "Answer must be \"Yes\" or \"No\"\n"
-                        ;;
-                    esac
-                done
+                #while true; do
+                #    if [[ $retVal_baw -eq 0 ]]; then
+                #        printf "\n"
+                #    fi
+                    #if [[ $retVal_baw -eq 1 ]]; then
+                    #    printf "\x1B[1mDid you deploy Content CR (CRD: contents.icp4a.ibm.com) in current cluster? (Yes/No, default: No): \x1B[0m"
+                    #fi
+                    #if  [[ $CONTENT_CR_EXISTS == "" ]]; then
+                    #    read -rp "" ans
+                    #else
+                    #    ans=$CONTENT_CR_EXISTS
+                    #fi
+                    #case "$ans" in
+                    #"y"|"Y"|"yes"|"Yes"|"YES")
+                    #    echo -e "Continuing...\n"
+                    #    # echo -e "\x1B[1;31mThe baw-deployment.sh can not work with existing Content CR together, exiting now...\x1B[0m\n"
+                    #    CONTENT_DEPLOYED="Yes"
+                    #    break
+                    #    ;;
+                    #"n"|"N"|"no"|"No"|"NO"|"")
+                    #    echo -e "Continuing...\n"
+                    #    CONTENT_DEPLOYED="No"
+                    #    break
+                    #    ;;
+                    #*)
+                    #    echo -e "Answer must be \"Yes\" or \"No\"\n"
+                    #    ;;
+                    #esac
+                #done
+            CONTENT_DEPLOYED="No"
             echo -e "Starting to Install the Cloud Pak for Business Automation Operator...\n"
             IBM_LICENS="Accept"
             validate_cli
@@ -2026,7 +2026,7 @@ function select_baw_pattern(){
         case $opt in
             "Business Automation Workflow Authoring")
                 pattern_arr=("Business Automation Workflow Authoring")
-                pattern_cr_arr=("workflow-authoring")
+                pattern_cr_arr=("workflow,workflow-authoring")
                 foundation_baw=("BAN" "BAS")
                 break
                 ;;
@@ -3125,7 +3125,7 @@ function select_optional_component(){
                     optional_components_list=( "Exposed Kafka Services" "Exposed OpenSearch")
                     optional_components_cr_list=("kafka" "opensearch")
                     show_optional_components
-                    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "cmis" )
+                    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "css" )
                     optional_components_list=()
                     optional_components_cr_list=()
                     break
@@ -3532,7 +3532,7 @@ function get_storage_class_name(){
                echo -e "\x1B[1;31mEnter a valid file storage classname(RWX)\x1B[0m"
             fi
         done
-        if [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]]; then
+        #if [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]]; then
         while [[ $block_storage_class_name == "" ]] # While get block storage clase name
         do
             printf "\x1B[1mEnter the block storage classname for Zen(RWO): \x1B[0m"
@@ -3541,7 +3541,7 @@ function get_storage_class_name(){
                echo -e "\x1B[1;31mEnter a valid block storage classname(RWO)\x1B[0m"
             fi
         done
-        fi
+        #fi
     fi
     STORAGE_CLASS_NAME=${storage_class_name}
     SLOW_STORAGE_CLASS_NAME=${sc_slow_file_storage_classname}
@@ -4549,10 +4549,10 @@ function input_information(){
         if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "production" && "$USE_DEFAULT_IAM_ADMIN" == "" && "$NON_DEFAULT_IAM_ADMIN" == "" ]]; then
             select_iam_default_admin
         fi
-        #if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "starter" ]]; then
-        #    select_project
-        #fi
-        check_ocp_version #TODO
+        if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "starter" ]]; then
+            select_project
+        fi
+        check_ocp_version
         validate_docker_podman_cli
         prepare_pattern_file #TODO remove unused pattern
         # select_baw_iaws_installation
@@ -8591,9 +8591,9 @@ function apply_pattern_cr(){
         ${SED_COMMAND} "s/.*# ecm_configuration:.*/  # ecm_configuration:/g" ${CP4A_PATTERN_FILE_TMP}
     fi
 
-    if [[ $PLATFORM_SELECTED == "other" ]]; then
-        ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.storage_configuration.sc_block_storage_classname
-    fi
+    #if [[ $PLATFORM_SELECTED == "other" ]]; then
+    #    ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.storage_configuration.sc_block_storage_classname
+    #fi
 
     # if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
     #     if [[ (" ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams" || " ${PATTERNS_CR_SELECTED[@]} " =~ "decisions_ads") && !(" ${PATTERNS_CR_SELECTED[@]} " =~ "document_processing") && !(" ${PATTERNS_CR_SELECTED[@]} " =~ "application") ]]; then
@@ -8817,10 +8817,10 @@ function apply_pattern_cr(){
     fi
 
     echo -e "\x1B[1mThe custom resource file is located at: \"${CP4A_PATTERN_FILE_BAK}\"\x1B[0m"
-    if [[ "$DEPLOYMENT_TYPE" == "production" && (" ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams" || " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-runtime" || " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-authoring") ]]; then
-        printf "\n"
-        echo -e "\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1mIf the cluster is running a Linux on Z (s390x)/Power architecture, remove the \x1B[0m\x1B[1;31mbaml_configuration\x1B[0m \x1B[1msection from \"${CP4A_PATTERN_FILE_BAK}\" before applying the custom resource. Business Automation Machine Learning Server (BAML) is not supported on this architecture.\n\x1B[0m"
-    fi
+#    if [[ "$DEPLOYMENT_TYPE" == "production" && (" ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-workstreams" || " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-runtime" || " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-authoring") ]]; then
+#        printf "\n"
+#        echo -e "\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1mIf the cluster is running a Linux on Z (s390x)/Power architecture, remove the \x1B[0m\x1B[1;31mbaml_configuration\x1B[0m \x1B[1msection from \"${CP4A_PATTERN_FILE_BAK}\" before applying the custom resource. Business Automation Machine Learning Server (BAML) is not supported on this architecture.\n\x1B[0m"
+#    fi
     printf "\n"
     echo -e "\x1B[1mTo monitor the deployment status, follow the Operator logs.\x1B[0m"
     echo -e "\x1B[1mFor details, refer to the troubleshooting section in Knowledge Center here: \x1B[0m"
@@ -9111,8 +9111,8 @@ function prepare_pattern_file(){
 
     if [[ "$DEPLOYMENT_TYPE" == "production" ]];then
         DEPLOY_TYPE_IN_FILE_NAME="production"
-    #else
-    #    DEPLOY_TYPE_IN_FILE_NAME="starter"
+    else
+        DEPLOY_TYPE_IN_FILE_NAME="starter"
     fi
 
     FOUNDATION_PATTERN_FILE=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_foundation.yaml
@@ -9146,17 +9146,17 @@ function prepare_pattern_file(){
     ${COPY_CMD} -rf "${ARIA_PATTERN_FILE}" "${ARIA_PATTERN_FILE_BAK}"
 
     ${COPY_CMD} -rf "${FOUNDATION_PATTERN_FILE}" "${CP4A_PATTERN_FILE_TMP}"
-    #if [[ "$DEPLOYMENT_TYPE" == "starter" ]];then
-    #    WORKFLOW_PATTERN_FILE=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow.yaml
-    #    WORKFLOW_PATTERN_FILE_TMP=$TEMP_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_tmp.yaml
-    #    WORKFLOW_PATTERN_FILE_BAK=$BAK_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow.yaml
+    if [[ "$DEPLOYMENT_TYPE" == "starter" ]];then
+        WORKFLOW_PATTERN_FILE=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow.yaml
+        WORKFLOW_PATTERN_FILE_TMP=$TEMP_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_tmp.yaml
+        WORKFLOW_PATTERN_FILE_BAK=$BAK_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow.yaml
 
-    #    WW_PATTERN_FILE=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_authoring-workstreams.yaml
-    #    WW_PATTERN_FILE_TMP=$TEMP_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_authoring-workstreams_tmp.yaml
-    #    WW_PATTERN_FILE_BAK=$BAK_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_authoring-workstreams.yaml
-    #    ${COPY_CMD} -rf "${WORKFLOW_PATTERN_FILE}" "${WORKFLOW_PATTERN_FILE_BAK}"
-    #    ${COPY_CMD} -rf "${WW_PATTERN_FILE}" "${WW_PATTERN_FILE_BAK}"
-    if [[ "$DEPLOYMENT_TYPE" == "production" ]]
+        WW_PATTERN_FILE=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_authoring-workstreams.yaml
+        WW_PATTERN_FILE_TMP=$TEMP_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_authoring-workstreams_tmp.yaml
+        WW_PATTERN_FILE_BAK=$BAK_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_authoring-workstreams.yaml
+        ${COPY_CMD} -rf "${WORKFLOW_PATTERN_FILE}" "${WORKFLOW_PATTERN_FILE_BAK}"
+        ${COPY_CMD} -rf "${WW_PATTERN_FILE}" "${WW_PATTERN_FILE_BAK}"
+    elif [[ "$DEPLOYMENT_TYPE" == "production" ]]
     then
         WORKFLOW_PATTERN_FILE=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow.yaml
         WORKFLOW_PATTERN_FILE_TMP=$TEMP_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_tmp.yaml
@@ -9622,7 +9622,7 @@ else
 fi
 ############## Start - Migration CPfs mode and upgrade CP4BA Operators ##############
 
-if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then  #TODO
+if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
     upgrade_operator_project_name=$TARGET_PROJECT_NAME
 
     # check current cp4ba version
