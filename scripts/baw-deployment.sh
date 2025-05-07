@@ -275,7 +275,7 @@ function prompt_license(){
     #if [[ $retVal_baw -eq 1 ]]; then
     echo -e "\x1B[1;31mIMPORTANT: Review the IBM Business Automation Workflow license information here: \n\x1B[0m"
     echo -e "\x1B[1;31mhttps://www.ibm.com/support/customer/csol/terms/?id=L-GPHE-W5RGSC&lc=en\n\x1B[0m"
-    #INSTALL_BAW_ONLY="No"
+    INSTALL_BAW_ONLY="No" #TODO
     #fi
 
     prompt_press_any_key_to_continue
@@ -4442,7 +4442,7 @@ function select_aca_tenant(){
     printf "\n"
 }
 # NOT USED ANYMORE
-function select_baw_only_NOTUSED(){
+function select_baw_only(){
     pattern_arr=()
     pattern_cr_arr=()
     printf "\n"
@@ -4563,8 +4563,8 @@ function input_information(){
         prompt_press_any_key_to_continue "Install a new pattern"
     fi
 
-#    if [[ "${INSTALL_BAW_ONLY}" == "No" ]];
-#    then
+    if [[ "${INSTALL_BAW_ONLY}" == "No" ]];
+    then
         if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
             #select_patternNOTUSED
             select_baw_pattern
@@ -4576,9 +4576,9 @@ function input_information(){
 
             PATTERNS_CR_SELECTED=($(echo "${pattern_cr_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
         fi
-#    else
-#       select_baw_only
-#    fi
+    else
+       select_baw_only
+    fi
 
     if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
         select_optional_component
@@ -4948,9 +4948,9 @@ function merge_pattern(){
                     ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${DECISIONS_PATTERN_FILE_BAK}
                     break
                     ;;
-                "workflow")
+                "workflow") #TODO
                     # set_ldap_type_workflow_pattern
-#                    if [[ "${INSTALL_BAW_ONLY}" == "Yes" ]]; then
+                    if [[ "${INSTALL_BAW_ONLY}" == "Yes" ]]; then
                         # ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.baw_configuration
                         if [[ $DEPLOYMENT_TYPE == "production" ]];then
                             # if [[ $INSTALLATION_TYPE == "existing" && (" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow") ]]; then
@@ -4968,7 +4968,7 @@ function merge_pattern(){
                             ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WORKFLOW_PATTERN_FILE_BAK}
                             ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.bastudio_configuration
                         fi
- #                   fi
+                    fi
                     break
                     ;;
                 "workflow-authoring")
