@@ -943,7 +943,7 @@ function select_optional_component(){
                     optional_components_list=("Data Collector and Data Indexer" "Exposed Kafka Services")
                     optional_components_cr_list=("pfs" "kafka")
                     show_optional_components
-                    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "cmis" )
+                    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "baw_authoring" "cmis" )
                     optional_components_list=()
                     optional_components_cr_list=()
                     break
@@ -952,7 +952,7 @@ function select_optional_component(){
                     optional_components_list=("Data Collector and Data Indexer" "Exposed Kafka Services")
                     optional_components_cr_list=("pfs" "kafka")
                     show_optional_components
-                    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "cmis" )
+                    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "css" )
                     optional_components_list=()
                     optional_components_cr_list=()
                     break
@@ -7441,13 +7441,13 @@ function select_baw_pattern(){
         case $opt in
             "Business Automation Workflow Authoring")
                 pattern_arr=("Business Automation Workflow Authoring")
-                pattern_cr_arr=("workflow-authoring")
+                pattern_cr_arr=("workflow,workflow-authoring")
                 foundation_baw=("BAN" "BAS")
                 break
                 ;;
             "Business Automation Workflow Runtime")
                 pattern_arr=("Business Automation Workflow Runtime")
-                pattern_cr_arr=("workflow-runtime")
+                pattern_cr_arr=("workflow,workflow-runtime")
                 foundation_baw=("BAN" "AE")
                 break
                 ;;
