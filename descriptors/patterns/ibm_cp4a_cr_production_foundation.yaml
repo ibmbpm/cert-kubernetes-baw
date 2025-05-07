@@ -270,6 +270,7 @@ spec:
   ##                               workflow-authoring                         #
   #############################################################################
   bastudio_configuration:
+    baw_cncf: true
     #Adjust this one if you created the secret with name other than the default
     admin_secret_name: "{{ meta.name }}-bas-admin-secret"
     #-----------------------------------------------------------------------
