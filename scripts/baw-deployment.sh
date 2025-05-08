@@ -1942,7 +1942,7 @@ function select_platform(){
         prompt_press_any_key_to_continue
     fi
 
-    if [[ "$PLATFORM_SELECTED" == "OCP" ]]; then
+    if [[ "$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS" ]]; then
         CLI_CMD=oc
     elif [[ "$PLATFORM_SELECTED" == "other" ]]
     then
@@ -2641,7 +2641,7 @@ function select_optional_component(){
         if [[ $DEPLOYMENT_TYPE == "starter" ]];then
             decision_tips="\x1B[1mTips:\x1B[0m Decision Center, Rule Execution Server and Decision Runner will be installed by default.\n"
         else
-        decision_tips="\x1B[1mTips:\x1B[0m Decision Center is typically required for development and testing environments. \nRule Execution Server is typically required for testing and production environments and for using Business Automation Insights. \nYou should choose at least one these 2 features to have a minimum environment configuration. \n"
+            decision_tips="\x1B[1mTips:\x1B[0m Decision Center is typically required for development and testing environments. \nRule Execution Server is typically required for testing and production environments and for using Business Automation Insights. \nYou should choose at least one these 2 features to have a minimum environment configuration. \n"
         fi
         application_tips_demo="\x1B[1mTips:\x1B[0m Application Designer is typically required if you are deploying a development or test environment.\nThis feature will automatically install Business Automation Studio, if not already present.  \n\nMake your selection or press enter to proceed. \n"
         application_tips_ent="\x1B[1mTips:\x1B[0m Application Designer is typically required if you are deploying a development or test environment.\nThis feature will automatically install Business Automation Studio, if not already present. \n\nApplication Engine is automatically installed in the environment.  \n\nMake your selection or press enter to proceed. \n"
@@ -2720,9 +2720,9 @@ function select_optional_component(){
             if [[ "${item_pattern}" == "Business Automation Application" ]]; then
 
                 echo -e "${application_tips}"
-                #if [[ $DEPLOYMENT_TYPE == "starter" ]];then
-                #    echo -e "${application_tips_demo}"
-                if [[ $DEPLOYMENT_TYPE == "production" ]]
+                if [[ $DEPLOYMENT_TYPE == "starter" ]];then
+                    echo -e "${application_tips_demo}"
+                elif [[ $DEPLOYMENT_TYPE == "production" ]]
                 then
                     echo -e "${application_tips_ent}"
                 fi
@@ -4124,7 +4124,7 @@ function set_external_share_content_pattern(){
             vi ${CONTENT_PATTERN_FILE_TMP} -c ':'"${content_start}"','"${content_stop}"'s/  # /  ' -c ':wq' >/dev/null 2>&1
 
             # un-comment LDAP
-            if [[  $DEPLOYMENT_TYPE == "starter" || ($DEPLOYMENT_TYPE == "production" && $DEPLOYMENT_WITH_PROPERTY == "No") ]]; then
+            if [[ $DEPLOYMENT_TYPE == "starter" || ($DEPLOYMENT_TYPE == "production" && $DEPLOYMENT_WITH_PROPERTY == "No") ]]; then
                 if [[ "$LDAP_TYPE" == "AD" ]]; then
                     # content_start="$(grep -n "ad:" ${CONTENT_PATTERN_FILE_TMP} | awk 'NR==2{print $1}' | cut -d: -f1)"
                     content_start="$(grep -n "ad:" ${CONTENT_PATTERN_FILE_TMP} | cut -d: -f1)"
@@ -4565,7 +4565,7 @@ function input_information(){
 
     if [[ "${INSTALL_BAW_ONLY}" == "No" ]];
     then
-        if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+        if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
             #select_patternNOTUSED
             select_baw_pattern
         elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && $DEPLOYMENT_TYPE == "production" ]]; then  #TODO
@@ -4631,9 +4631,9 @@ function input_information(){
         if  [[  ("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No") && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
             generate_sample_network_policies
         elif [[ "$DEPLOYMENT_TYPE" == "starter" ]]; then
-            # For starter deployment, always set sc_restricted_internet_access: true
-            info "For starter deployment, always setting \"sc_restricted_internet_access\" to \"true\" in final custom resource."
-            RESTRICTED_INTERNET_ACCESS="true"
+            # For starter deployment, always set generate_sample_network_policies: true
+            info "For starter deployment, always setting \"generate_sample_network_policies\" as \"true\" in the final custom resource."
+            GENERATE_SAMPLE_NETWORK_POLICIES="true"
         fi
 
         if [[ "$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
@@ -8006,11 +8006,11 @@ function apply_pattern_cr(){
             pattern_joined="foundation$delim$pattern_joined"
         fi
     else
-    if [[ ! ("${#pattern_cr_arr[@]}" -eq "1" && "${pattern_cr_arr[@]}" =~ "workflow-process-service") ]]; then
-        pattern_joined="foundation$delim$pattern_joined"
-    else
-        pattern_joined="$pattern_joined"
-    fi
+        if [[ ! ("${#pattern_cr_arr[@]}" -eq "1" && "${pattern_cr_arr[@]}" =~ "workflow-process-service") ]]; then
+            pattern_joined="foundation$delim$pattern_joined"
+        else
+            pattern_joined="$pattern_joined"
+        fi
 
     fi
     # if [[ $INSTALL_BAW_IAWS == "No" ]];then
@@ -9501,35 +9501,35 @@ then
                 then
                     case "$ans" in
                     "1")
-                        if [[  $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+                        if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
                             select_pattern
                             select_optional_component
                             if [[ ( -z "$CP4BA_JDBC_URL" ) && (" ${optional_component_cr_arr[@]} " =~ "iccsap") ]]; then
                                 get_jdbc_url
                             fi
                         else
-                            info "Please run baw-prerequisites.sh to modify BAW capability"
+                            info "Run baw-prerequisites.sh to modify BAW capability"
                             prompt_press_any_key_to_continue
                         fi
                         break
                         ;;
                     "2")
-                        if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+                        if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
                             select_optional_component
                             if [[ ( -z "$CP4BA_JDBC_URL" ) && (" ${optional_component_cr_arr[@]} " =~ "iccsap") ]]; then
                                 get_jdbc_url
                             fi
                         else
-                            info "Please run baw-prerequisites.sh to modify optional components"
+                            info "Run baw-prerequisites.sh to modify optional components"
                             prompt_press_any_key_to_continue
                         fi
                         break
                         ;;
                     "3"|"4")
-                        if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+                        if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
                             get_storage_class_name
                         else
-                            info "Please run baw-prerequisites.sh to modify storage class name"
+                            info "Run baw-prerequisites.sh to modify storage class name"
                             prompt_press_any_key_to_continue
                         fi
                         break
@@ -9545,7 +9545,7 @@ then
                 else
                     case "$ans" in
                     "1")
-                        if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+                        if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
                             select_pattern
                             select_optional_component
                             if [[ ( -z "$CP4BA_JDBC_URL" ) && (" ${optional_component_cr_arr[@]} " =~ "iccsap") ]]; then
@@ -9558,7 +9558,7 @@ then
                         break
                         ;;
                     "2")
-                        if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+                        if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
                             select_optional_component
                             if [[ ( -z "$CP4BA_JDBC_URL" ) && (" ${optional_component_cr_arr[@]} " =~ "iccsap") ]]; then
                                 get_jdbc_url
@@ -9586,7 +9586,7 @@ then
                         break
                         ;;
                     "7")
-                        if [[ $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+                        if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
                             get_storage_class_name
                         else
                             info "Run baw-prerequisites.sh to modify storage class name"
@@ -9645,14 +9645,9 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
     ################## End - Detect all namespace or not ##################
 
     # Check whether the CP4BA is separation of operators and operands, namely seperation of duty.
-    if [[ "$cp4a_operator_csv_version" == "25."* ]]; then
-        ## return SEPARATE_OPERAND_FLAG is Yes or No
-        ## return CP4BA_SERVICES_NS for the project of CP4BA CR
-        if [[ $ALL_NAMESPACE_FLAG != "Yes" ]]; then
-            check_cp4ba_separate_operand $TARGET_PROJECT_NAME
-        else
-            CP4BA_SERVICES_NS=$TARGET_PROJECT_NAME
-        fi
+#DBACLD-175890: There is no need to for CSV version in 25.0.0.x or later.
+    if [[ $ALL_NAMESPACE_FLAG != "Yes" ]]; then
+        check_cp4ba_separate_operand $TARGET_PROJECT_NAME
     else
         CP4BA_SERVICES_NS=$TARGET_PROJECT_NAME
     fi
@@ -10030,42 +10025,6 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
     fi
     ############## End - Decide which catalog source (GNC/Private) should be used ##############
 
-    ############## Start - Create ibm-cp4a-common-config depending on CPfs mode selected ##############
-    if [[ "$cp4a_operator_csv_version" != "25."* ]]; then
-        # Create ibm-cp4ba-common-config configMap for this CP4BA deployment
-        create_zen_yaml
-        info "Creating ibm-cp4ba-common-config configMap for this CP4BA deployment in the project \"$CP4BA_SERVICES_NS\"."
-        if [[ $UPGRADE_MODE == "shared2shared" ]]; then
-            if [[ $ALL_NAMESPACE_FLAG == "Yes" ]]; then
-                # ${SED_COMMAND} "s|CS_OPERATOR_NAMESPACE=\"\"|CS_OPERATOR_NAMESPACE=\"openshift-operators\"|g" ${UPGRADE_DEPLOYMENT_PROPERTY_FILE}
-                ${YQ_CMD} w -i ${UPGRADE_CS_ZEN_FILE} data.operators_namespace "\"openshift-operators\""
-            elif [[ $ALL_NAMESPACE_FLAG == "No" ]]; then
-                # ${SED_COMMAND} "s|CS_OPERATOR_NAMESPACE=\"\"|CS_OPERATOR_NAMESPACE=\"ibm-common-services\"|g" ${UPGRADE_DEPLOYMENT_PROPERTY_FILE}
-                ${YQ_CMD} w -i ${UPGRADE_CS_ZEN_FILE} data.operators_namespace "\"ibm-common-services\""
-            fi
-            # ${SED_COMMAND} "s|CS_SERVICES_NAMESPACE=\"\"|CS_SERVICES_NAMESPACE=\"ibm-common-services\"|g" ${UPGRADE_DEPLOYMENT_PROPERTY_FILE}
-            ${YQ_CMD} w -i ${UPGRADE_CS_ZEN_FILE} data.services_namespace "\"ibm-common-services\""
-        elif [[ $UPGRADE_MODE == "shared2dedicated" || $UPGRADE_MODE == "dedicated2dedicated" ]]; then
-            # ${SED_COMMAND} "s|CS_OPERATOR_NAMESPACE=\"\"|CS_OPERATOR_NAMESPACE=\"$CP4BA_SERVICES_NS\"|g" ${UPGRADE_DEPLOYMENT_PROPERTY_FILE}
-            # ${SED_COMMAND} "s|CS_SERVICES_NAMESPACE=\"\"|CS_SERVICES_NAMESPACE=\"$CP4BA_SERVICES_NS\"|g" ${UPGRADE_DEPLOYMENT_PROPERTY_FILE}
-            ${YQ_CMD} w -i ${UPGRADE_CS_ZEN_FILE} data.operators_namespace "\"$CP4BA_SERVICES_NS\""
-            ${YQ_CMD} w -i ${UPGRADE_CS_ZEN_FILE} data.services_namespace "\"$CP4BA_SERVICES_NS\""
-        fi
-
-        ${SED_COMMAND} "s|'\"|\"|g" ${UPGRADE_CS_ZEN_FILE}
-        ${SED_COMMAND} "s|\"'|\"|g" ${UPGRADE_CS_ZEN_FILE}
-
-        ${CLI_CMD} delete -f ${UPGRADE_CS_ZEN_FILE} -n $CP4BA_SERVICES_NS >/dev/null 2>&1
-        ${CLI_CMD} apply -f ${UPGRADE_CS_ZEN_FILE} -n $CP4BA_SERVICES_NS >/dev/null 2>&1
-        if [ $? -eq 0 ]; then
-            success "Created ibm-cp4ba-common-config configMap for this CP4BA deployment in the project \"$CP4BA_SERVICES_NS\"."
-            sleep 3
-        else
-            warning "Failed to create ibm-cp4ba-common-config configMap for this CP4BA deployment in the project \"$CP4BA_SERVICES_NS\"!"
-            exit 1
-        fi
-    fi
-    ############## End - Create ibm-cp4a-common-config depending on CPfs mode selected ##############
 
     ############## Start - Check CSS selected or not ##############
     # Retrieve existing Content CR
@@ -10117,113 +10076,6 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
     fi
     ############## End - Check CSS selected or not ##############
 
-
-    ############## Start - checking whether executed cp4a-pre-upgrade-and-post-upgrade-optional.sh ##############
-    if [[ "$cp4a_operator_csv_version" != "25."* ]]; then
-        if [[ $CONTENT_CR_EXIST == "Yes" || (" ${EXISTING_PATTERN_ARR[@]} " =~ "content") || ((" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow") && (! " ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-process-service")) || (" ${EXISTING_PATTERN_ARR[@]} " =~ "document_processing") || (" ${EXISTING_OPT_COMPONENT_ARR[@]} " =~ "baw_authoring") || (" ${EXISTING_OPT_COMPONENT_ARR[@]} " =~ "ae_data_persistence") ]]; then
-            info "Determining if the directory provider type is SCIM for Content Process Engine."
-            ## Start up cp4a-operator/conent-operator for
-            ${CLI_CMD} scale --replicas=1 deployment ibm-cp4a-operator -n $TEMP_OPERATOR_PROJECT_NAME >/dev/null 2>&1
-            info "Waiting for ibm-cp4a-operator pod to be ready in the project \"$TEMP_OPERATOR_PROJECT_NAME\"."
-            maxRetry=25
-            for ((retry=0;retry<=${maxRetry};retry++)); do
-                pod_name=$(${CLI_CMD} get pod -l=name=ibm-cp4a-operator -n $TEMP_OPERATOR_PROJECT_NAME -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}')
-                if [[ -z $pod_name ]]; then
-                    if [[ $retry -eq ${maxRetry} ]]; then
-                        printf "\n"
-                        if [[ -z $pod_name ]]; then
-                            warning "Timeout waiting for ibm-cp4a-operator pod to be ready in the project \"$TEMP_OPERATOR_PROJECT_NAME\""
-                        fi
-                        exit 1
-                    else
-                        sleep 30
-                        echo -n "..."
-                        continue
-                    fi
-                else
-                    break
-                fi
-            done
-
-            CONTENT_DEPLOYMENT_NAME=$(${CLI_CMD} get deployment ibm-content-operator --no-headers --ignore-not-found -n $TEMP_OPERATOR_PROJECT_NAME  -o name)
-            if [[ ! -z $CONTENT_DEPLOYMENT_NAME ]]; then
-                ${CLI_CMD} scale --replicas=1 deployment ibm-content-operator -n $TEMP_OPERATOR_PROJECT_NAME >/dev/null 2>&1
-                info "Waiting for ibm-content-operator pod to be ready in the project \"$TEMP_OPERATOR_PROJECT_NAME\"."
-                maxRetry=25
-                for ((retry=0;retry<=${maxRetry};retry++)); do
-                    pod_name=$(${CLI_CMD} get pod -l=name=ibm-content-operator -n $TEMP_OPERATOR_PROJECT_NAME -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}')
-                    if [[ -z $pod_name ]]; then
-                        if [[ $retry -eq ${maxRetry} ]]; then
-                            printf "\n"
-                            if [[ -z $pod_name ]]; then
-                                warning "Timeout waiting for ibm-content-operator pod to be ready in the project \"$TEMP_OPERATOR_PROJECT_NAME\""
-                            fi
-                            exit 1
-                        else
-                            sleep 30
-                            echo -n "..."
-                            continue
-                        fi
-                    else
-                        break
-                    fi
-                done
-            fi
-            is_scim_enabled
-            if [[ $IS_SCIM_ENABLED == "True" ]]; then
-                if [[ "$cp4a_operator_csv_version" == "21.3."* && $UPGRADE_MODE == "shared2dedicated" ]]; then
-                    printf "\n"
-                    echo -e "\x1B[33;5m[ATTENTION]: \x1B[0mYou ${RED_TEXT}DO NOT${RESET_TEXT} need to run the script ${YELLOW_TEXT}./cp4a-pre-upgrade-and-post-upgrade-optional.sh${RESET_TEXT} in ${YELLOW_TEXT}\"pre-upgrade\"${RESET_TEXT} mode when upgrading CP4BA from 21.0.3 to 24.0.0 (migrating IBM Cloud Pak foundational services from Cluster-scoped to Namespace-scoped)."
-                    prompt_press_any_key_to_continue
-                fi
-                if [[ "$cp4a_operator_csv_version" == "22.2."* && $UPGRADE_MODE == "shared2dedicated" ]]; then
-                    printf "\n"
-                    echo -e "\x1B[33;5m[ATTENTION]: \x1B[0mYou ${RED_TEXT}DO NOT${RESET_TEXT} need to run the script ${YELLOW_TEXT}./cp4a-pre-upgrade-and-post-upgrade-optional.sh${RESET_TEXT} in ${YELLOW_TEXT}\"pre-upgrade\"${RESET_TEXT} mode when upgrading CP4BA from 22.0.2 to 24.0.0 (migrating IBM Cloud Pak foundational services from Cluster-scoped to Namespace-scoped)."
-                    prompt_press_any_key_to_continue
-                fi
-                if [[ "$cp4a_operator_csv_version" == "23.2."* ]]; then
-                    printf "\n"
-                    echo -e "\x1B[33;5m[ATTENTION]: \x1B[0mYou ${RED_TEXT}DO NOT${RESET_TEXT} need to run the script ${YELLOW_TEXT}./cp4a-pre-upgrade-and-post-upgrade-optional.sh${RESET_TEXT} in ${YELLOW_TEXT}\"pre-upgrade\"${RESET_TEXT} mode when upgrading CP4BA from 23.0.2 to 24.0.0."
-                    prompt_press_any_key_to_continue
-                fi
-                if [[ "$cp4a_operator_csv_version" == "21.3."* || "$cp4a_operator_csv_version" == "22.2."* ]]; then
-                    if [[ $UPGRADE_MODE == "shared2shared" || $UPGRADE_MODE == "dedicated2dedicated" ]]; then
-                        info "Checking whether \"./cp4a-pre-upgrade-and-post-upgrade-optional.sh pre-upgrade\" has been executed"
-                        if [[ $UPGRADE_MODE == "shared2shared" ]]; then
-                            info "Checking if the cp-console-iam-provider/cp-console-iam-idmgmt routes exist in the project \"ibm-common-services\"."
-                            iam_provider=$(${CLI_CMD} get route cp-console-iam-provider --no-headers --ignore-not-found -n ibm-common-services -o 'jsonpath={.metadata.name}') >/dev/null 2>&1
-                            iam_idmgmt=$(${CLI_CMD} get route cp-console-iam-idmgmt --no-headers --ignore-not-found -n ibm-common-services -o 'jsonpath={.metadata.name}') >/dev/null 2>&1
-                            if [[ "${iam_provider}" == "cp-console-iam-provider" && "${iam_idmgmt}" == "cp-console-iam-idmgmt" ]]; then
-                                success "Found cp-console-iam-provider/cp-console-iam-idmgmt routes in the project \"ibm-common-services\"."
-                            else
-                                error "cp-console-iam-provider/cp-console-iam-idmgmt routes not found in the project \"ibm-common-services\". You NEED to run \"./cp4a-pre-upgrade-and-post-upgrade-optional.sh pre-upgrade\" first, and then RERUN \"${CUR_DIR}/baw-deployment.sh -m upgradeOperator -n $TARGET_PROJECT_NAME\"."
-                                exit 1
-                            fi
-                        elif [[ $UPGRADE_MODE == "dedicated2dedicated" ]]; then
-                            info "Checking whether cp-console-iam-provider/cp-console-iam-idmgmt routes exist in the project \"$CP4BA_SERVICES_NS\"."
-                            iam_provider=$(${CLI_CMD} get route cp-console-iam-provider --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS -o 'jsonpath={.metadata.name}') >/dev/null 2>&1
-                            iam_idmgmt=$(${CLI_CMD} get route cp-console-iam-idmgmt --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS -o 'jsonpath={.metadata.name}') >/dev/null 2>&1
-                            if [[ "${iam_provider}" == "cp-console-iam-provider" && "${iam_idmgmt}" == "cp-console-iam-idmgmt" ]]; then
-                                success "Found cp-console-iam-provider/cp-console-iam-idmgmt routes in the project \"$CP4BA_SERVICES_NS\"."
-                            else
-                                error "cp-console-iam-provider/cp-console-iam-idmgmt routes not found in the project \"ibm-common-services\". You NEED to run \"./cp4a-pre-upgrade-and-post-upgrade-optional.sh pre-upgrade\" first, and then RERUN \"${CUR_DIR}/baw-deployment.sh -m upgradeOperator -n $TARGET_PROJECT_NAME\"."
-                                exit 1
-                            fi
-                        fi
-                    fi
-                    printf "\n"
-                    # post-upgrade mode requird for all CPfs migration mode
-                    echo -e "\x1B[33;5m[ATTENTION]: \x1B[0mAfter upgrading IBM Cloud Pak for Business Automation deployment, you ${RED_TEXT}NEED${RESET_TEXT} to run the script ${YELLOW_TEXT}./cp4a-pre-upgrade-and-post-upgrade-optional.sh${RESET_TEXT} in ${YELLOW_TEXT}\"post-upgrade\"${RESET_TEXT} mode."
-                    prompt_press_any_key_to_continue
-                elif [[ $UPGRADE_MODE == "shared2dedicated" && "$cp4a_operator_csv_version" == "23.2."* ]]; then
-                    printf "\n"
-                    echo -e "\x1B[33;5m[ATTENTION]: \x1B[0mAfter upgrading IBM Cloud Pak for Business Automation, you ${RED_TEXT}NEED${RESET_TEXT} to run the script ${YELLOW_TEXT}./cp4a-pre-upgrade-and-post-upgrade-optional.sh${RESET_TEXT} in ${YELLOW_TEXT}\"post-upgrade\"${RESET_TEXT} mode."
-                    prompt_press_any_key_to_continue
-                fi
-            fi
-        fi
-    fi
-    ############## End - checking whether executed cp4a-pre-upgrade-and-post-upgrade-optional.sh ##############
 
     ############## Start - Decide whether to create savepoint for Flink job ##############
     # NOTES: No need to create save point for upgrade IFIX by IFIX
@@ -10584,20 +10436,20 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                             info "Create the BAI savepoints for recovery path when merge custom resource"
                             ${CLI_CMD} get crd |grep insightsengines.icp4a.ibm.com >/dev/null 2>&1
                             if [ $? -eq 0 ]; then
-                                INSIGHTS_ENGINE_CR=$(${CLI_CMD} get insightsengines.icp4a.ibm.com --no-headers --ignore-not-found -n ${TARGET_PROJECT_NAME} -o name)
+                                INSIGHTS_ENGINE_CR=$(${CLI_CMD} get insightsengines.icp4a.ibm.com --no-headers --ignore-not-found -n ${CP4BA_SERVICES_NS} -o name)
                             fi
                             if [[ -z $INSIGHTS_ENGINE_CR ]]; then
-                                INSIGHTS_ENGINE_CR=$(${CLI_CMD} get insightsengines.insightsengine.automation.ibm.com --no-headers --ignore-not-found -n ${TARGET_PROJECT_NAME} -o name)
+                                INSIGHTS_ENGINE_CR=$(${CLI_CMD} get insightsengines.insightsengine.automation.ibm.com --no-headers --ignore-not-found -n ${CP4BA_SERVICES_NS} -o name)
                                 if [[ -z $INSIGHTS_ENGINE_CR ]]; then
-                                    error "insightsengines custom resource instance was not found in the project \"${TARGET_PROJECT_NAME}\"."
+                                    error "insightsengines custom resource instance was not found in the project \"${CP4BA_SERVICES_NS}\"."
                                 fi
                                 # exit 1
                             fi
                             if [[ ! -z $INSIGHTS_ENGINE_CR ]]; then
-                                MANAGEMENT_URL=$(${CLI_CMD} get ${INSIGHTS_ENGINE_CR} --no-headers --ignore-not-found -n ${TARGET_PROJECT_NAME} -o jsonpath='{.status.components.management.endpoints[?(@.scope=="External")].uri}')
-                                MANAGEMENT_AUTH_SECRET=$(${CLI_CMD} get ${INSIGHTS_ENGINE_CR} --no-headers --ignore-not-found -n ${TARGET_PROJECT_NAME} -o jsonpath='{.status.components.management.endpoints[?(@.scope=="External")].authentication.secret.secretName}')
-                                MANAGEMENT_USERNAME=$(${CLI_CMD} get secret ${MANAGEMENT_AUTH_SECRET} --no-headers --ignore-not-found -n ${TARGET_PROJECT_NAME} -o jsonpath='{.data.username}' | base64 -d)
-                                MANAGEMENT_PASSWORD=$(${CLI_CMD} get secret ${MANAGEMENT_AUTH_SECRET} --no-headers --ignore-not-found -n ${TARGET_PROJECT_NAME} -o jsonpath='{.data.password}' | base64 -d)
+                                MANAGEMENT_URL=$(${CLI_CMD} get ${INSIGHTS_ENGINE_CR} --no-headers --ignore-not-found -n ${CP4BA_SERVICES_NS} -o jsonpath='{.status.components.management.endpoints[?(@.scope=="External")].uri}')
+                                MANAGEMENT_AUTH_SECRET=$(${CLI_CMD} get ${INSIGHTS_ENGINE_CR} --no-headers --ignore-not-found -n ${CP4BA_SERVICES_NS} -o jsonpath='{.status.components.management.endpoints[?(@.scope=="External")].authentication.secret.secretName}')
+                                MANAGEMENT_USERNAME=$(${CLI_CMD} get secret ${MANAGEMENT_AUTH_SECRET} --no-headers --ignore-not-found -n ${CP4BA_SERVICES_NS} -o jsonpath='{.data.username}' | base64 -d)
+                                MANAGEMENT_PASSWORD=$(${CLI_CMD} get secret ${MANAGEMENT_AUTH_SECRET} --no-headers --ignore-not-found -n ${CP4BA_SERVICES_NS} -o jsonpath='{.data.password}' | base64 -d)
                                 if [[ -z "$MANAGEMENT_URL" || -z "$MANAGEMENT_AUTH_SECRET" || -z "$MANAGEMENT_USERNAME" || -z "$MANAGEMENT_PASSWORD" ]]; then
                                     error "Can not create the BAI savepoints for recovery path."
                                     # exit 1
@@ -10772,20 +10624,20 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                     info "Create the BAI savepoints for recovery path when merge custom resource"
                     ${CLI_CMD} get crd |grep insightsengines.icp4a.ibm.com >/dev/null 2>&1
                     if [ $? -eq 0 ]; then
-                        INSIGHTS_ENGINE_CR=$(${CLI_CMD} get insightsengines.icp4a.ibm.com --no-headers --ignore-not-found -n ${TARGET_PROJECT_NAME} -o name)
+                        INSIGHTS_ENGINE_CR=$(${CLI_CMD} get insightsengines.icp4a.ibm.com --no-headers --ignore-not-found -n ${CP4BA_SERVICES_NS} -o name)
                     fi
                     if [[ -z $INSIGHTS_ENGINE_CR ]]; then
-                        INSIGHTS_ENGINE_CR=$(${CLI_CMD} get insightsengines.insightsengine.automation.ibm.com --no-headers --ignore-not-found -n ${TARGET_PROJECT_NAME} -o name)
+                        INSIGHTS_ENGINE_CR=$(${CLI_CMD} get insightsengines.insightsengine.automation.ibm.com --no-headers --ignore-not-found -n ${CP4BA_SERVICES_NS} -o name)
                         if [[ -z $INSIGHTS_ENGINE_CR ]]; then
-                            error "insightsengines custom resource instance was not found in the project \"${TARGET_PROJECT_NAME}\"."
+                            error "insightsengines custom resource instance was not found in the project \"${CP4BA_SERVICES_NS}\"."
                         fi
                         # exit 1
                     fi
                     if [[ ! -z $INSIGHTS_ENGINE_CR ]]; then
-                        MANAGEMENT_URL=$(${CLI_CMD} get ${INSIGHTS_ENGINE_CR} --no-headers --ignore-not-found -n ${TARGET_PROJECT_NAME} -o jsonpath='{.status.components.management.endpoints[?(@.scope=="External")].uri}')
-                        MANAGEMENT_AUTH_SECRET=$(${CLI_CMD} get ${INSIGHTS_ENGINE_CR} --no-headers --ignore-not-found -n ${TARGET_PROJECT_NAME} -o jsonpath='{.status.components.management.endpoints[?(@.scope=="External")].authentication.secret.secretName}')
-                        MANAGEMENT_USERNAME=$(${CLI_CMD} get secret ${MANAGEMENT_AUTH_SECRET} --no-headers --ignore-not-found -n ${TARGET_PROJECT_NAME} -o jsonpath='{.data.username}' | base64 -d)
-                        MANAGEMENT_PASSWORD=$(${CLI_CMD} get secret ${MANAGEMENT_AUTH_SECRET} --no-headers --ignore-not-found -n ${TARGET_PROJECT_NAME} -o jsonpath='{.data.password}' | base64 -d)
+                        MANAGEMENT_URL=$(${CLI_CMD} get ${INSIGHTS_ENGINE_CR} --no-headers --ignore-not-found -n ${CP4BA_SERVICES_NS} -o jsonpath='{.status.components.management.endpoints[?(@.scope=="External")].uri}')
+                        MANAGEMENT_AUTH_SECRET=$(${CLI_CMD} get ${INSIGHTS_ENGINE_CR} --no-headers --ignore-not-found -n ${CP4BA_SERVICES_NS} -o jsonpath='{.status.components.management.endpoints[?(@.scope=="External")].authentication.secret.secretName}')
+                        MANAGEMENT_USERNAME=$(${CLI_CMD} get secret ${MANAGEMENT_AUTH_SECRET} --no-headers --ignore-not-found -n ${CP4BA_SERVICES_NS} -o jsonpath='{.data.username}' | base64 -d)
+                        MANAGEMENT_PASSWORD=$(${CLI_CMD} get secret ${MANAGEMENT_AUTH_SECRET} --no-headers --ignore-not-found -n ${CP4BA_SERVICES_NS} -o jsonpath='{.data.password}' | base64 -d)
                         if [[ -z "$MANAGEMENT_URL" || -z "$MANAGEMENT_AUTH_SECRET" || -z "$MANAGEMENT_USERNAME" || -z "$MANAGEMENT_PASSWORD" ]]; then
                             error "Can not create the BAI savepoints for recovery path."
                             # exit 1
