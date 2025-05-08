@@ -534,7 +534,7 @@ function INFO() {
 
 function tips() {
 
-  echo -en "\x1B[1;31m[NEXT ACTIONS]\x1B[0m${1}\n" 
+  echo -en "\x1B[1;31m[NEXT ACTIONS]\x1B[0m${1}\n"
 
 }
 
@@ -807,7 +807,7 @@ function check_single_quotes_password() {
 # secret template field is the property field in the secret template who's value will be the value in password_value
 # secret_file is the name of the secret template file. (this file is already created prior to this function call)
 # new_secret_template_field is the name of a new secret field to be added. This is only passed for the fncm secret where we add password fields to the existing template
-# for new_secret_template_field to be used, secret template field must be osDBpassword as the current logic will append the new field after osDBpassword . 
+# for new_secret_template_field to be used, secret template field must be osDBpassword as the current logic will append the new field after osDBpassword .
 # Other than for fncm secret the new_secret_template_field field is empty and not needed
 function update_secret_template_passwords(){
     local password_value=$1
@@ -855,8 +855,8 @@ function create_user_password_dictionary_string(){
         # Username is already encoded in the add_to_list function
         username="${usernames[$i]}"
         password="${passwords[$i]}"
-        
-        
+
+
         # Check if the password is empty or not
         if [ -n "$password" ]; then
             # For https://jsw.ibm.com/browse/DBACLD-157019 where we want to make sure we consider if passwords are encoded
@@ -870,7 +870,7 @@ function create_user_password_dictionary_string(){
         else
             encoded_password=""
         fi
-        
+
         # Append to the output string
         output="${output}username:${username},password:${encoded_password};"
     done
@@ -1003,7 +1003,7 @@ function ldap_validation_parameter_generator(){
 
     # creating the user password dictionary string
     ldap_user_password_list=$(create_user_password_dictionary_string ldap_user_list[@] ldap_password_list[@])
-    
+
     ldap_details=("$ldap_group_basedn" "$ldap_user_filter" "$ldap_group_filter" "$ldap_user_password_list" "$final_ldap_group_list")
 }
 
@@ -1041,7 +1041,7 @@ function check_valid_baw_operator_version() {
 }
 
 
-# Function used to check if a specific value is present in a list of values 
+# Function used to check if a specific value is present in a list of values
 function containsElement(){
     local e match="$1"
     shift
@@ -1059,7 +1059,7 @@ function clean_up_temp_file(){
     do
         rm -rf $item >/dev/null 2>&1
     done
-    
+
     # deletes all temporary files i.e files ending with ""
     files=($(find $TEMP_FOLDER -name '*.*""'))
     for item in ${files[*]}
@@ -1102,22 +1102,22 @@ function load_properties_from_temp_file(){
     optional_component_list="$(prop_tmp_property_file OPTION_COMPONENT_LIST)"
     optional_component_name_list="$(prop_tmp_property_file OPTION_COMPONENT_NAME_LIST)"
     foundation_list="$(prop_tmp_property_file FOUNDATION_LIST)"
-    
+
     OIFS=$IFS
     IFS=',' read -ra pattern_cr_arr <<< "$pattern_list"
     IFS=',' read -ra PATTERNS_CR_SELECTED <<< "$pattern_list"
-    
+
     IFS=',' read -ra pattern_arr <<< "$pattern_name_list"
     IFS=',' read -ra optional_component_cr_arr <<< "$optional_component_list"
     IFS=',' read -ra optional_component_arr <<< "$optional_component_name_list"
-    IFS=',' read -ra foundation_component_arr <<< "$foundation_list"    
+    IFS=',' read -ra foundation_component_arr <<< "$foundation_list"
     IFS=$OIFS
 
     # load fips enabled flag
     FIPS_ENABLED="false"
 
     # load profile size  flag
-    PROFILE_TYPE=$(prop_tmp_property_file PROFILE_SIZE_FLAG) 
+    PROFILE_TYPE=$(prop_tmp_property_file PROFILE_SIZE_FLAG)
 
 
 }
@@ -1137,11 +1137,11 @@ function generate_truststore_password() {
 }
 
 # Function to update repository and tag sections in the CR with the staging repository and current sprint tag
-# This function is used by the baw-deployment.sh only in 
+# This function is used by the baw-deployment.sh only in
 # 1.For OTHER type of platform
 # 2.DEV mode
 function update_repository_and_tags(){
-    component_path=$1  
+    component_path=$1
     if [[ "$component_path" == *"keytool_init_container"* ]]; then
         repository_path="$component_path.repository"
         tag_path="$component_path.tag"
@@ -1154,11 +1154,11 @@ function update_repository_and_tags(){
     ${YQ_CMD} w -i "$BAW_PATTERN_FILE_TMP" "$repository_path" "\"$updated_value\""
     ${YQ_CMD} w -i ${BAW_PATTERN_FILE_TMP} "$tag_path" "\"$CURRENT_SPRINT_TAG\""
 
-    
+
 }
 
 
-# Function to get the domain name 
+# Function to get the domain name
 # Used only for OTHER type of platform
 # 1.To cupdate the property file as part of the property mode of baw-prerequisites.sh
 function get_domain_name() {
@@ -1218,7 +1218,7 @@ function prompt_license(){
     local message=$1
     local license=$2
     echo -e "\x1B[1;31mIMPORTANT: Review the IBM Business Automation Insights standalone license information here: \n\x1B[0m"
-    echo -e "\x1B[1;31m$license\n\x1B[0m" 
+    echo -e "\x1B[1;31m$license\n\x1B[0m"
     INSTALL_BAW_ONLY="No"
 
     prompt_press_any_key_to_continue
@@ -1266,16 +1266,16 @@ function validate_kube_oc_cli(){
 # Function that takes in namespace value passed in the -n parameter and checks if it is a valid namespace
 # Function used in baw-deployment.sh
 function validate_namespace() {
-    
+
     printf "\n"
     echo -e "\x1B[1mValidating the Namespace used to deploy IBM Business Automation Insights standalone...\x1B[0m"
     printf "\n"
     #read -p "Enter the name for an existing project (namespace): " TARGET_PROJECT_NAME
     if [[ "$TARGET_PROJECT_NAME" == openshift* ]]; then
-        error  "\x1B[1;31mEnter a valid project name, project name should not be 'openshift' or start with 'openshift' \x1B[0m"
+        error  "\x1B[1;31mEnter a valid namespace name, namespace name should not be 'openshift' or start with 'openshift' \x1B[0m"
         exit
     elif [[ "$TARGET_PROJECT_NAME" == kube* ]]; then
-        error "\x1B[1;31mEnter a valid project name, project name should not be 'kube' or start with 'kube' \x1B[0m"
+        error "\x1B[1;31mEnter a valid namespace name, namespace name should not be 'kube' or start with 'kube' \x1B[0m"
         exit
     else
         check_cluster_login
@@ -1293,7 +1293,7 @@ function validate_namespace() {
 
 # Function to select the project , in case the user wants to use a different project name from what was entered or passed
 function select_project() {
-    while [[ $TARGET_PROJECT_NAME == "" ]]; 
+    while [[ $TARGET_PROJECT_NAME == "" ]];
     do
         printf "\n"
         echo -e "\x1B[1mWhere do you want to deploy IBM Business Automation Insights standalone?\x1B[0m"

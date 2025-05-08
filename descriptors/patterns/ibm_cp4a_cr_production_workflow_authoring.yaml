@@ -257,6 +257,7 @@ spec:
   ########   IBM Business Automation Workflow Authoring configuration     ########
   ########################################################################
   workflow_authoring_configuration:
+    baw_cncf: true
     ## The configurations for content integration for attachment in process
     content_integration:
       ## Domain name for content integration. The value must be the same as initialize_configuration.ic_domain_creation.domain_name.
