@@ -264,6 +264,7 @@ spec:
   ## Each baw_configuration.name can consist of lowercase alphanumeric characters or '-', and must start and end with an alphanumeric character. Keep the instance name as short as possible.
   ## For baw_configuration.tls.tls_secret_name, if you choose to use a customized Workflow Server TLS certificate, ensure that each BAW instance has a different value.
   - name: bawins1
+    baw_cncf: true
     ## Workflow Server capability.
     capabilities: "workflow"
     ## Designate an existing LDAP user for the Workflow Server admin user.
