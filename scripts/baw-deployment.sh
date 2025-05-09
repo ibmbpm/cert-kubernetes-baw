@@ -9028,7 +9028,6 @@ function show_summary(){
             fi
         done
     fi
-
     if [[ $PLATFORM_SELECTED == "other" ]]; then
         echo -e "\x1B[1;31m3. Entitlement Registry key:\x1B[0m" # not show plaintext password
         echo -e "\x1B[1;31m4. Docker registry service name or URL:\x1B[0m ${LOCAL_REGISTRY_SERVER}"
@@ -9097,6 +9096,7 @@ function show_summary(){
         printf '   * \x1B[1;31m%s\x1B[0m %s\n' "Fast:" "${FAST_STORAGE_CLASS_NAME}"
         if [[ $PLATFORM_SELECTED == "other" ]]; then
             echo -e "\x1B[1;31m8. URL to zip file for JDBC and/or ICCSAP drivers:\x1B[0m ${CP4BA_JDBC_URL}"
+            echo -e "\x1B[1;31m9. Block storage classname(RWO):\x1B[0m ${BLOCK_STORAGE_CLASS_NAME}"
         fi
         if [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]]; then
             echo -e "\x1B[1;31m4. Block storage classname(RWO):\x1B[0m ${BLOCK_STORAGE_CLASS_NAME}"
