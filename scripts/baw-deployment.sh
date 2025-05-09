@@ -1,5 +1,5 @@
 #!/bin/bash
-#set -x
+set -x
 ###############################################################################
 #
 # Licensed Materials - Property of IBM
@@ -28,6 +28,7 @@ function show_help() {
     echo "  -n  Required: The target namespace of the BAW deployment.(If BAW is separate of operator and operand, the value is namespace of BAW operator)"
     echo "  -i  Optional: Operator image name, by default it is cp.icr.io/cp/cp4a/icp4a-operator:$CP4BA_RELEASE_BASE"
     echo "  -p  Optional: Pull secret to use to connect to the registry, by default it is ibm-entitlement-key"
+    echo "  --ingress  Only for Other type of platform (not OCP or ROKS): Platform type for which the ingress templates are created. Possible options are rancher and tanzu"
     echo "  --enable-private-catalog Optional: Set this flag to let the script to switch CatalogSource from global to namespace scoped. Default is in openshift-marketplace namespace"
     echo "  ${YELLOW_TEXT}* Running the script to create a custom resource file for new BAW deployment:${RESET_TEXT}"
     echo "      - STEP 1: Run the script with \"-n <BAW_NAMESPACE>\"."
@@ -124,6 +125,27 @@ function parse_arguments() {
         --cpfs-upgrade-mode)
             shift
             UPGRADE_MODE=$1
+            ;;
+        #Hidden flag if ingress files should be generated without tls for CNCF
+        -t)
+            shift
+            tls_flag=false
+            ;;
+        # adding a flag to generate ingress for tanzu and rancher
+        # DBACLD-168345
+        --ingress)
+            shift
+            if [ -z $1 ]; then
+                echo "Invalid option: --ingress flag requires an argument (rancher/tanzu)"
+                exit 1
+            fi
+            INGRESS_MODE=$1
+            if [[ $INGRESS_MODE == "rancher" || $INGRESS_MODE == "tanzu" ]]; then
+                echo -n
+            else
+                msg "Provide a valid argument for --ingress: [rancher] or [tanzu]"
+                exit -1
+            fi
             ;;
         dev)
         SCRIPT_MODE="dev"
@@ -13050,4 +13072,16 @@ if [ "$RUNTIME_MODE" == "upgradePostconfig" ]; then
         fi
     fi
     success "Completed to execute script for post CP4BA upgrade"
+fi
+
+# IF the INGRESS_MODE variable is set that means the user has used --ingress flag and wants to generate ingress template files for CNCF
+if [[ ! -z "$INGRESS_MODE" ]]; then
+
+    # IF tls flag is not passed, we default the ingress files to be generated with tls
+    if [[ -z "$tls_flag" ]]; then
+        tls_flag=true
+    fi
+    # Import the functions required when ingress flag is passed to the script
+    source ${CUR_DIR}/helper/baw-deployment-modes/ingress-mode.sh
+    generate_ingress_templates $tls_flag # function definition can be found in helper/baw-deployment-modes/ingress-mode.sh
 fi
