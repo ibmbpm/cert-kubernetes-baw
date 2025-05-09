@@ -13,7 +13,7 @@
 
 
 # This file is a helper script used to store all functions that are used by the baw-deployment.sh when the ingress flag is passed
-# Example : baw-deployment.sh --ingress rancher -n <baw-namespace>
+# Example : baw-deployment.sh -m generateIngress--ingress rancher -n <baw-namespace>
 
 #### Start - Functions being called by the generate_ingress_templates function ####
 
