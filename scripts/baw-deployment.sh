@@ -1923,11 +1923,11 @@ function select_platform(){
             options=("Openshift Container Platform (OCP) - Private Cloud")
             options_var=("OCP")
             if [[ "${SCRIPT_MODE}" == "OLM" ]]; then
-                options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
-                options_var=("ROKS" "OCP")
+                options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud" "Other CNCF Kubernetes")
+                options_var=("ROKS" "OCP" "other")
             else
-                options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
-                options_var=("ROKS" "OCP")
+                options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud" "Other CNCF Kubernetes")
+                options_var=("ROKS" "OCP" "other")
             fi
         fi
         for i in ${!options_var[@]}; do
@@ -5390,6 +5390,7 @@ function get_existing_pattern_name(){
             case "${existing_platform_type}" in
                 ROKS*)     PLATFORM_SELECTED="ROKS";;
                 OCP*)    PLATFORM_SELECTED="OCP";;
+                other*)    PLATFORM_SELECTED="other";;
                 *)
                     echo -e "\x1B[1;31mInvalid platform type found in CR, exiting....\n\x1B[0m"
                     exit 0
