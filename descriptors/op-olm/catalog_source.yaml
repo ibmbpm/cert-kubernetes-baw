@@ -8,7 +8,7 @@
 # disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
 #
 ###############################################################################
-# CP4BA 2500.RC1 catalog
+# CP4BA 2500.RC2 catalog
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:b79c459fd4f57dd5bd43f59cfebce763a9f497a20dbddd0422243fa1aa1f23e1
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:dfc69ffeddcd3eed8acd2e8222230a4785548d98636e7f6d6aa3a1d09cc8c522
   secrets:
   - "ibm-entitlement-key"
   - "ibm-stg-entitlement-key"
@@ -60,7 +60,7 @@ spec:
   displayName: IBM CS Opencontent Opensearch Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/opencontent-ibm-opensearch-operator-catalog:devel-main
+  image: icr.io/cpopen/opencontent-ibm-opensearch-operator-catalog@sha256:33d8f38eaa94e6c5160ccf44eac58acec25aa0d385385f571c85028de6c5923e
   secrets:
   - "ibm-entitlement-key"
   - "ibm-stg-entitlement-key"
@@ -259,7 +259,7 @@ spec:
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-fncm-catalog@sha256:457954516779c20cb0b750a02c75d7dc99e884342a4a2b16afc896a02fb3512b
+  image: icr.io/cpopen/ibm-fncm-catalog@sha256:8d9e37c439a9f9ddd3097cd0f54e91aa8afe4ef4c3cfdac88c4e59316f395c52
   secrets:
   - "ibm-entitlement-key"
   - "ibm-stg-entitlement-key"
