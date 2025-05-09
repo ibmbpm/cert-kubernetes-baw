@@ -64,7 +64,7 @@ function replace() {
     if ${CLI_CMD} get ingress zen-ingress -n ${baw_namespace} >/dev/null 2>&1; then
         ${CLI_CMD} get ingress zen-ingress -n ${baw_namespace} -o yaml | \
         ${CLI_CMD} patch -f - -p '{"metadata":{"creationTimestamp": null, "generation": null, "ownerReferences": null, "resourceVersion": null, "uid": null}, "status":null}' --type=merge --dry-run='client' -o yaml | \
-        ${CLI_CMD} patch -f - -p '{"metadata":{"annotations":{"nginx.ingress.kubernetes.io/proxy-buffer-size":"8k"}}}' --type=merge --dry-run='client' -o yaml \
+        ${CLI_CMD} patch -f - -p '{"metadata":{"annotations":{"nginx.ingress.kubernetes.io/proxy-buffer-size":"8k","nginx.ingress.kubernetes.io/proxy-body-size":"0"}}}' --type=merge --dry-run='client' -o yaml \
         > ${tmp_zen_ingress}
     else
         info "zen-ingress not found in namespace ${baw_namespace}. Skipping."
@@ -76,7 +76,7 @@ function replace() {
         # ${CLI_CMD} patch -f ${tmp_zen_ingress} -p='[{"op": "add", "path": "/spec", "value": {"tls": { "hosts": ["CPD_HOST"], "secretName": "cpd-ingress-tls-secret" }}}]' --type=json --dry-run='client' -o yaml | \
         ${CLI_CMD} patch -f ${tmp_zen_ingress} -p '{"spec": {"tls": [{"hosts": ["CPD_HOST"], "secretName": "cpd-ingress-tls-secret" }]}}' --type=merge --dry-run='client' -o yaml | \
         # add annotation
-        ${CLI_CMD} patch -f - -p '{"metadata":{"annotations":{"cert-manager.io/issuer":"zen-tls-issuer"}}}' --type=merge --dry-run='client' -o yaml  \
+        ${CLI_CMD} patch -f - -p '{"metadata":{"annotations":{"cert-manager.io/issuer":"zen-tls-issuer","cert-manager.io/common-name":"CPD_HOST"}}}' --type=merge --dry-run='client' -o yaml  \
         > ${tmp_zen_ingress_work}
         cat ${tmp_zen_ingress_work} > ${tmp_zen_ingress} && rm ${tmp_zen_ingress_work}
         ${SED_COMMAND} "s/CPD_HOST/${baw_namespace}-cpd.${domain_name}/g" ${tmp_zen_ingress}

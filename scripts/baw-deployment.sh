@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+#set -x
 ###############################################################################
 #
 # Licensed Materials - Property of IBM
@@ -23,7 +23,8 @@ function show_help() {
     echo -e "  ./baw-deployment.sh -n <BAW_NAMESPACE>"
     echo "Options:"
     echo "  -h  Display the help"
-    #echo "  -m  Optional: The valid mode types are:[upgradeOperator], [upgradeOperatorStatus], [upgradeDeployment] and [upgradeDeploymentStatus]"
+    #echo "  -m  Optional: The valid mode types are:[upgradeOperator], [upgradeOperatorStatus], [upgradeDeployment], [upgradeDeploymentStatus] and [generateIngress]"
+    echo "  -m  Optional: The valid mode types are: [generateIngress]"
     # echo "  -s  The value of the update approval strategy. The valid values are: [automatic] and [manual]."
     echo "  -n  Required: The target namespace of the BAW deployment.(If BAW is separate of operator and operand, the value is namespace of BAW operator)"
     echo "  -i  Optional: Operator image name, by default it is cp.icr.io/cp/cp4a/icp4a-operator:$CP4BA_RELEASE_BASE"
@@ -54,11 +55,13 @@ function parse_arguments() {
                 echo "Invalid option: -m flag requires an argument"
                 exit 1
             fi
-            #RUNTIME_MODE=$1 CURRENTLY NOT SUPPORTED
-            if [[ $RUNTIME_MODE == "upgradeOperator" || $RUNTIME_MODE == "upgradeOperatorStatus" || $RUNTIME_MODE == "upgradeDeployment" || $RUNTIME_MODE == "upgradeDeploymentStatus" ]]; then
+            RUNTIME_MODE=$1
+            #if [[ $RUNTIME_MODE == "upgradeOperator" || $RUNTIME_MODE == "upgradeOperatorStatus" || $RUNTIME_MODE == "upgradeDeployment" || $RUNTIME_MODE == "upgradeDeploymentStatus" || $RUNTIME_MODE == "generateIngress" ]]; then
+            if [[ $RUNTIME_MODE == "generateIngress" ]]; then
                 echo -n
             else
-                echo -e "Provide a valid argument for -m: [upgradeOperator] or [upgradeOperatorStatus] or [upgradeDeployment] or [upgradeDeploymentStatus]"
+                #echo -e "Provide a valid argument for -m: [upgradeOperator] or [upgradeOperatorStatus] or [upgradeDeployment] or [upgradeDeploymentStatus] or [generateIngress]"
+                echo -e "Provide a valid argument for -m: generateIngress"
                 exit -1
             fi
             ;;
@@ -9633,17 +9636,35 @@ then
     done
 else
     ENABLE_PRIVATE_CATALOG=0
-    # parse_arguments "$@"
-    # if [[ -z "$RUNTIME_MODE" ]]; then
-    #     echo -e "\x1B[1;31mPlease input value for \"-m <MODE_NAME>\" option.\n\x1B[0m"
-    #     exit 1
-    # fi
-    # if [[ -z "$TARGET_PROJECT_NAME" ]]; then
-    #     echo -e "\x1B[1;31mPlease input value for \"-n <NAME_SPACE>\" option.\n\x1B[0m"
-    #     exit 1
-    # fi
+    parse_arguments "$@"
+    if [[ -z "$RUNTIME_MODE" ]]; then
+        echo -e "\x1B[1;31mPlease input value for \"-m <MODE_NAME>\" option.\n\x1B[0m"
+        exit 1
+    fi
+    if [[ -z "$TARGET_PROJECT_NAME" ]]; then
+        echo -e "\x1B[1;31mPlease input value for \"-n <NAME_SPACE>\" option.\n\x1B[0m"
+        exit 1
+    fi
 fi
 ############## Start - Migration CPfs mode and upgrade CP4BA Operators ##############
+
+
+# IF the INGRESS_MODE variable is set that means the user has used --ingress flag and wants to generate ingress template files for CNCF
+#if [[ ! -z "$INGRESS_MODE" ]]; then
+if [ "$RUNTIME_MODE" == "generateIngress" ]; then
+    if [[ ($INGRESS_MODE != "rancher" && $INGRESS_MODE != "tanzu") ]]; then
+        echo -e "\x1B[1;31mPlease a valid value for \"--ingress [tanzu|rancher]\" option.\n\x1B[0m"
+        exit 1
+    fi
+
+    # IF tls flag is not passed, we default the ingress files to be generated with tls
+    if [[ -z "$tls_flag" ]]; then
+        tls_flag=true
+    fi
+    # Import the functions required when ingress flag is passed to the script
+    source ${CUR_DIR}/helper/baw-deployment-modes/ingress-mode.sh
+    generate_ingress_templates $tls_flag # function definition can be found in helper/baw-deployment-modes/ingress-mode.sh
+fi
 
 if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
     upgrade_operator_project_name=$TARGET_PROJECT_NAME
@@ -12925,16 +12946,4 @@ if [ "$RUNTIME_MODE" == "upgradePostconfig" ]; then
         fi
     fi
     success "Completed to execute script for post CP4BA upgrade"
-fi
-
-# IF the INGRESS_MODE variable is set that means the user has used --ingress flag and wants to generate ingress template files for CNCF
-if [[ ! -z "$INGRESS_MODE" ]]; then
-
-    # IF tls flag is not passed, we default the ingress files to be generated with tls
-    if [[ -z "$tls_flag" ]]; then
-        tls_flag=true
-    fi
-    # Import the functions required when ingress flag is passed to the script
-    source ${CUR_DIR}/helper/baw-deployment-modes/ingress-mode.sh
-    generate_ingress_templates $tls_flag # function definition can be found in helper/baw-deployment-modes/ingress-mode.sh
 fi

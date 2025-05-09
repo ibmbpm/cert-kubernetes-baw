@@ -9,6 +9,7 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "180"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     cert-manager.io/issuer: "zen-tls-issuer"
+    cert-manager.io/common-name: HOST
   name: cncf-social-login-callback
   namespace: NAMESPACE
 spec:
