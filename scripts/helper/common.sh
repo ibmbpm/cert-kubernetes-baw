@@ -204,15 +204,15 @@ CP4A_LDAP_SSL_SECRET_FILE=${LDAP_SSL_SECRET_FOLDER}/ibm-baw-ldap-ssl-cert-secret
 LDAP_SECRET_FILE=${SECRET_FILE_FOLDER}/ldap-bind-secret.yaml
 
 # Release/Patch version for CP4BA
-# BAW_RELEASE_BASE is for fetch content/foundation operator pod, only need to change for major release.
-BAW_RELEASE_BASE="25.0.0"
+# CP4BA_RELEASE_BASE is for fetch content/foundation operator pod, only need to change for major release.
+CP4BA_RELEASE_BASE="25.0.0"
 BAW_PATCH_VERSION="GA"
-# BAW_RELEASE_BASE_MAJOR_VERSION is used in certain checks where we used to hardcode to see if a upgrade is not ifix to ifix,change this only for major release
-BAW_RELEASE_BASE_MAJOR_VERSION="25.0"
-# BAW_CSV_VERSION is for checking CP4BA operator upgrade status, need to update for each IFIX
-BAW_CSV_VERSION="v25.0.0"
-# BAW_CHANNEL_VERSION is for switch CP4BA operator upgrade status, need to update for major release
-BAW_CHANNEL_VERSION="v25.0"
+# CP4BA_RELEASE_BASE_MAJOR_VERSION is used in certain checks where we used to hardcode to see if a upgrade is not ifix to ifix,change this only for major release
+CP4BA_RELEASE_BASE_MAJOR_VERSION="25.0"
+# CP4BA_CSV_VERSION is for checking CP4BA operator upgrade status, need to update for each IFIX
+CP4BA_CSV_VERSION="v25.0.0"
+# CP4BA_CHANNEL_VERSION is for switch CP4BA operator upgrade status, need to update for major release
+CP4BA_CHANNEL_VERSION="v25.0"
 # CS_OPERATOR_VERSION is for checking CPFS operator upgrade status, need to update for each IFIX
 CS_OPERATOR_VERSION="v4.12.0"
 # CS_CHANNEL_VERSION is for for CPFS script -c option, need to update for each IFIX
@@ -235,7 +235,7 @@ REQUIREDVER_BTS="3.35.3"
 REQUIREDVER_POSTGRESQL="1.25.1"
 # EVENTS_OPERATOR_VERSION is for checking IBM Events operator upgrade status, need to update for each IFIX
 EVENTS_OPERATOR_VERSION="v5.1.2"
-# List of BAW versions that are supported for upgrade to $BAW_CSV_VERSION
+# List of BAW versions that are supported for upgrade to $CP4BA_CSV_VERSION
 MINIMUM_SUPPORTED_UPGRADE_VERSIONS=("24.1." "25.0." )
 
 
@@ -1033,7 +1033,7 @@ function check_valid_baw_operator_version() {
     local current_operator_version=$1
     valid_baw_operator_version=false
     for version in "${MINIMUM_SUPPORTED_UPGRADE_VERSIONS[@]}"; do
-        if [[ "$current_operator_version" == "$version"* && "$current_operator_version" != "${BAW_CSV_VERSION#v}" ]]; then
+        if [[ "$current_operator_version" == "$version"* && "$current_operator_version" != "${CP4BA_CSV_VERSION#v}" ]]; then
             valid_baw_operator_version=true
             break
         fi

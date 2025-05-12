@@ -4526,7 +4526,12 @@ function clean_up_temp_file(){
 
 function input_information(){
     if [[ $DEPLOYMENT_WITH_PROPERTY == "No" || $DEPLOYMENT_TYPE == "starter" ]]; then
-        select_installation_type
+        #select_installation_type
+        warning "No generated property files for the selected capabilities were found"
+        fail "You need to first run the baw-prerequisites.sh script to generate the property files."
+        info "${YELLOW_TEXT}- [NEXT-STEPS]${RESET_TEXT}"
+        echo "  - STEP 1 ${RED_TEXT}(Required)${RESET_TEXT}:${GREEN_TEXT} # Execute the baw-prerequisites.sh script..${RESET_TEXT}"
+        exit 1
     elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" ]]; then
         INSTALLATION_TYPE="new"
     fi
@@ -4841,7 +4846,7 @@ function get_jdbc_url(){
         fi
     done
 }
-
+#UNUSED function
 function copy_sap_libraries(){
     SAP_LIBS_LIST=("libicudata.so.50" "libicudecnumber.so" "libicui18n.so.50" "libicuuc.so.50" "libsapcrypto.so" "libsapjco3.so" "libsapnwrfc.so" "sapjco3.jar" "libsapucum.so")
     # Get pod name
@@ -4850,7 +4855,7 @@ function copy_sap_libraries(){
     #Check if saplibs folder exists
     if [ ! -d ${SAP_LIB_DIR} ]; then
         echo -e "\x1B[1;31m\"${SAP_LIB_DIR}\" directory does not exist! Refer to the documentation to get the SAP libraries for ICCSAP. Exiting...
-Check the following KC for details--> https://www.ibm.com/support/knowledgecenter/SSYHZ8_$CP4BA_RELEASE_BASE/com.ibm.dba.install/op_topics/tsk_deploy_demo.html \n\x1B[0m"
+Check the following documentation for details--> https://www.ibm.com/support/knowledgecenter/SSYHZ8_$CP4BA_RELEASE_BASE/com.ibm.dba.install/op_topics/tsk_deploy_demo.html \n\x1B[0m"
         exit 0
     fi
 
@@ -4865,7 +4870,7 @@ Check the following KC for details--> https://www.ibm.com/support/knowledgecente
 
     if [ $missing_libs == "yes" ]; then
         echo -e "\x1B[1;31mMissing required SAP Libraries. Refer to the documentation to get the SAP libraries for ICCSAP. Exiting...
-Check the following KC for details--> https://www.ibm.com/support/knowledgecenter/SSYHZ8_$CP4BA_RELEASE_BASE/com.ibm.dba.install/op_topics/tsk_deploy_demo.html \n\x1B[0m"
+Check the following documentation for details--> https://www.ibm.com/support/knowledgecenter/SSYHZ8_$CP4BA_RELEASE_BASE/com.ibm.dba.install/op_topics/tsk_deploy_demo.html \n\x1B[0m"
         exit 0
     fi
 
@@ -5012,6 +5017,9 @@ function merge_pattern(){
                         #     ${YQ_CMD} d -i ${WORKFLOW_AUTHOR_PATTERN_FILE_BAK} spec.bastudio_configuration
                         # fi
                         ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WORKFLOW_AUTHOR_PATTERN_FILE_BAK}
+                        if [[ $PLATFORM_SELECTED == "other" ]]; then
+                            ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.trusted_certificate_list.[+] "\"zen-ingress-tls-cert\""
+                        fi
                     fi
                     break
                     ;;
@@ -5028,6 +5036,9 @@ function merge_pattern(){
                             #     ${YQ_CMD} d -i ${WORKFLOW_PATTERN_FILE_BAK} spec.datasource_configuration.dc_os_datasources
                             #     ${YQ_CMD} d -i ${WORKFLOW_PATTERN_FILE_BAK} spec.initialize_configuration
                             # fi
+                            if [[ $PLATFORM_SELECTED == "other" ]]; then
+                              ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.trusted_certificate_list.[+] "\"zen-ingress-tls-cert\""
+                        fi
                             ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WORKFLOW_PATTERN_FILE_BAK}
                         fi
                     elif [[ $DEPLOYMENT_TYPE == "starter" ]]
@@ -8774,7 +8785,7 @@ function apply_pattern_cr(){
         # For https://jsw.ibm.com/browse/DBACLD-160661 where we have added remediation steps on how to recreate the configmap
         fail "You NEED to first create the \"ibm-cp4ba-common-config\" configMap in the namespace where you want to deploy or upgrade CP4BA operands (i.e., runtime pods)."
         info "${YELLOW_TEXT}- [NEXT-STEPS]${RESET_TEXT}"
-        echo "  - STEP 1 ${RED_TEXT}(Required)${RESET_TEXT}:${GREEN_TEXT} # Execute the baw-clusteradmin-setup.sh script with the \"-fix_configmap\" option to re-create the missing \"ibm-cp4ba-common-config\" configMap in the target namespace.For additional information refer to the Troubleshooting page in the Upgrade Section of the Knowledge Center.${RESET_TEXT}"
+        echo "  - STEP 1 ${RED_TEXT}(Required)${RESET_TEXT}:${GREEN_TEXT} # Execute the baw-clusteradmin-setup.sh script.For additional information refer to the Troubleshooting page in the Upgrade Section of the documentation.${RESET_TEXT}"
         exit 1
     fi
 
@@ -8835,10 +8846,10 @@ function apply_pattern_cr(){
         else
             printf "\n"
             echo -e "${YELLOW_TEXT}[NOTE]${RESET_TEXT} The custom resource (CR) file has been generated, but is not yet deployed (applied).\n"
-
-            echo -e "${YELLOW_TEXT}[ATTENTION]${RESET_TEXT} Before deploying (applying) the custom resource (CR), follow the steps in the Knowledge Center ${BLUE_TEXT}\"Check and complete your custom resource\"${RESET_TEXT} to add or update any additional configuration to the custom resource file for the capabilities you have selected, which are not configured by the script: ${BLUE_TEXT} https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE?topic=deployment-checking-completing-your-custom-resource ${RESET_TEXT}  \n"
-
-            echo -e "${YELLOW_TEXT}[ATTENTION]${RESET_TEXT} After finishing configuring the custom resource (CR) file, follow the steps in the Knowledge Center to deploy (apply) your custom resource:${BLUE_TEXT} https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE?topic=cpd-option-1b-deploying-custom-resource-you-created-deployment-script ${RESET_TEXT} \n"
+#TODO
+            echo -e "${YELLOW_TEXT}[ATTENTION]${RESET_TEXT} Before deploying (applying) the custom resource (CR), follow the steps in the documentation ${BLUE_TEXT}\"Check and complete your custom resource\"${RESET_TEXT} to add or update any additional configuration to the custom resource file for the capabilities you have selected, which are not configured by the script: ${BLUE_TEXT} https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE?topic=deployment-checking-completing-your-custom-resource ${RESET_TEXT}  \n"
+#TODO
+            echo -e "${YELLOW_TEXT}[ATTENTION]${RESET_TEXT} After finishing configuring the custom resource (CR) file, follow the steps in the documentation to deploy (apply) your custom resource:${BLUE_TEXT} https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE?topic=cpd-option-1b-deploying-custom-resource-you-created-deployment-script ${RESET_TEXT} \n"
         fi
     fi
 
@@ -8849,7 +8860,8 @@ function apply_pattern_cr(){
 #    fi
     printf "\n"
     echo -e "\x1B[1mTo monitor the deployment status, follow the Operator logs.\x1B[0m"
-    echo -e "\x1B[1mFor details, refer to the troubleshooting section in Knowledge Center here: \x1B[0m"
+#TODO
+    echo -e "\x1B[1mFor details, refer to the troubleshooting section in documentation here: \x1B[0m"
     echo -e "\x1B[1mhttps://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE?topic=automation-troubleshooting\x1B[0m"
 }
 # End - Modify FOUNDATION pattern yaml according pattent/components selected
@@ -9578,7 +9590,7 @@ then
                                 get_jdbc_url
                             fi
                         else
-                            info "Run baw-prerequisites.sh to modify CP4BA pattern"
+                            info "Run baw-prerequisites.sh to modify BAW pattern"
                             prompt_press_any_key_to_continue
                         fi
                         break
@@ -12025,7 +12037,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                 step_num=$((step_num + 1))
             fi
             echo "  - STEP ${step_num} ${RED_TEXT}(Required)${RESET_TEXT}: You need to run ${GREEN_TEXT}\"${CUR_DIR}/baw-deployment.sh -m upgradeDeployment -n $TARGET_PROJECT_NAME\"${RESET_TEXT} to upgrade CP4BA deployment."
-            echo "    ${RED_TEXT}[ATTENTION]: ${RESET_TEXT}${YELLOW_TEXT}When you run the [upgradeDeployment] mode of the baw-deployment.sh script, the updated custom resource (CR) must be manually applied that all required additional actions can be completed before the upgrade process begins. Refer to the Knowledge Center: \"Updating the custom resource for each capability in your deployment\" topic to complete the REQUIRED steps for the installed pattern(s).${RESET_TEXT}"
+            echo "    ${RED_TEXT}[ATTENTION]: ${RESET_TEXT}${YELLOW_TEXT}When you run the [upgradeDeployment] mode of the baw-deployment.sh script, the updated custom resource (CR) must be manually applied that all required additional actions can be completed before the upgrade process begins. Refer to the documentation : \"Updating the custom resource for each capability in your deployment\" topic to complete the REQUIRED steps for the installed pattern(s).${RESET_TEXT}"
             step_num=$((step_num + 1))
             echo "  - STEP ${step_num} ${RED_TEXT}(Required)${RESET_TEXT}: You can run ${GREEN_TEXT}\"${CUR_DIR}/baw-deployment.sh -m upgradeDeploymentStatus -n $TARGET_PROJECT_NAME\"${RESET_TEXT} to check whether the upgrade of the CP4BA deployment was successful."
         else
