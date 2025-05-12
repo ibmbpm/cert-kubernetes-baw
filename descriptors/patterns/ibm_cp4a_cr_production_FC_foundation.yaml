@@ -27,6 +27,7 @@ spec:
   ## This section contains the shared configuration for all CP4A components #
   ##########################################################################
   shared_configuration:
+    sc_cloudpak: true
     ## This is an optional parameter, If the user installing cp4ba in a CNCF cluster and they selected the parameter sc_deployment_platform as "OCP" then the possible values for this parameter is: ARO or ROSA.
     sc_deployment_ocp_platform:
     ## FileNet Content Manager (FNCM) license and possible values are: user, concurrent-user, authorized-user, non-production, and production.

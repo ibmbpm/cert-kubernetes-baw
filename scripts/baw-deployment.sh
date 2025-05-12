@@ -4526,7 +4526,12 @@ function clean_up_temp_file(){
 
 function input_information(){
     if [[ $DEPLOYMENT_WITH_PROPERTY == "No" || $DEPLOYMENT_TYPE == "starter" ]]; then
-        select_installation_type
+        #select_installation_type
+        warning "No generated property files for the selected capabilities were found"
+        fail "You need to first run the baw-prerequisites.sh script to generate the property files."
+        info "${YELLOW_TEXT}- [NEXT-STEPS]${RESET_TEXT}"
+        echo "  - STEP 1 ${RED_TEXT}(Required)${RESET_TEXT}:${GREEN_TEXT} # Execute the baw-prerequisites.sh script..${RESET_TEXT}"
+        exit 1
     elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" ]]; then
         INSTALLATION_TYPE="new"
     fi
@@ -5012,6 +5017,9 @@ function merge_pattern(){
                         #     ${YQ_CMD} d -i ${WORKFLOW_AUTHOR_PATTERN_FILE_BAK} spec.bastudio_configuration
                         # fi
                         ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WORKFLOW_AUTHOR_PATTERN_FILE_BAK}
+                        if [[ $PLATFORM_SELECTED == "other" ]]; then
+                            ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.trusted_certificate_list.[+] "\"zen-ingress-tls-cert\""
+                        fi
                     fi
                     break
                     ;;
@@ -5028,6 +5036,9 @@ function merge_pattern(){
                             #     ${YQ_CMD} d -i ${WORKFLOW_PATTERN_FILE_BAK} spec.datasource_configuration.dc_os_datasources
                             #     ${YQ_CMD} d -i ${WORKFLOW_PATTERN_FILE_BAK} spec.initialize_configuration
                             # fi
+                            if [[ $PLATFORM_SELECTED == "other" ]]; then
+                              ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.trusted_certificate_list.[+] "\"zen-ingress-tls-cert\""
+                        fi
                             ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WORKFLOW_PATTERN_FILE_BAK}
                         fi
                     elif [[ $DEPLOYMENT_TYPE == "starter" ]]
@@ -8774,7 +8785,7 @@ function apply_pattern_cr(){
         # For https://jsw.ibm.com/browse/DBACLD-160661 where we have added remediation steps on how to recreate the configmap
         fail "You NEED to first create the \"ibm-cp4ba-common-config\" configMap in the namespace where you want to deploy or upgrade CP4BA operands (i.e., runtime pods)."
         info "${YELLOW_TEXT}- [NEXT-STEPS]${RESET_TEXT}"
-        echo "  - STEP 1 ${RED_TEXT}(Required)${RESET_TEXT}:${GREEN_TEXT} # Execute the baw-clusteradmin-setup.sh script with the \"-fix_configmap\" option to re-create the missing \"ibm-cp4ba-common-config\" configMap in the target namespace.For additional information refer to the Troubleshooting page in the Upgrade Section of the documentation.${RESET_TEXT}"
+        echo "  - STEP 1 ${RED_TEXT}(Required)${RESET_TEXT}:${GREEN_TEXT} # Execute the baw-clusteradmin-setup.sh script.For additional information refer to the Troubleshooting page in the Upgrade Section of the documentation.${RESET_TEXT}"
         exit 1
     fi
 
@@ -9579,7 +9590,7 @@ then
                                 get_jdbc_url
                             fi
                         else
-                            info "Run baw-prerequisites.sh to modify CP4BA pattern"
+                            info "Run baw-prerequisites.sh to modify BAW pattern"
                             prompt_press_any_key_to_continue
                         fi
                         break
