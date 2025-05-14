@@ -943,14 +943,14 @@ function select_optional_component(){
                     optional_components_list=("Data Collector and Data Indexer" "Exposed Kafka Services")
                     optional_components_cr_list=("pfs" "kafka")
                     show_optional_components
-                    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "baw_authoring" "cmis" )
+                    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "baw_authoring" "cmis" "opensearch" )
                     optional_components_list=()
                     optional_components_cr_list=()
                     break
                     ;;
                 "Business Automation Workflow Runtime")
-                    optional_components_list=("Data Collector and Data Indexer" "Exposed Kafka Services")
-                    optional_components_cr_list=("pfs" "kafka")
+                    optional_components_list=("Exposed Kafka Services" "Exposed OpenSearch")
+                    optional_components_cr_list=("kafka" "opensearch")
                     show_optional_components
                     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "css" )
                     optional_components_list=()
