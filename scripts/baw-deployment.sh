@@ -1514,7 +1514,7 @@ function retrieve_dependencies(){
   fi
   return 0
 }
-
+# Not used
 function is_scim_enabled(){
   retrieve_dependencies
   ecode=$?
