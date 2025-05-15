@@ -5018,7 +5018,7 @@ function merge_pattern(){
                         # fi
                         ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WORKFLOW_AUTHOR_PATTERN_FILE_BAK}
                         if [[ $PLATFORM_SELECTED == "other" ]]; then
-                            ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.trusted_certificate_list.[+] "\"zen-ingress-tls-cert\""
+                            ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.trusted_certificate_list.[+] "\"cpd-ingress-tls-secret\""
                         fi
                     fi
                     break
@@ -5037,7 +5037,7 @@ function merge_pattern(){
                             #     ${YQ_CMD} d -i ${WORKFLOW_PATTERN_FILE_BAK} spec.initialize_configuration
                             # fi
                             if [[ $PLATFORM_SELECTED == "other" ]]; then
-                              ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.trusted_certificate_list.[+] "\"zen-ingress-tls-cert\""
+                              ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.trusted_certificate_list.[+] "\"cpd-ingress-tls-secret\""
                         fi
                             ${YQ_CMD} m -a -i -M ${CP4A_PATTERN_FILE_TMP} ${WORKFLOW_PATTERN_FILE_BAK}
                         fi
