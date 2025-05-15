@@ -2649,6 +2649,8 @@ verify_silence_install
 check_airgap_mode
 select_platform
 
+validate_docker_podman_cli
+
 #Function that handles the platform type rancher or tanzu
 if [[ "$OTHER_PLATFROM_TYPE" == "rancher" || "$OTHER_PLATFROM_TYPE" == "tanzu" ]]; then
     setup_other_type_platform
@@ -2694,7 +2696,6 @@ ALL_NAMESPACE="No"
 collect_input
 # create_project
 # bind_scc
-validate_docker_podman_cli
 
 if [[ $SCRIPT_MODE == "OLM" ]];then
     ${CLI_CMD} project $project_name >/dev/null 2>&1
