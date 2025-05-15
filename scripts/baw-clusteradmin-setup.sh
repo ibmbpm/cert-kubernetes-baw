@@ -1400,7 +1400,7 @@ function get_entitlement_registry(){
     printf "\n"
     printf "\n"
     printf "\x1B[1;31mFollow the instructions on how to get your Entitlement Key: \n\x1B[0m" # TODO update link
-    printf "\x1B[1;31m https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$BAI_RELEASE_BASE?topic=deployment-getting-access-images-from-public-entitled-registry\n\x1B[0m"
+    printf "\x1B[1;31m https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE?topic=deployment-getting-access-images-from-public-entitled-registry\n\x1B[0m"
     printf "\n"
     while true; do
         if [[ ! -z "$BAW_AUTO_ENTITLEMENT_KEY" && ! -z "$BAW_AUTO_LOCAL_REGISTRY" ]]; then
@@ -1465,7 +1465,7 @@ function get_entitlement_registry(){
                         printf "\n"
                         printf "\x1B[1mVerifying the Entitlement Registry key...\n\x1B[0m"
 
-                        if [[ ("$machine" == "Mac" && $PODMAN_FOUND == "No") ||  "$PLATFORM_SELECTED" == "other" ]]; then
+                        if [[ $PODMAN_FOUND == "No" ]]; then
                         cli_command="docker"
                         else
                         cli_command="podman"
