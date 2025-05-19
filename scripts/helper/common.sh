@@ -1187,7 +1187,7 @@ function get_domain_name() {
 #This function is used to validate the docker and podman CLI
 # Used by both baw-clusteradmin-setup script and baw-deployment.sh so its being moved here
 function validate_docker_podman_cli(){
-    if [[ $OCP_VERSION == "" || $OCP_VERSION == "3.11" || "$machine" == "Mac" ]];then
+    if [[ $OCP_VERSION == "3.11" || "$machine" == "Mac" ]];then
         which podman &>/dev/null
         if [[ $? -ne 0 ]]; then
             PODMAN_FOUND="No"
