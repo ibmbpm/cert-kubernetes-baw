@@ -33,6 +33,7 @@ PLATFORM_VERSION=""
 PROJ_NAME=""
 PROJ_NAME_ALL_NAMESPACE="openshift-operators"
 DOCKER_RES_SECRET_NAME="ibm-entitlement-key"
+DOCKER_RES_SECRET_NAME_STG="ibm-stg-entitlement-key"
 REGISTRY_IN_FILE="cp.icr.io"
 OPERATOR_FILE=${PARENT_DIR}/descriptors/operator.yaml
 OPERATOR_FILE_TMP=$TEMP_FOLDER/.operator_tmp.yaml
@@ -1390,10 +1391,86 @@ function display_airgap_prerequisites(){
 
 }
 
+function verify_entitlement_key(){
+
+  local DOCKER_REG_SERVER=$1
+
+  ATTEMPTS=0
+  while [[ $entitlement_key == '' ]]
+  do
+      if [ -z "$BAW_AUTO_ENTITLEMENT_KEY" ]; then
+          read -rsp "" entitlement_key
+      else
+          entitlement_key=$BAW_AUTO_ENTITLEMENT_KEY
+      fi
+      if [ -z "$entitlement_key" ]; then
+          printf "\n"
+          echo -e "\x1B[1;31mEnter a valid Entitlement Registry key\x1B[0m"
+      else
+          if  [[ $entitlement_key == iamapikey:* ]] ;
+          then
+              DOCKER_REG_USER="iamapikey"
+              reg_key="${entitlement_key#*:}"
+          else
+              DOCKER_REG_USER="cp"
+              reg_key=$entitlement_key
+
+          fi
+
+          if [[ "$DOCKER_REG_SERVER" == "cp.stg.icr.io" ]]
+          then
+            DOCKER_REG_KEY_STG=$reg_key
+          else
+            DOCKER_REG_KEY=$reg_key
+          fi
+
+          entitlement_verify_passed=""
+          while [[ $entitlement_verify_passed == '' ]]
+          do
+              printf "\n"
+              printf "\x1B[1mVerifying the Entitlement Registry key...\n\x1B[0m"
+
+              if [[ $PODMAN_FOUND == "No" ]]; then
+              cli_command="docker"
+              else
+              cli_command="podman"
+              fi
+
+              if $cli_command login -u "$DOCKER_REG_USER" -p "$reg_key" "$DOCKER_REG_SERVER"; then
+                  printf 'Entitlement Registry key is valid.\n'
+                  entitlement_verify_passed="passed"
+              else
+                  printf '\x1B[1;31mThe Entitlement Registry key failed. Try again...\n\x1B[0m'
+                  ATTEMPTS=$((ATTEMPTS + 1))
+                  if [[ $ATTEMPTS -eq 10 ]]; then
+                      printf '\x1B[1mEnter a valid Entitlement Registry key. Exiting ...\n\x1B[0m'
+                      exit 1
+                  fi
+                  entitlement_key=''
+                  entitlement_verify_passed="failed"
+              fi
+          done
+      fi
+  done
+
+  if [[ $entitlement_verify_passed != $PASSED ]]; then
+        printf "\x1B[1;31m Entitlement Key is not Valid!, exiting...\n\x1B[0m"
+        exit 1
+    fi
+
+  echo "$entitlement_verify_passed"
+
+}
+
 
 # Function that asks for the entitlement key and verifies it
-# For dev mode it verifies against cp.stg.icr.io
+# For dev mode it verifies against icr.io
 function get_entitlement_registry(){
+
+    if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
+    then
+        get_stg_entitlement_registry
+    fi
 
     # For Entitlement Registry key
     entitlement_key=""
@@ -1429,64 +1506,57 @@ function get_entitlement_registry(){
             printf "\n"
             printf "\x1B[1mEnter your Entitlement Registry key: \x1B[0m"
             # During dev, OLM uses stage image repo
-            if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
-            then
-                DOCKER_REG_SERVER="cp.stg.icr.io"
-            else
-                DOCKER_REG_SERVER="cp.icr.io"
-            fi
+            DOCKER_REG_SERVER="cp.icr.io"
+            PASSED="passed"
+
             # During dev, OLM uses stage image repo
-
-            ATTEMPTS=0
-            while [[ $entitlement_key == '' ]]
-            do
-
-                if [ -z "$BAW_AUTO_ENTITLEMENT_KEY" ]; then
-                    read -rsp "" entitlement_key
-                else
-                    entitlement_key=$BAW_AUTO_ENTITLEMENT_KEY
-                fi
-                if [ -z "$entitlement_key" ]; then
+            verify_entitlement_key $DOCKER_REG_SERVER
+            break
+            ;;
+        "n"|"N"|"no"|"No"|"NO"|"")
+            use_entitlement="no"
+            DOCKER_REG_KEY="None"
+            if [[ $PRIVATE_CATALOG == "No" ]]; then
+                if [[ "$PLATFORM_SELECTED" == "ROKS" || "$PLATFORM_SELECTED" == "OCP" ]]; then
                     printf "\n"
-                    echo -e "\x1B[1;31mEnter a valid Entitlement Registry key\x1B[0m"
+                    printf "\x1B[1;31mIBM $BAW_FULL_NAME only supports the Entitlement Registry on \"${PLATFORM_SELECTED}\", exiting...\n\x1B[0m"
+                    exit 1
                 else
-                    if  [[ $entitlement_key == iamapikey:* ]] ;
-                    then
-                        DOCKER_REG_USER="iamapikey"
-                        DOCKER_REG_KEY="${entitlement_key#*:}"
-                    else
-                        DOCKER_REG_USER="cp"
-                        DOCKER_REG_KEY=$entitlement_key
-
-                    fi
-                    entitlement_verify_passed=""
-                    while [[ $entitlement_verify_passed == '' ]]
-                    do
-                        printf "\n"
-                        printf "\x1B[1mVerifying the Entitlement Registry key...\n\x1B[0m"
-
-                        if [[ $PODMAN_FOUND == "No" ]]; then
-                        cli_command="docker"
-                        else
-                        cli_command="podman"
-                        fi
-
-                        if $cli_command login -u "$DOCKER_REG_USER" -p "$DOCKER_REG_KEY" "$DOCKER_REG_SERVER"; then
-                            printf 'Entitlement Registry key is valid.\n'
-                            entitlement_verify_passed="passed"
-                        else
-                            printf '\x1B[1;31mThe Entitlement Registry key failed. Try again...\n\x1B[0m'
-                            ATTEMPTS=$((ATTEMPTS + 1))
-                            if [[ $ATTEMPTS -eq 10 ]]; then
-                                printf '\x1B[1mEnter a valid Entitlement Registry key. Exiting ...\n\x1B[0m'
-                                exit 1
-                            fi
-                            entitlement_key=''
-                            entitlement_verify_passed="failed"
-                        fi
-                    done
+                    break
                 fi
-            done
+            else
+                break
+            fi
+            ;;
+        *)
+            echo -e "Answer must be \"Yes\" or \"No\"\n"
+            ;;
+        esac
+    done
+}
+
+# Function that asks for the stg entitlement key and verifies it
+# For dev mode it verifies against cp.stg.icr.io
+function get_stg_entitlement_registry(){
+
+    # For Entitlement Registry key
+    entitlement_key=""
+
+    while true; do
+
+        printf "\x1B[1mDo you have a $BAW_FULL_NAME Staging Entitlement Registry key (Yes/No, default: No): \x1B[0m"
+        read -rp "" ans
+
+        case "$ans" in
+        "y"|"Y"|"yes"|"Yes"|"YES")
+            use_entitlement="yes"
+            printf "\n"
+            printf "\x1B[1mEnter your Staging Entitlement Registry key: \x1B[0m"
+            # During dev, OLM uses stage image repo
+            DOCKER_REG_SERVER="cp.stg.icr.io"
+            PASSED="passed"
+
+            verify_entitlement_key $DOCKER_REG_SERVER
             break
             ;;
         "n"|"N"|"no"|"No"|"NO"|"")
@@ -1588,16 +1658,41 @@ function create_secret_entitlement_registry(){
     # Create docker-registry secret for Entitlement Registry Key in target project
     if [[ $SEPARATE_OPERATOR == "No" || -z $SEPARATE_OPERATOR ]]; then
         printf "\x1B[1mCreating docker-registry secret for Entitlement Registry key in project $project_name...\n\x1B[0m"
+
         ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME" -n "${project_name}" >/dev/null 2>&1
+
+        if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
+        then
+            ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME_STG" -n "${project_name}" >/dev/null 2>&1
+        fi
+
         if [[ "$(echo "$CNCF_DEV" | tr '[:upper:]' '[:lower:]')" == "yes" && ("$OTHER_PLATFROM_TYPE" == "rancher" || "$OTHER_PLATFROM_TYPE" == "tanzu") ]]; then
-            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry ibm-staging-entitlement-key --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY --docker-email=ecmtest@ibm.com -n $project_name"   
+            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry ibm-staging-entitlement-key --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY --docker-email=ecmtest@ibm.com -n $project_name"
+
+            if $CREATE_SECRET_CMD ; then
+                echo -e "\x1B[1mDone\x1B[0m"
+            else
+                echo -e "\x1B[1mFailed\x1B[0m"
+            fi
         else
             CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY --docker-email=ecmtest@ibm.com -n $project_name"
-        fi
-        if $CREATE_SECRET_CMD ; then
-            echo -e "\x1B[1mDone\x1B[0m"
-        else
-            echo -e "\x1B[1mFailed\x1B[0m"
+
+            if $CREATE_SECRET_CMD ; then
+                echo -e "\x1B[1mDone\x1B[0m"
+            else
+                echo -e "\x1B[1mFailed\x1B[0m"
+            fi
+
+            if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
+            then
+                CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name"
+
+                if $CREATE_SECRET_CMD ; then
+                    echo -e "\x1B[1mDone\x1B[0m"
+                else
+                    echo -e "\x1B[1mFailed\x1B[0m"
+                fi
+            fi
         fi
     else
         # Create docker registry key in the seperate operator scenario
@@ -2554,6 +2649,8 @@ verify_silence_install
 check_airgap_mode
 select_platform
 
+validate_docker_podman_cli
+
 #Function that handles the platform type rancher or tanzu
 if [[ "$OTHER_PLATFROM_TYPE" == "rancher" || "$OTHER_PLATFROM_TYPE" == "tanzu" ]]; then
     setup_other_type_platform
@@ -2599,7 +2696,6 @@ ALL_NAMESPACE="No"
 collect_input
 # create_project
 # bind_scc
-validate_docker_podman_cli
 
 if [[ $SCRIPT_MODE == "OLM" ]];then
     ${CLI_CMD} project $project_name >/dev/null 2>&1
