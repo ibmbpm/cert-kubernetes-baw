@@ -943,7 +943,7 @@ function select_optional_component(){
                     optional_components_list=("Data Collector and Data Indexer" "Exposed Kafka Services")
                     optional_components_cr_list=("pfs" "kafka")
                     show_optional_components
-                    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "baw_authoring" "cmis" "opensearch" )
+                    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "baw_authoring" "cmis")
                     optional_components_list=()
                     optional_components_cr_list=()
                     break
