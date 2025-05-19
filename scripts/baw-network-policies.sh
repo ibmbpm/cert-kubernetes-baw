@@ -20,7 +20,7 @@ function show_help() {
     echo
     echo "Usage:"
     echo
-    echo "baw-network-policies.sh -m [modeType] -n [cp4ba_namespace]"
+    echo "baw-network-policies.sh -m [modeType] -n [baw_namespace]"
     echo
     echo "Options:"
     echo
