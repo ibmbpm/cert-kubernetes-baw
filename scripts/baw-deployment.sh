@@ -12012,6 +12012,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
             printf "\n"
             if [[ $CONTENT_CR_EXIST == "Yes" || (" ${EXISTING_PATTERN_ARR[@]} " =~ "content") || ((" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow") && (! " ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-process-service")) || (" ${EXISTING_PATTERN_ARR[@]} " =~ "document_processing") || (" ${EXISTING_OPT_COMPONENT_ARR[@]} " =~ "baw_authoring") || (" ${EXISTING_OPT_COMPONENT_ARR[@]} " =~ "ae_data_persistence") ]]; then
                 if [[ $UPGRADE_MODE == "shared2dedicated" ]]; then
+                #TODO cp4a-pre-upgrade-and-post-upgrade-optional.sh was not migrated to baw
                     echo -e "\x1B[33;5m[ATTENTION]: \x1B[0m${RED_TEXT}You DO NOT need to run \"./cp4a-pre-upgrade-and-post-upgrade-optional.sh\" in \"pre-upgrade\" mode when migrate IBM Cloud Pak foundational services from \"Cluster-scoped\" to \"Namespace-scoped\"!${RESET_TEXT}"
                     prompt_press_any_key_to_continue
                 fi
