@@ -384,6 +384,8 @@ function select_project(){
         fi
     done
 
+    cp ${OLM_CATALOG}  ${OLM_CATALOG_TMP}
+
     if [[ $PRIVATE_CATALOG == "Yes" ]]; then  
         info "Creating project \"$CERT_MANAGER_PROJECT\" for IBM Cert Manager operator catalog."
         create_project "$CERT_MANAGER_PROJECT"
@@ -398,10 +400,11 @@ function select_project(){
         # replace openshift-marketplace for ibm-licensing-catalog with ibm-licensing
         ${SED_COMMAND} "/name: ibm-licensing-catalog/{n;s/namespace: .*/namespace: $LICENSE_MANAGER_PROJECT/;}" ${OLM_CATALOG_TMP}
     fi
+
     if [[ $RUNTIME_MODE == "dev" ]];then
-        sed -i 's|icr.io\cpopen\ibm-cp-automation-catalog|stg.cp.icr.io\cp\ibm-cp-automation-catalog|g' ${OLM_CATALOG}
-        sed -i 's|icr.io\cpopen\ibm-opensearch-operator-catalog|stg.cp.icr.io\cp\ibm-opensearch-operator-catalog|g' ${OLM_CATALOG}
-        sed -i 's|icr.io\cpopen\ibm-fncm-operator-catalog|stg.cp.icr.io\cp\ibm-fncm-operator-catalog|g' ${OLM_CATALOG}
+          sed -i 's|icr.io/cpopen/ibm-cp-automation-catalog|cp.stg.icr.io/cp/ibm-cp-automation-catalog|g' ${OLM_CATALOG_TMP}
+          sed -i 's|icr.io/cpopen/ibm-opensearch-operator-catalog|stg.cp.icr.io/cp/ibm-opensearch-operator-catalog|g' ${OLM_CATALOG_TMP}
+          sed -i 's|icr.io/cpopen/ibm-fncm-operator-catalog|cp.stg.icr.io/cp/ibm-fncm-operator-catalog|g' ${OLM_CATALOG_TMP}
     fi
 }
 
