@@ -400,6 +400,10 @@ function select_project(){
     fi
 
     if [[ $RUNTIME_MODE == "dev" ]];then
+          if [[ ! -f $BACKUP_ROOT_DIR/tmp/spark_backup.sql ]]; then
+            cp ${OLM_CATALOG} ${OLM_CATALOG_TMP}
+          fi
+
           sed -i 's|icr.io/cpopen/ibm-cp-automation-catalog|cp.stg.icr.io/cp/ibm-cp-automation-catalog|g' ${OLM_CATALOG_TMP}
           sed -i 's|icr.io/cpopen/ibm-opensearch-operator-catalog|stg.cp.icr.io/cp/ibm-opensearch-operator-catalog|g' ${OLM_CATALOG_TMP}
           sed -i 's|icr.io/cpopen/ibm-fncm-operator-catalog|cp.stg.icr.io/cp/ibm-fncm-operator-catalog|g' ${OLM_CATALOG_TMP}

@@ -109,7 +109,7 @@ function wait_for_service_account() {
 function create_all_catalog_sources(){
     local baw_namespace=$1
     local dev=$2
-    catalog_source_file_name=${TEMP_FOLDER}/.catalog_sources.yaml
+    catalog_source_file_name=${TEMP_FOLDER}/.catalog_source.yaml
     cp ${CATALOG_SOURCE_FILENAME} ${catalog_source_file_name}
     catalog_names=()
 
