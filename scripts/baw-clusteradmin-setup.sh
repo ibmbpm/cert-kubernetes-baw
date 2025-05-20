@@ -1666,32 +1666,22 @@ function create_secret_entitlement_registry(){
             ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME_STG" -n "${project_name}" >/dev/null 2>&1
         fi
 
-        if [[ "$(echo "$CNCF_DEV" | tr '[:upper:]' '[:lower:]')" == "yes" && ("$OTHER_PLATFROM_TYPE" == "rancher" || "$OTHER_PLATFROM_TYPE" == "tanzu") ]]; then
-            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry ibm-staging-entitlement-key --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY --docker-email=ecmtest@ibm.com -n $project_name"
+        CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY --docker-email=ecmtest@ibm.com -n $project_name"
 
-            if $CREATE_SECRET_CMD ; then
-                echo -e "\x1B[1mDone\x1B[0m"
-            else
-                echo -e "\x1B[1mFailed\x1B[0m"
-            fi
+        if $CREATE_SECRET_CMD ; then
+            echo -e "\x1B[1mDone\x1B[0m"
         else
-            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY --docker-email=ecmtest@ibm.com -n $project_name"
+            echo -e "\x1B[1mFailed\x1B[0m"
+        fi
+
+        if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
+        then
+            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name"
 
             if $CREATE_SECRET_CMD ; then
                 echo -e "\x1B[1mDone\x1B[0m"
             else
                 echo -e "\x1B[1mFailed\x1B[0m"
-            fi
-
-            if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
-            then
-                CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name"
-
-                if $CREATE_SECRET_CMD ; then
-                    echo -e "\x1B[1mDone\x1B[0m"
-                else
-                    echo -e "\x1B[1mFailed\x1B[0m"
-                fi
             fi
         fi
     else
@@ -1706,6 +1696,18 @@ function create_secret_entitlement_registry(){
             echo -e "\x1B[1mFailed\x1B[0m"
         fi
 
+        if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
+        then
+            printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $project_name_operator...\n\x1B[0m"
+            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name_operator"
+
+            if $CREATE_SECRET_CMD ; then
+                echo -e "\x1B[1mDone\x1B[0m"
+            else
+                echo -e "\x1B[1mFailed\x1B[0m"
+            fi
+        fi
+
         printf "\x1B[1mCreating docker-registry secret for Entitlement Registry key in project $project_name_cs_service...\n\x1B[0m"
         ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME" -n "${project_name_cs_service}" >/dev/null 2>&1
 
@@ -1715,11 +1717,28 @@ function create_secret_entitlement_registry(){
         else
             echo -e "\x1B[1mFailed\x1B[0m"
         fi
+
+        if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
+        then
+            printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $project_name_cs_service...\n\x1B[0m"
+            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name_cs_service"
+
+            if $CREATE_SECRET_CMD ; then
+                echo -e "\x1B[1mDone\x1B[0m"
+            else
+                echo -e "\x1B[1mFailed\x1B[0m"
+            fi
+        fi
     fi
     if [[ $MULTIPLE_DEPLOYMENT = "Yes" ]]; then
         for item in "${project_baw_service_array[@]}"; do
             printf "\x1B[1mCreating docker-registry secret for Entitlement Registry key in project $item...\n\x1B[0m"
             ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME" -n "${item}" >/dev/null 2>&1
+
+            if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
+            then
+                ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME_STG" -n "${item}" >/dev/null 2>&1
+            fi
 
             CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY --docker-email=ecmtest@ibm.com -n $item"
             if $CREATE_SECRET_CMD ; then
@@ -1727,6 +1746,19 @@ function create_secret_entitlement_registry(){
             else
                 echo -e "\x1B[1mFailed\x1B[0m"
             fi
+
+            if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
+            then
+                printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $item...\n\x1B[0m"
+                CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $item"
+
+                if $CREATE_SECRET_CMD ; then
+                    echo -e "\x1B[1mDone\x1B[0m"
+                else
+                    echo -e "\x1B[1mFailed\x1B[0m"
+                fi
+            fi
+
         done
     fi
 }
