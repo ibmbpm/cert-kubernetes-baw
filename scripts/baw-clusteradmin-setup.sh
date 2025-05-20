@@ -33,7 +33,7 @@ PLATFORM_VERSION=""
 PROJ_NAME=""
 PROJ_NAME_ALL_NAMESPACE="openshift-operators"
 DOCKER_RES_SECRET_NAME="ibm-entitlement-key"
-DOCKER_RES_SECRET_NAME_STG="ibm-stg-entitlement-key"
+DOCKER_RES_SECRET_NAME_STG="ibm-staging-entitlement-key"
 REGISTRY_IN_FILE="cp.icr.io"
 STG_REGISTRY_IN_FILE="cp.stg.icr.io"
 OPERATOR_FILE=${PARENT_DIR}/descriptors/operator.yaml
@@ -404,10 +404,6 @@ function select_project(){
         ${SED_COMMAND} "/name: ibm-licensing-catalog/{n;s/namespace: .*/namespace: $LICENSE_MANAGER_PROJECT/;}" ${OLM_CATALOG_TMP}
     fi
 
-#    if [[ $RUNTIME_MODE == "dev" ]];then
-#          ${SED_COMMAND} "s|icr.io/cpopen/ibm-cp-automation-catalog|cp.stg.icr.io/cp/ibm-cp-automation-catalog|g" ${OLM_CATALOG_TMP}
-#          ${SED_COMMAND} "s|icr.io/cpopen/ibm-fncm-catalog|cp.stg.icr.io/cp/ibm-fncm-catalog|g" ${OLM_CATALOG_TMP}
-#    fi
 }
 
 function set_separate_operator_project(){
