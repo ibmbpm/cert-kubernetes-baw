@@ -399,9 +399,9 @@ function select_project(){
         ${SED_COMMAND} "/name: ibm-licensing-catalog/{n;s/namespace: .*/namespace: $LICENSE_MANAGER_PROJECT/;}" ${OLM_CATALOG_TMP}
     fi
     if [[ $RUNTIME_MODE == "dev" ]];then
-        sed -i 's|icr.io\cpopen\ibm-cp-automation-catalog|stg.cp.icr.io\cp\ibm-cp-automation-catalog|g' ${OLM_CATALOG_TMP}
-        sed -i 's|icr.io\cpopen\ibm-opensearch-operator-catalog|stg.cp.icr.io\cp\ibm-opensearch-operator-catalog|g' ${OLM_CATALOG_TMP}
-        sed -i 's|icr.io\cpopen\ibm-fncm-operator-catalog|stg.cp.icr.io\cp\ibm-fncm-operator-catalog|g' ${OLM_CATALOG_TMP}
+        sed -i 's|icr.io\cpopen\ibm-cp-automation-catalog|stg.cp.icr.io\cp\ibm-cp-automation-catalog|g' ${OLM_CATALOG}
+        sed -i 's|icr.io\cpopen\ibm-opensearch-operator-catalog|stg.cp.icr.io\cp\ibm-opensearch-operator-catalog|g' ${OLM_CATALOG}
+        sed -i 's|icr.io\cpopen\ibm-fncm-operator-catalog|stg.cp.icr.io\cp\ibm-fncm-operator-catalog|g' ${OLM_CATALOG}
     fi
 }
 
