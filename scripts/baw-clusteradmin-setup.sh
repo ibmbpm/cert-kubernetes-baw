@@ -400,7 +400,7 @@ function select_project(){
     fi
 
     if [[ $RUNTIME_MODE == "dev" ]];then
-          if [[ ! -f $BACKUP_ROOT_DIR/tmp/spark_backup.sql ]]; then
+          if [[ ! -f $OLM_CATALOG_TMP ]]; then
             cp ${OLM_CATALOG} ${OLM_CATALOG_TMP}
           fi
 

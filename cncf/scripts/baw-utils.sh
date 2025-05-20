@@ -110,7 +110,10 @@ function create_all_catalog_sources(){
     local baw_namespace=$1
     local dev=$2
     catalog_source_file_name=${TEMP_FOLDER}/.catalog_source.yaml
-    cp ${CATALOG_SOURCE_FILENAME} ${catalog_source_file_name}
+
+    if [[ ! -f ${catalog_source_file_name} ]]; then
+      cp ${CATALOG_SOURCE_FILENAME} ${catalog_source_file_name}
+    fi
     catalog_names=()
 
     # Read catalog names into the array
