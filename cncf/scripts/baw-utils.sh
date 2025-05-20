@@ -109,7 +109,7 @@ function wait_for_service_account() {
 function create_all_catalog_sources(){
     local baw_namespace=$1
     local dev=$2
-    catalog_source_file_name=${TEMP_FOLDER}/catalog_sources.yaml
+    catalog_source_file_name=${TEMP_FOLDER}/.catalog_sources.yaml
     cp ${CATALOG_SOURCE_FILENAME} ${catalog_source_file_name}
     catalog_names=()
 
@@ -324,7 +324,7 @@ function create_baw_subscription() {
     local namespace=$1
     local channel=$2
     local dev_mode=$3
-    subscription_file_name=${TEMP_FOLDER}/subscription.yaml
+    subscription_file_name=${TEMP_FOLDER}/.subscription.yaml
     cp ${SUBSCRIPTION_FILENAME} ${subscription_file_name}
     ${SED_COMMAND} "s/REPLACE_NAMESPACE/$baw_namespace/g" ${subscription_file_name}
     ${SED_COMMAND} "s/openshift-marketplace/$baw_namespace/g" ${subscription_file_name}

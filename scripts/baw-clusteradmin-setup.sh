@@ -384,8 +384,6 @@ function select_project(){
         fi
     done
 
-    cp ${OLM_CATALOG}  ${OLM_CATALOG_TMP}
-
     if [[ $PRIVATE_CATALOG == "Yes" ]]; then  
         info "Creating project \"$CERT_MANAGER_PROJECT\" for IBM Cert Manager operator catalog."
         create_project "$CERT_MANAGER_PROJECT"
