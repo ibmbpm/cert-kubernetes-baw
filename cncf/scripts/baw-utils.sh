@@ -137,23 +137,23 @@ function create_all_catalog_sources(){
             ${YQ_CMD} w -i "$catalog_source_file_name" -d "$((doc_index - 1))" "metadata.namespace" "$baw_namespace"
         fi
 
-#        # For dev mode the image for the catalog source has to be in cp.stg.icr.io and a secrets field has to be added
-#        if [[ "$dev" == true ]]; then
-#            # temporarily adding ibm-zen-operator-catalog because as of March 13th 2025 zen has not GAed
-#            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-opensearch-operator-catalog" || "$name" == "ibm-fncm-operator-catalog" ]]; then
-#                ${YQ_CMD} w -i "$catalog_source_file_name" -d "$((doc_index - 1))"  "spec.secrets[+]" "ibm-staging-entitlement-key"
-#                # Extract the current image value
-#                current_image=$(${YQ_CMD} r -d "$((doc_index - 1))" "$catalog_source_file_name" 'spec.image')
-#
-#                if [[ -n "$current_image" && "$current_image" == icr.io/cpopen/* ]]; then
-#                    # Modify the repository path
-#                    updated_image=${current_image/icr.io\/cpopen\//cp.stg.icr.io\/cp/}
-#
-#                    # Update the image field in the YAML
-#                    ${YQ_CMD} w -i "$catalog_source_file_name" -d "$((doc_index - 1))" "spec.image" "$updated_image"
-#                fi
-#            fi
-#        fi
+        # For dev mode the image for the catalog source has to be in cp.stg.icr.io and a secrets field has to be added
+        if [[ "$dev" == true ]]; then
+            # temporarily adding ibm-zen-operator-catalog because as of March 13th 2025 zen has not GAed
+            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-fncm-operator-catalog" ]]; then
+#                ${YQ_CMD} w -i "$catalog_source_file_name" -d "$((doc_index - 1))"  "spec.secrets[+]" "ibm-stg-entitlement-key"
+                # Extract the current image value
+                current_image=$(${YQ_CMD} r -d "$((doc_index - 1))" "$catalog_source_file_name" 'spec.image')
+
+                if [[ -n "$current_image" && "$current_image" == icr.io/cpopen/* ]]; then
+                    # Modify the repository path
+                    updated_image=${current_image/icr.io\/cpopen\//cp.stg.icr.io\/cp/}
+
+                    # Update the image field in the YAML
+                    ${YQ_CMD} w -i "$catalog_source_file_name" -d "$((doc_index - 1))" "spec.image" "$updated_image"
+                fi
+            fi
+        fi
 
     done
 

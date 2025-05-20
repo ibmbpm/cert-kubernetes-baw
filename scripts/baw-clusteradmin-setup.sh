@@ -351,6 +351,10 @@ function select_separate_operator(){
 # The function also checks to make sure the project name is valid and not some of the namespaces used by the platform
 # The Function calls create_project function to create the namespace if required
 function select_project(){
+
+   if [[ ! -f $OLM_CATALOG_TMP ]]; then
+      cp ${OLM_CATALOG} ${OLM_CATALOG_TMP}
+   fi
     
     while [[ $project_name == "" ]];
     do
@@ -400,14 +404,10 @@ function select_project(){
         ${SED_COMMAND} "/name: ibm-licensing-catalog/{n;s/namespace: .*/namespace: $LICENSE_MANAGER_PROJECT/;}" ${OLM_CATALOG_TMP}
     fi
 
-    if [[ $RUNTIME_MODE == "dev" ]];then
-          if [[ ! -f $OLM_CATALOG_TMP ]]; then
-            cp ${OLM_CATALOG} ${OLM_CATALOG_TMP}
-          fi
-
-          sed -i 's|icr.io/cpopen/ibm-cp-automation-catalog|cp.stg.icr.io/cp/ibm-cp-automation-catalog|g' ${OLM_CATALOG_TMP}
-          sed -i 's|icr.io/cpopen/ibm-fncm-catalog|cp.stg.icr.io/cp/ibm-fncm-catalog|g' ${OLM_CATALOG_TMP}
-    fi
+#    if [[ $RUNTIME_MODE == "dev" ]];then
+#          ${SED_COMMAND} "s|icr.io/cpopen/ibm-cp-automation-catalog|cp.stg.icr.io/cp/ibm-cp-automation-catalog|g" ${OLM_CATALOG_TMP}
+#          ${SED_COMMAND} "s|icr.io/cpopen/ibm-fncm-catalog|cp.stg.icr.io/cp/ibm-fncm-catalog|g" ${OLM_CATALOG_TMP}
+#    fi
 }
 
 function set_separate_operator_project(){
