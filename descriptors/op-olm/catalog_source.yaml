@@ -21,7 +21,7 @@ spec:
   image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:0d1fa0737519f3c8b759da1dcc2e4fbf2021a5929761ef796abe36270bef49dc
   secrets:
   - "ibm-entitlement-key"
-  - "ibm-stg-entitlement-key"
+  - "ibm-staging-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   updateStrategy:
@@ -42,7 +42,7 @@ spec:
     icr.io/cpopen/ibm-opencontent-flink-operator-catalog@sha256:b1e6182101793348aaf45b77160848b09674033a2b6c910d14d3049a711bbdd7
   secrets:
   - "ibm-entitlement-key"
-  - "ibm-stg-entitlement-key"
+  - "ibm-staging-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   updateStrategy:
@@ -63,7 +63,7 @@ spec:
   image: icr.io/cpopen/opencontent-ibm-opensearch-operator-catalog@sha256:62959c185c5fb320453f82583c462e03c244617ea5b3087603ac223f21b65fe4
   secrets:
   - "ibm-entitlement-key"
-  - "ibm-stg-entitlement-key"
+  - "ibm-staging-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   updateStrategy:
@@ -84,7 +84,7 @@ spec:
   image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:21866a45719eef50764c421c349a539262147d215ef87c8cc2174fdf2c269346
   secrets:
   - "ibm-entitlement-key"
-  - "ibm-stg-entitlement-key"
+  - "ibm-staging-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   updateStrategy:
@@ -104,7 +104,7 @@ spec:
   sourceType: grpc
   secrets:
   - "ibm-entitlement-key"
-  - "ibm-stg-entitlement-key"
+  - "ibm-staging-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   updateStrategy:
@@ -126,7 +126,7 @@ spec:
   image: icr.io/cpopen/ibm-cs-install-catalog@sha256:d4dff1a8968c18d984e16c4c9f1517c3a10e23a11bf166c64d734773324d4c9d
   secrets:
   - "ibm-entitlement-key"
-  - "ibm-stg-entitlement-key"
+  - "ibm-staging-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   updateStrategy:
@@ -149,7 +149,7 @@ spec:
   image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:64a5f79d9f2f0d97bb039267866e47c7a5bc1c0f7f8b4d17e399b09e655a6b13
   secrets:
   - "ibm-entitlement-key"
-  - "ibm-stg-entitlement-key"
+  - "ibm-staging-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   updateStrategy:
@@ -171,7 +171,7 @@ spec:
   image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:f289ac0d44803ff12d41c3659e6fdf04c404e0b3b233b6bc44eec671abb1b47e
   secrets:
   - "ibm-entitlement-key"
-  - "ibm-stg-entitlement-key"
+  - "ibm-staging-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   updateStrategy:
@@ -195,7 +195,7 @@ spec:
   image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:209ea4b77b3b0863c591bcdec6f53c4c39dafcb10ff13e27ae4e1cb986a59727
   secrets:
   - "ibm-entitlement-key"
-  - "ibm-stg-entitlement-key"
+  - "ibm-staging-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   updateStrategy:
@@ -218,7 +218,7 @@ spec:
   image: icr.io/cpopen/ibm-events-operator-catalog@sha256:603a6bf0e616f16b609bf157b9e21415802478aefc9c606e124008d0224a1188
   secrets:
   - "ibm-entitlement-key"
-  - "ibm-stg-entitlement-key"
+  - "ibm-staging-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   updateStrategy:
@@ -241,7 +241,7 @@ spec:
   image: icr.io/cpopen/ibm-cpd-cloud-native-postgresql-operator-catalog@sha256:7dbff355db7739152961cb6a97887d2e43bc960ac58837c126e03ed1a4480a3a
   secrets:
   - "ibm-entitlement-key"
-  - "ibm-stg-entitlement-key"
+  - "ibm-staging-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   updateStrategy:
@@ -262,7 +262,7 @@ spec:
   image: icr.io/cpopen/ibm-fncm-catalog@sha256:21f64c32dc46c5c962176c2904c45c6f14387de0597d6d4a23ad4c7452893322
   secrets:
   - "ibm-entitlement-key"
-  - "ibm-stg-entitlement-key"
+  - "ibm-staging-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   updateStrategy:
