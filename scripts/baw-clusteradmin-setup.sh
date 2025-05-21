@@ -173,6 +173,47 @@ function install_cert_license_operator(){
             exit 1
         fi
     else
+        local baw_namespace=""
+
+        catalog_names=()
+
+        # Read catalog names into the array
+        while IFS= read -r name; do
+            catalog_names+=("$name")
+        done < <(${YQ_CMD} r -d* "$OLM_CATALOG_TMP" 'metadata.name')
+
+        # Iterate over the catalog names
+        for name in "${catalog_names[@]}"; do
+            # Get the document index of the catalog source (by name)
+            doc_index=$( ${YQ_CMD} r -d* "$OLM_CATALOG_TMP" 'metadata.name' | grep -n "^$name$" | cut -d: -f1 )
+
+            if [[ "$name" == "ibm-cert-manager-catalog" ]]; then
+
+                ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))" "metadata.namespace" "ibm-cert-manager"
+            elif [[ "$name" == "ibm-licensing-catalog" ]]; then
+
+                ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))" "metadata.namespace" "ibm-licensing"
+            else
+                ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))" "metadata.namespace" "$project_name"
+            fi
+
+            # temporarily adding ibm-zen-operator-catalog because as of March 13th 2025 zen has not GAed
+            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-fncm-operator-catalog" ]]; then
+                ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))"  "spec.secrets[+]" "ibm-staging-entitlement-key"
+                # Extract the current image value
+                current_image=$(${YQ_CMD} r -d "$((doc_index - 1))" "$OLM_CATALOG_TMP" 'spec.image')
+
+                if [[ -n "$current_image" && "$current_image" == icr.io/cpopen/* ]]; then
+                    # Modify the repository path
+                    updated_image=${current_image/icr.io\/cpopen\//cp.stg.icr.io\/cp/}
+
+                    # Update the image field in the YAML
+                    ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))" "spec.image" "$updated_image"
+                fi
+            fi
+
+        done
+
         kubectl apply -f $OLM_CATALOG_TMP >/dev/null 2>&1
         if [ $? -eq 0 ]; then
             success "The $BAW_FULL_NAME Operator catalog source has been successfully updated!"
@@ -1079,13 +1120,43 @@ function apply_cp4a_operator(){
     printf "\n"
 }
 
+function wait_for_pods_active() {
+
+    source $BAW_CNCF_FOLDER/baw-utils.sh
+
+    printf "\n"
+    info "Waiting for BAW subscription to become active."
+
+    patch_csv "ibm-content-operator" $project_name
+    patch_csv "ibm-cp4a-operator" $project_name
+    patch_csv "ibm-cp4a-wfps-operator" $project_name
+    patch_csv "ibm-dpe-operator" $project_name
+    patch_csv "ibm-insights-engine-operator" $project_name
+    patch_csv "ibm-odm-operator" $project_name
+    patch_csv "ibm-pfs-operator" $project_name
+    patch_csv "ibm-workflow-operator" $project_name
+    patch_csv "icp4a-foundation-operator" $project_name
+
+    wait_for_operator "${project_name}" "ibm-common-service-operator"
+    wait_for_operator "${project_name}" "operand-deployment-lifecycle-manager"
+    wait_for_operator "${project_name}" "ibm-content-operator"
+    wait_for_operator "${project_name}" "ibm-cp4a-operator"
+    wait_for_operator "${project_name}" "ibm-cp4a-wfps-operator"
+    wait_for_operator "${project_name}" "ibm-dpe-operator"
+    wait_for_operator "${project_name}" "ibm-insights-engine-operator"
+    wait_for_operator "${project_name}" "ibm-odm-operator"
+    wait_for_operator "${project_name}" "ibm-pfs-operator"
+    wait_for_operator "${project_name}" "ibm-workflow-operator"
+    wait_for_operator "${project_name}" "icp4a-foundation-operator"
+}
+
 # Function to install the BAW Standalone Operators
 function prepare_olm_install() {
     printf "\n"
     echo -e "\x1B[1mWaiting for the $BAW_FULL_NAME operator to be ready. This might take a few minutes... \x1B[0m"
     printf "\n"
 
-    local maxRetry=20
+    local maxRetry=30
     if [[ $SEPARATE_OPERATOR == "Yes"  ]]; then
         project_name=$project_name_operator
     fi
@@ -1220,7 +1291,7 @@ function prepare_olm_install() {
         #checking if ibm-common-service-operator is present and if so checking if the pod is running
         ibmCommonServicesPodPresent=$(${CLI_CMD} get pod -n "$temp_project_name" --no-headers --ignore-not-found | grep ibm-common-service-operator | wc -l)
         if [[ $ibmCommonServicesPodPresent -eq 1 ]]; then
-            ibmCommonServicesPodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep ibm-common-service-operator | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}' | wc -l)
+            ibmCommonServicesPodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep ibm-common-service-operator | head -1 | awk '{print $1}' | wc -l)
         else
             ibmCommonServicesPodCount=0
         fi
@@ -1236,7 +1307,7 @@ function prepare_olm_install() {
         #checking if ibm-pfs-operator is present and if so checking if the pod is running
         ibmPFSPodPresent=$(${CLI_CMD} get pod -n "$temp_project_name" --no-headers --ignore-not-found | grep ibm-pfs-operator | wc -l)
         if [[ $ibmPFSPodPresent -eq 1 ]]; then
-            ibmPFSPodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep ibm-pfs-operator | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}' | wc -l)
+            ibmPFSPodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep ibm-pfs-operator |  head -1 | awk '{print $1}' | wc -l)
         else    
             ibmPFSPodCount=0
         fi
@@ -1244,7 +1315,7 @@ function prepare_olm_install() {
         #checking if icp4a-foundation-operator is present and if so checking if the pod is running
         foundationPodPresent=$(${CLI_CMD} get pod -n "$temp_project_name" --no-headers --ignore-not-found | grep icp4a-foundation-operator | wc -l)
         if [[ $foundationPodPresent -eq 1 ]]; then
-            foundationPodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep icp4a-foundation-operator | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}' | wc -l)
+            foundationPodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep icp4a-foundation-operator | head -1 | awk '{print $1}' | wc -l)
         else   
             foundationPodCount=0
         fi
@@ -1252,7 +1323,7 @@ function prepare_olm_install() {
         #checking if operand-deployment-lifecycle-manager is present and if so checking if the pod is running
         operandLifeCyclePodPresent=$(${CLI_CMD} get pod -n "$temp_project_name" --no-headers --ignore-not-found | grep operand-deployment-lifecycle-manager | wc -l)
         if [[ $operandLifeCyclePodPresent -eq 1 ]]; then
-            operandLifeCyclePodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep operand-deployment-lifecycle-manager | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}' | wc -l)
+            operandLifeCyclePodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep operand-deployment-lifecycle-manager | head -1 | awk '{print $1}' | wc -l)
         else    
             operandLifeCyclePodCount=0
         fi    
@@ -1280,6 +1351,9 @@ function prepare_olm_install() {
           continue
         fi
       else
+
+        wait_for_pods_active
+
         printf "\n"
         echo "$BAW_FULL_NAME operator is running..."
         ${CLI_CMD} get pod -n "$temp_project_name" -l=name=ibm-cp4a-operator -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}'
@@ -2799,7 +2873,6 @@ EOF
         prepare_olm_install
         setup_separate_operator
     fi
-    
 else
     if [[ $PLATFORM_SELECTED == "other" ]]; then
         get_entitlement_registry
