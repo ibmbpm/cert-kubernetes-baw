@@ -33,7 +33,9 @@ PLATFORM_VERSION=""
 PROJ_NAME=""
 PROJ_NAME_ALL_NAMESPACE="openshift-operators"
 DOCKER_RES_SECRET_NAME="ibm-entitlement-key"
+DOCKER_RES_SECRET_NAME_STG="ibm-staging-entitlement-key"
 REGISTRY_IN_FILE="cp.icr.io"
+STG_REGISTRY_IN_FILE="cp.stg.icr.io"
 OPERATOR_FILE=${PARENT_DIR}/descriptors/operator.yaml
 OPERATOR_FILE_TMP=$TEMP_FOLDER/.operator_tmp.yaml
 CNCF_OLM_NAMESPACE="olm"
@@ -171,6 +173,47 @@ function install_cert_license_operator(){
             exit 1
         fi
     else
+        local baw_namespace=""
+
+        catalog_names=()
+
+        # Read catalog names into the array
+        while IFS= read -r name; do
+            catalog_names+=("$name")
+        done < <(${YQ_CMD} r -d* "$OLM_CATALOG_TMP" 'metadata.name')
+
+        # Iterate over the catalog names
+        for name in "${catalog_names[@]}"; do
+            # Get the document index of the catalog source (by name)
+            doc_index=$( ${YQ_CMD} r -d* "$OLM_CATALOG_TMP" 'metadata.name' | grep -n "^$name$" | cut -d: -f1 )
+
+            if [[ "$name" == "ibm-cert-manager-catalog" ]]; then
+
+                ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))" "metadata.namespace" "ibm-cert-manager"
+            elif [[ "$name" == "ibm-licensing-catalog" ]]; then
+
+                ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))" "metadata.namespace" "ibm-licensing"
+            else
+                ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))" "metadata.namespace" "$project_name"
+            fi
+
+            # temporarily adding ibm-zen-operator-catalog because as of March 13th 2025 zen has not GAed
+            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-fncm-operator-catalog" ]]; then
+#                ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))"  "spec.secrets[+]" "ibm-staging-entitlement-key"
+                # Extract the current image value
+                current_image=$(${YQ_CMD} r -d "$((doc_index - 1))" "$OLM_CATALOG_TMP" 'spec.image')
+
+                if [[ -n "$current_image" && "$current_image" == icr.io/cpopen/* ]]; then
+                    # Modify the repository path
+                    updated_image=${current_image/icr.io\/cpopen\//cp.stg.icr.io\/cp/}
+
+                    # Update the image field in the YAML
+                    ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))" "spec.image" "$updated_image"
+                fi
+            fi
+
+        done
+
         kubectl apply -f $OLM_CATALOG_TMP >/dev/null 2>&1
         if [ $? -eq 0 ]; then
             success "The $BAW_FULL_NAME Operator catalog source has been successfully updated!"
@@ -349,6 +392,10 @@ function select_separate_operator(){
 # The function also checks to make sure the project name is valid and not some of the namespaces used by the platform
 # The Function calls create_project function to create the namespace if required
 function select_project(){
+
+   if [[ ! -f $OLM_CATALOG_TMP ]]; then
+      cp ${OLM_CATALOG} ${OLM_CATALOG_TMP}
+   fi
     
     while [[ $project_name == "" ]];
     do
@@ -397,11 +444,7 @@ function select_project(){
         # replace openshift-marketplace for ibm-licensing-catalog with ibm-licensing
         ${SED_COMMAND} "/name: ibm-licensing-catalog/{n;s/namespace: .*/namespace: $LICENSE_MANAGER_PROJECT/;}" ${OLM_CATALOG_TMP}
     fi
-    if [[ $RUNTIME_MODE == "dev" ]];then
-        sed -i 's|icr.io\cpopen\ibm-cp-automation-catalog|stg.cp.icr.io\cp\ibm-cp-automation-catalog|g' ${OLM_CATALOG_TMP}
-        sed -i 's|icr.io\cpopen\ibm-opensearch-operator-catalog|stg.cp.icr.io\cp\ibm-opensearch-operator-catalog|g' ${OLM_CATALOG_TMP}
-        sed -i 's|icr.io\cpopen\ibm-fncm-operator-catalog|stg.cp.icr.io\cp\ibm-fncm-operator-catalog|g' ${OLM_CATALOG_TMP}
-    fi
+
 }
 
 function set_separate_operator_project(){
@@ -1077,13 +1120,43 @@ function apply_cp4a_operator(){
     printf "\n"
 }
 
+function wait_for_pods_active() {
+
+    source $BAW_CNCF_FOLDER/baw-utils.sh
+
+    printf "\n"
+    info "Waiting for BAW subscription to become active."
+
+    patch_csv "ibm-content-operator" $project_name
+    patch_csv "ibm-cp4a-operator" $project_name
+    patch_csv "ibm-cp4a-wfps-operator" $project_name
+    patch_csv "ibm-dpe-operator" $project_name
+    patch_csv "ibm-insights-engine-operator" $project_name
+    patch_csv "ibm-odm-operator" $project_name
+    patch_csv "ibm-pfs-operator" $project_name
+    patch_csv "ibm-workflow-operator" $project_name
+    patch_csv "icp4a-foundation-operator" $project_name
+
+    wait_for_operator "${project_name}" "ibm-common-service-operator"
+    wait_for_operator "${project_name}" "operand-deployment-lifecycle-manager"
+    wait_for_operator "${project_name}" "ibm-content-operator"
+    wait_for_operator "${project_name}" "ibm-cp4a-operator"
+    wait_for_operator "${project_name}" "ibm-cp4a-wfps-operator"
+    wait_for_operator "${project_name}" "ibm-dpe-operator"
+    wait_for_operator "${project_name}" "ibm-insights-engine-operator"
+    wait_for_operator "${project_name}" "ibm-odm-operator"
+    wait_for_operator "${project_name}" "ibm-pfs-operator"
+    wait_for_operator "${project_name}" "ibm-workflow-operator"
+    wait_for_operator "${project_name}" "icp4a-foundation-operator"
+}
+
 # Function to install the BAW Standalone Operators
 function prepare_olm_install() {
     printf "\n"
     echo -e "\x1B[1mWaiting for the $BAW_FULL_NAME operator to be ready. This might take a few minutes... \x1B[0m"
     printf "\n"
 
-    local maxRetry=20
+    local maxRetry=30
     if [[ $SEPARATE_OPERATOR == "Yes"  ]]; then
         project_name=$project_name_operator
     fi
@@ -1218,7 +1291,7 @@ function prepare_olm_install() {
         #checking if ibm-common-service-operator is present and if so checking if the pod is running
         ibmCommonServicesPodPresent=$(${CLI_CMD} get pod -n "$temp_project_name" --no-headers --ignore-not-found | grep ibm-common-service-operator | wc -l)
         if [[ $ibmCommonServicesPodPresent -eq 1 ]]; then
-            ibmCommonServicesPodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep ibm-common-service-operator | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}' | wc -l)
+            ibmCommonServicesPodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep ibm-common-service-operator | head -1 | awk '{print $1}' | wc -l)
         else
             ibmCommonServicesPodCount=0
         fi
@@ -1234,7 +1307,7 @@ function prepare_olm_install() {
         #checking if ibm-pfs-operator is present and if so checking if the pod is running
         ibmPFSPodPresent=$(${CLI_CMD} get pod -n "$temp_project_name" --no-headers --ignore-not-found | grep ibm-pfs-operator | wc -l)
         if [[ $ibmPFSPodPresent -eq 1 ]]; then
-            ibmPFSPodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep ibm-pfs-operator | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}' | wc -l)
+            ibmPFSPodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep ibm-pfs-operator |  head -1 | awk '{print $1}' | wc -l)
         else    
             ibmPFSPodCount=0
         fi
@@ -1242,7 +1315,7 @@ function prepare_olm_install() {
         #checking if icp4a-foundation-operator is present and if so checking if the pod is running
         foundationPodPresent=$(${CLI_CMD} get pod -n "$temp_project_name" --no-headers --ignore-not-found | grep icp4a-foundation-operator | wc -l)
         if [[ $foundationPodPresent -eq 1 ]]; then
-            foundationPodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep icp4a-foundation-operator | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}' | wc -l)
+            foundationPodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep icp4a-foundation-operator | head -1 | awk '{print $1}' | wc -l)
         else   
             foundationPodCount=0
         fi
@@ -1250,7 +1323,7 @@ function prepare_olm_install() {
         #checking if operand-deployment-lifecycle-manager is present and if so checking if the pod is running
         operandLifeCyclePodPresent=$(${CLI_CMD} get pod -n "$temp_project_name" --no-headers --ignore-not-found | grep operand-deployment-lifecycle-manager | wc -l)
         if [[ $operandLifeCyclePodPresent -eq 1 ]]; then
-            operandLifeCyclePodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep operand-deployment-lifecycle-manager | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}' | wc -l)
+            operandLifeCyclePodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep operand-deployment-lifecycle-manager | head -1 | awk '{print $1}' | wc -l)
         else    
             operandLifeCyclePodCount=0
         fi    
@@ -1278,6 +1351,9 @@ function prepare_olm_install() {
           continue
         fi
       else
+
+        wait_for_pods_active
+
         printf "\n"
         echo "$BAW_FULL_NAME operator is running..."
         ${CLI_CMD} get pod -n "$temp_project_name" -l=name=ibm-cp4a-operator -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}'
@@ -1390,10 +1466,86 @@ function display_airgap_prerequisites(){
 
 }
 
+function verify_entitlement_key(){
+
+  local DOCKER_REG_SERVER=$1
+
+  ATTEMPTS=0
+  while [[ $entitlement_key == '' ]]
+  do
+      if [ -z "$BAW_AUTO_ENTITLEMENT_KEY" ]; then
+          read -rsp "" entitlement_key
+      else
+          entitlement_key=$BAW_AUTO_ENTITLEMENT_KEY
+      fi
+      if [ -z "$entitlement_key" ]; then
+          printf "\n"
+          echo -e "\x1B[1;31mEnter a valid Entitlement Registry key\x1B[0m"
+      else
+          if  [[ $entitlement_key == iamapikey:* ]] ;
+          then
+              DOCKER_REG_USER="iamapikey"
+              reg_key="${entitlement_key#*:}"
+          else
+              DOCKER_REG_USER="cp"
+              reg_key=$entitlement_key
+
+          fi
+
+          if [[ "$DOCKER_REG_SERVER" == "cp.stg.icr.io" ]]
+          then
+            DOCKER_REG_KEY_STG=$reg_key
+          else
+            DOCKER_REG_KEY=$reg_key
+          fi
+
+          entitlement_verify_passed=""
+          while [[ $entitlement_verify_passed == '' ]]
+          do
+              printf "\n"
+              printf "\x1B[1mVerifying the Entitlement Registry key...\n\x1B[0m"
+
+              if [[ $PODMAN_FOUND == "No" ]]; then
+              cli_command="docker"
+              else
+              cli_command="podman"
+              fi
+
+              if $cli_command login -u "$DOCKER_REG_USER" -p "$reg_key" "$DOCKER_REG_SERVER"; then
+                  printf 'Entitlement Registry key is valid.\n'
+                  entitlement_verify_passed="passed"
+              else
+                  printf '\x1B[1;31mThe Entitlement Registry key failed. Try again...\n\x1B[0m'
+                  ATTEMPTS=$((ATTEMPTS + 1))
+                  if [[ $ATTEMPTS -eq 10 ]]; then
+                      printf '\x1B[1mEnter a valid Entitlement Registry key. Exiting ...\n\x1B[0m'
+                      exit 1
+                  fi
+                  entitlement_key=''
+                  entitlement_verify_passed="failed"
+              fi
+          done
+      fi
+  done
+
+  if [[ $entitlement_verify_passed != $PASSED ]]; then
+        printf "\x1B[1;31m Entitlement Key is not Valid!, exiting...\n\x1B[0m"
+        exit 1
+    fi
+
+  echo "$entitlement_verify_passed"
+
+}
+
 
 # Function that asks for the entitlement key and verifies it
-# For dev mode it verifies against cp.stg.icr.io
+# For dev mode it verifies against icr.io
 function get_entitlement_registry(){
+
+    if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
+    then
+        get_stg_entitlement_registry
+    fi
 
     # For Entitlement Registry key
     entitlement_key=""
@@ -1429,64 +1581,57 @@ function get_entitlement_registry(){
             printf "\n"
             printf "\x1B[1mEnter your Entitlement Registry key: \x1B[0m"
             # During dev, OLM uses stage image repo
-            if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
-            then
-                DOCKER_REG_SERVER="cp.stg.icr.io"
-            else
-                DOCKER_REG_SERVER="cp.icr.io"
-            fi
+            DOCKER_REG_SERVER="cp.icr.io"
+            PASSED="passed"
+
             # During dev, OLM uses stage image repo
-
-            ATTEMPTS=0
-            while [[ $entitlement_key == '' ]]
-            do
-
-                if [ -z "$BAW_AUTO_ENTITLEMENT_KEY" ]; then
-                    read -rsp "" entitlement_key
-                else
-                    entitlement_key=$BAW_AUTO_ENTITLEMENT_KEY
-                fi
-                if [ -z "$entitlement_key" ]; then
+            verify_entitlement_key $DOCKER_REG_SERVER
+            break
+            ;;
+        "n"|"N"|"no"|"No"|"NO"|"")
+            use_entitlement="no"
+            DOCKER_REG_KEY="None"
+            if [[ $PRIVATE_CATALOG == "No" ]]; then
+                if [[ "$PLATFORM_SELECTED" == "ROKS" || "$PLATFORM_SELECTED" == "OCP" ]]; then
                     printf "\n"
-                    echo -e "\x1B[1;31mEnter a valid Entitlement Registry key\x1B[0m"
+                    printf "\x1B[1;31mIBM $BAW_FULL_NAME only supports the Entitlement Registry on \"${PLATFORM_SELECTED}\", exiting...\n\x1B[0m"
+                    exit 1
                 else
-                    if  [[ $entitlement_key == iamapikey:* ]] ;
-                    then
-                        DOCKER_REG_USER="iamapikey"
-                        DOCKER_REG_KEY="${entitlement_key#*:}"
-                    else
-                        DOCKER_REG_USER="cp"
-                        DOCKER_REG_KEY=$entitlement_key
-
-                    fi
-                    entitlement_verify_passed=""
-                    while [[ $entitlement_verify_passed == '' ]]
-                    do
-                        printf "\n"
-                        printf "\x1B[1mVerifying the Entitlement Registry key...\n\x1B[0m"
-
-                        if [[ $PODMAN_FOUND == "No" ]]; then
-                        cli_command="docker"
-                        else
-                        cli_command="podman"
-                        fi
-
-                        if $cli_command login -u "$DOCKER_REG_USER" -p "$DOCKER_REG_KEY" "$DOCKER_REG_SERVER"; then
-                            printf 'Entitlement Registry key is valid.\n'
-                            entitlement_verify_passed="passed"
-                        else
-                            printf '\x1B[1;31mThe Entitlement Registry key failed. Try again...\n\x1B[0m'
-                            ATTEMPTS=$((ATTEMPTS + 1))
-                            if [[ $ATTEMPTS -eq 10 ]]; then
-                                printf '\x1B[1mEnter a valid Entitlement Registry key. Exiting ...\n\x1B[0m'
-                                exit 1
-                            fi
-                            entitlement_key=''
-                            entitlement_verify_passed="failed"
-                        fi
-                    done
+                    break
                 fi
-            done
+            else
+                break
+            fi
+            ;;
+        *)
+            echo -e "Answer must be \"Yes\" or \"No\"\n"
+            ;;
+        esac
+    done
+}
+
+# Function that asks for the stg entitlement key and verifies it
+# For dev mode it verifies against cp.stg.icr.io
+function get_stg_entitlement_registry(){
+
+    # For Entitlement Registry key
+    entitlement_key=""
+
+    while true; do
+
+        printf "\x1B[1mDo you have a $BAW_FULL_NAME Staging Entitlement Registry key (Yes/No, default: No): \x1B[0m"
+        read -rp "" ans
+
+        case "$ans" in
+        "y"|"Y"|"yes"|"Yes"|"YES")
+            use_entitlement="yes"
+            printf "\n"
+            printf "\x1B[1mEnter your Staging Entitlement Registry key: \x1B[0m"
+            # During dev, OLM uses stage image repo
+            DOCKER_REG_SERVER="cp.stg.icr.io"
+            PASSED="passed"
+
+            verify_entitlement_key $DOCKER_REG_SERVER
             break
             ;;
         "n"|"N"|"no"|"No"|"NO"|"")
@@ -1588,16 +1733,31 @@ function create_secret_entitlement_registry(){
     # Create docker-registry secret for Entitlement Registry Key in target project
     if [[ $SEPARATE_OPERATOR == "No" || -z $SEPARATE_OPERATOR ]]; then
         printf "\x1B[1mCreating docker-registry secret for Entitlement Registry key in project $project_name...\n\x1B[0m"
+
         ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME" -n "${project_name}" >/dev/null 2>&1
-        if [[ "$(echo "$CNCF_DEV" | tr '[:upper:]' '[:lower:]')" == "yes" && ("$OTHER_PLATFROM_TYPE" == "rancher" || "$OTHER_PLATFROM_TYPE" == "tanzu") ]]; then
-            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry ibm-staging-entitlement-key --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY --docker-email=ecmtest@ibm.com -n $project_name"   
-        else
-            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY --docker-email=ecmtest@ibm.com -n $project_name"
+
+        if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
+        then
+            ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME_STG" -n "${project_name}" >/dev/null 2>&1
         fi
+
+        CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY --docker-email=ecmtest@ibm.com -n $project_name"
+
         if $CREATE_SECRET_CMD ; then
             echo -e "\x1B[1mDone\x1B[0m"
         else
             echo -e "\x1B[1mFailed\x1B[0m"
+        fi
+
+        if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
+        then
+            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name"
+
+            if $CREATE_SECRET_CMD ; then
+                echo -e "\x1B[1mDone\x1B[0m"
+            else
+                echo -e "\x1B[1mFailed\x1B[0m"
+            fi
         fi
     else
         # Create docker registry key in the seperate operator scenario
@@ -1611,6 +1771,18 @@ function create_secret_entitlement_registry(){
             echo -e "\x1B[1mFailed\x1B[0m"
         fi
 
+        if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
+        then
+            printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $project_name_operator...\n\x1B[0m"
+            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name_operator"
+
+            if $CREATE_SECRET_CMD ; then
+                echo -e "\x1B[1mDone\x1B[0m"
+            else
+                echo -e "\x1B[1mFailed\x1B[0m"
+            fi
+        fi
+
         printf "\x1B[1mCreating docker-registry secret for Entitlement Registry key in project $project_name_cs_service...\n\x1B[0m"
         ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME" -n "${project_name_cs_service}" >/dev/null 2>&1
 
@@ -1620,11 +1792,28 @@ function create_secret_entitlement_registry(){
         else
             echo -e "\x1B[1mFailed\x1B[0m"
         fi
+
+        if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
+        then
+            printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $project_name_cs_service...\n\x1B[0m"
+            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name_cs_service"
+
+            if $CREATE_SECRET_CMD ; then
+                echo -e "\x1B[1mDone\x1B[0m"
+            else
+                echo -e "\x1B[1mFailed\x1B[0m"
+            fi
+        fi
     fi
     if [[ $MULTIPLE_DEPLOYMENT = "Yes" ]]; then
         for item in "${project_baw_service_array[@]}"; do
             printf "\x1B[1mCreating docker-registry secret for Entitlement Registry key in project $item...\n\x1B[0m"
             ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME" -n "${item}" >/dev/null 2>&1
+
+            if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
+            then
+                ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME_STG" -n "${item}" >/dev/null 2>&1
+            fi
 
             CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY --docker-email=ecmtest@ibm.com -n $item"
             if $CREATE_SECRET_CMD ; then
@@ -1632,6 +1821,19 @@ function create_secret_entitlement_registry(){
             else
                 echo -e "\x1B[1mFailed\x1B[0m"
             fi
+
+            if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
+            then
+                printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $item...\n\x1B[0m"
+                CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $item"
+
+                if $CREATE_SECRET_CMD ; then
+                    echo -e "\x1B[1mDone\x1B[0m"
+                else
+                    echo -e "\x1B[1mFailed\x1B[0m"
+                fi
+            fi
+
         done
     fi
 }
@@ -2554,6 +2756,8 @@ verify_silence_install
 check_airgap_mode
 select_platform
 
+validate_docker_podman_cli
+
 #Function that handles the platform type rancher or tanzu
 if [[ "$OTHER_PLATFROM_TYPE" == "rancher" || "$OTHER_PLATFROM_TYPE" == "tanzu" ]]; then
     setup_other_type_platform
@@ -2599,7 +2803,6 @@ ALL_NAMESPACE="No"
 collect_input
 # create_project
 # bind_scc
-validate_docker_podman_cli
 
 if [[ $SCRIPT_MODE == "OLM" ]];then
     ${CLI_CMD} project $project_name >/dev/null 2>&1
@@ -2670,7 +2873,6 @@ EOF
         prepare_olm_install
         setup_separate_operator
     fi
-    
 else
     if [[ $PLATFORM_SELECTED == "other" ]]; then
         get_entitlement_registry

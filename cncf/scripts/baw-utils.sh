@@ -109,8 +109,11 @@ function wait_for_service_account() {
 function create_all_catalog_sources(){
     local baw_namespace=$1
     local dev=$2
-    catalog_source_file_name=${TEMP_FOLDER}/catalog_sources.yaml
-    cp ${CATALOG_SOURCE_FILENAME} ${catalog_source_file_name}
+    catalog_source_file_name=${TEMP_FOLDER}/.catalog_source.yaml
+
+    if [[ ! -f ${catalog_source_file_name} ]]; then
+      cp ${CATALOG_SOURCE_FILENAME} ${catalog_source_file_name}
+    fi
     catalog_names=()
 
     # Read catalog names into the array
@@ -137,8 +140,8 @@ function create_all_catalog_sources(){
         # For dev mode the image for the catalog source has to be in cp.stg.icr.io and a secrets field has to be added
         if [[ "$dev" == true ]]; then
             # temporarily adding ibm-zen-operator-catalog because as of March 13th 2025 zen has not GAed
-            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-opensearch-operator-catalog" || "$name" == "ibm-fncm-operator-catalog" ]]; then
-                ${YQ_CMD} w -i "$catalog_source_file_name" -d "$((doc_index - 1))"  "spec.secrets[+]" "ibm-staging-entitlement-key"
+            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-fncm-operator-catalog" ]]; then
+#                ${YQ_CMD} w -i "$catalog_source_file_name" -d "$((doc_index - 1))"  "spec.secrets[+]" "ibm-staging-entitlement-key"
                 # Extract the current image value
                 current_image=$(${YQ_CMD} r -d "$((doc_index - 1))" "$catalog_source_file_name" 'spec.image')
 
@@ -299,7 +302,11 @@ function patch_csv() {
     sleep 5
     # Patch the CSV with the new image
     ${CLI_CMD} patch csv "$csv_name" -n "$namespace" --type='json' -p="[{'op': 'replace', 'path': '/spec/install/spec/deployments/0/spec/template/spec/containers/0/image', 'value': '$updated_image'}]"
-    ${CLI_CMD} patch csv "$csv_name" -n "$namespace" --type='json' -p="[{'op': 'replace', 'path': '/spec/install/spec/deployments/0/spec/template/spec/initContainers/0/image', 'value': '$updated_image'}]"
+
+    initContainersImage=$(${CLI_CMD} get csv "$csv_name" -n "$namespace" -o jsonpath='{.spec.install.spec.deployments[0].spec.template.spec.initContainers[0].image}')
+    if [ -n "$initContainersImage" ]; then
+      ${CLI_CMD} patch csv "$csv_name" -n "$namespace" --type='json' -p="[{'op': 'replace', 'path': '/spec/install/spec/deployments/0/spec/template/spec/initContainers/0/image', 'value': '$updated_image'}]"
+    fi
 
     #Patch the CSV with the image pull secret which has the staging credentials
     ${CLI_CMD} patch csv "$csv_name" -n "$namespace" --type='json' -p="[
@@ -324,7 +331,7 @@ function create_baw_subscription() {
     local namespace=$1
     local channel=$2
     local dev_mode=$3
-    subscription_file_name=${TEMP_FOLDER}/subscription.yaml
+    subscription_file_name=${TEMP_FOLDER}/.subscription.yaml
     cp ${SUBSCRIPTION_FILENAME} ${subscription_file_name}
     ${SED_COMMAND} "s/REPLACE_NAMESPACE/$baw_namespace/g" ${subscription_file_name}
     ${SED_COMMAND} "s/openshift-marketplace/$baw_namespace/g" ${subscription_file_name}
