@@ -79,7 +79,7 @@ function create_subscriptions() {
 # Function gets called as soon as rancher platform is selected in baw-clusteradmin-setup.sh
 function check_cncf_rancher_prereqs() {
     printf "\n"
-    info "Checking the prerequisites to install BAW Standalone Operators for Rancher..."
+    info "Checking the prerequisites to install BAW Standalone Operators..."
     #check_command kubectl
 
     oc_version=$(kubectl get clusterversion version -o=jsonpath={.status.desired.version} 2>/dev/null)
