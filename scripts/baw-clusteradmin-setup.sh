@@ -1495,6 +1495,7 @@ function verify_entitlement_key(){
           if [[ "$DOCKER_REG_SERVER" == "cp.stg.icr.io" ]]
           then
             DOCKER_REG_KEY_STG=$reg_key
+            DOCKER_REG_USER_STG=$DOCKER_REG_USER
           else
             DOCKER_REG_KEY=$reg_key
           fi
@@ -1751,7 +1752,7 @@ function create_secret_entitlement_registry(){
 
         if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
         then
-            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name"
+            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER_STG --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name"
 
             if $CREATE_SECRET_CMD ; then
                 echo -e "\x1B[1mDone\x1B[0m"
@@ -1774,7 +1775,7 @@ function create_secret_entitlement_registry(){
         if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
         then
             printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $project_name_operator...\n\x1B[0m"
-            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name_operator"
+            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER_STG --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name_operator"
 
             if $CREATE_SECRET_CMD ; then
                 echo -e "\x1B[1mDone\x1B[0m"
@@ -1796,7 +1797,7 @@ function create_secret_entitlement_registry(){
         if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
         then
             printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $project_name_cs_service...\n\x1B[0m"
-            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name_cs_service"
+            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER_STG --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name_cs_service"
 
             if $CREATE_SECRET_CMD ; then
                 echo -e "\x1B[1mDone\x1B[0m"
@@ -1825,7 +1826,7 @@ function create_secret_entitlement_registry(){
             if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
             then
                 printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $item...\n\x1B[0m"
-                CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $item"
+                CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER_STG --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $item"
 
                 if $CREATE_SECRET_CMD ; then
                     echo -e "\x1B[1mDone\x1B[0m"
