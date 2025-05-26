@@ -193,6 +193,7 @@ source ${CUR_DIR}/helper/common.sh $TARGET_PROJECT_NAME
 source ${CUR_DIR}/helper/cp4ba-property.sh
 
 DOCKER_RES_SECRET_NAME="ibm-entitlement-key"
+DOCKER_RES_STG_SECRET_NAME="ibm-staging-entitlement-key"
 DOCKER_REG_USER=""
 
 if [[ "$SCRIPT_MODE" == "baw-dev" || "$SCRIPT_MODE" == "dev" || "$SCRIPT_MODE" == "review" ]] # During dev, OLM uses stage image repo
@@ -7964,6 +7965,16 @@ function sync_property_into_final_cr(){
     msgB "Confirm final custom resource under $FINAL_CR_FOLDER"
 }
 
+function update_hostname_suffix(){
+  domain_name=$(${CLI_CMD} get configmap ibm-cpp-config -n $CP4BA_SERVICES_NS -o jsonpath='{.data.domain_name}')
+
+  if [[ -z $domain_name ]]; then
+    fail "Failed to get the domain name from the configmap to update the hostname_suffix "
+  fi
+
+  ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.sc_deployment_hostname_suffix "{{ meta.namespace }}.${domain_name}"
+}
+
 # Begin - Modify FOUNDATION pattern yaml according patterns/components selected
 function apply_pattern_cr(){
     # echo -e "\x1B[1mCreating a custom resource YAML file for IBM CP4A Operator ......\x1B[0m"
@@ -8278,19 +8289,19 @@ function apply_pattern_cr(){
     esac
 
     # Set sc_deployment_hostname_suffix
+#    if [ -z "$existing_infra_name" ]; then
+#        echo ""
+#    else
+#        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.sc_deployment_hostname_suffix "$existing_infra_name"
+#        if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]];
+#        then
+#            ${SED_COMMAND} "s|sc_deployment_hostname_suffix:.*|sc_deployment_hostname_suffix: \"{{ meta.namespace }}.${INFRA_NAME}\"|g" ${CP4A_PATTERN_FILE_TMP}
+#        else
+#            ${SED_COMMAND} "s|sc_deployment_hostname_suffix:.*|sc_deployment_hostname_suffix: \"{{ meta.namespace }}\"|g" ${CP4A_PATTERN_FILE_TMP}
+#        fi
+#    fi
 
-    if [ -z "$existing_infra_name" ]; then
-        echo ""
-    else
-        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.sc_deployment_hostname_suffix "$existing_infra_name"
-        if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]];
-        then
-            ${SED_COMMAND} "s|sc_deployment_hostname_suffix:.*|sc_deployment_hostname_suffix: \"{{ meta.namespace }}.${INFRA_NAME}\"|g" ${CP4A_PATTERN_FILE_TMP}
-        else
-            ${SED_COMMAND} "s|sc_deployment_hostname_suffix:.*|sc_deployment_hostname_suffix: \"{{ meta.namespace }}\"|g" ${CP4A_PATTERN_FILE_TMP}
-        fi
-    fi
-
+    update_hostname_suffix
 
     # Set lc_selected_ldap_type
 
@@ -8363,6 +8374,10 @@ function apply_pattern_cr(){
     # ${SED_COMMAND} "s|image-pull-secret|$DOCKER_RES_SECRET_NAME|g" ${CP4A_PATTERN_FILE_TMP}
     ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.image_pull_secrets
     ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.image_pull_secrets.[0] "$DOCKER_RES_SECRET_NAME"
+
+    if [[ "$SCRIPT_MODE" == "baw-dev" || "$SCRIPT_MODE" == "dev" || "$SCRIPT_MODE" == "review" ]]; then
+      ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.image_pull_secrets.[+] "$DOCKER_RES_STG_SECRET_NAME"
+    fi
 
     # set sc_drivers_url
     if [ -z "$CP4BA_JDBC_URL" ]; then

@@ -22,7 +22,7 @@ function generate_cncf_ingress_templates(){
     local tls_enable="$1"
     info "Generating Ingress files required for a BAW Standalone deployment..."
     printf "\n"
-    echo "${RED_TEXT}[WARNING]${RESET_TEXT}: ${YELLOW_TEXT}Before proceeding with the ingress generation, make sure the BAW Standalone components have been installed by looking at the status section of the BAW Custom Resource file and monitoring the BAW Operator logs ${RESET_TEXT}"
+    echo "${RED_TEXT}[WARNING]${RESET_TEXT}: ${YELLOW_TEXT}Before proceeding with the ingress generation, make sure the ZenService CR is ready by using: kubectl get ZenService ${RESET_TEXT}"
     attempt=0
 
     while (( attempt < 3 )); do
