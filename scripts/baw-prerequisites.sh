@@ -7790,7 +7790,7 @@ function validate_prerequisites(){
     fips_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$fips_flag")
     fips_flag=$(echo $fips_flag | tr '[:upper:]' '[:lower:]')
 
-    # Set default values if variables are not set (DBACLD-170075 Allow customers to customize the country and language being passed to the jar files being used for validation in cp4a-prerequisites.sh)
+    # Set default values if variables are not set (DBACLD-170075 Allow customers to customize the country and language being passed to the jar files being used for validation in baw-prerequisites.sh)
     CP4BA_AUTO_LANGUAGE=${CP4BA_AUTO_LANGUAGE:-"EN"}
     CP4BA_AUTO_REGION=${CP4BA_AUTO_REGION:-"US"} #bug-170075
 
@@ -8543,7 +8543,7 @@ function validate_prerequisites(){
         success "Checked DB connection for \"$dbname\" on database server \"$dbserver\", PASSED!"
     fi
 
-    info "If all prerequisites check PASSED, you can run cp4a-deployment to deploy CP4BA. Otherwise, please check the configuration again."
+    info "If all prerequisites check PASSED, you can run baw-deployment.sh to deploy CP4BA. Otherwise, please check the configuration again."
     info "After BAW is deployed, please refer to the documentation for post-deployment steps."
 }
 
