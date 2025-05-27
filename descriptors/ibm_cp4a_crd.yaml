@@ -16,7 +16,7 @@ metadata:
     app.kubernetes.io/instance: ibm-dba
     app.kubernetes.io/managed-by: ibm-dba
     app.kubernetes.io/name: ibm-dba
-    release: 24.0.1
+    release: 25.0.0
 spec:
   group: icp4a.ibm.com
   names:
@@ -58,9 +58,9 @@ spec:
               olm_starter_content:
                 type: boolean
               olm_starter_decisions:
-                type: boolean 
+                type: boolean
               olm_starter_decisions_ads:
-                type: boolean 
+                type: boolean
               olm_starter_document_processing:
                 type: boolean
               olm_starter_application:
@@ -70,9 +70,9 @@ spec:
               olm_production_content:
                 type: boolean
               olm_production_decisions:
-                type: boolean 
+                type: boolean
               olm_production_decisions_ads:
-                type: boolean 
+                type: boolean
               olm_production_document_processing:
                 type: boolean
               olm_production_application:
@@ -85,40 +85,40 @@ spec:
                 type: string
               olm_starter_option:
                 type: object
-                properties:               
+                properties:
                   content:
                     type: object
                     properties:
-                      bai: 
+                      bai:
                         type: boolean
-                      css: 
-                        type: boolean 
-                      cmis: 
-                        type: boolean 
-                      tm: 
-                        type: boolean 
-                      ier: 
-                        type: boolean 
-                      iccsap: 
-                        type: boolean   
+                      css:
+                        type: boolean
+                      cmis:
+                        type: boolean
+                      tm:
+                        type: boolean
+                      ier:
+                        type: boolean
+                      iccsap:
+                        type: boolean
                   adp:
                     type: object
                     properties:
-                      css: 
+                      css:
                         type: boolean
-                      cmis: 
+                      cmis:
                         type: boolean
-                      tm: 
+                      tm:
                         type: boolean
                   decisions:
                     type: object
                     properties:
-                      bai: 
+                      bai:
                         type: boolean
                   ads:
                     type: object
                     properties:
-                      bai: 
+                      bai:
                         type: boolean
                   workstreams:
                     type: object
@@ -138,48 +138,48 @@ spec:
                   application:
                     type: object
                     properties:
-                      ban: 
+                      ban:
                         type: boolean
               olm_production_option:
                 type: object
-                properties:               
+                properties:
                   content:
                     type: object
                     properties:
-                      bai: 
+                      bai:
                         type: boolean
-                      css: 
-                        type: boolean 
-                      cmis: 
-                        type: boolean 
-                      es: 
-                        type: boolean 
-                      tm: 
-                        type: boolean 
-                      ier: 
-                        type: boolean 
-                      iccsap: 
-                        type: boolean  
+                      css:
+                        type: boolean
+                      cmis:
+                        type: boolean
+                      es:
+                        type: boolean
+                      tm:
+                        type: boolean
+                      ier:
+                        type: boolean
+                      iccsap:
+                        type: boolean
                   decisions:
                     type: object
                     properties:
-                      decisionCenter: 
-                        type: boolean 
-                      decisionRunner: 
-                        type: boolean 
-                      decisionServerRuntime: 
-                        type: boolean 
-                      bai: 
+                      decisionCenter:
+                        type: boolean
+                      decisionRunner:
+                        type: boolean
+                      decisionServerRuntime:
+                        type: boolean
+                      bai:
                         type: boolean
                   ads:
                     type: object
                     properties:
-                      ads_designer: 
-                        type: boolean 
-                      ads_runtime: 
+                      ads_designer:
                         type: boolean
-                      bai: 
-                        type: boolean 
+                      ads_runtime:
+                        type: boolean
+                      bai:
+                        type: boolean
                   application:
                     type: object
                     properties:
@@ -201,20 +201,20 @@ spec:
                     type: object
                     properties:
                       bai:
-                        type: boolean                  
+                        type: boolean
                   adp:
                     type: object
                     properties:
-                      document_processing_runtime: 
+                      document_processing_runtime:
                         type: boolean
-                      css: 
+                      css:
                         type: boolean
-                      cmis: 
+                      cmis:
                         type: boolean
                       es:
                         type: boolean
-                      tm: 
-                        type: boolean 
+                      tm:
+                        type: boolean
               shared_configuration:
                 description: Shared Configuration for CP4A
                 required:
@@ -225,15 +225,15 @@ spec:
                 properties:
                   sc_deployment_fncm_license:
                     type: string
-                    nullable: true 
+                    nullable: true
                   sc_deployment_baw_license:
-                    type: string 
+                    type: string
                     nullable: true
                   sc_deployment_license:
-                    type: string 
+                    type: string
                     nullable: true
                   sc_deployment_platform:
-                    type: string 
+                    type: string
                   external_tls_certificate_secret:
                     type: string
                     nullable: true
@@ -242,11 +242,11 @@ spec:
                     nullable: true
                   sc_drivers_url:
                     type: string
-                    nullable: true 
+                    nullable: true
                   sc_ingress_enable:
                     type: boolean
-                  sc_ingress_tls_secret_name: 
-                    type: string 
+                  sc_ingress_tls_secret_name:
+                    type: string
                     nullable: true
                   trusted_certificate_list:
                     items:
@@ -268,13 +268,13 @@ spec:
                         nullable: true
                       sc_slow_file_storage_classname:
                         type: string
-                        nullable: true 
+                        nullable: true
                       sc_medium_file_storage_classname:
                         type: string
-                        nullable: true 
+                        nullable: true
                       sc_fast_file_storage_classname:
                         type: string
-                        nullable: true 
+                        nullable: true
                   olm_sc_content_initialization:
                     type: boolean
                   olm_sc_content_verification:
@@ -282,47 +282,47 @@ spec:
                   initial_admin_user:
                     type: string
                     nullable: true
-                
+
               ldap_configuration:
                 type: object
                 description: LDAP Configuration for CP4A
                 x-kubernetes-preserve-unknown-fields: true
                 properties:
                   lc_selected_ldap_type:
-                    type: string 
+                    type: string
                   lc_ldap_server:
                     type: string
-                  lc_ldap_port: 
+                  lc_ldap_port:
                     type: string
-                  lc_bind_secret: 
+                  lc_bind_secret:
                     type: string
-                  lc_ldap_ssl_enabled: 
+                  lc_ldap_ssl_enabled:
                     type: boolean
                   lc_ldap_ssl_secret_name:
-                    type: string 
+                    type: string
                     nullable: true
-                  lc_ldap_base_dn: 
+                  lc_ldap_base_dn:
                     type: string
-                  lc_ldap_user_name_attribute: 
+                  lc_ldap_user_name_attribute:
                     type: string
-                  lc_ldap_user_display_name_attr: 
+                  lc_ldap_user_display_name_attr:
                     type: string
-                  lc_ldap_group_base_dn: 
+                  lc_ldap_group_base_dn:
                     type: string
                   lc_ldap_group_name_attribute:
                     type: string
                   lc_ldap_group_display_name_attr:
                     type: string
-                  lc_ldap_group_membership_search_filter: 
+                  lc_ldap_group_membership_search_filter:
                     type: string
                   lc_ldap_group_member_id_map:
-                    type: string 
+                    type: string
                   ad:
                     type: object
                     description: Provide below info if you use Active Directory (ad)
                     x-kubernetes-preserve-unknown-fields: true
                     properties:
-                      lc_ad_gc_host: 
+                      lc_ad_gc_host:
                         type: string
                         nullable: true
                       lc_ad_gc_port:
@@ -331,17 +331,17 @@ spec:
                         type: string
                         nullable: true
                       lc_group_filter:
-                        type: string 
+                        type: string
                         nullable: true
                   tds:
                     type: object
                     description: Provide below info if you use Tivoli Directory Service (tds)
                     x-kubernetes-preserve-unknown-fields: true
                     properties:
-                      lc_user_filter: 
+                      lc_user_filter:
                         type: string
                         nullable: true
-                      lc_group_filter: 
+                      lc_group_filter:
                         type: string
                         nullable: true
               datasource_configuration:
@@ -349,9 +349,9 @@ spec:
                 description: Datasource Configuration for CP4A
                 x-kubernetes-preserve-unknown-fields: true
                 properties:
-                  dc_ssl_enabled: 
+                  dc_ssl_enabled:
                     type: boolean
-                  database_precheck: 
+                  database_precheck:
                     type: boolean
                   dc_gcd_datasource:
                     type: object
@@ -359,34 +359,34 @@ spec:
                     x-kubernetes-preserve-unknown-fields: true
                     properties:
                       dc_database_type:
-                        type: string 
+                        type: string
                       dc_common_gcd_datasource_name:
                         type: string
-                      dc_common_gcd_xa_datasource_name: 
+                      dc_common_gcd_xa_datasource_name:
                         type: string
-                      database_servername: 
+                      database_servername:
                         type: string
-                      database_name: 
+                      database_name:
                         type: string
-                      database_port: 
+                      database_port:
                         type: string
-                      database_ssl_secret_name: 
-                        type: string
-                        nullable: true
-                      dc_oracle_gcd_jdbc_url: 
+                      database_ssl_secret_name:
                         type: string
                         nullable: true
-                      dc_hadr_standby_servername: 
+                      dc_oracle_gcd_jdbc_url:
                         type: string
                         nullable: true
-                      dc_hadr_standby_port: 
+                      dc_hadr_standby_servername:
                         type: string
                         nullable: true
-                      dc_hadr_validation_timeout: 
+                      dc_hadr_standby_port:
+                        type: string
+                        nullable: true
+                      dc_hadr_validation_timeout:
                         type: number
                       dc_hadr_retry_interval_for_client_reroute:
                         type: number
-                      dc_hadr_max_retries_for_client_reroute: 
+                      dc_hadr_max_retries_for_client_reroute:
                         type: number
                   olm_dc_os_content_datasources:
                     type: array
@@ -395,38 +395,38 @@ spec:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                       properties:
-                        dc_database_type: 
+                        dc_database_type:
                           type: string
-                        dc_os_label: 
-                          type: string
-                          nullable: true
-                        dc_common_os_datasource_name: 
-                          type: string
-                        dc_common_os_xa_datasource_name: 
-                          type: string
-                        database_servername: 
-                          type: string
-                        database_name: 
-                          type: string
-                        database_port: 
-                          type: string
-                        database_ssl_secret_name: 
+                        dc_os_label:
                           type: string
                           nullable: true
-                        dc_oracle_os_jdbc_url: 
+                        dc_common_os_datasource_name:
+                          type: string
+                        dc_common_os_xa_datasource_name:
+                          type: string
+                        database_servername:
+                          type: string
+                        database_name:
+                          type: string
+                        database_port:
+                          type: string
+                        database_ssl_secret_name:
                           type: string
                           nullable: true
-                        dc_hadr_standby_servername: 
+                        dc_oracle_os_jdbc_url:
                           type: string
                           nullable: true
-                        dc_hadr_standby_port: 
+                        dc_hadr_standby_servername:
                           type: string
                           nullable: true
-                        dc_hadr_validation_timeout: 
+                        dc_hadr_standby_port:
+                          type: string
+                          nullable: true
+                        dc_hadr_validation_timeout:
                           type: number
-                        dc_hadr_retry_interval_for_client_reroute: 
+                        dc_hadr_retry_interval_for_client_reroute:
                           type: number
-                        dc_hadr_max_retries_for_client_reroute: 
+                        dc_hadr_max_retries_for_client_reroute:
                           type: number
                   olm_dc_os_workflow_datasources:
                     type: array
@@ -435,39 +435,39 @@ spec:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                       properties:
-                        dc_database_type: 
+                        dc_database_type:
                           type: string
-                        dc_os_label: 
-                          type: string
-                          nullable: true
-                        dc_common_os_datasource_name: 
-                          type: string
-                        dc_common_os_xa_datasource_name: 
-                          type: string
-                        database_servername: 
-                          type: string
-                        database_name: 
-                          type: string
-                        database_port: 
-                          type: string
-                        database_ssl_secret_name: 
+                        dc_os_label:
                           type: string
                           nullable: true
-                        dc_oracle_os_jdbc_url: 
+                        dc_common_os_datasource_name:
+                          type: string
+                        dc_common_os_xa_datasource_name:
+                          type: string
+                        database_servername:
+                          type: string
+                        database_name:
+                          type: string
+                        database_port:
+                          type: string
+                        database_ssl_secret_name:
                           type: string
                           nullable: true
-                        dc_hadr_standby_servername: 
+                        dc_oracle_os_jdbc_url:
                           type: string
                           nullable: true
-                        dc_hadr_standby_port: 
+                        dc_hadr_standby_servername:
                           type: string
                           nullable: true
-                        dc_hadr_validation_timeout: 
+                        dc_hadr_standby_port:
+                          type: string
+                          nullable: true
+                        dc_hadr_validation_timeout:
                           type: number
-                        dc_hadr_retry_interval_for_client_reroute: 
+                        dc_hadr_retry_interval_for_client_reroute:
                           type: number
-                        dc_hadr_max_retries_for_client_reroute: 
-                          type: number  
+                        dc_hadr_max_retries_for_client_reroute:
+                          type: number
                   olm_dc_os_adp_datasources:
                     type: array
                     description: Database configuration for the object store datasource for ADP
@@ -475,39 +475,39 @@ spec:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                       properties:
-                        dc_database_type: 
+                        dc_database_type:
                           type: string
-                        dc_os_label: 
-                          type: string
-                          nullable: true
-                        dc_common_os_datasource_name: 
-                          type: string
-                        dc_common_os_xa_datasource_name: 
-                          type: string
-                        database_servername: 
-                          type: string
-                        database_name: 
-                          type: string
-                        database_port: 
-                          type: string
-                        database_ssl_secret_name: 
+                        dc_os_label:
                           type: string
                           nullable: true
-                        dc_oracle_os_jdbc_url: 
+                        dc_common_os_datasource_name:
+                          type: string
+                        dc_common_os_xa_datasource_name:
+                          type: string
+                        database_servername:
+                          type: string
+                        database_name:
+                          type: string
+                        database_port:
+                          type: string
+                        database_ssl_secret_name:
                           type: string
                           nullable: true
-                        dc_hadr_standby_servername: 
+                        dc_oracle_os_jdbc_url:
                           type: string
                           nullable: true
-                        dc_hadr_standby_port: 
+                        dc_hadr_standby_servername:
                           type: string
                           nullable: true
-                        dc_hadr_validation_timeout: 
+                        dc_hadr_standby_port:
+                          type: string
+                          nullable: true
+                        dc_hadr_validation_timeout:
                           type: number
-                        dc_hadr_retry_interval_for_client_reroute: 
+                        dc_hadr_retry_interval_for_client_reroute:
                           type: number
-                        dc_hadr_max_retries_for_client_reroute: 
-                          type: number        
+                        dc_hadr_max_retries_for_client_reroute:
+                          type: number
                   olm_dc_os_ae_datasources:
                     type: array
                     description: Database configuration for the object store datasource for AEOS
@@ -515,78 +515,78 @@ spec:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                       properties:
-                        dc_database_type: 
+                        dc_database_type:
                           type: string
-                        dc_os_label: 
-                          type: string
-                          nullable: true
-                        dc_common_os_datasource_name: 
-                          type: string
-                        dc_common_os_xa_datasource_name: 
-                          type: string
-                        database_servername: 
-                          type: string
-                        database_name: 
-                          type: string
-                        database_port: 
-                          type: string
-                        database_ssl_secret_name: 
+                        dc_os_label:
                           type: string
                           nullable: true
-                        dc_oracle_os_jdbc_url: 
+                        dc_common_os_datasource_name:
+                          type: string
+                        dc_common_os_xa_datasource_name:
+                          type: string
+                        database_servername:
+                          type: string
+                        database_name:
+                          type: string
+                        database_port:
+                          type: string
+                        database_ssl_secret_name:
                           type: string
                           nullable: true
-                        dc_hadr_standby_servername: 
+                        dc_oracle_os_jdbc_url:
                           type: string
                           nullable: true
-                        dc_hadr_standby_port: 
+                        dc_hadr_standby_servername:
                           type: string
                           nullable: true
-                        dc_hadr_validation_timeout: 
+                        dc_hadr_standby_port:
+                          type: string
+                          nullable: true
+                        dc_hadr_validation_timeout:
                           type: number
-                        dc_hadr_retry_interval_for_client_reroute: 
+                        dc_hadr_retry_interval_for_client_reroute:
                           type: number
-                        dc_hadr_max_retries_for_client_reroute: 
-                          type: number        
+                        dc_hadr_max_retries_for_client_reroute:
+                          type: number
                   dc_icn_datasource:
                     type: object
                     description: Database configuration for ICN (Navigator) - aka BAN (Business Automation Navigator)
                     x-kubernetes-preserve-unknown-fields: true
                     properties:
-                      dc_database_type: 
+                      dc_database_type:
                         type: string
                       dc_common_icn_datasource_name:
-                        type: string 
-                      database_servername: 
                         type: string
-                      database_port: 
+                      database_servername:
                         type: string
-                      database_name: 
+                      database_port:
                         type: string
-                      database_ssl_secret_name: 
+                      database_name:
                         type: string
-                        nullable: true
-                      dc_oracle_icn_jdbc_url: 
+                      database_ssl_secret_name:
                         type: string
                         nullable: true
-                      dc_hadr_standby_servername: 
+                      dc_oracle_icn_jdbc_url:
                         type: string
                         nullable: true
-                      dc_hadr_standby_port: 
+                      dc_hadr_standby_servername:
                         type: string
                         nullable: true
-                      dc_hadr_validation_timeout: 
+                      dc_hadr_standby_port:
+                        type: string
+                        nullable: true
+                      dc_hadr_validation_timeout:
                         type: number
-                      dc_hadr_retry_interval_for_client_reroute: 
+                      dc_hadr_retry_interval_for_client_reroute:
                         type: number
-                      dc_hadr_max_retries_for_client_reroute: 
+                      dc_hadr_max_retries_for_client_reroute:
                         type: number
                   dc_odm_datasource:
                     type: object
                     description: Database configuration for ODM.
                     x-kubernetes-preserve-unknown-fields: true
                     properties:
-                      dc_database_type: 
+                      dc_database_type:
                         type: string
                       database_servername:
                         type: string
@@ -607,36 +607,36 @@ spec:
                     description: Database configuration for Document Processing Engine (DPE)
                     x-kubernetes-preserve-unknown-fields: true
                     properties:
-                      dc_database_type: 
+                      dc_database_type:
                         type: string
-                      database_servername: 
+                      database_servername:
                         type: string
-                      database_name: 
+                      database_name:
                         type: string
-                      tenant_databases: 
+                      tenant_databases:
                         type: array
                         items:
                           type: string
-                      database_port: 
+                      database_port:
                         type: string
-                      dc_database_ssl_enabled: 
+                      dc_database_ssl_enabled:
                         type: boolean
-                      dc_hadr_standby_servername: 
+                      dc_hadr_standby_servername:
                         type: string
                         nullable: true
-                      dc_hadr_standby_port: 
+                      dc_hadr_standby_port:
                         type: string
                         nullable: true
-                      dc_hadr_validation_timeout: 
+                      dc_hadr_validation_timeout:
                         type: number
-                      dc_hadr_retry_interval_for_client_reroute: 
+                      dc_hadr_retry_interval_for_client_reroute:
                         type: number
-                      dc_hadr_max_retries_for_client_reroute: 
+                      dc_hadr_max_retries_for_client_reroute:
                         type: number
-                      database_ip: 
+                      database_ip:
                         type: string
                         nullable: true
-                      dc_hadr_standby_ip: 
+                      dc_hadr_standby_ip:
                         type: string
                         nullable: true
               initialize_configuration:
@@ -683,18 +683,18 @@ spec:
                               items:
                                 type: string
                               type: array
-                            oc_cpe_obj_store_enable_workflow: 
+                            oc_cpe_obj_store_enable_workflow:
                               type: boolean
-                            oc_cpe_obj_store_workflow_data_tbl_space: 
+                            oc_cpe_obj_store_workflow_data_tbl_space:
                               type: string
                               nullable: true
-                            oc_cpe_obj_store_workflow_admin_group: 
+                            oc_cpe_obj_store_workflow_admin_group:
                               type: string
                               nullable: true
-                            oc_cpe_obj_store_workflow_config_group: 
+                            oc_cpe_obj_store_workflow_config_group:
                               type: string
                               nullable: true
-                            oc_cpe_obj_store_workflow_pe_conn_point_name: 
+                            oc_cpe_obj_store_workflow_pe_conn_point_name:
                               type: string
                               nullable: true
                   ic_icn_init_info:
@@ -743,17 +743,17 @@ spec:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
                 properties:
-                  admin_user: 
+                  admin_user:
                     type: string
                     nullable: true
-                  admin_secret_name: 
+                  admin_secret_name:
                     type: string
                     nullable: true
-                  database: 
+                  database:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                     properties:
-                      host: 
+                      host:
                         type: string
                       name:
                         type: string
@@ -786,20 +786,20 @@ spec:
                   playback_server:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
-                    properties: 
-                      admin_user: 
+                    properties:
+                      admin_user:
                         type: string
                         nullable: true
-                      admin_secret_name: 
+                      admin_secret_name:
                         type: string
                         nullable: true
                       use_custom_jdbc_drivers:
                         type: boolean
-                      database: 
+                      database:
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                         properties:
-                          host: 
+                          host:
                             type: string
                           name:
                             type: string
@@ -859,9 +859,9 @@ spec:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                   properties:
-                    name: 
+                    name:
                       type: string
-                    admin_user: 
+                    admin_user:
                       type: string
                       nullable: true
                     admin_secret_name:
@@ -869,11 +869,11 @@ spec:
                       nullable: true
                     use_custom_jdbc_drivers:
                       type: boolean
-                    database: 
+                    database:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                       properties:
-                        host: 
+                        host:
                           type: string
                         name:
                           type: string
@@ -912,7 +912,7 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                     properties:
-                      admin_secret_name: 
+                      admin_secret_name:
                         type: string
                         nullable: true
               odm_configuration:
@@ -938,7 +938,7 @@ spec:
                     x-kubernetes-preserve-unknown-fields: true
                     properties:
                       replicaCount:
-                        type: number 
+                        type: number
               workflow_authoring_configuration:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
@@ -946,34 +946,34 @@ spec:
                   content_integration:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
-                    properties: 
-                      domain_name: 
+                    properties:
+                      domain_name:
                         type: string
                         nullable: true
-                      object_store_name: 
+                      object_store_name:
                         type: string
                         nullable: true
                   case:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
-                    properties: 
-                      domain_name: 
+                    properties:
+                      domain_name:
                         type: string
-                      object_store_name_dos: 
+                      object_store_name_dos:
                         type: string
-                      object_store_name_tos: 
+                      object_store_name_tos:
                         type: string
               baw_configuration:
                 type: array
                 items:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
-                  properties: 
+                  properties:
                     name:
                       type: string
                     capabilities:
                       type: string
-                    admin_user: 
+                    admin_user:
                       type: string
                       nullable: true
                     host_federated_portal:
@@ -981,32 +981,32 @@ spec:
                     database:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
-                      properties:                 
-                        enable_ssl: 
-                          type: boolean       
-                        db_cert_secret_name: 
-                          type: string
-                          nullable: true
-                        type: 
-                          type: string
-                        server_name: 
-                          type: string
-                        database_name: 
-                          type: string
-                        port: 
-                          type: string
-                        secret_name: 
-                          type: string
-                          nullable: true
-                        jdbc_url: 
-                          type: string
-                          nullable: true
-                        use_custom_jdbc_drivers: 
+                      properties:
+                        enable_ssl:
                           type: boolean
-                        custom_jdbc_pvc: 
+                        db_cert_secret_name:
                           type: string
                           nullable: true
-                        jdbc_driver_files: 
+                        type:
+                          type: string
+                        server_name:
+                          type: string
+                        database_name:
+                          type: string
+                        port:
+                          type: string
+                        secret_name:
+                          type: string
+                          nullable: true
+                        jdbc_url:
+                          type: string
+                          nullable: true
+                        use_custom_jdbc_drivers:
+                          type: boolean
+                        custom_jdbc_pvc:
+                          type: string
+                          nullable: true
+                        jdbc_driver_files:
                           type: string
                           nullable: true
                         hadr:
@@ -1022,21 +1022,21 @@ spec:
                     content_integration:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
-                      properties: 
-                        domain_name: 
+                      properties:
+                        domain_name:
                           type: string
-                        object_store_name: 
+                        object_store_name:
                           type: string
                     case:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
-                      properties: 
-                        domain_name: 
+                      properties:
+                        domain_name:
                           type: string
-                        object_store_name_dos: 
+                        object_store_name_dos:
                           type: string
-                        object_store_name_tos: 
-                          type: string                
+                        object_store_name_tos:
+                          type: string
               ca_configuration:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
@@ -1045,12 +1045,12 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                     properties:
-                      gpu_enabled: 
+                      gpu_enabled:
                         type: boolean
                       nodelabel_key:
                         type: string
                         nullable: true
-                      nodelabel_value:  
+                      nodelabel_value:
                         type: string
                         nullable: true
             type: object
@@ -1062,7 +1062,7 @@ spec:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
               endpoints:
-                type: array 
+                type: array
                 items:
                   properties:
                     type:
@@ -1079,8 +1079,8 @@ spec:
                         secretName:
                           type: string
                         key:
-                          type: string                   
-                  type: object 
+                          type: string
+                  type: object
               conditions:
                 items:
                   properties:
@@ -1096,7 +1096,7 @@ spec:
                   - status
                   - type
                   type: object
-                type: array      
+                type: array
             type: object
         type: object
     served: true
