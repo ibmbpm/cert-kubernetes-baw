@@ -16,7 +16,7 @@ metadata:
     app.kubernetes.io/instance: ibm-dba
     app.kubernetes.io/managed-by: ibm-dba
     app.kubernetes.io/name: ibm-dba
-    release: 24.0.1
+    release: 25.0.0
 spec:
   replicas: 1
   selector:
@@ -36,16 +36,16 @@ spec:
         com.ibm.cp4a.networking/egress-allow-all: "true"
         com.ibm.cp4a.networking/egress-allow-ldap: "true"
         com.ibm.cp4a.ecm.networking/egress-allow-db: "true"
-        release: 24.0.1
+        release: 25.0.0
       annotations:
         productID: "5737-I23"
         productName: "IBM Cloud Pak for Business Automation"
-        productVersion: "24.0.0"
+        productVersion: "25.0.0"
         productChargedContainers: ""
         productMetric: "VIRTUAL_PROCESSOR_CORE"
         cloudpakId: "94a9c8c358bb43ba8fbdea62e7e166a5"
         cloudpakName: "IBM Cloud Pak for Business Automation"
-        cloudpakVersion: "24.0.0"
+        cloudpakVersion: "25.0.0"
     spec:
       hostNetwork: false
       hostPID: false
@@ -85,7 +85,7 @@ spec:
             - name: ansible-folder-pvc
               mountPath: /ansible-folder
             - name: tmp-folder-pvc
-              mountPath: /tmp-folder        
+              mountPath: /tmp-folder
             - name: log-folder-pvc
               mountPath: /log-folder
             - name: ibm-folder-pvc
@@ -95,11 +95,11 @@ spec:
             - "-ecx"
             - >
               rm -rf /license-folder/* && rm -rf /tmp-folder/* && rm -rf /ansible-folder/* && rm -rf /log-folder/* && rm -rf /ibm-folder/* &&
-              cp -rp /licenses/* /license-folder && 
+              cp -rp /licenses/* /license-folder &&
               mkdir -p /ansible-folder/.ansible &&
               cp -rp /opt/ansible/* /ansible-folder &&
               cp -rp /opt/ansible/.ansible/* /ansible-folder/.ansible &&
-              cp -rp /opt/ibm/* /ibm-folder 
+              cp -rp /opt/ibm/* /ibm-folder
       containers:
         - name: operator
           # Replace this with the built image name
@@ -147,7 +147,7 @@ spec:
             - name: ansible-folder-pvc
               mountPath: /opt/ansible
             - name: tmp-folder-pvc
-              mountPath: /tmp        
+              mountPath: /tmp
             - name: log-folder-pvc
               mountPath: /logs
             - name: ibm-folder-pvc

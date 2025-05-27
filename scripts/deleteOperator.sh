@@ -45,11 +45,11 @@ function uninstall_olm_cp4a(){
     local csvName
     printf "\n"
     printf "\x1B[1mUninstall CP4BA Operator Subscription...\n\x1B[0m"
-    if [[ $RUNTIME_MODE == "baw" ]];then
-        OLM_SUBSCRIPTION=${PARENT_DIR}/descriptors/baw-olm/subscription.yaml
-    elif [[ $RUNTIME_MODE == "baw-dev" ]];then
-        OLM_SUBSCRIPTION=${PARENT_DIR}/descriptors/baw-olm/devsubscription.yaml
-    fi
+    #if [[ $RUNTIME_MODE == "baw" ]];then
+    #    OLM_SUBSCRIPTION=${PARENT_DIR}/descriptors/baw-olm/subscription.yaml
+    #elif [[ $RUNTIME_MODE == "baw-dev" ]];then
+    #    OLM_SUBSCRIPTION=${PARENT_DIR}/descriptors/baw-olm/devsubscription.yaml
+    #fi
     ${COPY_CMD} -rf "${OLM_SUBSCRIPTION}" "${OLM_SUBSCRIPTION_TMP}"
     ${SED_COMMAND} '/namespace: /d' ${OLM_SUBSCRIPTION_TMP}
     if [[ $RUNTIME_MODE == "baw" || $RUNTIME_MODE == "baw-dev" ]];then
@@ -131,8 +131,8 @@ else
                echo "Use a valid value: -m [baw] "
                show_help
                exit -1
-            fi        
-            ;;    
+            fi
+            ;;
         :)  echo "Invalid option: -$OPTARG requires an argument"
             show_help
             exit -1
