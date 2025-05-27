@@ -8543,7 +8543,7 @@ function validate_prerequisites(){
         success "Checked DB connection for \"$dbname\" on database server \"$dbserver\", PASSED!"
     fi
 
-    info "If all prerequisites check PASSED, you can run baw-deployment.sh to deploy CP4BA. Otherwise, please check the configuration again."
+    info "If all prerequisites check PASSED, you can run baw-deployment.sh to deploy BAW. Otherwise, please check the configuration again."
     info "After BAW is deployed, please refer to the documentation for post-deployment steps."
 }
 
