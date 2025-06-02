@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:03174e58102c1b2873d88f3c226597b808c52906e74f862b480e95578354cf7b
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:fe2d40748515e763a6361fa8113b14e5461f018e466c763c3c8273850e93a311
   secrets:
   - "ibm-entitlement-key"
   - "ibm-staging-entitlement-key"
@@ -28,7 +28,7 @@ spec:
     registryPoll:
       interval: 45m
 ---
-# IBM CS Flink Operator Catalog 1.18.1 (2.0.4)
+# IBM CS Flink Operator Catalog 1.18.1 (2.0.5+20250528.100000)
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -39,7 +39,7 @@ spec:
   publisher: IBM
   sourceType: grpc
   image: >-
-    icr.io/cpopen/ibm-opencontent-flink-operator-catalog@sha256:b1e6182101793348aaf45b77160848b09674033a2b6c910d14d3049a711bbdd7
+    icr.io/cpopen/ibm-opencontent-flink-operator-catalog:2.0.5-66444
   secrets:
   - "ibm-entitlement-key"
   - "ibm-staging-entitlement-key"
@@ -50,7 +50,7 @@ spec:
       interval: 45m
   priority: 100
 ---
-# IBM CS Opensearch Operator Catalog 1.1.2344
+# IBM CS Opensearch Operator Catalog 1.1.2422
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -60,7 +60,7 @@ spec:
   displayName: IBM CS Opencontent Opensearch Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/opencontent-ibm-opensearch-operator-catalog@sha256:8aa1ff712f101b578236c4c3ff2b368b60a481bf5dc7ded296b792dad8f33c5e
+  image: icr.io/cpopen/opencontent-ibm-opensearch-operator-catalog@sha256:462f7b0ccfc38b80cfe339a1fb883a5cf6c65dc6274deea22c3635efe77acf47
   secrets:
   - "ibm-entitlement-key"
   - "ibm-staging-entitlement-key"
@@ -259,7 +259,7 @@ spec:
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-fncm-catalog@sha256:a18daa76afe2004af200c50945bf5be6a7abd03e85d6b11f23b36e1b8bcd1587
+  image: icr.io/cpopen/ibm-fncm-catalog@sha256:79d70ce6cfcda9c5a44aff80a5260a644f5a356b58a752c32bef4380c56e412b
   secrets:
   - "ibm-entitlement-key"
   - "ibm-staging-entitlement-key"
