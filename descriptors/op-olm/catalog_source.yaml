@@ -8,7 +8,7 @@
 # disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
 #
 ###############################################################################
-# CP4BA 2500.RC2 catalog
+# CP4BA 2500 catalog
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:9425a18b95055522d4ea0a223bac231153e9f208ee999af56ba236a42915c702
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:cc66a1fa98b6c76397c30c743e1cc8542e497dc8a8f86b75b351515ed9aa8ac2
   secrets:
   - "ibm-entitlement-key"
   - "ibm-staging-entitlement-key"
@@ -259,7 +259,7 @@ spec:
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-fncm-catalog@sha256:a3c354f86477624583a16d384b2f12b2df8fcc7833b4ef08f1b742cf695f8915
+  image: icr.io/cpopen/ibm-fncm-catalog@sha256:93e6e1bc6f04c0f6960c2cff0d270318b69b3d64e4e5b1df2f3998b1d10c75d0
   secrets:
   - "ibm-entitlement-key"
   - "ibm-staging-entitlement-key"
