@@ -8301,7 +8301,9 @@ function apply_pattern_cr(){
 #        fi
 #    fi
 
-    update_hostname_suffix
+    if  [[ $PLATFORM_SELECTED != "OCP" ]];then
+        update_hostname_suffix
+    fi
 
     # Set lc_selected_ldap_type
 
