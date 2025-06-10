@@ -8301,7 +8301,7 @@ function apply_pattern_cr(){
 #        fi
 #    fi
 
-    if  [[ $PLATFORM_SELECTED != "OCP"]];then
+    if  [[ $PLATFORM_SELECTED != "OCP" ]];then
         update_hostname_suffix
     fi
 
