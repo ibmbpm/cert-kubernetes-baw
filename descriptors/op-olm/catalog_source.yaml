@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:cc66a1fa98b6c76397c30c743e1cc8542e497dc8a8f86b75b351515ed9aa8ac2
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:c2e967f194165bd24380d1d0874fdabf1910175ffd4937929f2bf1b05eed0336
   secrets:
   - "ibm-entitlement-key"
   - "ibm-staging-entitlement-key"
@@ -259,7 +259,7 @@ spec:
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-fncm-catalog@sha256:93e6e1bc6f04c0f6960c2cff0d270318b69b3d64e4e5b1df2f3998b1d10c75d0
+  image: icr.io/cpopen/ibm-fncm-catalog@sha256:5aec3dbac40bd54e824d4ec378b25a63e2dd302850c37b9cfe8d5bda9bdd795e
   secrets:
   - "ibm-entitlement-key"
   - "ibm-staging-entitlement-key"
