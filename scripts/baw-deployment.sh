@@ -8878,9 +8878,8 @@ function apply_pattern_cr(){
 #    fi
     printf "\n"
     echo -e "\x1B[1mTo monitor the deployment status, follow the Operator logs.\x1B[0m"
-#TODO
     echo -e "\x1B[1mFor details, refer to the troubleshooting section in documentation here: \x1B[0m"
-    echo -e "\x1B[1mhttps://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE?topic=automation-troubleshooting\x1B[0m"
+    echo -e "\x1B[1mhttps://www.ibm.com/docs/en/baw/$CP4BA_RELEASE_BASE?topic=automation-troubleshooting\x1B[0m"
 }
 # End - Modify FOUNDATION pattern yaml according pattent/components selected
 
