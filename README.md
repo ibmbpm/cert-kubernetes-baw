@@ -1,5 +1,5 @@
-# IBM Business Automation Workflow 25.0.0 on Certified Kubernetes
+# IBM Business Automation Workflow on Containers
 
-This repository includes folders and resources to help you install the IBM Business Automation Workflow. Installation of the capabilities is done with the Cloud Pak operator.
+This repository includes folders and resources to help you install IBM Business Automation Workflow on containers. Starting with v25.0.0.0 IBM Business Automation on containers supports Authoring and Runtime setups
 
 For information and instructions to install, upgrade, manage, and administer IBM Business Automation Workflow, go to [IBM Docs](https://www.ibm.com/docs/baw/25.0.x).
