@@ -1,5 +1,18 @@
-# IBM Business Automation Workflow on Containers
+# IBM Business Automation Workflow on Containers v25.0.0.0
 
-This repository includes folders and resources to help you install IBM Business Automation Workflow on containers. Starting with v25.0.0.0 IBM Business Automation on containers supports Authoring and Runtime setups
+IBM Business Automation Workflow on Containers (BAW on Containers) version 25.0.0.0 introduces support for both Authoring and Runtime environments, enabling streamlined development and deployment of business automation solutions in containerized infrastructures.
 
-For information and instructions to install, upgrade, manage, and administer IBM Business Automation Workflow, go to [IBM Docs](https://www.ibm.com/docs/baw/25.0.x).
+This GitHub repository provides all the necessary resources to help you install, configure, and manage IBM Business Automation Workflow on containers. It includes:
+  - Installation scripts
+  - Kubernetes descriptors
+
+With version 25.0.0.0, IBM BAW on Containers supports a more flexible and scalable architecture, making it easier to integrate into your DevOps pipeline and cloud-native strategy.
+
+Key Features:
+  - Full support for Authoring and Runtime environments
+  - Seamless installation using the Cloud Pak operator
+  - Ready-to-use Kubernetes resources for efficient deployment
+  - Centralized documentation and support via IBM Docs
+
+Get Started:\
+  To install, upgrade, or administer IBM Business Automation Workflow on Containers, refer to the official [IBM Business Automation Workflow documentation](https://www.ibm.com/docs/baw/25.0.x).
