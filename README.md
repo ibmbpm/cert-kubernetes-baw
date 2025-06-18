@@ -2,7 +2,7 @@
 
 IBM Business Automation Workflow on Containers (BAW on Containers) version 25.0.0.0 introduces support for both Authoring and Runtime environments, enabling streamlined development and deployment of business automation solutions in containerized infrastructures.
 
-This GitHub repository provides all the necessary resources to help you install, configure, and manage IBM Business Automation Workflow on containers. It includes:
+This GitHub repository provides all the necessary resources to help you install, configure, and manage IBM Business Automation Workflow on Containers. It includes:
   - Installation scripts
   - Kubernetes descriptors
 
