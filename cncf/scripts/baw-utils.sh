@@ -345,15 +345,17 @@ function create_baw_subscription() {
     printf "\n"
     info "Waiting for BAW subscription to become active."
 
-    patch_csv "ibm-content-operator" $namespace
-    patch_csv "ibm-cp4a-operator" $namespace
-    patch_csv "ibm-cp4a-wfps-operator" $namespace
-    patch_csv "ibm-dpe-operator" $namespace
-    patch_csv "ibm-insights-engine-operator" $namespace
-    patch_csv "ibm-odm-operator" $namespace
-    patch_csv "ibm-pfs-operator" $namespace
-    patch_csv "ibm-workflow-operator" $namespace
-    patch_csv "icp4a-foundation-operator" $namespace
+    if [[ "$dev_mode" == true ]]; then 
+        patch_csv "ibm-content-operator" $namespace
+        patch_csv "ibm-cp4a-operator" $namespace
+        patch_csv "ibm-cp4a-wfps-operator" $namespace
+        patch_csv "ibm-dpe-operator" $namespace
+        patch_csv "ibm-insights-engine-operator" $namespace
+        patch_csv "ibm-odm-operator" $namespace
+        patch_csv "ibm-pfs-operator" $namespace
+        patch_csv "ibm-workflow-operator" $namespace
+        patch_csv "icp4a-foundation-operator" $namespace
+    fi
 
     wait_for_operator "${namespace}" "ibm-common-service-operator"
     wait_for_operator "${namespace}" "operand-deployment-lifecycle-manager"
