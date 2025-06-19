@@ -345,7 +345,7 @@ function create_baw_subscription() {
     printf "\n"
     info "Waiting for BAW subscription to become active."
 
-    if [[ "$dev" == true ]]; then
+    if [[ "$dev_mode" == true ]]; then
         patch_csv "ibm-content-operator" $namespace
         patch_csv "ibm-cp4a-operator" $namespace
         patch_csv "ibm-cp4a-wfps-operator" $namespace
