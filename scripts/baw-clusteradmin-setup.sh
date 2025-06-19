@@ -1127,15 +1127,17 @@ function wait_for_pods_active() {
     printf "\n"
     info "Waiting for BAW subscription to become active."
 
-    patch_csv "ibm-content-operator" $project_name
-    patch_csv "ibm-cp4a-operator" $project_name
-    patch_csv "ibm-cp4a-wfps-operator" $project_name
-    patch_csv "ibm-dpe-operator" $project_name
-    patch_csv "ibm-insights-engine-operator" $project_name
-    patch_csv "ibm-odm-operator" $project_name
-    patch_csv "ibm-pfs-operator" $project_name
-    patch_csv "ibm-workflow-operator" $project_name
-    patch_csv "icp4a-foundation-operator" $project_name
+    if [[ $RUNTIME_MODE == "dev" ]];then
+        patch_csv "ibm-content-operator" $project_name
+        patch_csv "ibm-cp4a-operator" $project_name
+        patch_csv "ibm-cp4a-wfps-operator" $project_name
+        patch_csv "ibm-dpe-operator" $project_name
+    	patch_csv "ibm-insights-engine-operator" $project_name
+    	patch_csv "ibm-odm-operator" $project_name
+    	patch_csv "ibm-pfs-operator" $project_name
+    	patch_csv "ibm-workflow-operator" $project_name
+    	patch_csv "icp4a-foundation-operator" $project_name
+    fi
 
     wait_for_operator "${project_name}" "ibm-common-service-operator"
     wait_for_operator "${project_name}" "operand-deployment-lifecycle-manager"
