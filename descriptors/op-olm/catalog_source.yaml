@@ -50,7 +50,7 @@ spec:
       interval: 45m
   priority: 100
 ---
-# IBM CS Opensearch Operator Catalog 1.1.2441
+# IBM CS Opensearch Operator Catalog 1.1.2452
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -60,7 +60,7 @@ spec:
   displayName: IBM CS Opencontent Opensearch Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/opencontent-ibm-opensearch-operator-catalog@sha256:90688d78e43477a9a7bc08c3916b69c656ca7094b81fe38d705a3eced519edab
+  image: icr.io/cpopen/opencontent-ibm-opensearch-operator-catalog@sha256:6fbe960c6a5168c54632e771960da89d45cfedafc0498c768c7747d11161a979
   secrets:
   - "ibm-entitlement-key"
   - "ibm-staging-entitlement-key"
