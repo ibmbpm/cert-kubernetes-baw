@@ -15,4 +15,4 @@ Key Features:
   - Centralized documentation and support via IBM Docs
 
 Get Started:\
-  To install, upgrade, or administer IBM Business Automation Workflow on Containers, refer to the official [IBM Business Automation Workflow documentation](https://www.ibm.com/docs/baw/25.0.x).
+  To install, upgrade, or administer IBM Business Automation Workflow on Containers, refer to the official [IBM Business Automation Workflow documentation](https://www.ibm.com/docs/baw/25.0.0).
