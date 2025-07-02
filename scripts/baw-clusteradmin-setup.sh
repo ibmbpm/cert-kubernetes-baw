@@ -130,6 +130,10 @@ OLM_CATALOG_TMP=${TEMP_FOLDER}/.catalog_source.yaml
 OLM_OPT_GROUP_TMP=${TEMP_FOLDER}/.operator_group.yaml
 OLM_SUBSCRIPTION_TMP=${TEMP_FOLDER}/.subscription.yaml
 
+if [[ -d $TEMP_FOLDER ]]; then
+  find "$TEMP_FOLDER" -type f \( -name "*.yaml" -o -name "*.yml" \) -exec rm -f {} +
+fi
+
 
 echo '' > $LOG_FILE
 
