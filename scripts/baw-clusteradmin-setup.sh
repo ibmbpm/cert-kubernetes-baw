@@ -134,7 +134,6 @@ if [[ -d $TEMP_FOLDER ]]; then
   find "$TEMP_FOLDER" -type f \( -name "*.yaml" -o -name "*.yml" \) -exec rm -f {} +
 fi
 
-
 echo '' > $LOG_FILE
 
 # Function to validate the CLI based on platform type
