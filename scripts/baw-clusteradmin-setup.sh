@@ -200,21 +200,6 @@ function install_cert_license_operator(){
                 ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))" "metadata.namespace" "$project_name"
             fi
 
-            # temporarily adding ibm-zen-operator-catalog because as of March 13th 2025 zen has not GAed
-            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-fncm-operator-catalog" ]]; then
-#                ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))"  "spec.secrets[+]" "ibm-staging-entitlement-key"
-                # Extract the current image value
-                current_image=$(${YQ_CMD} r -d "$((doc_index - 1))" "$OLM_CATALOG_TMP" 'spec.image')
-
-                if [[ -n "$current_image" && "$current_image" == icr.io/cpopen/* ]]; then
-                    # Modify the repository path
-                    updated_image=${current_image/icr.io\/cpopen\//cp.stg.icr.io\/cp/}
-
-                    # Update the image field in the YAML
-                    ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))" "spec.image" "$updated_image"
-                fi
-            fi
-
         done
 
         kubectl apply -f $OLM_CATALOG_TMP >/dev/null 2>&1
