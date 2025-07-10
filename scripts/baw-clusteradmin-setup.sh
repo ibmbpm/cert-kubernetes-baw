@@ -134,7 +134,6 @@ if [[ -d $TEMP_FOLDER ]]; then
   find "$TEMP_FOLDER" -type f \( -name "*.yaml" -o -name "*.yml" \) -exec rm -f {} +
 fi
 
-
 echo '' > $LOG_FILE
 
 # Function to validate the CLI based on platform type
@@ -199,21 +198,6 @@ function install_cert_license_operator(){
                 ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))" "metadata.namespace" "ibm-licensing"
             else
                 ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))" "metadata.namespace" "$project_name"
-            fi
-
-            # temporarily adding ibm-zen-operator-catalog because as of March 13th 2025 zen has not GAed
-            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-fncm-operator-catalog" ]]; then
-#                ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))"  "spec.secrets[+]" "ibm-staging-entitlement-key"
-                # Extract the current image value
-                current_image=$(${YQ_CMD} r -d "$((doc_index - 1))" "$OLM_CATALOG_TMP" 'spec.image')
-
-                if [[ -n "$current_image" && "$current_image" == icr.io/cpopen/* ]]; then
-                    # Modify the repository path
-                    updated_image=${current_image/icr.io\/cpopen\//cp.stg.icr.io\/cp/}
-
-                    # Update the image field in the YAML
-                    ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))" "spec.image" "$updated_image"
-                fi
             fi
 
         done
