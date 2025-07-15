@@ -12,7 +12,7 @@
 apiVersion: icp4a.ibm.com/v1
 kind: ICP4ACluster
 metadata:
-  name: icp4adeploy
+  name: bawdeploy
   labels:
     app.kubernetes.io/instance: ibm-dba
     app.kubernetes.io/managed-by: ibm-dba
