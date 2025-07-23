@@ -206,39 +206,43 @@ LDAP_SECRET_FILE=${SECRET_FILE_FOLDER}/ldap-bind-secret.yaml
 # Release/Patch version for CP4BA
 # CP4BA_RELEASE_BASE is for fetch content/foundation operator pod, only need to change for major release.
 CP4BA_RELEASE_BASE="25.0.0"
-BAW_PATCH_VERSION="GA"
+
+BAW_PATCH_VERSION="IF001"
 # CP4BA_RELEASE_BASE_MAJOR_VERSION is used in certain checks where we used to hardcode to see if a upgrade is not ifix to ifix,change this only for major release
 CP4BA_RELEASE_BASE_MAJOR_VERSION="25.0"
+CP4BA_PATCH_VERSION="IF001"
 # CP4BA_CSV_VERSION is for checking CP4BA operator upgrade status, need to update for each IFIX
-CP4BA_CSV_VERSION="v25.0.0"
+CP4BA_CSV_VERSION="v25.0.1"
 # CP4BA_CHANNEL_VERSION is for switch CP4BA operator upgrade status, need to update for major release
 CP4BA_CHANNEL_VERSION="v25.0"
 # CS_OPERATOR_VERSION is for checking CPFS operator upgrade status, need to update for each IFIX
-CS_OPERATOR_VERSION="v4.12.0"
+CS_OPERATOR_VERSION="v4.14.0"
 # CS_CHANNEL_VERSION is for for CPFS script -c option, need to update for each IFIX
-CS_CHANNEL_VERSION="v4.12"
+CS_CHANNEL_VERSION="v4.14"
+# CS CHANNEL VERSION that is used in the KC
+CS_CHANNEL_KC="4.14.0"
 # CERT_LICENSE_OPERATOR_VERSION is for checking IBM cert-manager/licensing operator upgrade status, need to update for each IFIX
-CERT_LICENSE_OPERATOR_VERSION="v4.2.13"
+CERT_LICENSE_OPERATOR_VERSION="v4.2.15"
 # CERT_LICENSE_CHANNEL_VERSION is for for IBM cert-manager/licensing script -c option, need to update for each IFIX
 CERT_LICENSE_CHANNEL_VERSION="v4.2"
 # CS_CATALOG_VERSION is for CPFS script -s option, need to update for each IFIX
-CS_CATALOG_VERSION="ibm-cs-install-catalog-v4-12-0"
+CS_CATALOG_VERSION="ibm-cs-install-catalog-v4-14-0"
 # ZEN_OPERATOR_VERSION is for checking ZenService operator upgrade status, need to update for each IFIX
-ZEN_OPERATOR_VERSION="v6.1.3"
+ZEN_OPERATOR_VERSION="v6.2.1"
 # BTS_CHANNEL_VERSION is for for BTS, need to update for each IFIX
 BTS_CHANNEL_VERSION="v3.35"
-# BTS_CATALOG_VERSION is for BTS 3.35.2.
-BTS_CATALOG_VERSION="bts-operator-v3-35-3"
+# BTS_CATALOG_VERSION is for BTS 3.35.4.
+BTS_CATALOG_VERSION="ibm-bts-operator-catalog-v3-35"
 # REQUIREDVER_BTS is for checking bts operator upgrade status before run removal_iaf.sh, need to update for each IFIX
-REQUIREDVER_BTS="3.35.3"
+REQUIREDVER_BTS="3.35.5"
 # REQUIREDVER_POSTGRESQL is for checking postgresql operator upgrade status before run removal_iaf.sh, need to update for each IFIX
-REQUIREDVER_POSTGRESQL="1.25.1"
+REQUIREDVER_POSTGRESQL="1.25.2"
 # EVENTS_OPERATOR_VERSION is for checking IBM Events operator upgrade status, need to update for each IFIX
 EVENTS_OPERATOR_VERSION="v5.1.2"
-# List of BAW versions that are supported for upgrade to $CP4BA_CSV_VERSION
-MINIMUM_SUPPORTED_UPGRADE_VERSIONS=("24.1." "25.0." )
-
-
+#This is the list where we further restricted the versions that are supported for upgrade to $CP4BA_CSV_VERSION.  
+#This should change with each new version of CP4BA.  For example, if the next version is 25.0.1, we need to update this list to include the minimum version that is supported for upgrade to 25.0.1 such as 25.0.0.
+# 24.1.2 means the customer must have 24.1.2 installed to upgrade to 25.0.0.
+MINIMUM_SUPPORTED_UPGRADE_VERSIONS=("24.1.2" "25.0.0")
 
 # Zen metastore EDB configmap name
 ZEN_EDB_CFG="ibm-zen-metastore-edb-cm"
@@ -267,6 +271,15 @@ CP4BA_OPERATOR_LIST="ibm-cp4a-operator ibm-content-operator icp4a-foundation-ope
 
 # CP4BA EDB default instance name
 EDB_INSTANCE_CP4BA_NAME="postgres-cp4ba"
+
+# Becomes true if any SSL certificate validation fails (Used in the validate_ssl_certificates function and it's helper functions)
+SSL_CERT_ERROR_TAG=false
+
+# Becomes true if any required parameters are null or empty (Used in validate_property_file_required_fields)
+MISSING_REQUIRED_PARAMETERS=false
+
+# Global array to store all optional parameter keys
+OPTIONAL_PARAMETERS_LIST=()
 
 # set CLI_CMD var
 if which oc >/dev/null 2>&1; then
@@ -425,7 +438,6 @@ function install_ibm_jre(){
             local tmp_file="/tmp/ibm-java.tgz"
             local download_url=https://public.dhe.ibm.com/ibmdl/export/pub/systems/cloud/runtimes/java/${JRE_VERSION}/linux/$(uname -m)/ibm-java-jre-${JRE_VERSION_TMP}-linux-$(uname -m).tgz
             echo -n "Downloading $download_url";
-            echo ""
             curl -o $tmp_file -f $download_url
             if [ ! -e $tmp_file ]; then
                 fail "Can NOT access official IBM JRE Repository https://public.dhe.ibm.com/ibmdl/export/pub/systems/cloud/runtimes/java, Please install IBM JRE manually."
@@ -646,7 +658,7 @@ function check_cluster_login() {
     # if both oc and kubectl are not logged in, exit the script
     if [[ "$oc_login" == "false" && "$kubectl_login" == "false" ]]; then
         error "Cannot find a login context for the cluster. Please login to a cluster before running this script."
-        exit 1
+            exit 1
     fi
 }
 
@@ -807,7 +819,7 @@ function check_single_quotes_password() {
 # secret template field is the property field in the secret template who's value will be the value in password_value
 # secret_file is the name of the secret template file. (this file is already created prior to this function call)
 # new_secret_template_field is the name of a new secret field to be added. This is only passed for the fncm secret where we add password fields to the existing template
-# for new_secret_template_field to be used, secret template field must be osDBpassword as the current logic will append the new field after osDBpassword .
+# for new_secret_template_field to be used, secret template field must be osDBpassword as the current logic will append the new field after osDBpassword . 
 # Other than for fncm secret the new_secret_template_field field is empty and not needed
 function update_secret_template_passwords(){
     local password_value=$1
@@ -816,7 +828,7 @@ function update_secret_template_passwords(){
     local new_secret_template_field=$4
     # Checking if the password in the property file is base64 encoded and if so we just remove the prefix.
     # IF the password is plaintext we base64 encode it
-
+    
     if [[ "${password_value:0:8}" == "{Base64}"  ]]; then
         temp_val=$(echo "$password_value" | sed -e "s/^{Base64}//" )
     else
@@ -828,13 +840,13 @@ function update_secret_template_passwords(){
         fi
     fi
     if ${YQ_CMD} r "$secret_file" "stringData.$secret_template_field" >/dev/null 2>&1; then
-        # Remove the field from stringData and add it to data with the new encoded value
-        # Use yq to delete and add the field in a more compatible way without eval
+    # Remove the field from stringData and add it to data with the new encoded value
+    # Use yq to delete and add the field in a more compatible way without eval
         if [[ "$secret_template_field" != "osDBPassword" ]]; then
-            ${YQ_CMD} w -i "$secret_file" "data.$secret_template_field" "$temp_val"
-            ${YQ_CMD} d -i "$secret_file" "stringData.$secret_template_field"
-        else
-            ${YQ_CMD} w -i "$secret_file" "data.$new_secret_template_field" "$temp_val"
+        ${YQ_CMD} w -i "$secret_file" "data.$secret_template_field" "$temp_val"
+        ${YQ_CMD} d -i "$secret_file" "stringData.$secret_template_field"
+    else
+        ${YQ_CMD} w -i "$secret_file" "data.$new_secret_template_field" "$temp_val"
         fi
     else
         echo "Field $secret_template_field not found in stringData."
@@ -855,8 +867,8 @@ function create_user_password_dictionary_string(){
         # Username is already encoded in the add_to_list function
         username="${usernames[$i]}"
         password="${passwords[$i]}"
-
-
+        
+        
         # Check if the password is empty or not
         if [ -n "$password" ]; then
             # For https://jsw.ibm.com/browse/DBACLD-157019 where we want to make sure we consider if passwords are encoded
@@ -870,7 +882,7 @@ function create_user_password_dictionary_string(){
         else
             encoded_password=""
         fi
-
+        
         # Append to the output string
         output="${output}username:${username},password:${encoded_password};"
     done
@@ -1003,7 +1015,7 @@ function ldap_validation_parameter_generator(){
 
     # creating the user password dictionary string
     ldap_user_password_list=$(create_user_password_dictionary_string ldap_user_list[@] ldap_password_list[@])
-
+    
     ldap_details=("$ldap_group_basedn" "$ldap_user_filter" "$ldap_group_filter" "$ldap_user_password_list" "$final_ldap_group_list")
 }
 
@@ -1145,7 +1157,7 @@ function update_repository_and_tags(){
     if [[ "$component_path" == *"keytool_init_container"* ]]; then
         repository_path="$component_path.repository"
         tag_path="$component_path.tag"
-    else
+        else
         repository_path="$component_path.image.repository"
         tag_path="$component_path.image.tag"
     fi
@@ -1347,7 +1359,7 @@ function prompt_to_continue() {
         read -rp "" ans
         case "$ans" in
         "y"|"Y"|"yes"|"Yes"|"YES"|"")
-            break
+                    break
             ;;
         "n"|"N"|"no"|"No"|"NO")
             exit
