@@ -232,7 +232,7 @@ BTS_CATALOG_VERSION="bts-operator-v3-35-3"
 # REQUIREDVER_BTS is for checking bts operator upgrade status before run removal_iaf.sh, need to update for each IFIX
 REQUIREDVER_BTS="3.35.3"
 # REQUIREDVER_POSTGRESQL is for checking postgresql operator upgrade status before run removal_iaf.sh, need to update for each IFIX
-REQUIREDVER_POSTGRESQL="1.25.1"
+REQUIREDVER_POSTGRESQL="1.25.2"
 # EVENTS_OPERATOR_VERSION is for checking IBM Events operator upgrade status, need to update for each IFIX
 EVENTS_OPERATOR_VERSION="v5.1.2"
 # List of BAW versions that are supported for upgrade to $CP4BA_CSV_VERSION
