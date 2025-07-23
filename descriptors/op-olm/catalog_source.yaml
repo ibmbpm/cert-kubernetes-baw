@@ -8,7 +8,7 @@
 # disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
 #
 ###############################################################################
-# CP4BA 2500 catalog
+# CP4BA 25.0.0-IF001 catalog
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:fd7af2d675d7f430ea1315bcc75d366405991d51e98b918ebb8fb23e7dbaa7f0
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:bbf73e05cb6463c3aa9cebada32919c7791a7de17ed5e5aa2b06c3722fa154c6
   secrets:
   - "ibm-entitlement-key"
   - "ibm-staging-entitlement-key"
@@ -71,17 +71,17 @@ spec:
       interval: 45m
   priority: 100
 ---
-# IBM Certificate Manager 4.2.13
+# IBM Certificate Manager 4.2.15
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: ibm-cert-manager-catalog
   namespace: openshift-marketplace
 spec:
-  displayName: ibm-cert-manager-4.2.13
+  displayName: ibm-cert-manager-4.2.15
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:21866a45719eef50764c421c349a539262147d215ef87c8cc2174fdf2c269346
+  image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:85690858394aa8104e4452bead01b5648495c9930a237f9ee953064ddd1151fb
   secrets:
   - "ibm-entitlement-key"
   - "ibm-staging-entitlement-key"
@@ -91,16 +91,16 @@ spec:
     registryPoll:
       interval: 45m
 ---
-# IBM License Manager 4.2.13
+# IBM License Manager 4.2.15
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: ibm-licensing-catalog
   namespace: openshift-marketplace
 spec:
-  displayName: ibm-licensing-4.2.13
+  displayName: ibm-licensing-4.2.15
   publisher: IBM
-  image: icr.io/cpopen/ibm-licensing-catalog@sha256:17980ccacb1aeae19729e7d5129ad0b69e0f18a2c30f9f1a0db1daf9ae7c2e92
+  image: icr.io/cpopen/ibm-licensing-catalog@sha256:5c5fda8dc9958f1420ccccb4872c58fd6639d5f2c70694c06eb14f59816a4be8
   sourceType: grpc
   secrets:
   - "ibm-entitlement-key"
@@ -111,11 +111,11 @@ spec:
     registryPoll:
       interval: 45m
 ---
-# IBM Cloud Foundational Services 4.12.0
+# IBM Cloud Foundational Services 4.14.0
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-cs-install-catalog-v4-12-0
+  name: ibm-cs-install-catalog-v4-14-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -123,7 +123,7 @@ spec:
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:d4dff1a8968c18d984e16c4c9f1517c3a10e23a11bf166c64d734773324d4c9d
+  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:21799d358b07ecdc515d397d57c12c1cad94173efdd8042a89163ba8849eeaf9
   secrets:
   - "ibm-entitlement-key"
   - "ibm-staging-entitlement-key"
@@ -134,7 +134,7 @@ spec:
       interval: 45m
   priority: 100    
 ---
-# IBM Business Teams Service version 3.35.4
+# IBM Business Teams Service version 3.35.5
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -143,10 +143,10 @@ metadata:
   annotations:
     bedrock_catalogsource_priority: '1'
 spec:
-  displayName: BTS Operator-3.35.4
+  displayName: BTS Operator-3.35.5
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:113be4fe998b104994d3eb22890915c2ec1cf1aa23bd3931c86342fc27e6d39a
+  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:7dd6ff79b3c8af43dcda6cd3043073bf8e9894dbcea7f0d81631c426a3df832d
   secrets:
   - "ibm-entitlement-key"
   - "ibm-staging-entitlement-key"
@@ -156,11 +156,11 @@ spec:
     registryPoll:
       interval: 45m
 ---
-# IBM CS IM Operator Catalog 4.11.0
+# IBM CS IM Operator Catalog 4.13.0
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-iam-operator-catalog-4-11-0
+  name: ibm-iam-operator-catalog-4-13-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -168,7 +168,7 @@ spec:
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:f289ac0d44803ff12d41c3659e6fdf04c404e0b3b233b6bc44eec671abb1b47e
+  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:e104f9719cdc11753fd9af06d992e5486507b63178ab0f5d13a84ed9b696d4a0
   secrets:
   - "ibm-entitlement-key"
   - "ibm-staging-entitlement-key"
@@ -179,12 +179,12 @@ spec:
       interval: 45m
   priority: 100
 ---
-# IBM Zen Operator Catalog 6.1.3+20250416.164817.22
+# IBM Zen Operator Catalog 6.2.1+20250709.172140.67
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-zen-operator-catalog-6-1-0
+  name: ibm-zen-operator-catalog-6-2-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -192,7 +192,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:209ea4b77b3b0863c591bcdec6f53c4c39dafcb10ff13e27ae4e1cb986a59727
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:f7a9483631beaf2db1e861a7b7d4319a715fde6558fe288d880550ea79757be8
   secrets:
   - "ibm-entitlement-key"
   - "ibm-staging-entitlement-key"
@@ -226,7 +226,7 @@ spec:
       interval: 45m
   priority: 100
 ---
-# Cloud Native PostgresSQL Version 1.25.1 (CASE 5.15.0+20250416.103820.2490)(Postgresql Image Version 14.17)
+# Cloud Native PostgresSQL Version 1.25.2 (CASE 5.16.0+20250711.153226.2592)(Postgresql Image Version 14.18)
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -238,7 +238,7 @@ spec:
   displayName: Cloud Native Postgresql Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cpd-cloud-native-postgresql-operator-catalog@sha256:7dbff355db7739152961cb6a97887d2e43bc960ac58837c126e03ed1a4480a3a
+  image: icr.io/cpopen/ibm-cpd-cloud-native-postgresql-operator-catalog@sha256:870b10d4e0b76705a1d39a1630d004257f39a154240ea8796dd22d1740aeb86b
   secrets:
   - "ibm-entitlement-key"
   - "ibm-staging-entitlement-key"
@@ -259,7 +259,7 @@ spec:
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-fncm-catalog@sha256:6ca26d65edea357c3533fb0fe7eb699ca57d40c126be08cefb84e9169022a78f
+  image: icr.io/cpopen/ibm-fncm-catalog@sha256:663443ddca58d31ae06d07a945d103a39c4c3ee5bfa0565ddfd6a6cea18ead9f
   secrets:
   - "ibm-entitlement-key"
   - "ibm-staging-entitlement-key"
