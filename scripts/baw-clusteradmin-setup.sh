@@ -1392,7 +1392,7 @@ function catalog_source_staging() {
         # For dev mode the image for the catalog source has to be in cp.stg.icr.io and a secrets field has to be added
         if [[ "$RUNTIME_MODE" == "dev" ]]; then
             # temporarily adding ibm-zen-operator-catalog because as of March 13th 2025 zen has not GAed
-            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-fncm-operator-catalog"  || "$name" == "ibm-zen-operator-catalog" || "$name" == "cloud-native-postgresql-catalog" ]]; then
+            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-fncm-operator-catalog"  || "$name" == "ibm-zen-operator-catalog" || "$name" == "cloud-native-postgresql-catalog" || "$name" == "ibm-cp-automation-catalog" ]]; then
     #                ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))"  "spec.secrets[+]" "ibm-staging-entitlement-key"
                 # Extract the current image value
                 current_image=$(${YQ_CMD} r -d "$((doc_index - 1))" "$OLM_CATALOG_TMP" 'spec.image')
