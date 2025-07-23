@@ -114,7 +114,7 @@ function check_prereqs() {
     # Check if licensing service version is the one we target
     local vls=$(get_licensing_service_version "")
     if [[ "$vls" == "unknown" ]]; then
-        error "Cannot find licensing version in your cluster. Please use baw-install-prereqs.sh script to install it."
+        error "Cannot find licensing version in your cluster. Please use cncf/scripts/baw-install-prereqs.sh script to install it."
         exit 1
     elif [[ $(semver_compare ${vls} ${LICENSING_SERVICE_TARGET_VERSION}) == "-1" ]]; then
         error "Detected licensing service version ${vls} which is not ${LICENSING_SERVICE_TARGET_VERSION}. Please upgrade pre-requisites with baw-upgrade-prereqs.sh script."
