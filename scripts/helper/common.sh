@@ -32,7 +32,7 @@ BAW_CNCF_FOLDER=${PARENT_DIR}/cncf/scripts
 
 #OLM VARIABLES while installing olm on Rancher
 OLM_MINIMAL_VERSION=v0.23.1
-OLM_VERSION=v0.27.0
+OLM_VERSION=v0.32.0
 
 #Licensing service related variables that required during the creation of subscription and the checks.
 # NEED TO BE UPDATED WHEN WE UPDATE THE VERSIONS
