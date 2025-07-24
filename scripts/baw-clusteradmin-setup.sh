@@ -1172,6 +1172,7 @@ function prepare_olm_install() {
         if [[ $PRIVATE_CATALOG == "No" ]]; then
             sed "s/REPLACE_CATALOG_SOURCE_NAMESPACE/$CATALOG_NAMESPACE/g" ${OLM_CATALOG} > ${OLM_CATALOG_TMP}
         fi
+        catalog_source_staging
         ${CLI_CMD} apply -f $OLM_CATALOG_TMP
         if [ $? -eq 0 ]; then
             echo "IBM Operator Catalog source updated!"
@@ -1183,6 +1184,7 @@ function prepare_olm_install() {
         if [[ $PRIVATE_CATALOG == "No" ]]; then
             sed "s/REPLACE_CATALOG_SOURCE_NAMESPACE/$CATALOG_NAMESPACE/g" ${OLM_CATALOG} > ${OLM_CATALOG_TMP}
         fi
+        catalog_source_staging
         ${CLI_CMD} apply -f $OLM_CATALOG_TMP
         if [ $? -eq 0 ]; then
             echo "IBM Operator Catalog source created!"
@@ -1370,6 +1372,42 @@ function prepare_olm_install() {
     echo -ne Label the default namespace to allow network policies to open traffic to the ingress controller using a namespaceSelector...
     ${CLI_CMD} label --overwrite namespace default 'network.openshift.io/policy-group=ingress'
     echo "Done"
+}
+
+function catalog_source_staging() {
+
+    # Catalog stageupdate starts here 
+    catalog_names=()
+
+    # Read catalog names into the array
+    while IFS= read -r name; do
+        catalog_names+=("$name")
+    done < <(${YQ_CMD} r -d* "$OLM_CATALOG_TMP" 'metadata.name')
+
+    # Iterate over the catalog names
+    for name in "${catalog_names[@]}"; do
+        # Get the document index of the catalog source (by name)
+        doc_index=$( ${YQ_CMD} r -d* "$OLM_CATALOG_TMP" 'metadata.name' | grep -n "^$name$" | cut -d: -f1 )
+
+        # For dev mode the image for the catalog source has to be in cp.stg.icr.io and a secrets field has to be added
+        if [[ "$RUNTIME_MODE" == "dev" ]]; then
+            # temporarily adding ibm-zen-operator-catalog because as of March 13th 2025 zen has not GAed
+            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-fncm-operator-catalog"  || "$name" == "ibm-zen-operator-catalog-6-2-0" || "$name" == "cloud-native-postgresql-catalog" || "$name" == "ibm-cp-automation-catalog" ]]; then
+    #                ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))"  "spec.secrets[+]" "ibm-staging-entitlement-key"
+                # Extract the current image value
+                current_image=$(${YQ_CMD} r -d "$((doc_index - 1))" "$OLM_CATALOG_TMP" 'spec.image')
+
+                if [[ -n "$current_image" && "$current_image" == icr.io/cpopen/* ]]; then
+                    # Modify the repository path
+                    updated_image=${current_image/icr.io\/cpopen\//cp.stg.icr.io\/cp/}
+
+                    # Update the image field in the YAML
+                    ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))" "spec.image" "$updated_image"
+                fi
+            fi
+        fi
+
+    done
 }
 
 function setup_separate_operator(){

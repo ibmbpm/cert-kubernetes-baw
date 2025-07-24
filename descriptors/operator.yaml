@@ -85,7 +85,7 @@ spec:
             - name: ansible-folder-pvc
               mountPath: /ansible-folder
             - name: tmp-folder-pvc
-              mountPath: /tmp-folder
+              mountPath: /tmp-folder        
             - name: log-folder-pvc
               mountPath: /log-folder
             - name: ibm-folder-pvc
@@ -95,11 +95,11 @@ spec:
             - "-ecx"
             - >
               rm -rf /license-folder/* && rm -rf /tmp-folder/* && rm -rf /ansible-folder/* && rm -rf /log-folder/* && rm -rf /ibm-folder/* &&
-              cp -rp /licenses/* /license-folder &&
+              cp -rp /licenses/* /license-folder && 
               mkdir -p /ansible-folder/.ansible &&
               cp -rp /opt/ansible/* /ansible-folder &&
               cp -rp /opt/ansible/.ansible/* /ansible-folder/.ansible &&
-              cp -rp /opt/ibm/* /ibm-folder
+              cp -rp /opt/ibm/* /ibm-folder 
       containers:
         - name: operator
           # Replace this with the built image name
@@ -147,7 +147,7 @@ spec:
             - name: ansible-folder-pvc
               mountPath: /opt/ansible
             - name: tmp-folder-pvc
-              mountPath: /tmp
+              mountPath: /tmp        
             - name: log-folder-pvc
               mountPath: /logs
             - name: ibm-folder-pvc
