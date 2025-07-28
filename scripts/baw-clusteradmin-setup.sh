@@ -1764,10 +1764,10 @@ function create_secret_entitlement_registry(){
 
         ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME" -n "${project_name}" >/dev/null 2>&1
 
-        if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
-        then
-            ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME_STG" -n "${project_name}" >/dev/null 2>&1
-        fi
+        # if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
+        # then
+        #     ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME_STG" -n "${project_name}" >/dev/null 2>&1
+        # fi
 
         CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY --docker-email=ecmtest@ibm.com -n $project_name"
 
@@ -1779,7 +1779,29 @@ function create_secret_entitlement_registry(){
 
         if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
         then
-            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER_STG --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name"
+            cat <<EOF > ${TEMP_FOLDER}/dockerconfig.json
+            {
+            "auths": {
+                "$DOCKER_REG_SERVER": {
+                "username": "$DOCKER_REG_USER",
+                "password": "$DOCKER_REG_KEY",
+                "email": "ecmtest@ibm.com",
+                "auth": "$(echo -n $DOCKER_REG_USER:$DOCKER_REG_KEY | base64)"
+                },
+                "$STG_REGISTRY_IN_FILE": {
+                "username": "$DOCKER_REG_USER_STG",
+                "password": "$DOCKER_REG_KEY_STG",
+                "email": "ecmtest@ibm.com",
+                "auth": "$(echo -n $DOCKER_REG_USER_STG:$DOCKER_REG_KEY_STG | base64)"
+                }
+            }
+            }
+            EOF
+            ${CLI_CMD} delete secret $DOCKER_RES_SECRET_NAME -n $project_name --ignore-not-found
+
+            CREATE_SECRET_CMD="${CLI_CMD} create secret generic $DOCKER_RES_SECRET_NAME --from-file=.dockerconfigjson=dockerconfig.json --type=kubernetes.io/dockerconfigjson -n $project_name"
+            
+            rm -rf ${TEMP_FOLDER}/dockerconfig.json
 
             if $CREATE_SECRET_CMD ; then
                 echo -e "\x1B[1mDone\x1B[0m"
@@ -1802,7 +1824,29 @@ function create_secret_entitlement_registry(){
         if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
         then
             printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $project_name_operator...\n\x1B[0m"
-            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER_STG --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name_operator"
+            cat <<EOF > ${TEMP_FOLDER}/dockerconfig.json
+            {
+            "auths": {
+                "$DOCKER_REG_SERVER": {
+                "username": "$DOCKER_REG_USER",
+                "password": "$DOCKER_REG_KEY",
+                "email": "ecmtest@ibm.com",
+                "auth": "$(echo -n $DOCKER_REG_USER:$DOCKER_REG_KEY | base64)"
+                },
+                "$STG_REGISTRY_IN_FILE": {
+                "username": "$DOCKER_REG_USER_STG",
+                "password": "$DOCKER_REG_KEY_STG",
+                "email": "ecmtest@ibm.com",
+                "auth": "$(echo -n $DOCKER_REG_USER_STG:$DOCKER_REG_KEY_STG | base64)"
+                }
+            }
+            }
+            EOF
+            ${CLI_CMD} delete secret $DOCKER_RES_SECRET_NAME -n $project_name --ignore-not-found
+
+            CREATE_SECRET_CMD="${CLI_CMD} create secret generic $DOCKER_RES_SECRET_NAME --from-file=.dockerconfigjson=dockerconfig.json --type=kubernetes.io/dockerconfigjson -n $project_name"
+            
+            rm -rf ${TEMP_FOLDER}/dockerconfig.json
 
             if $CREATE_SECRET_CMD ; then
                 echo -e "\x1B[1mDone\x1B[0m"
@@ -1824,8 +1868,31 @@ function create_secret_entitlement_registry(){
         if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
         then
             printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $project_name_cs_service...\n\x1B[0m"
-            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER_STG --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name_cs_service"
 
+            cat <<EOF > ${TEMP_FOLDER}/dockerconfig.json
+            {
+            "auths": {
+                "$DOCKER_REG_SERVER": {
+                "username": "$DOCKER_REG_USER",
+                "password": "$DOCKER_REG_KEY",
+                "email": "ecmtest@ibm.com",
+                "auth": "$(echo -n $DOCKER_REG_USER:$DOCKER_REG_KEY | base64)"
+                },
+                "$STG_REGISTRY_IN_FILE": {
+                "username": "$DOCKER_REG_USER_STG",
+                "password": "$DOCKER_REG_KEY_STG",
+                "email": "ecmtest@ibm.com",
+                "auth": "$(echo -n $DOCKER_REG_USER_STG:$DOCKER_REG_KEY_STG | base64)"
+                }
+            }
+            }
+            EOF
+            ${CLI_CMD} delete secret $DOCKER_RES_SECRET_NAME -n $project_name --ignore-not-found
+
+            CREATE_SECRET_CMD="${CLI_CMD} create secret generic $DOCKER_RES_SECRET_NAME --from-file=.dockerconfigjson=dockerconfig.json --type=kubernetes.io/dockerconfigjson -n $project_name"
+            
+            rm -rf ${TEMP_FOLDER}/dockerconfig.json
+            
             if $CREATE_SECRET_CMD ; then
                 echo -e "\x1B[1mDone\x1B[0m"
             else
@@ -1853,7 +1920,29 @@ function create_secret_entitlement_registry(){
             if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
             then
                 printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $item...\n\x1B[0m"
-                CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER_STG --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $item"
+                cat <<EOF > ${TEMP_FOLDER}/dockerconfig.json
+                {
+                "auths": {
+                    "$DOCKER_REG_SERVER": {
+                    "username": "$DOCKER_REG_USER",
+                    "password": "$DOCKER_REG_KEY",
+                    "email": "ecmtest@ibm.com",
+                    "auth": "$(echo -n $DOCKER_REG_USER:$DOCKER_REG_KEY | base64)"
+                    },
+                    "$STG_REGISTRY_IN_FILE": {
+                    "username": "$DOCKER_REG_USER_STG",
+                    "password": "$DOCKER_REG_KEY_STG",
+                    "email": "ecmtest@ibm.com",
+                    "auth": "$(echo -n $DOCKER_REG_USER_STG:$DOCKER_REG_KEY_STG | base64)"
+                    }
+                }
+                }
+                EOF
+                ${CLI_CMD} delete secret $DOCKER_RES_SECRET_NAME -n $project_name --ignore-not-found
+
+                CREATE_SECRET_CMD="${CLI_CMD} create secret generic $DOCKER_RES_SECRET_NAME --from-file=.dockerconfigjson=dockerconfig.json --type=kubernetes.io/dockerconfigjson -n $project_name"
+                
+                rm -rf ${TEMP_FOLDER}/dockerconfig.json
 
                 if $CREATE_SECRET_CMD ; then
                     echo -e "\x1B[1mDone\x1B[0m"
