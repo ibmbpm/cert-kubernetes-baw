@@ -1773,7 +1773,7 @@ function create_secret_entitlement_registry(){
 
         if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
         then
-            ${CLI_CMD} delete secret $DOCKER_RES_SECRET_NAME -n $project_name --ignore-not-found
+            
             cat <<EOF > ${TEMP_FOLDER}/dockerconfig.json
             {
             "auths": {
@@ -1822,7 +1822,7 @@ EOF
         if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
         then
             printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $project_name_operator...\n\x1B[0m"
-            ${CLI_CMD} delete secret $DOCKER_RES_SECRET_NAME -n $project_name --ignore-not-found
+            
             cat <<EOF > ${TEMP_FOLDER}/dockerconfig.json
             {
             "auths": {
@@ -1869,7 +1869,7 @@ EOF
         if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
         then
             printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $project_name_cs_service...\n\x1B[0m"
-            ${CLI_CMD} delete secret $DOCKER_RES_SECRET_NAME -n $project_name --ignore-not-found
+            
             cat <<EOF > ${TEMP_FOLDER}/dockerconfig.json
             {
             "auths": {
@@ -1919,7 +1919,7 @@ EOF
             then
                 printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $item...\n\x1B[0m"
 
-                ${CLI_CMD} delete secret $DOCKER_RES_SECRET_NAME -n $project_name --ignore-not-found
+                
                 cat <<EOF > ${TEMP_FOLDER}/dockerconfig.json
                 {
                 "auths": {
