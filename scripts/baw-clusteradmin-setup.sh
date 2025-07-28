@@ -1781,13 +1781,13 @@ function create_secret_entitlement_registry(){
             "username": "$DOCKER_REG_USER",
             "password": "$DOCKER_REG_KEY",
             "email": "ecmtest@ibm.com",
-            "auth": "$(echo -n $DOCKER_REG_USER:$DOCKER_REG_KEY | base64)"
+            "auth": "$(echo -n "$DOCKER_REG_USER:$DOCKER_REG_KEY" | base64 | tr -d '\n')"
             },
             "$STG_REGISTRY_IN_FILE": {
             "username": "$DOCKER_REG_USER_STG",
             "password": "$DOCKER_REG_KEY_STG",
             "email": "ecmtest@ibm.com",
-            "auth": "$(echo -n $DOCKER_REG_USER_STG:$DOCKER_REG_KEY_STG | base64)"
+            "auth": "$(echo -n "$DOCKER_REG_USER_STG:$DOCKER_REG_KEY_STG" | base64 | tr -d '\n')"
             }
             }
             }
@@ -1830,13 +1830,13 @@ EOF
             "username": "$DOCKER_REG_USER",
             "password": "$DOCKER_REG_KEY",
             "email": "ecmtest@ibm.com",
-            "auth": "$(echo -n $DOCKER_REG_USER:$DOCKER_REG_KEY | base64)"
+            "auth": "$(echo -n "$DOCKER_REG_USER:$DOCKER_REG_KEY" | base64 | tr -d '\n')"
             },
             "$STG_REGISTRY_IN_FILE": {
             "username": "$DOCKER_REG_USER_STG",
             "password": "$DOCKER_REG_KEY_STG",
             "email": "ecmtest@ibm.com",
-            "auth": "$(echo -n $DOCKER_REG_USER_STG:$DOCKER_REG_KEY_STG | base64)"
+            "auth": "$(echo -n "$DOCKER_REG_USER_STG:$DOCKER_REG_KEY_STG" | base64 | tr -d '\n')"
             }
             }
             }
@@ -1877,13 +1877,13 @@ EOF
             "username": "$DOCKER_REG_USER",
             "password": "$DOCKER_REG_KEY",
             "email": "ecmtest@ibm.com",
-            "auth": "$(echo -n $DOCKER_REG_USER:$DOCKER_REG_KEY | base64)"
+            "auth": "$(echo -n "$DOCKER_REG_USER:$DOCKER_REG_KEY" | base64 | tr -d '\n')"
             },
             "$STG_REGISTRY_IN_FILE": {
             "username": "$DOCKER_REG_USER_STG",
             "password": "$DOCKER_REG_KEY_STG",
             "email": "ecmtest@ibm.com",
-            "auth": "$(echo -n $DOCKER_REG_USER_STG:$DOCKER_REG_KEY_STG | base64)"
+            "auth": "$(echo -n "$DOCKER_REG_USER_STG:$DOCKER_REG_KEY_STG" | base64 | tr -d '\n')"
             }
             }
             }
@@ -1927,13 +1927,13 @@ EOF
                 "username": "$DOCKER_REG_USER",
                 "password": "$DOCKER_REG_KEY",
                 "email": "ecmtest@ibm.com",
-                "auth": "$(echo -n $DOCKER_REG_USER:$DOCKER_REG_KEY | base64)"
+                "auth": "$(echo -n "$DOCKER_REG_USER:$DOCKER_REG_KEY" | base64 | tr -d '\n')"
                 },
                 "$STG_REGISTRY_IN_FILE": {
                 "username": "$DOCKER_REG_USER_STG",
                 "password": "$DOCKER_REG_KEY_STG",
                 "email": "ecmtest@ibm.com",
-                "auth": "$(echo -n $DOCKER_REG_USER_STG:$DOCKER_REG_KEY_STG | base64)"
+                "auth": "$(echo -n "$DOCKER_REG_USER_STG:$DOCKER_REG_KEY_STG" | base64 | tr -d '\n')"
                 }
                 }
                 }
