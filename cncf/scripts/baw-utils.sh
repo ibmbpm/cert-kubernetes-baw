@@ -307,6 +307,19 @@ function patch_csv() {
       ${CLI_CMD} patch csv "$csv_name" -n "$namespace" --type='json' -p="[{'op': 'replace', 'path': '/spec/install/spec/deployments/0/spec/template/spec/initContainers/0/image', 'value': '$updated_image'}]"
     fi
 
+    #Patch the CSV with the image pull secret which has the staging credentials	
+    ${CLI_CMD} patch csv "$csv_name" -n "$namespace" --type='json' -p="[	
+    {	
+        \"op\": \"add\",	
+        \"path\": \"/spec/install/spec/deployments/0/spec/template/spec/imagePullSecrets\",	
+        \"value\": [	
+        {	
+            \"name\": \"ibm-entitlement-key\"	
+        }	
+        ]	
+    }	
+    ]"
+
     ${CLI_CMD} delete deployment $csv_prefix
     success "The $csv_name CSV has been patched successfully!"
 }
