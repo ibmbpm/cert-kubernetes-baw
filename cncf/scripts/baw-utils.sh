@@ -141,7 +141,6 @@ function create_all_catalog_sources(){
         if [[ "$dev" == true ]]; then
             # temporarily adding ibm-zen-operator-catalog because as of March 13th 2025 zen has not GAed
             if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-fncm-operator-catalog"  || "$name" == "ibm-zen-operator-catalog-6-2-0" || "$name" == "cloud-native-postgresql-catalog" || "$name" == "ibm-cp-automation-catalog" ]]; then
-#                ${YQ_CMD} w -i "$catalog_source_file_name" -d "$((doc_index - 1))"  "spec.secrets[+]" "ibm-staging-entitlement-key"
                 # Extract the current image value
                 current_image=$(${YQ_CMD} r -d "$((doc_index - 1))" "$catalog_source_file_name" 'spec.image')
 
@@ -308,17 +307,17 @@ function patch_csv() {
       ${CLI_CMD} patch csv "$csv_name" -n "$namespace" --type='json' -p="[{'op': 'replace', 'path': '/spec/install/spec/deployments/0/spec/template/spec/initContainers/0/image', 'value': '$updated_image'}]"
     fi
 
-    #Patch the CSV with the image pull secret which has the staging credentials
-    ${CLI_CMD} patch csv "$csv_name" -n "$namespace" --type='json' -p="[
-    {
-        \"op\": \"add\",
-        \"path\": \"/spec/install/spec/deployments/0/spec/template/spec/imagePullSecrets\",
-        \"value\": [
-        {
-            \"name\": \"ibm-staging-entitlement-key\"
-        }
-        ]
-    }
+    #Patch the CSV with the image pull secret which has the staging credentials	
+    ${CLI_CMD} patch csv "$csv_name" -n "$namespace" --type='json' -p="[	
+    {	
+        \"op\": \"add\",	
+        \"path\": \"/spec/install/spec/deployments/0/spec/template/spec/imagePullSecrets\",	
+        \"value\": [	
+        {	
+            \"name\": \"ibm-entitlement-key\"	
+        }	
+        ]	
+    }	
     ]"
 
     ${CLI_CMD} delete deployment $csv_prefix
