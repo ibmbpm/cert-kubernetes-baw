@@ -193,7 +193,6 @@ source ${CUR_DIR}/helper/common.sh $TARGET_PROJECT_NAME
 source ${CUR_DIR}/helper/cp4ba-property.sh
 
 DOCKER_RES_SECRET_NAME="ibm-entitlement-key"
-DOCKER_RES_STG_SECRET_NAME="ibm-staging-entitlement-key"
 DOCKER_REG_USER=""
 
 if [[ "$SCRIPT_MODE" == "baw-dev" || "$SCRIPT_MODE" == "dev" || "$SCRIPT_MODE" == "review" ]] # During dev, OLM uses stage image repo
@@ -8377,9 +8376,6 @@ function apply_pattern_cr(){
     ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.image_pull_secrets
     ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.image_pull_secrets.[0] "$DOCKER_RES_SECRET_NAME"
 
-    if [[ "$SCRIPT_MODE" == "baw-dev" || "$SCRIPT_MODE" == "dev" || "$SCRIPT_MODE" == "review" ]]; then
-      ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.image_pull_secrets.[+] "$DOCKER_RES_STG_SECRET_NAME"
-    fi
 
     # set sc_drivers_url
     if [ -z "$CP4BA_JDBC_URL" ]; then

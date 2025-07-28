@@ -33,7 +33,6 @@ PLATFORM_VERSION=""
 PROJ_NAME=""
 PROJ_NAME_ALL_NAMESPACE="openshift-operators"
 DOCKER_RES_SECRET_NAME="ibm-entitlement-key"
-DOCKER_RES_SECRET_NAME_STG="ibm-staging-entitlement-key"
 REGISTRY_IN_FILE="cp.icr.io"
 STG_REGISTRY_IN_FILE="cp.stg.icr.io"
 OPERATOR_FILE=${PARENT_DIR}/descriptors/operator.yaml
@@ -1372,6 +1371,41 @@ function prepare_olm_install() {
     echo "Done"
 }
 
+function catalog_source_staging() {
+
+    # Catalog stageupdate starts here 
+    catalog_names=()
+
+    # Read catalog names into the array
+    while IFS= read -r name; do
+        catalog_names+=("$name")
+    done < <(${YQ_CMD} r -d* "$OLM_CATALOG_TMP" 'metadata.name')
+
+    # Iterate over the catalog names
+    for name in "${catalog_names[@]}"; do
+        # Get the document index of the catalog source (by name)
+        doc_index=$( ${YQ_CMD} r -d* "$OLM_CATALOG_TMP" 'metadata.name' | grep -n "^$name$" | cut -d: -f1 )
+
+        # For dev mode the image for the catalog source has to be in cp.stg.icr.io and a secrets field has to be added
+        if [[ "$RUNTIME_MODE" == "dev" ]]; then
+            # temporarily adding ibm-zen-operator-catalog because as of March 13th 2025 zen has not GAed
+            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-fncm-operator-catalog"  || "$name" == "ibm-zen-operator-catalog-6-2-0" || "$name" == "cloud-native-postgresql-catalog" || "$name" == "ibm-cp-automation-catalog" ]]; then
+                # Extract the current image value
+                current_image=$(${YQ_CMD} r -d "$((doc_index - 1))" "$OLM_CATALOG_TMP" 'spec.image')
+
+                if [[ -n "$current_image" && "$current_image" == icr.io/cpopen/* ]]; then
+                    # Modify the repository path
+                    updated_image=${current_image/icr.io\/cpopen\//cp.stg.icr.io\/cp/}
+
+                    # Update the image field in the YAML
+                    ${YQ_CMD} w -i "$OLM_CATALOG_TMP" -d "$((doc_index - 1))" "spec.image" "$updated_image"
+                fi
+            fi
+        fi
+
+    done
+}
+
 function setup_separate_operator(){
     if [[ $MULTIPLE_DEPLOYMENT = "No" ]]; then
         if [[ $PRIVATE_CATALOG == "Yes" ]]; then
@@ -1726,10 +1760,6 @@ function create_secret_entitlement_registry(){
 
         ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME" -n "${project_name}" >/dev/null 2>&1
 
-        if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
-        then
-            ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME_STG" -n "${project_name}" >/dev/null 2>&1
-        fi
 
         CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY --docker-email=ecmtest@ibm.com -n $project_name"
 
@@ -1741,13 +1771,7 @@ function create_secret_entitlement_registry(){
 
         if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
         then
-            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER_STG --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name"
-
-            if $CREATE_SECRET_CMD ; then
-                echo -e "\x1B[1mDone\x1B[0m"
-            else
-                echo -e "\x1B[1mFailed\x1B[0m"
-            fi
+            create_ibm_stg_entitlement_key
         fi
     else
         # Create docker registry key in the seperate operator scenario
@@ -1764,13 +1788,8 @@ function create_secret_entitlement_registry(){
         if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
         then
             printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $project_name_operator...\n\x1B[0m"
-            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER_STG --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name_operator"
-
-            if $CREATE_SECRET_CMD ; then
-                echo -e "\x1B[1mDone\x1B[0m"
-            else
-                echo -e "\x1B[1mFailed\x1B[0m"
-            fi
+            
+            create_ibm_stg_entitlement_key
         fi
 
         printf "\x1B[1mCreating docker-registry secret for Entitlement Registry key in project $project_name_cs_service...\n\x1B[0m"
@@ -1786,24 +1805,14 @@ function create_secret_entitlement_registry(){
         if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
         then
             printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $project_name_cs_service...\n\x1B[0m"
-            CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER_STG --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $project_name_cs_service"
-
-            if $CREATE_SECRET_CMD ; then
-                echo -e "\x1B[1mDone\x1B[0m"
-            else
-                echo -e "\x1B[1mFailed\x1B[0m"
-            fi
+            
+            create_ibm_stg_entitlement_key
         fi
     fi
     if [[ $MULTIPLE_DEPLOYMENT = "Yes" ]]; then
         for item in "${project_baw_service_array[@]}"; do
             printf "\x1B[1mCreating docker-registry secret for Entitlement Registry key in project $item...\n\x1B[0m"
             ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME" -n "${item}" >/dev/null 2>&1
-
-            if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
-            then
-                ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME_STG" -n "${item}" >/dev/null 2>&1
-            fi
 
             CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY --docker-email=ecmtest@ibm.com -n $item"
             if $CREATE_SECRET_CMD ; then
@@ -1815,15 +1824,9 @@ function create_secret_entitlement_registry(){
             if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
             then
                 printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $item...\n\x1B[0m"
-                CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME_STG --docker-server=$STG_REGISTRY_IN_FILE --docker-username=$DOCKER_REG_USER_STG --docker-password=$DOCKER_REG_KEY_STG --docker-email=ecmtest@ibm.com -n $item"
 
-                if $CREATE_SECRET_CMD ; then
-                    echo -e "\x1B[1mDone\x1B[0m"
-                else
-                    echo -e "\x1B[1mFailed\x1B[0m"
-                fi
+                create_ibm_stg_entitlement_key
             fi
-
         done
     fi
 }
@@ -2720,6 +2723,41 @@ function setup_other_type_platform()
     exit
 
 
+}
+
+function create_ibm_stg_entitlement_key() {
+    ${CLI_CMD} delete secret $DOCKER_RES_SECRET_NAME -n $project_name --ignore-not-found
+    cat <<EOF > ${TEMP_FOLDER}/dockerconfig.json
+    {
+    "auths": {
+    "$DOCKER_REG_SERVER": {
+    "username": "$DOCKER_REG_USER",
+    "password": "$DOCKER_REG_KEY",
+    "email": "ecmtest@ibm.com",
+    "auth": "$(echo -n "$DOCKER_REG_USER:$DOCKER_REG_KEY" | base64 | tr -d '\n')"
+    },
+    "$STG_REGISTRY_IN_FILE": {
+    "username": "$DOCKER_REG_USER_STG",
+    "password": "$DOCKER_REG_KEY_STG",
+    "email": "ecmtest@ibm.com",
+    "auth": "$(echo -n "$DOCKER_REG_USER_STG:$DOCKER_REG_KEY_STG" | base64 | tr -d '\n')"
+    }
+    }
+    }
+EOF
+
+    # Create the merged pull secret
+    CREATE_SECRET_CMD="${CLI_CMD} create secret generic $DOCKER_RES_SECRET_NAME  --from-file=.dockerconfigjson=${TEMP_FOLDER}/dockerconfig.json --type=kubernetes.io/dockerconfigjson -n $project_name"
+
+
+    if $CREATE_SECRET_CMD ; then
+        echo -e "\x1B[1mDone\x1B[0m"
+    else
+        echo -e "\x1B[1mFailed\x1B[0m"
+    fi
+
+    # Clean up
+    rm -f ${TEMP_FOLDER}/dockerconfig.json
 }
 
 ################################################
