@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:bbf73e05cb6463c3aa9cebada32919c7791a7de17ed5e5aa2b06c3722fa154c6
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:8cf6602286fe3681cf13ff593ddae4f63996b73fcee3c4a74de3dcffd0bab781
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -118,7 +118,7 @@ spec:
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:21799d358b07ecdc515d397d57c12c1cad94173efdd8042a89163ba8849eeaf9
+  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:93623fc8c2ef84feb86805793f24898e8fece7fa2aa4585af1840a422592c1a8
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -140,7 +140,7 @@ spec:
   displayName: BTS Operator-3.35.5
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:3a4069cd45f38c6ddd9ddb7e84870047d04ac4e835d0f3ccd568ec02e82603a5
+  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:187721d5c20ac96a5a6ca841adee683cc3a2dba4c19da960be0b80c2e16df6e3
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -161,7 +161,7 @@ spec:
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:e104f9719cdc11753fd9af06d992e5486507b63178ab0f5d13a84ed9b696d4a0
+  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:57be630e52844cee6c6ce7ce3b9bab59c127ab93d893ac608e8d6a6985126834
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -171,7 +171,7 @@ spec:
       interval: 45m
   priority: 100
 ---
-# IBM Zen Operator Catalog 6.2.1+20250709.172140.67
+# IBM Zen Operator Catalog 6.2.1+20250804.171536.112
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
@@ -184,7 +184,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:f7a9483631beaf2db1e861a7b7d4319a715fde6558fe288d880550ea79757be8
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:b702ec7d51341be8bb526a8485f06277ad15be36ba2ad53673b40f69aee7cc16
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
