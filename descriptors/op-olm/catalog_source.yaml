@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:b9d79a8e2276737f493657492471a0555e63744c1c4f5729d22e3d61481162e1
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:8cf6602286fe3681cf13ff593ddae4f63996b73fcee3c4a74de3dcffd0bab781
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -118,7 +118,7 @@ spec:
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:c1bc94ac65a54b74147b3b5a3a2fa501be9aec8353a339789c53830cf2a98e83
+  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:93623fc8c2ef84feb86805793f24898e8fece7fa2aa4585af1840a422592c1a8
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -161,7 +161,7 @@ spec:
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:79c787d53c76a916aab952c88c23cf71f1c69763b093157aabcf5b0d0eb853e6
+  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:57be630e52844cee6c6ce7ce3b9bab59c127ab93d893ac608e8d6a6985126834
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -171,7 +171,8 @@ spec:
       interval: 45m
   priority: 100
 ---
-# IBM Zen Operator Catalog 6.2.1+20250729.172058.108
+# IBM Zen Operator Catalog 6.2.1+20250804.171536.112
+=======
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
@@ -184,7 +185,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:30ea6cbd50a10a77b221593cfe0ca00e6f228385b8344684babb97f49e702e33
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:b702ec7d51341be8bb526a8485f06277ad15be36ba2ad53673b40f69aee7cc16
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
