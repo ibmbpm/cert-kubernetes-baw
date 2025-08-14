@@ -171,7 +171,7 @@ spec:
       interval: 45m
   priority: 100
 ---
-# IBM Zen Operator Catalog 6.2.1+20250804.171536.112
+# IBM Zen Operator Catalog 6.2.1+20250812.114846.113
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
