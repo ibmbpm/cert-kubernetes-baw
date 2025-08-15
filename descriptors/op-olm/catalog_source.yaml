@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:8cf6602286fe3681cf13ff593ddae4f63996b73fcee3c4a74de3dcffd0bab781
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:2b4181ecbd7e5bde71f0d72ac89e18d88510abe732057707bdf225f126ad51c6
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -140,7 +140,7 @@ spec:
   displayName: BTS Operator-3.35.5
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:187721d5c20ac96a5a6ca841adee683cc3a2dba4c19da960be0b80c2e16df6e3
+  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:d1f80f653c131d6b8b0f7d23a517b75900792688b120b564d5910c59ecd1729c
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
