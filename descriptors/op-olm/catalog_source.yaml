@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:2b4181ecbd7e5bde71f0d72ac89e18d88510abe732057707bdf225f126ad51c6
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:733819a70660e0d652dba8a3fb065abf0e741b32a850b5e7692f438dd74f93cc
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -171,7 +171,8 @@ spec:
       interval: 45m
   priority: 100
 ---
-# IBM Zen Operator Catalog 6.2.1+20250812.114846.113
+# IBM Zen Operator Catalog 6.2.1+20250818.110231.113
+
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
