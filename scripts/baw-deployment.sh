@@ -5785,21 +5785,21 @@ function sync_property_into_final_cr(){
         done
 
         # remove database_name if oracle
-        if [[ $DB_TYPE == "oracle" ]]; then
-            get_oracle_service_name $(prop_db_server_property_file $tmp_gcd_db_servername.ORACLE_JDBC_URL)
-            if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
-                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_gcd_datasource.database_name "\"${ORACLE_SERVICE_NAME}GCD\""
-            else
-                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_gcd_datasource.database_name "\"<Required>\""
-            fi
-            # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
-        else
-            ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_gcd_datasource.database_name "\"$tmp_gcd_db_name\""
-            if [[ $DB_TYPE == "postgresql-edb" ]]; then
-                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_gcd_datasource.dc_database_type "postgresql"
-                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_gcd_datasource.dc_use_postgres "true"
-            fi
+#        if [[ $DB_TYPE == "oracle" ]]; then
+#            get_oracle_service_name $(prop_db_server_property_file $tmp_gcd_db_servername.ORACLE_JDBC_URL)
+#            if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
+#                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_gcd_datasource.database_name "\"${ORACLE_SERVICE_NAME}GCD\""
+#            else
+#                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_gcd_datasource.database_name "\"<Required>\""
+#            fi
+#            # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
+#        else
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_gcd_datasource.database_name "\"$tmp_gcd_db_name\""
+        if [[ $DB_TYPE == "postgresql-edb" ]]; then
+            ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_gcd_datasource.dc_database_type "postgresql"
+            ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_gcd_datasource.dc_use_postgres "true"
         fi
+#        fi
 
         # Apply customized schema for GCDDB
         tmp_schema_name=$(prop_db_name_user_property_file GCD_DB_CURRENT_SCHEMA)
@@ -5882,21 +5882,21 @@ function sync_property_into_final_cr(){
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_os_label "\"os$((j+1))\""
 
                 # remove database_name if oracle
-                if [[ $DB_TYPE == "oracle" ]]; then
-                    get_oracle_service_name $(prop_db_server_property_file $tmp_os_db_servername.ORACLE_JDBC_URL)
-                    if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
-                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"${ORACLE_SERVICE_NAME}OS$((j+1))\""
-                    else
-                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"<Required>\""
-                    fi
-                    # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
-                else
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name $tmp_os_db_name
-                    if [[ $DB_TYPE == "postgresql-edb" ]]; then
-                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_database_type "postgresql"
-                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_use_postgres "true"
-                    fi
+#                if [[ $DB_TYPE == "oracle" ]]; then
+#                    get_oracle_service_name $(prop_db_server_property_file $tmp_os_db_servername.ORACLE_JDBC_URL)
+#                    if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
+#                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"${ORACLE_SERVICE_NAME}OS$((j+1))\""
+#                    else
+#                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"<Required>\""
+#                    fi
+#                    # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
+#                else
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name $tmp_os_db_name
+                if [[ $DB_TYPE == "postgresql-edb" ]]; then
+                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_database_type "postgresql"
+                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_use_postgres "true"
                 fi
+#                fi
             fi
         done
 
@@ -5997,21 +5997,21 @@ function sync_property_into_final_cr(){
                 tmp_label=$(echo ${BAW_AUTH_OS_ARR[i]} | tr '[:upper:]' '[:lower:]')
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_os_label "\"$tmp_label\""
                 # remove database_name if oracle
-                if [[ $DB_TYPE == "oracle" ]]; then
-                    get_oracle_service_name $(prop_db_server_property_file $tmp_os_db_servername.ORACLE_JDBC_URL)
-                    if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
-                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"${ORACLE_SERVICE_NAME}${BAW_AUTH_OS_ARR[i]}\""
-                    else
-                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"<Required>\""
-                    fi
-                    # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
-                else
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name $tmp_os_db_name
-                    if [[ $DB_TYPE == "postgresql-edb" ]]; then
-                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_database_type "postgresql"
-                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_use_postgres "true"
-                    fi
+#                if [[ $DB_TYPE == "oracle" ]]; then
+#                    get_oracle_service_name $(prop_db_server_property_file $tmp_os_db_servername.ORACLE_JDBC_URL)
+#                    if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
+#                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"${ORACLE_SERVICE_NAME}${BAW_AUTH_OS_ARR[i]}\""
+#                    else
+#                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"<Required>\""
+#                    fi
+#                    # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
+#                else
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name $tmp_os_db_name
+                if [[ $DB_TYPE == "postgresql-edb" ]]; then
+                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_database_type "postgresql"
+                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_use_postgres "true"
                 fi
+#                fi
             fi
             # Apply customized schema
             OS_DATASOURCE_NUMBER=$(grep "^          dc_os_datasource_name: " ${CP4A_PATTERN_FILE_TMP} | grep -Fn ${BAW_AUTH_OS_ARR[i]} |cut -d':' -f1)
@@ -6146,21 +6146,21 @@ function sync_property_into_final_cr(){
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_os_label "\"$tmp_label\""
 
                 # remove database_name if oracle
-                if [[ $DB_TYPE == "oracle" ]]; then
-                    get_oracle_service_name $(prop_db_server_property_file $tmp_os_db_servername.ORACLE_JDBC_URL)
-                    if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
-                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"${ORACLE_SERVICE_NAME}${BAW_AUTH_OS_ARR[i]}\""
-                    else
-                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"<Required>\""
-                    fi
-                    # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
-                else
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name $tmp_os_db_name
-                    if [[ $DB_TYPE == "postgresql-edb" ]]; then
-                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_database_type "postgresql"
-                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_use_postgres "true"
-                    fi
+#                if [[ $DB_TYPE == "oracle" ]]; then
+#                    get_oracle_service_name $(prop_db_server_property_file $tmp_os_db_servername.ORACLE_JDBC_URL)
+#                    if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
+#                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"${ORACLE_SERVICE_NAME}${BAW_AUTH_OS_ARR[i]}\""
+#                    else
+#                        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"<Required>\""
+#                    fi
+#                    # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
+#                else
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name $tmp_os_db_name
+                if [[ $DB_TYPE == "postgresql-edb" ]]; then
+                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_database_type "postgresql"
+                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_use_postgres "true"
                 fi
+#                fi
             fi
 
             # Apply customized schema
@@ -6294,21 +6294,21 @@ function sync_property_into_final_cr(){
             ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_os_label "\"awsdocs\""
 
             # remove database_name if oracle
-            if [[ $DB_TYPE == "oracle" ]]; then
-                get_oracle_service_name $(prop_db_server_property_file $tmp_os_db_servername.ORACLE_JDBC_URL)
-                if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"${ORACLE_SERVICE_NAME}AWSDOCS\""
-                else
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"<Required>\""
-                fi
-                # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
-            else
-                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name $tmp_os_db_name
-                if [[ $DB_TYPE == "postgresql-edb" ]]; then
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_database_type "postgresql"
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_use_postgres "true"
-                fi
+#            if [[ $DB_TYPE == "oracle" ]]; then
+#                get_oracle_service_name $(prop_db_server_property_file $tmp_os_db_servername.ORACLE_JDBC_URL)
+#                if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
+#                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"${ORACLE_SERVICE_NAME}AWSDOCS\""
+#                else
+#                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"<Required>\""
+#                fi
+#                # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
+#            else
+            ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name $tmp_os_db_name
+            if [[ $DB_TYPE == "postgresql-edb" ]]; then
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_database_type "postgresql"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_use_postgres "true"
             fi
+#            fi
         fi
 
         # Apply customized schema
@@ -6411,21 +6411,21 @@ function sync_property_into_final_cr(){
             done
             ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_os_label "\"devos1\""
             # remove database_name if oracle
-            if [[ $DB_TYPE == "oracle" ]]; then
-                get_oracle_service_name $(prop_db_server_property_file $tmp_os_db_servername.ORACLE_JDBC_URL)
-                if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"${ORACLE_SERVICE_NAME}DEVOS\""
-                else
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"<Required>\""
-                fi
-                # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
-            else
-                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name $tmp_os_db_name
-                if [[ $DB_TYPE == "postgresql-edb" ]]; then
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_database_type "postgresql"
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_use_postgres "true"
-                fi
+#            if [[ $DB_TYPE == "oracle" ]]; then
+#                get_oracle_service_name $(prop_db_server_property_file $tmp_os_db_servername.ORACLE_JDBC_URL)
+#                if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
+#                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"${ORACLE_SERVICE_NAME}DEVOS\""
+#                else
+#                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"<Required>\""
+#                fi
+#                # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
+#            else
+            ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name $tmp_os_db_name
+            if [[ $DB_TYPE == "postgresql-edb" ]]; then
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_database_type "postgresql"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_use_postgres "true"
             fi
+#            fi
         fi
         # apply oc_cpe_obj_store_admin_user_groups for FNCM OS used by DEVOS1
         OS_DATASOURCE_NUMBER=$(grep "^          dc_os_datasource_name: " ${CP4A_PATTERN_FILE_TMP} | grep -Fn 'DEVOS1DS'|cut -d':' -f1)
@@ -6525,21 +6525,21 @@ function sync_property_into_final_cr(){
             done
             ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_os_label "\"aeos\""
             # remove database_name if oracle
-            if [[ $DB_TYPE == "oracle" ]]; then
-                get_oracle_service_name $(prop_db_server_property_file $tmp_os_db_servername.ORACLE_JDBC_URL)
-                if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"${ORACLE_SERVICE_NAME}AEOS\""
-                else
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"<Required>\""
-                fi
-                # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
-            else
-                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name $tmp_os_db_name
-                if [[ $DB_TYPE == "postgresql-edb" ]]; then
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_database_type "postgresql"
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_use_postgres "true"
-                fi
+#            if [[ $DB_TYPE == "oracle" ]]; then
+#                get_oracle_service_name $(prop_db_server_property_file $tmp_os_db_servername.ORACLE_JDBC_URL)
+#                if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
+#                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"${ORACLE_SERVICE_NAME}AEOS\""
+#                else
+#                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"<Required>\""
+#                fi
+#                # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
+#            else
+            ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name $tmp_os_db_name
+            if [[ $DB_TYPE == "postgresql-edb" ]]; then
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_database_type "postgresql"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_use_postgres "true"
             fi
+#            fi
         fi
 
         # Apply customized schema
@@ -6629,21 +6629,21 @@ function sync_property_into_final_cr(){
             ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_os_label "\"ch\""
 
             # remove database_name if oracle
-            if [[ $DB_TYPE == "oracle" ]]; then
-                get_oracle_service_name $(prop_db_server_property_file $tmp_os_db_servername.ORACLE_JDBC_URL)
-                if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"${ORACLE_SERVICE_NAME}CHOS\""
-                else
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"<Required>\""
-                fi
-                # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
-            else
-                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name $tmp_os_db_name
-                if [[ $DB_TYPE == "postgresql-edb" ]]; then
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_database_type "postgresql"
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_use_postgres "true"
-                fi
+#            if [[ $DB_TYPE == "oracle" ]]; then
+#                get_oracle_service_name $(prop_db_server_property_file $tmp_os_db_servername.ORACLE_JDBC_URL)
+#                if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
+#                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"${ORACLE_SERVICE_NAME}CHOS\""
+#                else
+#                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name "\"<Required>\""
+#                fi
+#                # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
+#            else
+            ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].database_name $tmp_os_db_name
+            if [[ $DB_TYPE == "postgresql-edb" ]]; then
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_database_type "postgresql"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_os_datasources.[$OS_DATASOURCE_NUMBER].dc_use_postgres "true"
             fi
+#            fi
         fi
         # Apply customized schema
         OS_DATASOURCE_NUMBER=$(grep "^          dc_os_datasource_name: " ${CP4A_PATTERN_FILE_TMP} | grep -Fn 'CHOS' |cut -d':' -f1)
@@ -6695,21 +6695,21 @@ function sync_property_into_final_cr(){
             done
 
             # remove database_name if oracle
-            if [[ $DB_TYPE == "oracle" ]]; then
-                get_oracle_service_name $(prop_db_server_property_file $tmp_icn_db_servername.ORACLE_JDBC_URL)
-                if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_icn_datasource.database_name "\"${ORACLE_SERVICE_NAME}ICN\""
-                else
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_icn_datasource.database_name "\"<Required>\""
-                fi
-                # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
-            else
-                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_icn_datasource.database_name $tmp_icn_db_name
-                if [[ $DB_TYPE == "postgresql-edb" ]]; then
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_icn_datasource.dc_database_type "postgresql"
-                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_icn_datasource.dc_use_postgres "true"
-                fi
+#            if [[ $DB_TYPE == "oracle" ]]; then
+#                get_oracle_service_name $(prop_db_server_property_file $tmp_icn_db_servername.ORACLE_JDBC_URL)
+#                if [[ ! -z "$ORACLE_SERVICE_NAME" ]]; then
+#                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_icn_datasource.database_name "\"${ORACLE_SERVICE_NAME}ICN\""
+#                else
+#                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_icn_datasource.database_name "\"<Required>\""
+#                fi
+#                # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
+#            else
+            ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_icn_datasource.database_name $tmp_icn_db_name
+            if [[ $DB_TYPE == "postgresql-edb" ]]; then
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_icn_datasource.dc_database_type "postgresql"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.datasource_configuration.dc_icn_datasource.dc_use_postgres "true"
             fi
+#            fi
             # Apply customized schema for GCDDB
             tmp_schema_name=$(prop_db_name_user_property_file ICN_DB_CURRENT_SCHEMA)
             tmp_schema_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_schema_name")
@@ -6884,12 +6884,12 @@ function sync_property_into_final_cr(){
         fi
 
         # remove database_name if oracle
-        if [[ $DB_TYPE == "oracle" ]]; then
-            ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.baw_configuration.[0].database.database_name "\"<Remove>\""
-            # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
-        else
-            ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.baw_configuration.[0].database.database_name "\"$tmp_baw_runtime_db_name\""
-        fi
+#        if [[ $DB_TYPE == "oracle" ]]; then
+#            ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.baw_configuration.[0].database.database_name "\"<Remove>\""
+#            # ${SED_COMMAND} "s|database_name: '\"<Remove>\"'|# database_name: '\"\"'|g" ${CP4A_PATTERN_FILE_TMP}
+#        else
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.baw_configuration.[0].database.database_name "\"$tmp_baw_runtime_db_name\""
+#        fi
 
         if [[ $DB_TYPE == "oracle" ]]; then
             tmp_baw_runtime_db_jdbc_url="$(prop_db_server_property_file $tmp_baw_runtime_db_servername.ORACLE_JDBC_URL)"

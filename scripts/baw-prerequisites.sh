@@ -1222,6 +1222,10 @@ function check_property_file(){
     prefix_array=($(grep '=\"' ${DB_SERVER_INFO_PROPERTY_FILE} | cut -d'=' -f1 | cut -d'.' -f1 | tail -n +2))
     for item in ${prefix_array[*]}
     do
+        if [[ $item == \#* ]]; then
+            continue
+        fi
+
         if [[ ! (" ${db_server_array[@]}" =~ "${item}") ]]; then
             error "The prefix \"$item\" is not in the definition DB_SERVER_LIST=\"${tmp_db_array}\", please check follow example to configure \"${DB_SERVER_INFO_PROPERTY_FILE}\" again."
             echo -e "********************* example *********************"
