@@ -16,8 +16,9 @@ CUR_DIR=$(dirname "$0")
 
 #list of versions for which direct upgrade to 24.0.1 is not supported
 upgrade_blocked_versions=("21.3." "23.1." "22.1." "22.2." "23.2.")
+
 #list of versions for which direct upgrade to 24.0.1 is supported
-upgrade_valid_versions=("24.0." "24.1.")
+upgrade_valid_versions=("24.0." "24.1." "25.0.")
 
 #Determine if it's an Ifix to ifix upgrade or a n-1 upgrade using CSV
 # Format of CSV x.y.z where x is major version, y is minor version and z is ifix version
@@ -106,7 +107,7 @@ function check_cp4ba_operator_version(){
                 valid_version=true
             elif [[ "$cp4a_operator_csv_version" == "$blocked_version"* ]]; then
                 info "The version of IBM Cloud Pak for Business Automation Operator found is \"$cp4a_operator_csv_version\" ."
-                fail "Please upgrade to CP4BA v24.0.0 or a later iFix first before you can upgrade to CP4BA $CP4BA_CSV_VERSION"
+                fail "Please upgrade to CP4BA v25.0.0 or a later iFix first before you can upgrade to CP4BA $CP4BA_CSV_VERSION"
                 exit 1
             fi
         done
