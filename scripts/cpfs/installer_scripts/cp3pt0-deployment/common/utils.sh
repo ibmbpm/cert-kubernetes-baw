@@ -523,6 +523,49 @@ function wait_for_licensing_instance_deployment() {
 
 }
 
+# TODO: need to be removed in the next release
+function patch_workflow_operator() {
+  local namespace=$1
+  local kind="workflowruntime"
+
+  pods=$("$OC" get pods -n "$namespace" | grep workflow-operator  | grep CrashLoopBackOff | awk '{print $1}')
+
+  if [[ -z "$pods" ]]; then
+    echo "No workflow-operator pods found in namespace $namespace"
+    return 0
+  fi
+
+  instances=$("$OC" get "$kind" -n "$namespace" -o jsonpath='{.items[*].metadata.name}')
+
+  if [[ -z "$instances" ]]; then
+    info "No instances of kind $kind found in namespace $namespace"
+    return 0
+  fi
+
+  info "Patching $kind instances in namespace $namespace ..."
+  for instance in $instances; do
+    info "Patching $instance"
+    "$OC" patch "$kind" "$instance" -n "$namespace" --type=merge -p '{
+      "spec": {
+        "zen_performance": {
+          "keepalive": "512",
+          "keepalive_requests": "500",
+          "keepalive_timeout": "30s",
+          "proxy_buffer_size": "256k",
+          "proxy_buffers": "8 512k",
+          "proxy_busy_buffers_size": "512k",
+          "proxy_connect_timeout": "300",
+          "proxy_read_timeout": "300",
+          "proxy_send_timeout": "300"
+        }
+      }
+    }'
+  done
+
+  ${OC} delete pod  $pods
+  success "The $kind instances has been patched successfully!"
+}
+
 # THIS FUNCTION IS ONLY USED FOR DEV MODE
 function patch_csv() {
     local csv_prefix=$1
@@ -667,6 +710,7 @@ function wait_for_operator_upgrade() {
     for i in {1..4}; do
       msg "Operator Upgrade iteration $i"
       patch_failed_operator_pods $namespace
+      patch_workflow_operator $namesapce
 
       wait_for_condition "${condition}" ${retries}/4 ${sleep_time} "${wait_message}" "${success_message}" "${error_message}" "${debug_condition}" "No"
 
