@@ -710,7 +710,7 @@ function wait_for_operator_upgrade() {
     for i in {1..4}; do
       msg "Operator Upgrade iteration $i"
       patch_failed_operator_pods $namespace
-      patch_workflow_operator $namesapce
+      patch_workflow_operator $namespace
 
       wait_for_condition "${condition}" ${retries}/4 ${sleep_time} "${wait_message}" "${success_message}" "${error_message}" "${debug_condition}" "No"
 
