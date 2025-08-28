@@ -17,7 +17,7 @@ YQ=yq
 ENABLE_LICENSING=0
 MINIMAL_RBAC_ENABLED=0
 MINIMAL_RBAC=""
-CHANNEL="v4.6"
+CHANNEL="v4.13"
 MAINTAINED_CHANNEL="v4.2"
 SOURCE="opencloud-operators"
 SOURCE_NS="openshift-marketplace"
@@ -264,12 +264,16 @@ function pre_req() {
         error "Must provide additional namespaces for --tethered-namespaces, different from operator-namespace and services-namespace"
     fi
 
-    # When Common Service channel info is less then maintained channel, update maintained channel for backward compatibility e.g., v4.1 and v4.0
-    # Otherwise, maintained channel is pinned at v4.2
-    local channel_numeric="${CHANNEL#v}"
-    local maintained_channel_numeric="${MAINTAINED_CHANNEL#v}"
-    if awk -v num="$channel_numeric" "BEGIN { exit !(num < $maintained_channel_numeric) }"; then
+    # When Common Service channel is less than v4.2, maintained channel is the same as CS channel (e.g., v4.1 or v4.0)
+    # When Common Service channel is between v4.2 and v4.12, maintained channel is pinned at v4.2
+    # When Common Service  channel is greater than v4.12, maintained channel is pinned at v4.3
+    IFS='.' read -r channel_major channel_minor <<< "${CHANNEL#v}"
+    IFS='.' read -r maintained_major maintained_minor <<< "${MAINTAINED_CHANNEL#v}"
+
+    if (( channel_major < maintained_major )) || { (( channel_major == maintained_major )) && (( channel_minor < maintained_minor )); }; then
         MAINTAINED_CHANNEL="$CHANNEL"
+    elif (( channel_major == 4 )) && (( channel_minor > 12 )); then
+        MAINTAINED_CHANNEL="v4.3"
     fi
 
     # Check if the file path to the minimal RBAC permissions exists
@@ -636,7 +640,9 @@ function install_cs_operator() {
     else
         for ns in ${ns_list//,/ }; do
             if [[ "$ns" != "$OPERATOR_NS" ]]; then
-                local sub_name=$(${OC} get subscription.operators.coreos.com -n ${ns} -l operators.coreos.com/${pm}.${ns}='' --no-headers | awk '{print $1}')
+                local key="${pm}.${ns}"
+                local length_limited_key=$(echo ${key:0:63})
+                local sub_name=$(${OC} get subscription.operators.coreos.com -n ${ns} -l operators.coreos.com/${length_limited_key}='' --no-headers | awk '{print $1}')
                 if [ ! -z "$sub_name" ]; then
                     op_source=$SOURCE
                     op_source_ns=$SOURCE_NS
@@ -751,6 +757,14 @@ EOF
             fi
         fi
 
+        # Get the resource version of the CommonService CR from the cluster
+        # and update the resource version in the file
+        local resource_version=$(${OC} get commonservice common-service -n ${OPERATOR_NS} -o jsonpath='{.metadata.resourceVersion}' --ignore-not-found)
+        if [[ -n "${resource_version}" ]]; then
+            debug1 "Updating resourceVersion in commonservice.yaml to ${resource_version}\n"
+            ${YQ} -i eval '.metadata.resourceVersion = "'${resource_version}'"' ${PREVIEW_DIR}/commonservice.yaml    
+        fi
+
         cat "${PREVIEW_DIR}/commonservice.yaml" | ${OC_CMD} apply -f -
 
         # Check if the patch was successful
@@ -787,7 +801,10 @@ EOF
 function upgrade_mitigation() {
     # When it is upgrade scenario, and it is complex toppology, then do the mitigation
     if [[ $IS_UPGRADE -eq 1 && $IS_NOT_COMPLEX_TOPOLOGY -eq 0 ]]; then
-        local sub_name=$(${OC} get subscription.operators.coreos.com -n ${OPERATOR_NS} -l operators.coreos.com/ibm-common-service-operator.${OPERATOR_NS}='' --no-headers | awk '{print $1}')
+        local package_name="ibm-common-service-operator"
+        local key="${package_name}.${OPERATOR_NS}"
+        local length_limited_key=$(echo ${key:0:63})
+        local sub_name=$(${OC} get subscription.operators.coreos.com -n ${OPERATOR_NS} -l operators.coreos.com/${length_limited_key}='' --no-headers | awk '{print $1}')
         local csv_name=$(${OC} get subscription.operators.coreos.com ${sub_name} -n ${OPERATOR_NS} --ignore-not-found -o jsonpath={.status.installedCSV})
         if [[ ! -z ${csv_name} ]]; then
             local csv_deleted=$(${OC} get csv -n ${OPERATOR_NS} --ignore-not-found -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep ibm-common-service-operator | grep -v ${csv_name})
