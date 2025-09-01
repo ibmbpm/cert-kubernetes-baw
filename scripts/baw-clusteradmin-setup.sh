@@ -1607,6 +1607,38 @@ function get_stg_entitlement_registry(){
     # For Entitlement Registry key
     entitlement_key=""
 
+    # If env vars are set, skip interactive prompts
+    if [ -n "$BAW_AUTO_USE_ENTITLEMENT" ]; then
+        if [[ "$BAW_AUTO_USE_ENTITLEMENT" == "yes" ]]; then
+            use_entitlement="yes"
+            DOCKER_REG_SERVER="cp.stg.icr.io"
+            if [ -n "$BAW_AUTO_ENTITLEMENT_KEY" ]; then
+                DOCKER_REG_KEY=$BAW_AUTO_ENTITLEMENT_KEY
+                echo -e "\x1B[1mUsing entitlement key from env var.\x1B[0m"
+                PASSED="passed"
+                verify_entitlement_key $DOCKER_REG_SERVER
+                return 0
+            else
+                error "BAW_AUTO_USE_ENTITLEMENT=yes but BAW_AUTO_ENTITLEMENT_KEY not set."
+                exit 1
+            fi
+        else
+            use_entitlement="no"
+            DOCKER_REG_KEY="None"
+            if [[ $PRIVATE_CATALOG == "No" ]]; then
+                if [[ "$PLATFORM_SELECTED" == "ROKS" || "$PLATFORM_SELECTED" == "OCP" ]]; then
+                    printf "\n"
+                    printf "\x1B[1;31mIBM $BAW_FULL_NAME only supports the Entitlement Registry on \"${PLATFORM_SELECTED}\", exiting...\n\x1B[0m"
+                    exit 1
+                else
+                    return 0
+                fi
+            else
+                return 0
+            fi
+        fi
+    fi
+
     while true; do
 
         printf "\x1B[1mDo you have a $BAW_FULL_NAME Staging Entitlement Registry key (Yes/No, default: No): \x1B[0m"
@@ -1645,6 +1677,7 @@ function get_stg_entitlement_registry(){
         esac
     done
 }
+
 
 function get_domain_name(){
     valiateIngress=false
