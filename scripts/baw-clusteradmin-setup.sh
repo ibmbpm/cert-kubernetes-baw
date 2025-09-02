@@ -1612,8 +1612,8 @@ function get_stg_entitlement_registry(){
         if [[ "$BAW_AUTO_USE_ENTITLEMENT" == "yes" ]]; then
             use_entitlement="yes"
             DOCKER_REG_SERVER="cp.stg.icr.io"
-            if [ -n "$BAW_AUTO_ENTITLEMENT_KEY" ]; then
-                DOCKER_REG_KEY=$BAW_AUTO_ENTITLEMENT_KEY
+            if [ -n "$BAW_AUTO_STG_ENTITLEMENT_KEY" ]; then
+                DOCKER_REG_KEY=$BAW_AUTO_STG_ENTITLEMENT_KEY
                 echo -e "\x1B[1mUsing entitlement key from env var.\x1B[0m"
                 PASSED="passed"
                 verify_entitlement_key $DOCKER_REG_SERVER
