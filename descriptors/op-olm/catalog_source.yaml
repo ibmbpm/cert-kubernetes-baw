@@ -69,17 +69,17 @@ spec:
       interval: 45m
   priority: 100
 ---
-# IBM Certificate Manager 4.2.15
+# IBM Certificate Manager 4.2.17
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: ibm-cert-manager-catalog
   namespace: openshift-marketplace
 spec:
-  displayName: ibm-cert-manager-4.2.15
+  displayName: ibm-cert-manager-4.2.17
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:85690858394aa8104e4452bead01b5648495c9930a237f9ee953064ddd1151fb
+  image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:10c775e414d55e992b076d28638e83de432302067f3a5ce4a1f7d4b173b41341
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -88,16 +88,16 @@ spec:
     registryPoll:
       interval: 45m
 ---
-# IBM License Manager 4.2.15
+# IBM License Manager 4.2.17
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: ibm-licensing-catalog
   namespace: openshift-marketplace
 spec:
-  displayName: ibm-licensing-4.2.15
+  displayName: ibm-licensing-4.2.17
   publisher: IBM
-  image: icr.io/cpopen/ibm-licensing-catalog@sha256:5c5fda8dc9958f1420ccccb4872c58fd6639d5f2c70694c06eb14f59816a4be8
+  image: icr.io/cpopen/ibm-licensing-catalog@sha256:f557775e3872dd3ced9a23e5bf0763b1effb9b0184ff966bd2e96ab075d63a0a
   sourceType: grpc
   secrets:
   - "ibm-entitlement-key"
@@ -107,11 +107,11 @@ spec:
     registryPoll:
       interval: 45m
 ---
-# IBM Cloud Foundational Services 4.14.0
+# IBM Cloud Foundational Services 4.15.0
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-cs-install-catalog-v4-14-0
+  name: ibm-cs-install-catalog-v4-15-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -119,7 +119,7 @@ spec:
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:05e8a09eb13ae69563db7b41eff543ebcd618f540dc90f5ed13b69d75846086a
+  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:a8dd4e651b01f9d0778a04e8163bb8c98fa3ee26f3e5c2f165db2184d38fea79
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -150,11 +150,11 @@ spec:
     registryPoll:
       interval: 45m
 ---
-# IBM CS IM Operator Catalog 4.13.0
+# IBM CS IM Operator Catalog 4.14.0
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-iam-operator-catalog-4-13-0
+  name: ibm-iam-operator-catalog-4-14-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -162,7 +162,7 @@ spec:
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:64d8300c54590926e09f663de2af68de393cc7c86266d9e7be9af6e62acecdb9
+  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:229da7bbdcf8cc25b17911c6d974e499d23456af72ebff79df168d26b3687cc7
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -172,7 +172,7 @@ spec:
       interval: 45m
   priority: 100
 ---
-# IBM Zen Operator Catalog 6.2.1+20250818.110231.113
+# IBM Zen Operator Catalog 6.2.2+20250821.171453.7
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
@@ -185,7 +185,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:0b92ad1b0d12f06d89e34f9e0b6e5b4359614ef173501decc74758213cd5f11d
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:006b15ea1142cf0e7fc91f4ddd6f7d36fc9af0906b79bbf4a1887c66d763e091
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
