@@ -56,12 +56,12 @@ function parse_arguments() {
                 exit 1
             fi
             RUNTIME_MODE=$1
-            #if [[ $RUNTIME_MODE == "upgradeOperator" || $RUNTIME_MODE == "upgradeOperatorStatus" || $RUNTIME_MODE == "upgradeDeployment" || $RUNTIME_MODE == "upgradeDeploymentStatus" || $RUNTIME_MODE == "generateIngress" ]]; then
-            if [[ $RUNTIME_MODE == "generateIngress" ]]; then
+            if [[ $RUNTIME_MODE == "upgradeOperator" || $RUNTIME_MODE == "upgradeOperatorStatus" || $RUNTIME_MODE == "upgradeDeployment" || $RUNTIME_MODE == "upgradeDeploymentStatus" || $RUNTIME_MODE == "generateIngress" ]]; then
+#            if [[ $RUNTIME_MODE == "generateIngress" ]]; then
                 echo -n
             else
-                #echo -e "Provide a valid argument for -m: [upgradeOperator] or [upgradeOperatorStatus] or [upgradeDeployment] or [upgradeDeploymentStatus] or [generateIngress]"
-                echo -e "Provide a valid argument for -m: generateIngress"
+                echo -e "Provide a valid argument for -m: [upgradeOperator] or [upgradeOperatorStatus] or [upgradeDeployment] or [upgradeDeploymentStatus] or [generateIngress]"
+#                echo -e "Provide a valid argument for -m: generateIngress"
                 exit -1
             fi
             ;;
@@ -1228,33 +1228,54 @@ function setup_opensearch(){
     fi
 }
 
+# Create a namespace if the project entered is not a namespace found on the
 function create_project() {
+
     local project_name=$1
     project_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$project_name")
+    if [[ "$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS" ]]; then
+        isProjExists=`${CLI_CMD} get project $project_name --ignore-not-found | wc -l`  >/dev/null 2>&1
 
-    isProjExists=`${CLI_CMD} get namespace $project_name --ignore-not-found | wc -l`  >/dev/null 2>&1
-
-    if [ $isProjExists -ne 2 ] ; then
-        ${CLI_CMD} create namespace ${project_name} >/dev/null 2>&1
-        returnValue=$?
-        if [ "$returnValue" == 1 ]; then
-            if [ -z "$CP4BA_AUTO_NAMESPACE" ]; then
-                echo -e "\x1B[1;31mInvalid project name, enter a valid name...\x1B[0m"
-                project_name=""
-                return 1
+        if [ $isProjExists -ne 2 ] ; then
+            ${CLI_CMD} new-project ${project_name} >> ${LOG_FILE}
+            returnValue=$?
+            if [ "$returnValue" == 1 ]; then
+                if [ -z "$BAW_AUTO_NAMESPACE" ]; then
+                    echo -e "\x1B[1;31mInvalid project name, Enter a valid name...\x1B[0m"
+                    project_name=""
+                else
+                    echo -e "\x1B[1;31mInvalid project name \"$BAW_AUTO_NAMESPACE\", Set a valid name...\x1B[0m"
+                    exit 1
+                fi
             else
-                echo -e "\x1B[1;31mInvalid project name \"$CP4BA_AUTO_NAMESPACE\". Set a valid name...\x1B[0m"
-                project_name=""
-                exit 1
+                echo -e "\x1B[1mUsing project ${project_name}...\x1B[0m"
             fi
         else
-            echo -e "\x1B[1mUsing project ${project_name}...\x1B[0m"
-            return 0
+            echo -e "\x1B[1mProject \"${project_name}\" already exists! Continue...\x1B[0m"
         fi
-    else
-        echo -e "\x1B[1mProject \"${project_name}\" already exists! Continue...\x1B[0m"
-        return 0
+    elif [[ "$PLATFORM_SELECTED" == "other" ]]
+    then
+        isProjExists=`kubectl get namespace $project_name --ignore-not-found | wc -l`  >/dev/null 2>&1
+
+        if [ $isProjExists -ne 2 ] ; then
+            kubectl create namespace ${project_name} >> ${LOG_FILE}
+            returnValue=$?
+            if [ "$returnValue" == 1 ]; then
+                if [ -z "$BAW_AUTO_NAMESPACE" ]; then
+                    echo -e "\x1B[1;31mInvalid namespace name, Enter a valid name...\x1B[0m"
+                    project_name=""
+                else
+                    echo -e "\x1B[1;31mInvalid namespace name \"$BAW_AUTO_NAMESPACE\", Set a valid name...\x1B[0m"
+                    exit 1
+                fi
+            else
+                echo -e "\x1B[1mUsing namespace ${project_name}...\x1B[0m"
+            fi
+        else
+            echo -e "\x1B[1mName space \"${project_name}\" already exists! Continue...\x1B[0m"
+        fi
     fi
+    PROJ_NAME=${project_name}
 }
 
 function check_selection_migration(){
@@ -9307,28 +9328,28 @@ function shutdown_operator(){
 }
 
 function cncf_install(){
-  sed -e '/dba_license/{n;s/value:.*/value: accept/;}' ${CUR_DIR}/../upgradeOperator.yaml > ${CUR_DIR}/../upgradeOperatorsav.yaml ;  mv ${CUR_DIR}/../upgradeOperatorsav.yaml ${CUR_DIR}/../upgradeOperator.yaml
-  sed -e '/baw_license/{n;s/value:.*/value: accept/;}' ${CUR_DIR}/../upgradeOperator.yaml > ${CUR_DIR}/../upgradeOperatorsav.yaml ;  mv ${CUR_DIR}/../upgradeOperatorsav.yaml ${CUR_DIR}/../upgradeOperator.yaml
-  sed -e '/fncm_license/{n;s/value:.*/value: accept/;}' ${CUR_DIR}/../upgradeOperator.yaml > ${CUR_DIR}/../upgradeOperatorsav.yaml ;  mv ${CUR_DIR}/../upgradeOperatorsav.yaml ${CUR_DIR}/../upgradeOperator.yaml
-  sed -e '/ier_license/{n;s/value:.*/value: accept/;}' ${CUR_DIR}/../upgradeOperator.yaml > ${CUR_DIR}/../upgradeOperatorsav.yaml ;  mv ${CUR_DIR}/../upgradeOperatorsav.yaml ${CUR_DIR}/../upgradeOperator.yaml
+  sed -e '/dba_license/{n;s/value:.*/value: accept/;}' ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml > ${CUR_DIR}/../upgradeOperatorsav.yaml ;  mv ${CUR_DIR}/../upgradeOperatorsav.yaml ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml
+  sed -e '/baw_license/{n;s/value:.*/value: accept/;}' ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml > ${CUR_DIR}/../upgradeOperatorsav.yaml ;  mv ${CUR_DIR}/../upgradeOperatorsav.yaml ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml
+  sed -e '/fncm_license/{n;s/value:.*/value: accept/;}' ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml > ${CUR_DIR}/../upgradeOperatorsav.yaml ;  mv ${CUR_DIR}/../upgradeOperatorsav.yaml ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml
+  sed -e '/ier_license/{n;s/value:.*/value: accept/;}' ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml > ${CUR_DIR}/../upgradeOperatorsav.yaml ;  mv ${CUR_DIR}/../upgradeOperatorsav.yaml ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml
 
   if [ ! -z ${IMAGEREGISTRY} ]; then
   # Change the location of the image
   echo "Using the operator image name: $IMAGEREGISTRY"
-  sed -e "s|image: .*|image: \"$IMAGEREGISTRY\" |g" ${CUR_DIR}/../upgradeOperator.yaml > ${CUR_DIR}/../upgradeOperatorsav.yaml ;  mv ${CUR_DIR}/../upgradeOperatorsav.yaml ${CUR_DIR}/../upgradeOperator.yaml
+  sed -e "s|image: .*|image: \"$IMAGEREGISTRY\" |g" ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml > ${CUR_DIR}/../upgradeOperatorsav.yaml ;  mv ${CUR_DIR}/../upgradeOperatorsav.yaml ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml
   fi
 
   # Change the pullSecrets if needed
   if [ ! -z ${PULLSECRET} ]; then
       echo "Setting pullSecrets to $PULLSECRET"
-      sed -e "s|ibm-entitlement-key|$PULLSECRET|g" ${CUR_DIR}/../upgradeOperator.yaml > ${CUR_DIR}/../upgradeOperatorsav.yaml ;  mv ${CUR_DIR}/../upgradeOperatorsav.yaml ${CUR_DIR}/../upgradeOperator.yaml
+      sed -e "s|ibm-entitlement-key|$PULLSECRET|g" ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml > ${CUR_DIR}/../upgradeOperatorsav.yaml ;  mv ${CUR_DIR}/../upgradeOperatorsav.yaml ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml
   else
-      sed -e '/imagePullSecrets:/{N;d;}' ${CUR_DIR}/../upgradeOperator.yaml > ${CUR_DIR}/../upgradeOperatorsav.yaml ;  mv ${CUR_DIR}/../upgradeOperatorsav.yaml ${CUR_DIR}/../upgradeOperator.yaml
+      sed -e '/imagePullSecrets:/{N;d;}' ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml > ${CUR_DIR}/../upgradeOperatorsav.yaml ;  mv ${CUR_DIR}/../upgradeOperatorsav.yaml ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml
   fi
   kubectl apply -f ${CUR_DIR}/../descriptors/service_account.yaml --validate=false
   kubectl apply -f ${CUR_DIR}/../descriptors/role.yaml --validate=false
   kubectl apply -f ${CUR_DIR}/../descriptors/role_binding.yaml --validate=false
-  kubectl apply -f ${CUR_DIR}/../upgradeOperator.yaml --validate=false
+  kubectl apply -f ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml --validate=false
 }
 
 function patch_edb_configmap(){
@@ -9929,8 +9950,15 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
             read -rp "" ans
             case "$ans" in
             "y"|"Y"|"yes"|"Yes"|"YES")
-                displayUpgradeOperatorMessage '' $TARGET_PROJECT_NAME $cp4a_operator_csv_version
-                exit 1
+                # if the user is running the upgradeOperator command with --cpfs-upgrade-mode dedicated2dedicated --original-cp4ba-csv-ver 25.0.1 flags that means the user is explicitly trying to re-run upgrade
+                # In that scenario we should not exit out and allow upgrade to continue
+                # For https://jsw.ibm.com/browse/DBACLD-186019
+                if [[ -z $CP4BA_ORIGINAL_CSV_VERSION ]]; then
+                    displayUpgradeOperatorMessage '' $TARGET_PROJECT_NAME $cp4a_operator_csv_version
+                    exit 1
+                else
+                    break
+                fi
                 ;;
             "n"|"N"|"no"|"No"|"NO"|"")
                 echo "Exiting..."
@@ -10921,7 +10949,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                 fi
 
                 # Additionally, we would check if cs-control namespace exists.
-                isProjExists=`${CLI_CMD} get project $DEDICATED_CS_PROJECT --no-headers --ignore-not-found | wc -l`  >/dev/null 2>&1
+                isProjExists=`${CLI_CMD} get namespace $DEDICATED_CS_PROJECT --no-headers --ignore-not-found | wc -l`  >/dev/null 2>&1
                 if [ $isProjExists -eq 1 ] ; then
                     # If it exists, we will deploy the same ibm-licensing-catalog into cs-control namespace.
                     if [[ $machine == "Linux" ]]; then
@@ -10990,6 +11018,14 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
 
             # Checking ibm-cp4a-operator catalog source pod
             info "Checking CP4BA operator catalog pod ready or not in the project \"$TEMP_CATALOG_PROJECT_NAME\""
+
+            if [[ "$SCRIPT_MODE" == "dev" ]];then
+                source $BAW_CNCF_FOLDER/baw-utils.sh
+
+                patch_failed_operator_pods $TEMP_CATALOG_PROJECT_NAME
+                patch_catalog "ibm-cp4a-operator-catalog" $TEMP_CATALOG_PROJECT_NAME
+            fi
+
             maxRetry=50
             for ((retry=0;retry<=${maxRetry};retry++)); do
                 cp4a_catalog_pod_name=$(${CLI_CMD} get pod -l=olm.catalogSource=ibm-cp4a-operator-catalog -n $TEMP_CATALOG_PROJECT_NAME -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}')
@@ -11386,16 +11422,34 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
             fi
         fi
 
+
+
         # Migrate CPfs from 3.x to 4.6 for upgrade CP4BA 21.0.3.x/22.0.2 to latest
-        if [[ "$cp4a_operator_csv_version" == "21.3."* && (("$ibm_bts_operator_ready" == "Yes" && "$cloud_native_postgresql_ready" == "Yes" )) && "$ibm_cp4a_wfps_operator_ready" == "Yes" ]]; then
-            READY_FOR_DIRECT_UPGRADE="Yes"
-        elif [[ "$cp4a_operator_csv_version" == "22.2."* && (("$ibm_bts_operator_ready" == "Yes" && "$cloud_native_postgresql_ready" == "Yes" )) && "$ibm_cp4a_wfps_operator_ready" == "Yes" && "$ibm_cp4a_pfs_operator_ready" == "Yes" && "$ibm_cp4a_ads_operator_ready" == "Yes" && "$ibm_cp4a_content_operator_ready" == "Yes" && "$ibm_cp4a_foundation_operator_ready" == "Yes" ]]; then
-            READY_FOR_DIRECT_UPGRADE="Yes"
-        elif [[ "$cp4a_operator_csv_version" == "23.2."* || "$cp4a_operator_csv_version" == "24."* ]]; then
-            READY_FOR_DIRECT_UPGRADE="Yes"
-        else
+        # instead of having multiple conditions that evaluate and set READY_FOR_DIRECT_UPGRADE="Yes" , it makes more sense to have 1 condition that results to setting READY_FOR_DIRECT_UPGRADE="No"
+        # we were checking for csv version and a bunch other flags for 21.0.3 and 22.0.2 which I converted to the negative condition to set READY_FOR_DIRECT_UPGRADE to no
+        # For versions higher than 22.0.2 we didnt have those flags to check so basically we had to add a new condition each release to care of the release csv version
+        # instead of having to update this block every release, it made sense to check for the only case you would not be ready for upgrade
+        # Commented out the old block so its easier for everyone to undestand
+
+        ### START of OLD CONDITION ####
+        #if [[ "$cp4a_operator_csv_version" == "21.3."* && (("$ibm_bts_operator_ready" == "Yes" && "$cloud_native_postgresql_ready" == "Yes" )) && "$ibm_cp4a_wfps_operator_ready" == "Yes" ]]; then
+        #    READY_FOR_DIRECT_UPGRADE="Yes"
+        #elif [[ "$cp4a_operator_csv_version" == "22.2."* && (("$ibm_bts_operator_ready" == "Yes" && "$cloud_native_postgresql_ready" == "Yes" )) && "$ibm_cp4a_wfps_operator_ready" == "Yes" && "$ibm_cp4a_pfs_operator_ready" == "Yes" && "$ibm_cp4a_ads_operator_ready" == "Yes" && "$ibm_cp4a_content_operator_ready" == "Yes" && "$ibm_cp4a_foundation_operator_ready" == "Yes" ]]; then
+        #    READY_FOR_DIRECT_UPGRADE="Yes"
+        #elif [[ "$cp4a_operator_csv_version" == "23.2."* || "$cp4a_operator_csv_version" == "24."* ]]; then
+        #    READY_FOR_DIRECT_UPGRADE="Yes"
+        #else
+        #    READY_FOR_DIRECT_UPGRADE="No"
+        #    fail "Prerequisite for upgrade did not complete, exiting..."
+        ### END of OLD CONDITION ####
+
+        # For https://jsw.ibm.com/browse/DBACLD-186019
+
+        if [[ ( "$cp4a_operator_csv_version" == "21.3."* && ( "$ibm_bts_operator_ready" != "Yes" || "$cloud_native_postgresql_ready" != "Yes" || "$ibm_cp4a_wfps_operator_ready" != "Yes" ) ) || ( "$cp4a_operator_csv_version" == "22.2."* && ( "$ibm_bts_operator_ready" != "Yes" || "$cloud_native_postgresql_ready" != "Yes" || "$ibm_cp4a_wfps_operator_ready" != "Yes" || "$ibm_cp4a_pfs_operator_ready" != "Yes" || "$ibm_cp4a_ads_operator_ready" != "Yes" || "$ibm_cp4a_content_operator_ready" != "Yes" || "$ibm_cp4a_foundation_operator_ready" != "Yes" ) ) ]]; then
             READY_FOR_DIRECT_UPGRADE="No"
             fail "Prerequisite for upgrade did not complete, exiting..."
+        else
+            READY_FOR_DIRECT_UPGRADE="Yes"
         fi
 
         if [[ $READY_FOR_DIRECT_UPGRADE == "Yes" ]]; then
@@ -11528,7 +11582,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                     fi
 
                     # Additionally, we would check if cs-control namespace exists.
-                    isProjExists=`${CLI_CMD} get project $DEDICATED_CS_PROJECT --no-headers --ignore-not-found | wc -l`  >/dev/null 2>&1
+                    isProjExists=`${CLI_CMD} get namespace $DEDICATED_CS_PROJECT --no-headers --ignore-not-found | wc -l`  >/dev/null 2>&1
                     if [ $isProjExists -eq 1 ] ; then
                         # If it exists, we will deploy the same ibm-licensing-catalog into cs-control namespace.
                         if [[ $machine == "Linux" ]]; then
@@ -11618,7 +11672,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                     fi
 
                     # Additionally, we would check if cs-control namespace exists.
-                    isProjExists=`${CLI_CMD} get project $DEDICATED_CS_PROJECT --no-headers --ignore-not-found | wc -l`  >/dev/null 2>&1
+                    isProjExists=`${CLI_CMD} get namespace $DEDICATED_CS_PROJECT --no-headers --ignore-not-found | wc -l`  >/dev/null 2>&1
                     if [ $isProjExists -eq 1 ] ; then
                         # If it exists, we will deploy the same ibm-licensing-catalog into cs-control namespace.
                         if [[ $machine == "Linux" ]]; then
@@ -11715,7 +11769,15 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                         exit 1
                     fi
                 fi
-            elif [[ "$cp4a_operator_csv_version" == "23.2."* || "$cp4a_operator_csv_version" == "24.0."* || "$cp4a_operator_csv_version" == "24.1."* ]]; then
+            # The previous condition was basically checking for any version newer than 22.0.2
+            # It did it by listing each version newer than 22.0.2 and explicitly listing each of them
+            # This would also need to be updated each release and instead it made sense to use the negation so that we never have to constantly update the conditon with the new version each release
+            # This was the old condition
+            ###### START of OLD CONDTION #####
+            # elif [[ "$cp4a_operator_csv_version" == "23.2."* || "$cp4a_operator_csv_version" == "24.0."* || "$cp4a_operator_csv_version" == "24.1."* ]]; then
+            ###### END of OLD CONDTION #####
+            # For https://jsw.ibm.com/browse/DBACLD-186019
+            elif [[ "$cp4a_operator_csv_version" != "21.0."* || "$cp4a_operator_csv_version" != "22.2."* ]]; then
                 info "Starting to upgrade IBM Cloud Pak foundational services to $CS_OPERATOR_VERSION"
                 # Check if without option --enable-private-catalog, the catalog is in target project, set the private catalog as default.
                 info "Checking ibm-cp4a-operator-catalog catalog source is global or private namespace scoped"
@@ -11729,7 +11791,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                 # This is still a valid scenario in 24.0.0 upgrading to 24.0.1.
                 if [[ $UPGRADE_MODE == "dedicated2dedicated" && $ENABLE_PRIVATE_CATALOG -eq 1 ]]; then
                     # Additionally, we would check if cs-control namespace exists.
-                    isProjExists=`${CLI_CMD} get project $DEDICATED_CS_PROJECT --no-headers --ignore-not-found | wc -l`  >/dev/null 2>&1
+                    isProjExists=`${CLI_CMD} get namespace $DEDICATED_CS_PROJECT --no-headers --ignore-not-found | wc -l`  >/dev/null 2>&1
                     if [ $isProjExists -eq 1 ] ; then
                         # If it exists, we will deploy the same ibm-licensing-catalog into cs-control namespace.
                         if [[ $machine == "Linux" ]]; then
@@ -11879,6 +11941,11 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                     fi
                 fi
             fi
+        fi
+
+        if [[ "$SCRIPT_MODE" == "dev" ]];then
+            source $BAW_CNCF_FOLDER/baw-utils.sh
+            patch_failed_operator_pods $TEMP_CATALOG_PROJECT_NAME "sed -n '2p'"
         fi
 
         # Check IBM Cloud Pak foundational services Operator $CS_OPERATOR_VERSION
@@ -12779,7 +12846,16 @@ if [[ "$RUNTIME_MODE" == "upgradeDeploymentStatus" ]]; then
             echo "zenService Progress       : ${RED_TEXT}$isProgressDone${RESET_TEXT}"
         fi
 
-        if [[ ! ("$cp4ba_original_csv_ver_for_upgrade_script" == "24."*) && "$ALLOW_DIRECT_UPGRADE" == 1 ]]; then
+        # Another example of where script was checking for each version newer than 23.0.2 and explicitly mentioning it in the condition
+        # Instead of we can just check for the finite list of versions prior to and including 23.0.2
+        # IF you see the old condition we would have to add 25.* and then 26.* and so on
+
+        #### START of OLD CONDITION #####
+        # if [[ ! ("$cp4ba_original_csv_ver_for_upgrade_script" == "24."*) && "$ALLOW_DIRECT_UPGRADE" == 1 ]]; then
+        #### END of OLD CONDITION #####
+
+        # For https://jsw.ibm.com/browse/DBACLD-186019
+        if [[ ( "$cp4ba_original_csv_ver_for_upgrade_script" == "21."* || "$cp4ba_original_csv_ver_for_upgrade_script" == "22."* || "$cp4ba_original_csv_ver_for_upgrade_script" == "23."* ) && "$ALLOW_DIRECT_UPGRADE" == 1 ]]; then
             ## Create tow route after zenService ready
             TARGET_PROJECT_NAME_CS=$(${CLI_CMD} get route --no-headers --ignore-not-found  -A |grep  cp-console-iam-provider|awk '{print $1}')
             if [[ -z $TARGET_PROJECT_NAME_CS ]]; then
