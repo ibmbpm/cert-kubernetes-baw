@@ -1171,6 +1171,7 @@ function prepare_olm_install() {
         if [[ $PRIVATE_CATALOG == "No" ]]; then
             sed "s/REPLACE_CATALOG_SOURCE_NAMESPACE/$CATALOG_NAMESPACE/g" ${OLM_CATALOG} > ${OLM_CATALOG_TMP}
         fi
+        catalog_source_staging
         ${CLI_CMD} apply -f $OLM_CATALOG_TMP
         if [ $? -eq 0 ]; then
             echo "IBM Operator Catalog source updated!"
@@ -1182,6 +1183,7 @@ function prepare_olm_install() {
         if [[ $PRIVATE_CATALOG == "No" ]]; then
             sed "s/REPLACE_CATALOG_SOURCE_NAMESPACE/$CATALOG_NAMESPACE/g" ${OLM_CATALOG} > ${OLM_CATALOG_TMP}
         fi
+        catalog_source_staging
         ${CLI_CMD} apply -f $OLM_CATALOG_TMP
         if [ $? -eq 0 ]; then
             echo "IBM Operator Catalog source created!"
@@ -1641,38 +1643,6 @@ function get_stg_entitlement_registry(){
     # For Entitlement Registry key
     entitlement_key=""
 
-    # If env vars are set, skip interactive prompts
-    if [ -n "$BAW_AUTO_USE_ENTITLEMENT" ]; then
-        if [[ "$BAW_AUTO_USE_ENTITLEMENT" == "yes" ]]; then
-            use_entitlement="yes"
-            DOCKER_REG_SERVER="cp.stg.icr.io"
-            if [ -n "$BAW_AUTO_STG_ENTITLEMENT_KEY" ]; then
-                DOCKER_REG_KEY=$BAW_AUTO_STG_ENTITLEMENT_KEY
-                echo -e "\x1B[1mUsing entitlement key from env var.\x1B[0m"
-                PASSED="passed"
-                verify_entitlement_key $DOCKER_REG_SERVER
-                return 0
-            else
-                error "BAW_AUTO_USE_ENTITLEMENT=yes but BAW_AUTO_ENTITLEMENT_KEY not set."
-                exit 1
-            fi
-        else
-            use_entitlement="no"
-            DOCKER_REG_KEY="None"
-            if [[ $PRIVATE_CATALOG == "No" ]]; then
-                if [[ "$PLATFORM_SELECTED" == "ROKS" || "$PLATFORM_SELECTED" == "OCP" ]]; then
-                    printf "\n"
-                    printf "\x1B[1;31mIBM $BAW_FULL_NAME only supports the Entitlement Registry on \"${PLATFORM_SELECTED}\", exiting...\n\x1B[0m"
-                    exit 1
-                else
-                    return 0
-                fi
-            else
-                return 0
-            fi
-        fi
-    fi
-
     while true; do
 
         printf "\x1B[1mDo you have a $BAW_FULL_NAME Staging Entitlement Registry key (Yes/No, default: No): \x1B[0m"
@@ -1711,7 +1681,6 @@ function get_stg_entitlement_registry(){
         esac
     done
 }
-
 
 function get_domain_name(){
     valiateIngress=false
@@ -1924,7 +1893,7 @@ function clean_up(){
 function check_airgap_mode(){
     printf "\n"
     # clear
-    if [ -z "$BAW_AUTO_AIRGAP_MODE" ]; then
+    if [ -z "$BAW_AUTO_AIGRAP_MODE" ]; then
         COLUMNS=12
         echo -e "\x1B[1mWould you like to set up the cluster for an online based $BAW_FULL_NAME deployment or for an airgap/offline based BAW deployment: \x1B[0m"
 
@@ -1947,8 +1916,8 @@ function check_airgap_mode(){
             esac
         done
     else
-        AIRGAP_INSTALL=$BAW_AUTO_AIRGAP_MODE
-        echo -e "\x1B[1mWould you like to set up the cluster for an online based $BAW_FULL_NAME deployment or for an airgap/offline based BAW deployment :\x1B[0m $BAW_AUTO_AIRGAP_MODE"
+        AIRGAP_INSTALL=$BAW_AUTO_AIGRAP_MODE
+        echo -e "\x1B[1mWould you like to set up the cluster for an online based $BAW_FULL_NAME deployment or for an airgap/offline based BAW deployment :\x1B[0m $BAW_AUTO_AIGRAP_MODE"
     fi
 }
 
@@ -1962,8 +1931,8 @@ function select_platform(){
         #Adding support for the other type of platform
         # DBACLD-168151
         otherOption="Other ( Rancher Kubernetes Engine (RKE) / VMware Tanzu Kubernetes Grid Integrated Edition (TKGI) )"
-        options=("Openshift Container Platform (OCP) - Private Cloud")
-        PS3='Enter a valid option [1 to 2]: '
+      options=("Openshift Container Platform (OCP) - Private Cloud")
+      PS3='Enter a valid option [1 to 2]: '
         # For airgap deployment only ROKS and OCP is supported
         if [[ $AIRGAP_INSTALL == "Yes" ]]; then
             #options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
@@ -2007,7 +1976,7 @@ function select_platform(){
         done
     else
         PLATFORM_SELECTED=$BAW_AUTO_PLATFORM
-        echo -e "\x1B[1mWhat type of cloud platform is selected?\x1B[0m $BAW_AUTO_PLATFORM"
+        echo -e "\x1B[1mWhat type of cloud platform is selected?\x1B[0m $BAI_AUTO_PLATFORM"
     fi
 
     # For other type of platform we also ask what type of other type of platform
@@ -2016,32 +1985,26 @@ function select_platform(){
     if [[ "$PLATFORM_SELECTED" == "other" ]]; then
         SCRIPT_MODE="OLM"
         CLI_CMD=kubectl
-
-        if [ -z "$OTHER_PLATFORM_TYPE" ]; then
-            echo -e "\x1B[1mSpecify the other type of cloud platform to deploy: \x1B[0m"
-            otheroption1="VMware Tanzu Kubernetes Grid Integrated Edition (TKGI)"
-            otheroption2="Rancher Kubernetes Engine (RKE)"
-            options=("$otheroption1" "$otheroption2")
-            PS3='Enter a valid option [1 to 2]: '
-            select opt in "${options[@]}"
-            do
-                case $opt in
-                    "$otheroption1")
-                        OTHER_PLATFORM_TYPE="tanzu"
-                        break
-                        ;;
-                    "$otheroption2")
-                        OTHER_PLATFORM_TYPE="rancher"
-                        break
-                        ;;
-                    *) echo "invalid option $REPLY";;
-                esac
-            done
-        else
-            echo -e "\x1B[1mOther cloud platform selected via env var:\x1B[0m $OTHER_PLATFORM_TYPE"
-        fi
+        echo -e "\x1B[1mSpecify the other type of cloud platform to deploy: \x1B[0m"
+        otheroption1="VMware Tanzu Kubernetes Grid Integrated Edition (TKGI)"
+        otheroption2="Rancher Kubernetes Engine (RKE)"
+        options=("$otheroption1" "$otheroption2")
+        PS3='Enter a valid option [1 to 2]: '
+        select opt in "${options[@]}"
+        do
+            case $opt in
+                "$otheroption1")
+                    OTHER_PLATFORM_TYPE="tanzu"
+                    break
+                    ;;
+                "$otheroption2")
+                    OTHER_PLATFORM_TYPE="rancher"
+                    break
+                    ;;
+                *) echo "invalid option $REPLY";;
+            esac
+        done
     fi 
-
     if [[ "$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS" ]]; then
         SCRIPT_MODE="OLM"
         CLI_CMD=oc
@@ -2051,7 +2014,6 @@ function select_platform(){
         CLI_CMD=kubectl
     fi
 }
-
 
 
 function select_deployment_type(){
@@ -2705,38 +2667,31 @@ function verify_silence_install(){
 function retrieve_domain_name(){
     local attempts=0
     local max_attempts=3
-    OTHER_PLATFORM_TYPE_DOMAIN=""
-
-    # If env var is already set, skip interactive prompt
-    if [ -n "$BAW_AUTO_DOMAIN" ]; then
-        OTHER_PLATFORM_TYPE_DOMAIN=$BAW_AUTO_DOMAIN
-        echo -e "\x1B[1mDomain name provided via env var:\x1B[0m $OTHER_PLATFORM_TYPE_DOMAIN"
-        return 0
-    fi
+    OTHER_PLATFROM_TYPE_DOMAIN=""
 
     while [ $attempts -lt $max_attempts ]; do
         printf "\x1B[1mProvide the domain name for your cluster (This is the ingress that must be created and provided as a prerequisite for the deployment): \x1B[0m"
-        read -rp "" OTHER_PLATFORM_TYPE_DOMAIN
+        read -rp "" OTHER_PLATFROM_TYPE_DOMAIN
         
-        if [[ -z "$OTHER_PLATFORM_TYPE_DOMAIN" ]]; then
+        if [[ -z "$OTHER_PLATFROM_TYPE_DOMAIN" ]]; then
             warning "It is mandatory to provide a domain name for any deployment on $OTHER_PLATFORM_TYPE."
         else
-            if ping -c 1 -W 2 "$OTHER_PLATFORM_TYPE_DOMAIN" >/dev/null 2>&1; then
-                success "The Domain '$OTHER_PLATFORM_TYPE_DOMAIN' is reachable."
+            if ping -c 1 -W 2 "$OTHER_PLATFROM_TYPE_DOMAIN" >/dev/null 2>&1; then
+                success "The Domain '$OTHER_PLATFROM_TYPE_DOMAIN' is reachable."
             else
-                warning "The domain '$OTHER_PLATFORM_TYPE_DOMAIN' does not seem reachable.  Please make sure this is a valid domain before proceeding further."
+                warning "The domain '$OTHER_PLATFROM_TYPE_DOMAIN' does not seem reachable.  Please make sure this is a valid domain before proceeding further."
             fi
             return 0
         fi
     
         ((attempts++))
     done
-    if [[ -z "$OTHER_PLATFORM_TYPE_DOMAIN" ]]; then
-        error "Maximum number of retries exceeded for entering a valid Domain name. The script will exit now...."
+    if [[ -z "$OTHER_PLATFROM_TYPE_DOMAIN" ]]; then
+        error "Maximum number of retries exceeded for entering a valid Domain name.The script will exit now...."
         exit
     fi
-}
 
+}
 
 # Function that does the cluster setup for TANZU or Rancher
 # DBACLD-168151
@@ -2762,9 +2717,9 @@ function setup_other_type_platform()
     source $BAW_CNCF_FOLDER/baw-install.sh
     # This function call is used to install the BAW operators
     if [[ $CNCF_DEV == "Yes" ]]; then
-        baw_cncf_rancher_install "$project_name" "$OTHER_PLATFORM_TYPE_DOMAIN" true
+        baw_cncf_rancher_install "$project_name" "$OTHER_PLATFROM_TYPE_DOMAIN" true
     else
-        baw_cncf_rancher_install "$project_name" "$OTHER_PLATFORM_TYPE_DOMAIN" false
+        baw_cncf_rancher_install "$project_name" "$OTHER_PLATFROM_TYPE_DOMAIN" false
     fi
     success " $BAW_FULL_NAME Standalone Operators have been installed! "
     exit
