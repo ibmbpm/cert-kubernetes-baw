@@ -252,16 +252,33 @@ function is_sub_exist() {
     is_exist=$(echo "$name" | grep -w "$package_name")
 }
 
+function patch_failed_operator_pods() {
+  local ns=$1
+  local head_to_fetch=${2:-"head -n 1"}
+
+  pods=$(kubectl get pods -n "$ns" --no-headers | awk 'index($3,"ImagePullBackOff") || index($3,"Pending") {print $1}')
+  info "List of Pod need to be patched: ${pods}"
+
+  for pod in $pods; do
+      base=$(echo "$pod" | sed -E 's/-[a-z0-9]{9,10}-[a-z0-9]{4,5}$//')
+      if [[ $base == *operator ]]; then
+        patch_csv "$base" "$ns" "$head_to_fetch"
+      fi
+  done
+}
+
 # Function that patches the csv with the cp.stg.icr.io image
 # THIS FUNCTION IS ONLY USED FOR DEV MODE
 function patch_csv() {
     local csv_prefix=$1
     local namespace=$2
+    local head_to_fetch=${3:-"head -n 1"}
     local max_retries=20
     local retry_delay=20
+
     # Function to find a CSV that starts with the given prefix
     function get_csv_by_prefix() {
-        ${CLI_CMD} get csv -n "$namespace" --no-headers -o custom-columns=":metadata.name" | grep -E "^$csv_prefix" | head -n 1
+        ${CLI_CMD} get csv -n "$namespace" --no-headers -o custom-columns=":metadata.name" | grep -E "^$csv_prefix" | eval "$head_to_fetch"
     }
     # Check if the CSV exists, retry up to max_retries times
     
@@ -323,6 +340,31 @@ function patch_csv() {
     ${CLI_CMD} delete deployment $csv_prefix
     success "The $csv_name CSV has been patched successfully!"
 }
+
+# Function that patches the all catalog sources with the cp.stg.icr.io image which has ImagePullBackOff
+# THIS FUNCTION IS ONLY USED FOR DEV MODE
+function patch_catalog() {
+  local catalog="$1"
+  local namespace="$2"
+
+  # Get current image
+  current_image=$(kubectl get catalogsource "$catalog" -n "$namespace" -o jsonpath="{.spec.image}")
+  if [[ -z "$current_image" ]]; then
+    echo "Failed to get current image for $catalog"
+  else
+      # Transform the image path
+    new_image=$(echo "$current_image" | sed -E 's|^icr.io/cpopen/|cp.stg.icr.io/cp/|')
+
+    # Patch catalog with new image
+    kubectl patch catalogsource "$catalog" \
+      -n "$namespace" \
+      --type=merge \
+      -p "{\"spec\": {\"image\": \"$new_image\"}}"
+
+    echo "Patched $catalog successfully"
+  fi
+}
+
 
 # Function to create the BAW-Standalone Operator subscription.
 # Uses the file in descriptors folder 
