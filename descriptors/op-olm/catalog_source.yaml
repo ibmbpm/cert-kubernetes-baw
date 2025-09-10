@@ -1,4 +1,3 @@
-
 ################################################################################
 #
 # Licensed Materials - Property of IBM
@@ -9,7 +8,7 @@
 # disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
 #
 ###############################################################################
-# CP4BA 2501.SP17 catalog
+# CP4BA 2501.SP18 catalog
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -19,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:2461826ed79c80ddbe916520338008f0d032f474c62f7c1107cb056b71098cc5
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:98c0763aa4ed90b97a07152363ae88c65801803cb9b4fe8b59fb8aecf1f05967
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
