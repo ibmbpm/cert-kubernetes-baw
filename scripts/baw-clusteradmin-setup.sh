@@ -1491,76 +1491,82 @@ function display_airgap_prerequisites(){
 
 }
 
-function verify_entitlement_key(){
-
-  local DOCKER_REG_SERVER=$1
-
+function verify_entitlement_key() {
+  reg_key=""
+  entitlement_verify_passed=""
   ATTEMPTS=0
-  while [[ $entitlement_key == '' ]]
-  do
-      if [ -z "$BAW_AUTO_ENTITLEMENT_KEY" ]; then
-          read -rsp "" entitlement_key
+  cli_command="docker"
+
+  while [[ -z $entitlement_key ]]; do
+    if [[ "$USER_DOCKER_REG_SERVER" == "cp.stg.icr.io" ]]; then
+      if [[ -z "$BAW_AUTO_STG_ENTITLEMENT_KEY" ]]; then
+        read -rsp " " entitlement_key
+        echo
       else
-          entitlement_key=$BAW_AUTO_ENTITLEMENT_KEY
+        entitlement_key=$BAW_AUTO_STG_ENTITLEMENT_KEY
       fi
-      if [ -z "$entitlement_key" ]; then
-          printf "\n"
-          echo -e "\x1B[1;31mEnter a valid Entitlement Registry key\x1B[0m"
+    else
+      if [[ -z "$BAW_AUTO_ENTITLEMENT_KEY" ]]; then
+        read -rsp " " entitlement_key
+        echo
       else
-          if  [[ $entitlement_key == iamapikey:* ]] ;
-          then
-              DOCKER_REG_USER="iamapikey"
-              reg_key="${entitlement_key#*:}"
-          else
-              DOCKER_REG_USER="cp"
-              reg_key=$entitlement_key
-
-          fi
-
-          if [[ "$DOCKER_REG_SERVER" == "cp.stg.icr.io" ]]
-          then
-            DOCKER_REG_KEY_STG=$reg_key
-            DOCKER_REG_USER_STG=$DOCKER_REG_USER
-          else
-            DOCKER_REG_KEY=$reg_key
-          fi
-
-          entitlement_verify_passed=""
-          while [[ $entitlement_verify_passed == '' ]]
-          do
-              printf "\n"
-              printf "\x1B[1mVerifying the Entitlement Registry key...\n\x1B[0m"
-
-              if [[ $PODMAN_FOUND == "No" ]]; then
-              cli_command="docker"
-              else
-              cli_command="podman"
-              fi
-
-              if $cli_command login -u "$DOCKER_REG_USER" -p "$reg_key" "$DOCKER_REG_SERVER"; then
-                  printf 'Entitlement Registry key is valid.\n'
-                  entitlement_verify_passed="passed"
-              else
-                  printf '\x1B[1;31mThe Entitlement Registry key failed. Try again...\n\x1B[0m'
-                  ATTEMPTS=$((ATTEMPTS + 1))
-                  if [[ $ATTEMPTS -eq 10 ]]; then
-                      printf '\x1B[1mEnter a valid Entitlement Registry key. Exiting ...\n\x1B[0m'
-                      exit 1
-                  fi
-                  entitlement_key=''
-                  entitlement_verify_passed="failed"
-              fi
-          done
+        entitlement_key=$BAW_AUTO_ENTITLEMENT_KEY
       fi
-  done
-
-  if [[ $entitlement_verify_passed != $PASSED ]]; then
-        printf "\x1B[1;31m Entitlement Key is not Valid!, exiting...\n\x1B[0m"
-        exit 1
     fi
 
-  echo "$entitlement_verify_passed"
+    if [[ -z "$entitlement_key" ]]; then
+      printf "\n"
+      echo -e "\x1B[1;31mEnter a valid Entitlement Registry key\x1B[0m"
+    else
+      if [[ $entitlement_key == iamapikey:* ]]; then
+        DOCKER_REG_USER="iamapikey"
+        reg_key="${entitlement_key#*:}"
+        DOCKER_REG_KEY="${entitlement_key#*:}"
+      else
+        if [[ "$USER_DOCKER_REG_SERVER" == "cp.stg.icr.io" ]]; then
+           DOCKER_REG_KEY_STG=$entitlement_key
+           DOCKER_REG_USER_STG="cp"
+        else
+           DOCKER_REG_KEY=$entitlement_key
+        fi
+        DOCKER_REG_USER="cp"
+        reg_key=$entitlement_key
+      fi
 
+      entitlement_verify_passed=""
+      while [[ -z $entitlement_verify_passed ]]; do
+        printf "\n"
+        printf "\x1B[1mVerifying the Entitlement Registry key...\n\x1B[0m"
+
+        if [[ $PODMAN_FOUND == "No" ]]; then
+          cli_command="docker"
+        else
+          cli_command="podman"
+        fi
+
+        if $cli_command login -u "$DOCKER_REG_USER" -p "$reg_key" "$USER_DOCKER_REG_SERVER"; then
+          printf 'Entitlement Registry key is valid.\n'
+          entitlement_verify_passed="passed"
+        else
+          printf '\x1B[1;31mThe Entitlement Registry key failed. Try again...\n\x1B[0m'
+          ATTEMPTS=$((ATTEMPTS + 1))
+          if [[ $ATTEMPTS -eq 10 ]]; then
+            printf '\x1B[1mEnter a valid Entitlement Registry key. Exiting ...\n\x1B[0m'
+            exit 1
+          fi
+          entitlement_key=""
+          entitlement_verify_passed="failed"
+        fi
+      done
+    fi
+  done
+
+  if [[ $entitlement_verify_passed != "passed" ]]; then
+    printf "\x1B[1;31mEntitlement Key is not valid! Exiting...\n\x1B[0m"
+    exit 1
+  fi
+
+  echo "$entitlement_verify_passed"
 }
 
 
@@ -1607,11 +1613,11 @@ function get_entitlement_registry(){
             printf "\n"
             printf "\x1B[1mEnter your Entitlement Registry key: \x1B[0m"
             # During dev, OLM uses stage image repo
+            USER_DOCKER_REG_SERVER="cp.icr.io"
             DOCKER_REG_SERVER="cp.icr.io"
-            PASSED="passed"
 
             # During dev, OLM uses stage image repo
-            verify_entitlement_key $DOCKER_REG_SERVER
+            verify_entitlement_key $USER_DOCKER_REG_SERVER
             break
             ;;
         "n"|"N"|"no"|"No"|"NO"|"")
@@ -1643,6 +1649,16 @@ function get_stg_entitlement_registry(){
     # For Entitlement Registry key
     entitlement_key=""
 
+    # If env vars are set, skip interactive prompts
+    USER_DOCKER_REG_SERVER="cp.stg.icr.io"
+    if [ -n "$BAW_AUTO_STG_ENTITLEMENT_KEY" ]; then
+        DOCKER_REG_KEY=$BAW_AUTO_STG_ENTITLEMENT_KEY
+        echo -e "\x1B[1mUsing entitlement key from env var.\x1B[0m"
+        verify_entitlement_key $USER_DOCKER_REG_SERVER
+        use_entitlement="yes"
+        return 0
+    fi
+
     while true; do
 
         printf "\x1B[1mDo you have a $BAW_FULL_NAME Staging Entitlement Registry key (Yes/No, default: No): \x1B[0m"
@@ -1653,11 +1669,7 @@ function get_stg_entitlement_registry(){
             use_entitlement="yes"
             printf "\n"
             printf "\x1B[1mEnter your Staging Entitlement Registry key: \x1B[0m"
-            # During dev, OLM uses stage image repo
-            DOCKER_REG_SERVER="cp.stg.icr.io"
-            PASSED="passed"
-
-            verify_entitlement_key $DOCKER_REG_SERVER
+            verify_entitlement_key $USER_DOCKER_REG_SERVER
             break
             ;;
         "n"|"N"|"no"|"No"|"NO"|"")
@@ -1681,6 +1693,7 @@ function get_stg_entitlement_registry(){
         esac
     done
 }
+
 
 function get_domain_name(){
     valiateIngress=false
