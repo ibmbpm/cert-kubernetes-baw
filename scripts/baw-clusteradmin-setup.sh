@@ -1650,11 +1650,11 @@ function get_stg_entitlement_registry(){
     entitlement_key=""
 
     # If env vars are set, skip interactive prompts
-    USER_DOCKER_REG_SERVER_STG="cp.stg.icr.io"
+    USER_DOCKER_REG_SERVER="cp.stg.icr.io"
     if [ -n "$BAW_AUTO_STG_ENTITLEMENT_KEY" ]; then
         DOCKER_REG_KEY=$BAW_AUTO_STG_ENTITLEMENT_KEY
         echo -e "\x1B[1mUsing entitlement key from env var.\x1B[0m"
-        verify_entitlement_key $USER_DOCKER_REG_SERVER_STG
+        verify_entitlement_key $USER_DOCKER_REG_SERVER
         use_entitlement="yes"
         return 0
     fi
