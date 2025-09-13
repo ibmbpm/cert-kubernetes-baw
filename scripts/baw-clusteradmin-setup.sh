@@ -2722,9 +2722,9 @@ function setup_other_type_platform()
 
     # This function call is used to install catalog sources and the cert manager and ibm-licensing services
     if [[ $CNCF_DEV == "Yes" ]]; then
-        baw_cncf_rancher_prereq_install "ibm-licensing" "$project_name" true
+        baw_cncf_rancher_prereq_install "ibm-licensing" "$project_name" true "$OTHER_PLATFORM_TYPE"
     else
-        baw_cncf_rancher_prereq_install "ibm-licensing" "$project_name" false
+        baw_cncf_rancher_prereq_install "ibm-licensing" "$project_name" false "$OTHER_PLATFORM_TYPE"
     fi
     
     source $BAW_CNCF_FOLDER/baw-install.sh

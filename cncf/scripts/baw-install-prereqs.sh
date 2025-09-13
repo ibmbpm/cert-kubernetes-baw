@@ -177,10 +177,11 @@ function baw_cncf_rancher_prereq_install() {
     licensing_namespace=$1
     baw_namespace=$2
     dev_mode=$3
+    cncf_type=$4
     #check_prereqs
     check_cert_manager
     check_licensing_service
-    create_all_catalog_sources ${baw_namespace} ${dev_mode} # this function is in baw-utils and is used to create all catalog sources.
+    create_all_catalog_sources ${baw_namespace} ${dev_mode} ${cncf_type} # this function is in baw-utils and is used to create all catalog sources.
     create_operator_groups
     create_subscriptions
 }

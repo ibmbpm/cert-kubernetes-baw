@@ -109,6 +109,9 @@ function wait_for_service_account() {
 function create_all_catalog_sources(){
     local baw_namespace=$1
     local dev=$2
+    local cncf_type=$3
+    cncf_type_capitalized="$(tr '[:lower:]' '[:upper:]' <<< ${cncf_type:0:1})${cncf_type:1}"
+
     catalog_source_file_name=${TEMP_FOLDER}/.catalog_source.yaml
 
     if [[ ! -f ${catalog_source_file_name} ]]; then
@@ -156,7 +159,7 @@ function create_all_catalog_sources(){
 
     done
 
-    info "Applying all required Catalog Sources for BAW-Standalone on Rancher"
+    info "Applying all required Catalog Sources for BAW-Standalone on $cncf_type_capitalized"
     ${CLI_CMD} apply -f ${catalog_source_file_name}
     for catalog in "${catalog_names[@]}"; do
         if [[ "$catalog" == "ibm-cert-manager-catalog"  ]]; then 
