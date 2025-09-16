@@ -1941,32 +1941,21 @@ function select_platform(){
         COLUMNS=12
         echo -e "\x1B[1mSelect the cloud platform to deploy: \x1B[0m"
         
-        #Adding support for the other type of platform
+        # Adding support for the other type of platform
         # DBACLD-168151
         otherOption="Other ( Rancher Kubernetes Engine (RKE) / VMware Tanzu Kubernetes Grid Integrated Edition (TKGI) )"
-      options=("Openshift Container Platform (OCP) - Private Cloud")
-      PS3='Enter a valid option [1 to 2]: '
+        options=("Openshift Container Platform (OCP) - Private Cloud")
+        PS3='Enter a valid option [1 to 2]: '
+
         # For airgap deployment only ROKS and OCP is supported
         if [[ $AIRGAP_INSTALL == "Yes" ]]; then
-            #options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
             options=("Openshift Container Platform (OCP) - Private Cloud" "$otherOption")
             PS3='Enter a valid option [1 to 2]: '
         else
-            #Adding support for the other type of platform
-            # DBACLD-168151
-            otherOption="Other ( Rancher Kubernetes Engine (RKE) / VMware Tanzu Kubernetes Grid Integrated Edition (TKGI) )"
-            #options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud" "$otherOption")
             options=("Openshift Container Platform (OCP) - Private Cloud" "$otherOption")
             PS3='Enter a valid option [1 to 2]: '
         fi
 
-        # if [[ "${SCRIPT_MODE}" == "OLM" ]]; then
-        #     options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud")
-        #     PS3='Enter a valid option [1 to 2]: '
-        # else
-        #     options=("RedHat OpenShift Kubernetes Service (ROKS) - Public Cloud" "Openshift Container Platform (OCP) - Private Cloud" "Other ( Certified Kubernetes Cloud Platform / CNCF)")
-        #     PS3='Enter a valid option [1 to 3]: '
-        # fi
         select opt in "${options[@]}"
         do
             case $opt in
@@ -1978,8 +1967,6 @@ function select_platform(){
                     PLATFORM_SELECTED="OCP"
                     break
                     ;;
-                #Adding support for the other type of platform
-                # DBACLD-168151
                 "$otherOption")
                     PLATFORM_SELECTED="other"
                     break
@@ -1989,40 +1976,58 @@ function select_platform(){
         done
     else
         PLATFORM_SELECTED=$BAW_AUTO_PLATFORM
-        echo -e "\x1B[1mWhat type of cloud platform is selected?\x1B[0m $BAI_AUTO_PLATFORM"
+        echo -e "\x1B[1mWhat type of cloud platform is selected?\x1B[0m $BAW_AUTO_PLATFORM"
     fi
 
-    # For other type of platform we also ask what type of other type of platform
-    # This helps us identify if we need different tanzu and rancher related setup and conditions
-    # DBACLD-168151
+    # Handle "other" platform type (Tanzu / Rancher)
     if [[ "$PLATFORM_SELECTED" == "other" ]]; then
         SCRIPT_MODE="OLM"
         CLI_CMD=kubectl
-        echo -e "\x1B[1mSpecify the other type of cloud platform to deploy: \x1B[0m"
-        otheroption1="VMware Tanzu Kubernetes Grid Integrated Edition (TKGI)"
-        otheroption2="Rancher Kubernetes Engine (RKE)"
-        options=("$otheroption1" "$otheroption2")
-        PS3='Enter a valid option [1 to 2]: '
-        select opt in "${options[@]}"
-        do
-            case $opt in
-                "$otheroption1")
+
+        if [ -n "$BAW_OTHER_PLATFORM_TYPE" ]; then
+            # Environment variable is set, use it directly
+            case "${BAW_OTHER_PLATFORM_TYPE,,}" in  # lowercase match
+                tanzu)
                     OTHER_PLATFORM_TYPE="tanzu"
-                    break
                     ;;
-                "$otheroption2")
+                rancher)
                     OTHER_PLATFORM_TYPE="rancher"
-                    break
                     ;;
-                *) echo "invalid option $REPLY";;
+                *)
+                    echo "Invalid BAW_OTHER_PLATFORM_TYPE value: $BAW_OTHER_PLATFORM_TYPE"
+                    echo "Allowed values: tanzu, rancher"
+                    exit 1
+                    ;;
             esac
-        done
+        else
+            # Fallback to interactive prompt
+            echo -e "\x1B[1mSpecify the other type of cloud platform to deploy: \x1B[0m"
+            otheroption1="VMware Tanzu Kubernetes Grid Integrated Edition (TKGI)"
+            otheroption2="Rancher Kubernetes Engine (RKE)"
+            options=("$otheroption1" "$otheroption2")
+            PS3='Enter a valid option [1 to 2]: '
+            select opt in "${options[@]}"
+            do
+                case $opt in
+                    "$otheroption1")
+                        OTHER_PLATFORM_TYPE="tanzu"
+                        break
+                        ;;
+                    "$otheroption2")
+                        OTHER_PLATFORM_TYPE="rancher"
+                        break
+                        ;;
+                    *) echo "invalid option $REPLY";;
+                esac
+            done
+        fi
     fi 
+
+    # CLI tool selection
     if [[ "$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS" ]]; then
         SCRIPT_MODE="OLM"
         CLI_CMD=oc
-    elif [[ "$PLATFORM_SELECTED" == "other" ]]
-    then
+    elif [[ "$PLATFORM_SELECTED" == "other" ]]; then
         SCRIPT_MODE="OLM"
         CLI_CMD=kubectl
     fi
