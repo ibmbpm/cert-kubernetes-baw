@@ -1906,7 +1906,7 @@ function clean_up(){
 function check_airgap_mode(){
     printf "\n"
     # clear
-    if [ -z "$BAW_AUTO_AIGRAP_MODE" ]; then
+    if [ -z "$BAW_AUTO_AIRGAP_MODE" ]; then
         COLUMNS=12
         echo -e "\x1B[1mWould you like to set up the cluster for an online based $BAW_FULL_NAME deployment or for an airgap/offline based BAW deployment: \x1B[0m"
 
@@ -1929,7 +1929,7 @@ function check_airgap_mode(){
             esac
         done
     else
-        AIRGAP_INSTALL=$BAW_AUTO_AIGRAP_MODE
+        AIRGAP_INSTALL=$BAW_AUTO_AIRGAP_MODE
         echo -e "\x1B[1mWould you like to set up the cluster for an online based $BAW_FULL_NAME deployment or for an airgap/offline based BAW deployment :\x1B[0m $BAW_AUTO_AIGRAP_MODE"
     fi
 }
