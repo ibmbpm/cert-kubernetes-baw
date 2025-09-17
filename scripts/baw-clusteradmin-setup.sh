@@ -2676,40 +2676,54 @@ function verify_silence_install(){
             exit 1
         fi
 
+
     fi
 
 }
 
 # Function to retrieve domain name from the customer so that the cpp-configmap can be created
 # DBACLD-168151
-function retrieve_domain_name(){
+function retrieve_domain_name() {
     local attempts=0
     local max_attempts=3
-    OTHER_PLATFROM_TYPE_DOMAIN=""
 
+    validate_domain() {
+        local domain=$1
+        if ping -c 1 -W 2 "$domain" >/dev/null 2>&1; then
+            success "The Domain '$domain' is reachable."
+        else
+            warning "The domain '$domain' does not seem reachable. Please make sure this is a valid domain before proceeding further."
+        fi
+    }
+
+    # Check if OTHER_PLATFORM_TYPE_DOMAIN already exists in environment
+    if [[ -n "$OTHER_PLATFORM_TYPE_DOMAIN" ]]; then
+        success "Using domain from environment: '$OTHER_PLATFORM_TYPE_DOMAIN'"
+        validate_domain "$OTHER_PLATFORM_TYPE_DOMAIN"
+        return 0
+    fi
+
+    # Otherwise, prompt user for input
     while [ $attempts -lt $max_attempts ]; do
         printf "\x1B[1mProvide the domain name for your cluster (This is the ingress that must be created and provided as a prerequisite for the deployment): \x1B[0m"
-        read -rp "" OTHER_PLATFROM_TYPE_DOMAIN
+        read -rp "" OTHER_PLATFORM_TYPE_DOMAIN
         
-        if [[ -z "$OTHER_PLATFROM_TYPE_DOMAIN" ]]; then
+        if [[ -z "$OTHER_PLATFORM_TYPE_DOMAIN" ]]; then
             warning "It is mandatory to provide a domain name for any deployment on $OTHER_PLATFORM_TYPE."
         else
-            if ping -c 1 -W 2 "$OTHER_PLATFROM_TYPE_DOMAIN" >/dev/null 2>&1; then
-                success "The Domain '$OTHER_PLATFROM_TYPE_DOMAIN' is reachable."
-            else
-                warning "The domain '$OTHER_PLATFROM_TYPE_DOMAIN' does not seem reachable.  Please make sure this is a valid domain before proceeding further."
-            fi
+            validate_domain "$OTHER_PLATFORM_TYPE_DOMAIN"
             return 0
         fi
     
         ((attempts++))
     done
-    if [[ -z "$OTHER_PLATFROM_TYPE_DOMAIN" ]]; then
-        error "Maximum number of retries exceeded for entering a valid Domain name.The script will exit now...."
-        exit
-    fi
 
+    if [[ -z "$OTHER_PLATFORM_TYPE_DOMAIN" ]]; then
+        error "Maximum number of retries exceeded for entering a valid Domain name. The script will exit now...."
+        exit 1
+    fi
 }
+
 
 # Function that does the cluster setup for TANZU or Rancher
 # DBACLD-168151
@@ -2735,9 +2749,9 @@ function setup_other_type_platform()
     source $BAW_CNCF_FOLDER/baw-install.sh
     # This function call is used to install the BAW operators
     if [[ $CNCF_DEV == "Yes" ]]; then
-        baw_cncf_rancher_install "$project_name" "$OTHER_PLATFROM_TYPE_DOMAIN" true
+        baw_cncf_rancher_install "$project_name" "$OTHER_PLATFORM_TYPE_DOMAIN" true
     else
-        baw_cncf_rancher_install "$project_name" "$OTHER_PLATFROM_TYPE_DOMAIN" false
+        baw_cncf_rancher_install "$project_name" "$OTHER_PLATFORM_TYPE_DOMAIN" false
     fi
     success " $BAW_FULL_NAME Standalone Operators have been installed! "
     exit
