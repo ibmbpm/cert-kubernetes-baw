@@ -12,7 +12,18 @@ set -o nounset
 
 # ---------- Command arguments ----------
 
-OC=oc
+# set CLI_CMD var
+if which oc >/dev/null 2>&1; then
+    CLI_CMD=oc
+elif which kubectl >/dev/null 2>&1; then
+    CLI_CMD=kubectl
+else
+    echo -e  "\x1B[1;31mUnable to locate Kubernetes CLI or OpenShift CLI. You must install it to run this script.\x1B[0m" && \
+    exit 1
+fi
+
+OC="${CLI_CMD}"
+
 YQ=yq
 ENABLE_LICENSING=0
 MINIMAL_RBAC_ENABLED=0
@@ -29,7 +40,7 @@ SIZE_PROFILE=""
 INSTALL_MODE="Automatic"
 PREVIEW_MODE=0
 ENABLE_PRIVATE_CATALOG=0
-OC_CMD="oc"
+OC_CMD="${CLI_CMD}"
 DEBUG=0
 LICENSE_ACCEPT=0
 RETRY_CONFIG_CSCR=0
@@ -200,6 +211,8 @@ function pre_req() {
 
     # Checking oc command logged in
     user=$($OC whoami 2> /dev/null)
+    user=$(kubectl config view --minify -o jsonpath='{.users[0].name}' 2> /dev/null)
+
     if [ $? -ne 0 ]; then
         error "You must be logged into the OpenShift Cluster from the oc command line"
     else
@@ -762,8 +775,11 @@ EOF
         local resource_version=$(${OC} get commonservice common-service -n ${OPERATOR_NS} -o jsonpath='{.metadata.resourceVersion}' --ignore-not-found)
         if [[ -n "${resource_version}" ]]; then
             debug1 "Updating resourceVersion in commonservice.yaml to ${resource_version}\n"
-            ${YQ} -i eval '.metadata.resourceVersion = "'${resource_version}'"' ${PREVIEW_DIR}/commonservice.yaml    
+            ${YQ} -i eval '.metadata.resourceVersion = "'${resource_version}'"' ${PREVIEW_DIR}/commonservice.yaml
         fi
+
+        ${YQ} -i eval '.spec.channel = "'${CHANNEL}'"' ${PREVIEW_DIR}/commonservice.yaml
+        ${YQ} -i eval '.spec.startingCSV = "'ibm-common-service-operator.${CHANNEL}.0'"' ${PREVIEW_DIR}/commonservice.yaml
 
         cat "${PREVIEW_DIR}/commonservice.yaml" | ${OC_CMD} apply -f -
 
