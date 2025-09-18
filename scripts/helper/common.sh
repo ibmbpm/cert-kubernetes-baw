@@ -466,9 +466,9 @@ function install_kubectl_cli(){
 
 function install_openssl(){
     if [[ ${machine} = "Linux" ]]; then
-        echo -n "Installing OpenSSL..."; sudo yum install openssl -y >/dev/null; echo "done.";
+        echo -n "Installing OpenSSL..."; sudo yum install openssl-3.2.2 -y >/dev/null; echo "done.";
     elif [[ ${machine} = "Mac" ]]; then
-        echo -n "Installing OpenSSL..."; sudo brew install openssl >/dev/null; echo 'export PATH="/usr/local/opt/openssl/bin:$PATH"' >> ~/.bash_profile; source ~/.bash_profile; echo "done.";
+        echo -n "Installing OpenSSL..."; sudo brew install openssl@3.0 >/dev/null; echo 'export PATH="/usr/local/opt/openssl/bin:$PATH"' >> ~/.bash_profile; source ~/.bash_profile; echo "done.";
     fi
     printf "\n"
 }
