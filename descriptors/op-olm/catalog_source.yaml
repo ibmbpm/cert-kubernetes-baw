@@ -171,7 +171,7 @@ spec:
       interval: 45m
   priority: 100
 ---
-# IBM Zen Operator Catalog 6.2.2+20250915.171524.34
+# IBM Zen Operator Catalog 6.2.2+20250919.171444.37
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
@@ -184,7 +184,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:084f6147c5e486469f5793bbe606af3448b54cb723850387f84b00376883d20b
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:ea30d376509884419d74f4026df51911a257f0a04ff29877fb05b206eb5b3743
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
