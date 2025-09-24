@@ -128,7 +128,7 @@ spec:
 
     ## The deployment context, which has a default value of "CP4A".  Unless you are instructed to change this value or
     ## know the reason to change this value, please leave the default value.
-    sc_deployment_context: "CP4A"
+    sc_deployment_context: "BAW"
 
     ## The platform to be deployed specified by the user.  Possible values are: OCP and other.  This is normally populated by the User script
     ## based on input from the user.
