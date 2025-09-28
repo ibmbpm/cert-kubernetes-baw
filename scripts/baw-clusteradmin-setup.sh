@@ -2929,6 +2929,11 @@ check_cluster_login
 
 select_deployment_type
 
+ # BAW STD couldn't enable fips since it don't use the common service.
+if [[ ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") && $DEPLOYMENT_TYPE == "production" && $RUNTIME_MODE != "baw" && $RUNTIME_MODE != "baw-dev" ]]; then
+    check_fips_enable
+fi
+
 select_private_catalog
 
 if [[ $DEPLOYMENT_TYPE == "production" ]]; then
