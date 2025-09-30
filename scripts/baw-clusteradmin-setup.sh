@@ -65,6 +65,14 @@ BAW_FULL_NAME="IBM Business Automation Workflow"
 
 mkdir -p $TEMP_FOLDER >/dev/null 2>&1
 
+function check_kubectl_installed() {
+    if ! command -v kubectl >/dev/null 2>&1; then
+  	    printf "\n\n\n"
+        echo -e "\x1B[1;31mkubectl is required to run the script.\nPlease refer to the topic \"Preparing a client to connect to the cluster\" from IBM documentation:\nhttps://www.ibm.com/docs/en/cloud-paks/cp-biz-automation\x1B[0m"
+        exit 1
+    fi
+}
+
 function prompt_wfps_license(){
     clear
     echo -e "\x1B[1;31mIMPORTANT: Review the IBM Process Flow license information here: \n\x1B[0m"
@@ -2919,12 +2927,17 @@ select_platform
 
 validate_docker_podman_cli
 
+ # BAW STD couldn't enable fips since it don't use the common service.
+if [[ ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") && $DEPLOYMENT_TYPE == "production" && $RUNTIME_MODE != "baw" && $RUNTIME_MODE != "baw-dev" ]]; then
+    check_fips_enable
+fi
+
 # Create configMap for fips flag
 if [[ $SEPARATE_OPERATOR == "No" || -z $SEPARATE_OPERATOR || $DEPLOYMENT_TYPE == "starter" ]]; then
     create_configmap_fips $project_name
 else
     create_configmap_fips $project_name_cs_service
-fi
+fi  
 
 #Function that handles the platform type rancher or tanzu
 if [[ "$OTHER_PLATFORM_TYPE" == "rancher" || "$OTHER_PLATFORM_TYPE" == "tanzu" ]]; then
@@ -2936,10 +2949,6 @@ check_cluster_login
 
 select_deployment_type
 
- # BAW STD couldn't enable fips since it don't use the common service.
-if [[ ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") && $DEPLOYMENT_TYPE == "production" && $RUNTIME_MODE != "baw" && $RUNTIME_MODE != "baw-dev" ]]; then
-    check_fips_enable
-fi
 
 select_private_catalog
 
