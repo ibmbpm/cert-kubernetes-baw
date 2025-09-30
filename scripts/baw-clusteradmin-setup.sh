@@ -2919,6 +2919,13 @@ select_platform
 
 validate_docker_podman_cli
 
+# Create configMap for fips flag
+if [[ $SEPARATE_OPERATOR == "No" || -z $SEPARATE_OPERATOR || $DEPLOYMENT_TYPE == "starter" ]]; then
+    create_configmap_fips $project_name
+else
+    create_configmap_fips $project_name_cs_service
+fi
+
 #Function that handles the platform type rancher or tanzu
 if [[ "$OTHER_PLATFORM_TYPE" == "rancher" || "$OTHER_PLATFORM_TYPE" == "tanzu" ]]; then
     setup_other_type_platform
