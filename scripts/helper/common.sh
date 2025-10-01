@@ -1115,7 +1115,8 @@ function load_properties_from_temp_file(){
     IFS=$OIFS
 
     # load fips enabled flag
-    FIPS_ENABLED="false"
+    # FIPS_ENABLED="false"
+    local java_opts="-Dsemeru.fips=false"
 
     # load profile size  flag
     PROFILE_TYPE=$(prop_tmp_property_file PROFILE_SIZE_FLAG)
