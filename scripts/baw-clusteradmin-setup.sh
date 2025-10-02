@@ -170,7 +170,7 @@ function validate_cli(){
 }
 
 function check_fips_enable(){
-    check_kubectl_installed
+    # check_kubectl_installed
 
     local TEMPORARY_NODE_INFO=${TEMP_FOLDER}/.TEMPORARY_NODE_INFO.property
     local WORKER_NODE_LIST=()
