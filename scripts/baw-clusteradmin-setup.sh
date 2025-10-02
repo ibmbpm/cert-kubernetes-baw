@@ -65,13 +65,13 @@ BAW_FULL_NAME="IBM Business Automation Workflow"
 
 mkdir -p $TEMP_FOLDER >/dev/null 2>&1
 
-# function check_kubectl_installed() {
-#     if ! command -v kubectl >/dev/null 2>&1; then
-#   	    printf "\n\n\n"
-#         echo -e "\x1B[1;31mkubectl is required to run the script.\nPlease refer to the topic \"Preparing a client to connect to the cluster\" from IBM documentation:\nhttps://www.ibm.com/docs/en/cloud-paks/cp-biz-automation\x1B[0m"
-#         exit 1
-#     fi
-# }
+function check_kubectl_installed() {
+    if ! command -v kubectl >/dev/null 2>&1; then
+  	    printf "\n\n\n"
+        echo -e "\x1B[1;31mkubectl is required to run the script.\nPlease refer to the topic \"Preparing a client to connect to the cluster\" from IBM documentation:\nhttps://www.ibm.com/docs/en/cloud-paks/cp-biz-automation\x1B[0m"
+        exit 1
+    fi
+}
 
 function prompt_wfps_license(){
     clear
