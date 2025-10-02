@@ -65,6 +65,14 @@ BAW_FULL_NAME="IBM Business Automation Workflow"
 
 mkdir -p $TEMP_FOLDER >/dev/null 2>&1
 
+function check_kubectl_installed() {
+    if ! command -v kubectl >/dev/null 2>&1; then
+  	    printf "\n\n\n"
+        echo -e "\x1B[1;31mkubectl is required to run the script.\nPlease refer to the topic \"Preparing a client to connect to the cluster\" from IBM documentation:\nhttps://www.ibm.com/docs/en/cloud-paks/cp-biz-automation\x1B[0m"
+        exit 1
+    fi
+}
+
 function prompt_wfps_license(){
     clear
     echo -e "\x1B[1;31mIMPORTANT: Review the IBM Process Flow license information here: \n\x1B[0m"
@@ -158,6 +166,105 @@ function validate_cli(){
         [[ $? -ne 0 ]] && \
             echo "Unable to locate the Kubernetes CLI. You must install it to run this script." && \
             exit 1
+    fi
+}
+
+function check_fips_enable(){
+    check_kubectl_installed
+
+    local TEMPORARY_NODE_INFO=${TEMP_FOLDER}/.TEMPORARY_NODE_INFO.property
+    local WORKER_NODE_LIST=()
+    arch_type=$(kubectl get cm cluster-config-v1 -n kube-system -o yaml | grep -i architecture|tail -1| awk '{print $2}')
+    ## -- https://jsw.ibm.com/browse/DBACLD-186147 - <Update the script to remove the Power (ppc64le) restrictions with FIPS>
+    if [[ "$arch_type" == "amd64" || "$arch_type" == "ppc64le" ]]; then
+        printf "\n"
+        echo "${YELLOW_TEXT}[NOTES] If you plan to enable FIPS for the BAW deployment, this script can verify whether FIPS is enabled on the compute nodes of the OCP cluster.${RESET_TEXT}"
+        while true; do       
+            if [ -z "$CP4BA_AUTO_FIPS_CHECK" ]; then
+                printf "\x1B[1mWould you like to proceed with this check? (Yes/No, default: No): \x1B[0m"
+                read -rp "" ans
+            else
+                printf "\x1B[1mWould you like to proceed with this check? (Yes/No, default: No): $CP4BA_AUTO_FIPS_CHECK\x1B[0m"
+                ans=$CP4BA_AUTO_FIPS_CHECK
+            fi
+            case "$ans" in
+            "y"|"Y"|"yes"|"Yes"|"YES")
+                printf "\n"
+                info "Checking whether the compute nodes have FIPS enabled or not ..."
+                which oc &>/dev/null
+                [[ $? -ne 0 ]] && \
+                    echo "Unable to locate the OpenShift CLI. You must install it to perform the FIPS check." && \
+                    exit 1
+                > $TEMPORARY_NODE_INFO
+                for node in $(oc get no --no-headers -o name); 
+                do
+                    WORKER_NODE_LIST+=("$node")
+                    echo "$node" >> $TEMPORARY_NODE_INFO
+                    fips_flag=$(oc get cm cluster-config-v1 -n kube-system -o jsonpath={.data.install-config} | grep "fips: true")
+                    # oc debug $node --quiet=true -- chroot /host sh -c "fips-mode-setup --check" >/dev/null 2>&1 >> $TEMPORARY_NODE_INFO
+                done
+                printHeaderMessage "The mode of FIPS for each compute node"
+                # printf "%s\n" "${WORKER_NODE_LIST[@]}"
+                for node in "${WORKER_NODE_LIST[@]}"; 
+                do
+                    NUM=$(grep -Fn $node $TEMPORARY_NODE_INFO|cut -d':' -f1)
+
+                    if [[ -z $fips_flag  ]]; then
+                        FIPS_STATUS="${RED_TEXT}Disabled${RESET_TEXT}"
+                        ALL_FIPS_ENABLED="No"
+                    else
+                        FIPS_STATUS="${GREEN_TEXT}Enabled${RESET_TEXT}"
+                    fi
+                    echo "$node          : $FIPS_STATUS"
+                    # echo "Value for WORKER_NODE_LIST array is: $node"
+                done
+                if [[ -z $ALL_FIPS_ENABLED ]]; then
+                    ALL_FIPS_ENABLED="Yes"
+                fi
+                break
+                ;;
+            "n"|"N"|"no"|"No"|"NO"|"")
+                ALL_FIPS_ENABLED="No"
+                break
+                ;;
+            *)
+                echo -e "Answer must be \"Yes\" or \"No\"\n"
+                ;;
+            esac
+        done
+    elif [[ "$arch_type" == "s390x" ]]; then
+        warning "FIPS only support OCP/ROKS cluster based on amd64_x86 and ppc64le platforms."
+    else
+        warning "Platform type not found."
+    fi
+}
+
+function create_configmap_fips(){
+    local cp4ba_namespace=$1
+    info "Creating baw-fips-status configMap in the project \"$cp4ba_namespace\""
+    mkdir -p $TEMP_FOLDER >/dev/null 2>&1
+    if [[ -z $ALL_FIPS_ENABLED ]]; then
+        ALL_FIPS_ENABLED="No"
+    fi
+
+cat << EOF > ${TEMP_FOLDER}/baw-fips-status-configmap.yaml
+# YAML template for baw-fips-status
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: baw-fips-status
+  namespace: "$cp4ba_namespace"
+data:
+  all-fips-enabled: "$ALL_FIPS_ENABLED"
+EOF
+    ${CLI_CMD} delete -f ${TEMP_FOLDER}/baw-fips-status-configmap.yaml >/dev/null 2>&1
+    ${CLI_CMD} apply -f ${TEMP_FOLDER}/baw-fips-status-configmap.yaml >/dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        success "The baw-fips-status ConfigMap has been created in the project. \"$cp4ba_namespace\"."
+    else
+        warning "Failed to create the baw-fips-status ConfigMap in the project \"$cp4ba_namespace\"!"
+        exit 1
     fi
 }
 
@@ -2818,7 +2925,25 @@ verify_silence_install
 check_airgap_mode
 select_platform
 
-validate_docker_podman_cli
+if [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" || "$RUNTIME_MODE" == "process-flow" || $RUNTIME_MODE == "process-flow-dev" ]]; then
+    if [[ $PRIVATE_CATALOG == "Yes" ]]; then
+        ALL_NAMESPACE="No"
+    else
+        # comment out the logic in deployment scripts for fresh install of 23.0.1.
+        # select_all_namespace
+        ALL_NAMESPACE="No"
+    fi
+fi
+
+select_deployment_type
+
+# Check cluster login
+check_cluster_login
+
+ # BAW STD couldn't enable fips since it don't use the common service.
+if [[ ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") && $DEPLOYMENT_TYPE == "production" && $RUNTIME_MODE != "baw" && $RUNTIME_MODE != "baw-dev" ]]; then
+    check_fips_enable
+fi
 
 #Function that handles the platform type rancher or tanzu
 if [[ "$OTHER_PLATFORM_TYPE" == "rancher" || "$OTHER_PLATFORM_TYPE" == "tanzu" ]]; then
@@ -2829,6 +2954,7 @@ fi
 check_cluster_login
 
 select_deployment_type
+
 
 select_private_catalog
 
@@ -2865,6 +2991,13 @@ ALL_NAMESPACE="No"
 collect_input
 # create_project
 # bind_scc
+validate_docker_podman_cli
+# Create configMap for fips flag
+if [[ $SEPARATE_OPERATOR == "No" || -z $SEPARATE_OPERATOR || $DEPLOYMENT_TYPE == "starter" ]]; then
+    create_configmap_fips $project_name
+else
+    create_configmap_fips $project_name_cs_service
+fi  
 
 if [[ $SCRIPT_MODE == "OLM" ]];then
     ${CLI_CMD} project $project_name >/dev/null 2>&1
