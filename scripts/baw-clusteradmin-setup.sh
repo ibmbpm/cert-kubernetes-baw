@@ -2924,6 +2924,7 @@ info "Setting up the cluster for $BAW_FULL_NAME"
 verify_silence_install
 check_airgap_mode
 select_platform
+echo "Platform selected: $PLATFORM_SELECTED"
 
 validate_docker_podman_cli
 
