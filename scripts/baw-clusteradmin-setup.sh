@@ -2924,21 +2924,26 @@ info "Setting up the cluster for $BAW_FULL_NAME"
 verify_silence_install
 check_airgap_mode
 select_platform
-echo "Platform selected: $PLATFORM_SELECTED"
 
-validate_docker_podman_cli
+if [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" || "$RUNTIME_MODE" == "process-flow" || $RUNTIME_MODE == "process-flow-dev" ]]; then
+    if [[ $PRIVATE_CATALOG == "Yes" ]]; then
+        ALL_NAMESPACE="No"
+    else
+        # comment out the logic in deployment scripts for fresh install of 23.0.1.
+        # select_all_namespace
+        ALL_NAMESPACE="No"
+    fi
+fi
+
+select_deployment_type
+
+# Check cluster login
+check_cluster_login
 
  # BAW STD couldn't enable fips since it don't use the common service.
 if [[ ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") && $DEPLOYMENT_TYPE == "production" && $RUNTIME_MODE != "baw" && $RUNTIME_MODE != "baw-dev" ]]; then
     check_fips_enable
 fi
-
-# Create configMap for fips flag
-if [[ $SEPARATE_OPERATOR == "No" || -z $SEPARATE_OPERATOR || $DEPLOYMENT_TYPE == "starter" ]]; then
-    create_configmap_fips $project_name
-else
-    create_configmap_fips $project_name_cs_service
-fi  
 
 #Function that handles the platform type rancher or tanzu
 if [[ "$OTHER_PLATFORM_TYPE" == "rancher" || "$OTHER_PLATFORM_TYPE" == "tanzu" ]]; then
@@ -2986,6 +2991,13 @@ ALL_NAMESPACE="No"
 collect_input
 # create_project
 # bind_scc
+validate_docker_podman_cli
+# Create configMap for fips flag
+if [[ $SEPARATE_OPERATOR == "No" || -z $SEPARATE_OPERATOR || $DEPLOYMENT_TYPE == "starter" ]]; then
+    create_configmap_fips $project_name
+else
+    create_configmap_fips $project_name_cs_service
+fi  
 
 if [[ $SCRIPT_MODE == "OLM" ]];then
     ${CLI_CMD} project $project_name >/dev/null 2>&1
