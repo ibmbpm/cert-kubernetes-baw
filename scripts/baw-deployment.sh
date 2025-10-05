@@ -1610,7 +1610,7 @@ function prop_tmp_property_file() {
     grep "\b${1}\b" ${TEMPORARY_PROPERTY_FILE}|cut -d'=' -f2
 }
 
-function load_property_before_generate(){
+function load_temp_property_file(){
     if [[ ! -f $TEMPORARY_PROPERTY_FILE || ! -f $DB_NAME_USER_PROPERTY_FILE || ! -f $DB_SERVER_INFO_PROPERTY_FILE || ! -f $LDAP_PROPERTY_FILE ]]; then
         fail "Property file not found under \"$PROPERTY_FILE_FOLDER\". Run the \"baw-prerequisites.sh\" script to complete the prerequisites."
         exit 1
@@ -1681,6 +1681,9 @@ function load_property_before_generate(){
 
     # load profile size  flag
     PROFILE_TYPE=$(prop_tmp_property_file PROFILE_SIZE_FLAG)
+
+    # load the flag that detects whether the script is being run to generate a CR to with updated list of components
+    UPDATE_COMPONENTS=$(prop_tmp_property_file UPDATE_COMPONENTS)
 }
 
 function validate_docker_podman_cli(){
@@ -4583,22 +4586,43 @@ function input_information(){
         validate_docker_podman_cli
     elif [[ ${INSTALLATION_TYPE} == "new" ]]
     then
-        # select_ocp_olm
-        #select_deployment_type
-        DEPLOYMENT_TYPE="production"
+
+        select_deployment_type
+        # The script will load the temp property file only for production
+        # IF the deployment type is not production the script will not be executed for updating components and deployment patterns
         if [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && $DEPLOYMENT_TYPE == "production" ]]; then
+            # This information is from the flag UPDATE_COMPONENTS stored in the temp property file by the baw-prerequisites.sh script
+            load_temp_property_file
+            # IF the flag is set to true , we need to load some details from the live CR
+            if [[ "$UPDATE_COMPONENTS" == "true" ]]; then
+                # Import functions used only for the update components mode
+                source ${CUR_DIR}/helper/update-selected-components/update-selected-components.sh
+                retrieve_current_custom_resource_file "$CP4BA_SERVICES_NS" "deployment_script"
+            fi
+        else
+            UPDATE_COMPONENTS="false"
+        fi
+        if [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" ]]; then
             if [[ ! -z $CP4BA_AUTO_NAMESPACE ]]; then
                 TARGET_PROJECT_NAME=$CP4BA_AUTO_NAMESPACE
             fi
-            load_property_before_generate
             show_summary_pattern_selected
+            
         fi
-        if [[ $DEPLOYMENT_TYPE == "production" && (-z $PROFILE_TYPE) ]]; then
+        if [[ "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" && (-z $PROFILE_TYPE) ]]; then
             select_profile_type
         fi
-        select_platform
-        if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "production" && "$USE_DEFAULT_IAM_ADMIN" == "" && "$NON_DEFAULT_IAM_ADMIN" == "" ]]; then
-            select_iam_default_admin
+        # Only ask the deployment type question if the script is being used for a fresh install
+        # Otherwise if it is being used to generate a new CR with an updated list of components , then we get this information from the live CR 
+        if [[ "$UPDATE_COMPONENTS" == "false" ]]; then
+            select_platform
+        fi
+        # Only ask the deployment type question if the script is being used for a fresh install
+        # Otherwise if it is being used to generate a new CR with an updated list of components , then we get this information from the live CR 
+        if [[ "$UPDATE_COMPONENTS" == "false" ]]; then
+            if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" && "$USE_DEFAULT_IAM_ADMIN" == "" && "$NON_DEFAULT_IAM_ADMIN" == "" ]]; then
+                select_iam_default_admin
+            fi
         fi
         if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "starter" ]]; then
             select_project
@@ -4640,11 +4664,13 @@ function input_information(){
         OPT_COMPONENTS_SELECTED=($(echo "${optional_component_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
     fi
 
-
-
-    # get jdbc url according to whether ICCSAP component selected
-    if [[ ( -z $CP4BA_JDBC_URL || $CP4BA_JDBC_URL == "") && (( $DEPLOYMENT_TYPE == "starter" ) && (" ${optional_component_cr_arr[@]} " =~ "iccsap") || $DEPLOYMENT_TYPE == "production") ]]; then
-        get_jdbc_url
+    # Only ask the deployment type question if the script is being used for a fresh install
+    # Otherwise if it is being used to generate a new CR with an updated list of components , then we get this information from the live CR 
+    if [[ "$UPDATE_COMPONENTS" == "false" ]]; then
+        # get jdbc url according to whether ICCSAP component selected
+        if [[ ( -z $CP4BA_JDBC_URL || $CP4BA_JDBC_URL == "") && (( $DEPLOYMENT_TYPE == "starter" ) && (" ${optional_component_cr_arr[@]} " =~ "iccsap") || $DEPLOYMENT_TYPE == "production") ]]; then
+            get_jdbc_url
+        fi
     fi
     if [[ "$INSTALLATION_TYPE" == "new" ]]; then
         if [[ $PLATFORM_SELECTED == "other" ]]; then
@@ -5754,6 +5780,13 @@ function sync_property_into_final_cr(){
     printf "\n"
 
     wait_msg "Applying value in property file into final CR"
+
+    # If the baw-deployment.sh script is being used to generate a CR with an updated list of optional components/deployment patterns, we want to make sure that the name of the CR currently applied is the same name as the CR that will be generated by the script. 
+    # This should happen regardless if a new CR type is being created or the same CR type is being updated
+    # $cluster_cr_name is set from the retrieve_current_custom_resource_file() function in update-selected-components.sh helper script
+    if [[ "$UPDATE_COMPONENTS" == true ]]; then
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} "metadata.name" "$cluster_cr_name"
+    fi
 
     # Applying global value in user profile property into final CR
     tmp_value="$(prop_user_profile_property_file CP4BA.CP4BA_LICENSE)"
@@ -8422,6 +8455,12 @@ function apply_pattern_cr(){
         ${SED_COMMAND} "s|sc_image_repository:.*|sc_image_repository: ${CONVERT_LOCAL_REGISTRY_SERVER}|g" ${CP4A_PATTERN_FILE_TMP}
     fi
 
+    # If the script is being used for updating deployment patterns or components we keep what has already been set in the original CR
+    # The variable current_image_repository_chosen is set in the update-selected-components file
+    if [[ $UPDATE_COMPONENTS == "true" ]]; then
+        ${SED_COMMAND} "s|sc_image_repository:.*|sc_image_repository: ${current_image_repository_chosen}|g" ${CP4A_PATTERN_FILE_TMP}
+    fi
+
     # Replace image URL
     old_fmcn="$REGISTRY_IN_FILE\/cp\/cp4a\/fncm"
     old_ban="$REGISTRY_IN_FILE\/cp\/cp4a\/ban"
@@ -8884,6 +8923,13 @@ function apply_pattern_cr(){
 #TODO
             echo -e "${YELLOW_TEXT}[ATTENTION]${RESET_TEXT} Before deploying (applying) the custom resource (CR), follow the steps in the documentation ${BLUE_TEXT}\"Check and complete your custom resource\"${RESET_TEXT} to add or update any additional configuration to the custom resource file for the capabilities you have selected, which are not configured by the script: ${BLUE_TEXT} https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE?topic=deployment-checking-completing-your-custom-resource ${RESET_TEXT}  \n"
 #TODO
+            if [[ "$UPDATE_COMPONENTS" == "true" ]]; then
+                echo -e "${YELLOW_TEXT}[ATTENTION]${RESET_TEXT} The custom resource (CR) generated now reflects the updated list of deployment patterns and optional components. You must review the newly generated Custom Resource file to add any additional configuration that was manually added to live Custom Resource file on the cluster. Follow the steps in the Knowledge Center ${BLUE_TEXT}\"Check and complete your custom resource\"${RESET_TEXT} to add or update any additional configuration to the custom resource file for the capabilities you have added, which are not configured by the script: ${BLUE_TEXT} https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE ${RESET_TEXT}  \n"
+                echo -e "${YELLOW_TEXT}[ATTENTION]${RESET_TEXT} Before applying the newly generated custom resource (CR), you must complete the below steps\n"
+                echo -e "1. IF you have added any new object stores, you must patch the initialization-config configmap so that the new object stores required for the newly added deployment patterns can be configured. Execute - ${GREEN_TEXT} # ${CLI_CMD} patch cm $cluster_cr_name-initialization-config -n $CP4BA_SERVICES_NS --type merge -p '{\"data\":{\"cpe_initialized\":\"False\"}}' ${RESET_TEXT}. For more information refer to ${BLUE_TEXT} https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE ${RESET_TEXT}.   \n"
+                echo -e "2. IF you have chosen EDB Postgres (deployed by the CP4BA Operator) as the Database type, you must patch configmaps \"ibm-cp4ba-shared-info\" and \"postgresql-operator-controller-manager-config\" so that any new databases required for the newly added deployment patterns can be configured. Execute - ${GREEN_TEXT} # ${CLI_CMD} patch cm ibm-cp4ba-shared-info -n $CP4BA_SERVICES_NS --type merge -p '{\"data\":{\"edb_cluster_cr_applied\":\"False\"}}' ${RESET_TEXT} and ${GREEN_TEXT} # ${CLI_CMD} patch cm postgresql-operator-controller-manager-config -n $CP4BA_SERVICES_NS --type merge -p '{\"data\":{\"DATABASE_CREATED\":\"False\"}}' ${RESET_TEXT}. For more information refer to ${BLUE_TEXT} https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE ${RESET_TEXT}.   \n"
+            fi
+            
             echo -e "${YELLOW_TEXT}[ATTENTION]${RESET_TEXT} After finishing configuring the custom resource (CR) file, follow the steps in the documentation to deploy (apply) your custom resource:${BLUE_TEXT} https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE?topic=cpd-option-1b-deploying-custom-resource-you-created-deployment-script ${RESET_TEXT} \n"
         fi
     fi

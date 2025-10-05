@@ -16,7 +16,7 @@ PARENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 source ${CUR_DIR}/helper/common.sh
 
 function show_help() {
-    echo -e "\nUsage: baw-prerequisites.sh -m [modetype] -n [cp4baNamespace]\n"
+    echo -e "\nUsage: baw-prerequisites.sh -m [modetype] -n [bawNamespace]\n"
     echo "Options:"
     echo "  -h  Display help"
     echo "  -m  The valid mode types are: [property], [generate], or [validate]"
@@ -26,6 +26,12 @@ function show_help() {
     echo "      STEP3: Run the script in [generate] mode. Generates the DB SQL statement files and YAML templates for the secrets based on the values in the property files."
     echo "      STEP4: Create the databases and secrets by using the modified DB SQL statement files and YAML templates for the secrets."
     echo "      STEP5: Run the script in [validate] mode. Checks whether the databases and the secrets are created before you install BAW."
+    echo "  --update-components"
+    echo "      Updates deployment patterns and optional components in an existing installation,then regenerates property files with the new configuration."
+    echo "      Prerequisites:"
+    echo "        - Active deployment in the namespace specified with \"-n\"."
+    echo "        - Original property files must be available."
+    echo "        - Must be used exclusively with \"-m property\" mode."
 }
 
 function parse_arguments() {
@@ -82,6 +88,10 @@ function parse_arguments() {
         -h | --help | \?)
             show_help
             exit 0
+            ;;
+        # Flag to decide if the baw-prerequisites.sh is being 
+        --update-components)
+            UPDATE_COMPONENTS="true"
             ;;
         *)
             echo "Invalid option"
@@ -3096,6 +3106,14 @@ function create_temp_property_file(){
 
     # save profile size
     echo "PROFILE_SIZE_FLAG=$PROFILE_TYPE" >> ${TEMPORARY_PROPERTY_FILE}
+
+    # Writing a flag to the temp property file so that we can detect if the script is being used for updating the deployment patterns.
+    # This flag will help the baw-deployment.sh script perform the neccessary logic to generate the CR
+    if [[ -z $UPDATE_COMPONENTS ]]; then
+        echo "UPDATE_COMPONENTS=false" >> ${TEMPORARY_PROPERTY_FILE}
+    else
+        echo "UPDATE_COMPONENTS=true" >> ${TEMPORARY_PROPERTY_FILE}
+    fi
 }
 
 function create_property_file(){
@@ -5446,6 +5464,10 @@ fi
     msgRed   "The value in the property file must be within double quotes."
     msgRed   "The value for User/Password in [baw_user_profile.property] file should NOT include special characters: single quotation \"'\""
     msgRed   "The value in [baw_LDAP.property] or [baw_External_LDAP.property] [baw_user_profile.property] file should NOT include special character '\"'"
+    # This is an important note for to display to the user which is only applicable while adding /removing new patterns
+    if [[ ! -z $UPDATE_COMPONENTS ]]; then
+        msgRed "If you have selected a new deployment pattern/optional component that is not supported with the existing Database Type, you must update the property files to choose a supported Database Type for the new deployment patterns/optional components selected\n"
+    fi
 
     if (( db_server_number > 0 )); then
         echo -e  "\x1b[32m* [baw_db_server.property]:\x1B[0m"
@@ -5586,6 +5608,9 @@ function load_property_before_generate(){
     # load LDAP/DB required flag for wfps
     LDAP_WFPS_AUTHORING=$(prop_tmp_property_file LDAP_WFPS_AUTHORING_FLAG)
     EXTERNAL_DB_WFPS_AUTHORING=$(prop_tmp_property_file EXTERNAL_DB_WFPS_AUTHORING_FLAG)
+
+    # load the flag that detects whether the script is being run to generate a CR to with updated list of components
+    UPDATE_COMPONENTS=$(prop_tmp_property_file UPDATE_COMPONENTS)
 }
 
 function create_db_script(){
@@ -8551,6 +8576,25 @@ function validate_prerequisites(){
     info "After BAW is deployed, please refer to the documentation for post-deployment steps."
 }
 
+# Main function that performs the different functionalities required for adding/removing patterns and optional components
+function update_components_mode(){
+    # Import functions used only for the update components mode
+    source ${CUR_DIR}/helper/update-selected-components/update-selected-components.sh
+    retrieve_existing_property_files
+    retrieve_current_custom_resource_file "$CP4BA_SERVICES_NS" "prerequisites_script"
+    print_current_summary_table "$CP4BA_SERVICES_NS"
+    
+    # Function to select optional components 
+    select_optional_component
+
+    # This array (current_cr_optional_components_array) stores the current optional components selected.
+    # We should only ask if external certificate should be used by kafka if "bai" was not selected initially but added later.
+    # Both variables get set in the function retrieve_current_custom_resource_file function
+    if ! [[ " ${current_cr_optional_components_array[@]} " =~ "bai" ]]; then
+         [[ " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
+            select_external_cert_opensearch_kafka
+        fi
+    fi  
 ################################################
 #### Begin - Main step for install operator ####
 ################################################
@@ -8558,10 +8602,24 @@ function validate_prerequisites(){
 # prompt_license
 clear
 
+
 if [[ $RUNTIME_MODE == "property" ]]; then
     check_cp4ba_separate_operand $TARGET_PROJECT_NAME
-    input_information
+    # IF the variable UPDATE_COMPONENTS is set that means we are trying to update the list of deployment patterns or optional components 
+    if [[ ! -z $UPDATE_COMPONENTS ]]; then
+        echo
+        update_components_mode
+    fi
+    
+    if [[ -z $UPDATE_COMPONENTS ]]; then
+        input_information
+    fi
     create_property_file
+    
+    # IF the variable UPDATE_COMPONENTS is set that means we are trying to update the list of deployment patterns or optional components 
+    if [[ ! -z $UPDATE_COMPONENTS ]]; then
+        update_property_files
+    fi
     clean_up_temp_file
 fi
 if [[ $RUNTIME_MODE == "generate" ]]; then
