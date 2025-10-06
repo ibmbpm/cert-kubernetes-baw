@@ -8591,7 +8591,7 @@ function update_components_mode(){
     # We should only ask if external certificate should be used by kafka if "bai" was not selected initially but added later.
     # Both variables get set in the function retrieve_current_custom_resource_file function
     if ! [[ " ${current_cr_optional_components_array[@]} " =~ "bai" ]]; then
-         [[ " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
+        if [[ " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
             select_external_cert_opensearch_kafka
         fi
     fi  
