@@ -3806,7 +3806,7 @@ function select_ocp_olm(){
 }
 
 
-function select_deployment_typeNoLongerUsed(){
+function select_deployment_type(){
     printf "\n"
 
     if [[ "$SCRIPT_MODE" == "OLM" ]]
@@ -4549,16 +4549,7 @@ function clean_up_temp_file(){
 }
 
 function input_information(){
-    if [[ $DEPLOYMENT_WITH_PROPERTY == "No" || $DEPLOYMENT_TYPE == "starter" ]]; then
-        #select_installation_type
-        warning "No generated property files for the selected capabilities were found"
-        fail "You need to first run the baw-prerequisites.sh script to generate the property files."
-        info "${YELLOW_TEXT}- [NEXT-STEPS]${RESET_TEXT}"
-        echo "  - STEP 1 ${RED_TEXT}(Required)${RESET_TEXT}:${GREEN_TEXT} # Execute the baw-prerequisites.sh script..${RESET_TEXT}"
-        exit 1
-    elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" ]]; then
-        INSTALLATION_TYPE="new"
-    fi
+    INSTALLATION_TYPE="new"
     # clean_up_temp_file
     # rm -rf $BAK_FOLDER >/dev/null 2>&1
     # rm -rf $FINAL_CR_FOLDER >/dev/null 2>&1
@@ -4567,80 +4558,71 @@ function input_information(){
     mkdir -p $BAK_FOLDER >/dev/null 2>&1
     mkdir -p $FINAL_CR_FOLDER >/dev/null 2>&1
 
-    if [[ ${INSTALLATION_TYPE} == "existing" ]]; then
-        # INSTALL_BAW_IAWS="No"
-        prepare_pattern_file
-        #select_deployment_type
-        DEPLOYMENT_TYPE="production"
-        if [[ $DEPLOYMENT_TYPE == "production" && (-z $PROFILE_TYPE) ]]; then
-            select_profile_type
-        fi
-        select_platform
-        if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "production" && "$USE_DEFAULT_IAM_ADMIN" == "" && "$NON_DEFAULT_IAM_ADMIN" == "" ]]; then
-            select_iam_default_admin
-        fi
-        if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "starter" ]]; then
-            select_project
-        fi
-        check_ocp_version
-        validate_docker_podman_cli
-    elif [[ ${INSTALLATION_TYPE} == "new" ]]
-    then
-
-        select_deployment_type
+    
+    select_deployment_type
+    if [[ $DEPLOYMENT_TYPE == "production" ]]; then
         # The script will load the temp property file only for production
-        # IF the deployment type is not production the script will not be executed for updating components and deployment patterns
-        if [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && $DEPLOYMENT_TYPE == "production" ]]; then
-            # This information is from the flag UPDATE_COMPONENTS stored in the temp property file by the baw-prerequisites.sh script
+        # IF the script can not find property files it will exit out.
+        if [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" ]]; then
+            # Temporary property file is being loaded here so that we can get the information about the flag UPDATE_COMPONENTS stored by the cp4a-prerequisites.sh script.
             load_temp_property_file
-            # IF the flag is set to true , we need to load some details from the live CR
+            # IF the flag is set to true , we need to load some details from the live CR and know the script is being executed to update a current deployment, otherwise its a fresh install for the first time.
             if [[ "$UPDATE_COMPONENTS" == "true" ]]; then
                 # Import functions used only for the update components mode
                 source ${CUR_DIR}/helper/update-selected-components/update-selected-components.sh
                 retrieve_current_custom_resource_file "$CP4BA_SERVICES_NS" "deployment_script"
             fi
         else
-            UPDATE_COMPONENTS="false"
+            error "The script could not find all property files required to generate the Custom Resource (CR) for this deployment."
+            echo
+            info  "Before executing the \"cp4a-deployment.sh\" script to generate a Custom Resource (CR) file,you must first run \"cp4a-prerequisites.sh\" in the following modes:"
+            info  "1. \" cp4a-prerequisites.sh -m property -n $TARGET_PROJECT_NAME \""
+            info  "2. \" cp4a-prerequisites.sh -m generate -n $TARGET_PROJECT_NAME \""
+            info  "3. \" cp4a-prerequisites.sh -m validate -n $TARGET_PROJECT_NAME \""
+            info  "For more information, refer to the documentation at: https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE?topic=pycc-recommended-preparing-databases-secrets-your-chosen-capabilities-by-running-script"
+            info  "The script will now exit."
+            echo 
+            exit
         fi
-        if [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" ]]; then
-            if [[ ! -z $CP4BA_AUTO_NAMESPACE ]]; then
-                TARGET_PROJECT_NAME=$CP4BA_AUTO_NAMESPACE
-            fi
-            show_summary_pattern_selected
+    fi
             
+    
+    if [[ "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" ]]; then
+        if [[ ! -z $CP4BA_AUTO_NAMESPACE ]]; then
+            TARGET_PROJECT_NAME=$CP4BA_AUTO_NAMESPACE
         fi
-        if [[ "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" && (-z $PROFILE_TYPE) ]]; then
+        show_summary_pattern_selected
+        #Only ask the deployment type question if the script is being used for a fresh install
+        # Otherwise if it is being used to generate a new CR with an updated list of components , then we get this information from the live CR 
+        if [[ "$UPDATE_COMPONENTS" == "false" ]]; then
             select_profile_type
         fi
+    fi
+    # Only ask the deployment type question if the script is being used for a fresh install
+    # Otherwise if it is being used to generate a new CR with an updated list of components , then we get this information from the live CR 
+    if [[ "$UPDATE_COMPONENTS" == "false" || "$DEPLOYMENT_TYPE" == "starter" ]]; then
+        select_platform
+    fi
+    
+    if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" && "$USE_DEFAULT_IAM_ADMIN" == "" && "$NON_DEFAULT_IAM_ADMIN" == "" ]]; then
         # Only ask the deployment type question if the script is being used for a fresh install
         # Otherwise if it is being used to generate a new CR with an updated list of components , then we get this information from the live CR 
         if [[ "$UPDATE_COMPONENTS" == "false" ]]; then
-            select_platform
+            select_iam_default_admin
         fi
-        # Only ask the deployment type question if the script is being used for a fresh install
-        # Otherwise if it is being used to generate a new CR with an updated list of components , then we get this information from the live CR 
-        if [[ "$UPDATE_COMPONENTS" == "false" ]]; then
-            if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" && "$USE_DEFAULT_IAM_ADMIN" == "" && "$NON_DEFAULT_IAM_ADMIN" == "" ]]; then
-                select_iam_default_admin
-            fi
-        fi
-        if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "starter" ]]; then
-            select_project
-        fi
-        check_ocp_version
-        validate_docker_podman_cli
-        prepare_pattern_file
-        # select_baw_iaws_installation
     fi
-
-    if [[ "${INSTALLATION_TYPE}" == "existing" ]] && (( ${#EXISTING_PATTERN_ARR[@]} == 0 )); then
-        echo -e "\x1B[1;31mNO EXISTING PATTERN FOUND!\x1B[0m"
-        prompt_press_any_key_to_continue "Install a new pattern"
+    
+    if [[ ("$PLATFORM_SELECTED" == "OCP" || "$PLATFORM_SELECTED" == "ROKS") && "$DEPLOYMENT_TYPE" == "starter" ]]; then
+        select_project
     fi
+    check_ocp_version
+    validate_docker_podman_cli
+    prepare_pattern_file
+    
 
     if [[ "${INSTALL_BAW_ONLY}" == "No" ]];
     then
-        if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+        if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
             #select_patternNOTUSED
             select_baw_pattern
         elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && $DEPLOYMENT_TYPE == "production" ]]; then
@@ -4655,7 +4637,7 @@ function input_information(){
        select_baw_only
     fi
 
-    if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+    if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
         select_optional_component
     elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && $DEPLOYMENT_TYPE == "production" ]]; then
         OPT_COMPONENTS_CR_SELECTED=($(echo "${optional_component_cr_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
@@ -4664,114 +4646,52 @@ function input_information(){
         OPT_COMPONENTS_SELECTED=($(echo "${optional_component_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
     fi
 
-    # Only ask the deployment type question if the script is being used for a fresh install
-    # Otherwise if it is being used to generate a new CR with an updated list of components , then we get this information from the live CR 
-    if [[ "$UPDATE_COMPONENTS" == "false" ]]; then
-        # get jdbc url according to whether ICCSAP component selected
-        if [[ ( -z $CP4BA_JDBC_URL || $CP4BA_JDBC_URL == "") && (( $DEPLOYMENT_TYPE == "starter" ) && (" ${optional_component_cr_arr[@]} " =~ "iccsap") || $DEPLOYMENT_TYPE == "production") ]]; then
-            get_jdbc_url
-        fi
+    # This question gets asked for 1. Starter and ICCSAP selected and 2. Production and the script is not used for updating the deployment patterns/optional components
+    if [[ ( ( ( $DEPLOYMENT_TYPE == "starter" ) && (" ${optional_component_cr_arr[@]} " =~ "iccsap") ) || ("$UPDATE_COMPONENTS" == "false" && "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" )) ]]; then
+        get_jdbc_url
     fi
-    if [[ "$INSTALLATION_TYPE" == "new" ]]; then
-        if [[ $PLATFORM_SELECTED == "other" ]]; then
-            get_entitlement_registry
-        fi
-        if [[ "$use_entitlement" == "no" ]]; then
-            verify_local_registry_password
-        fi
 
-        # if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]];
-        # then
-        #     get_infra_name
-        # fi
-        # load storage class name
-        if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
-            get_storage_class_name
-        elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && $DEPLOYMENT_TYPE == "production" ]]; then
-            SLOW_STORAGE_CLASS_NAME=$(prop_user_profile_property_file CP4BA.SLOW_FILE_STORAGE_CLASSNAME)
-            MEDIUM_STORAGE_CLASS_NAME=$(prop_user_profile_property_file CP4BA.MEDIUM_FILE_STORAGE_CLASSNAME)
-            FAST_STORAGE_CLASS_NAME=$(prop_user_profile_property_file CP4BA.FAST_FILE_STORAGE_CLASSNAME)
-            BLOCK_STORAGE_CLASS_NAME=$(prop_user_profile_property_file CP4BA.BLOCK_STORAGE_CLASS_NAME)
+    if [[ $PLATFORM_SELECTED == "other" ]]; then
+        get_entitlement_registry
+    fi
+    if [[ "$use_entitlement" == "no" ]]; then
+        verify_local_registry_password
+    fi
+
+       
+    # load storage class name
+    if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
+        get_storage_class_name
+    elif [[ "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" ]]; then
+        # Only ask the deployment type question if the script is being used for a fresh install
+        # Otherwise if it is being used to generate a new CR with an updated list of components , then we get this information from the live CR 
+        if [[ "$UPDATE_COMPONENTS" == "false" ]]; then
+            SLOW_STORAGE_CLASS_NAME=$(prop_user_profile_property_file BAW.SLOW_FILE_STORAGE_CLASSNAME)
+            MEDIUM_STORAGE_CLASS_NAME=$(prop_user_profile_property_file BAW.MEDIUM_FILE_STORAGE_CLASSNAME)
+            FAST_STORAGE_CLASS_NAME=$(prop_user_profile_property_file BAW.FAST_FILE_STORAGE_CLASSNAME)
+            BLOCK_STORAGE_CLASS_NAME=$(prop_user_profile_property_file BAW.BLOCK_STORAGE_CLASS_NAME)
             if [[ -z $SLOW_STORAGE_CLASS_NAME || -z $MEDIUM_STORAGE_CLASS_NAME || -z $FAST_STORAGE_CLASS_NAME || -z $BLOCK_STORAGE_CLASS_NAME ]]; then
                 get_storage_class_name
             fi
         fi
+    fi
 
         # Select FIPS enable or not
 #TODO will CNCFsupport FIPS
-        if  [[ ("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No") && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
+    if  [[ ("$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production") && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
+        # Only ask the deployment type question if the script is being used for a fresh install
+        # Otherwise if it is being used to generate a new CR with an updated list of components , then we get this information from the live CR 
+        if [[ "$UPDATE_COMPONENTS" == "false" ]]; then
             select_fips_enable
-        elif [[ "$DEPLOYMENT_TYPE" == "starter" ]]; then
-            FIPS_ENABLED="false"
-        fi
-
-        if  [[  ("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No") && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" || $PLATFORM_SELECTED == "other") ]]; then
             generate_sample_network_policies
-        elif [[ "$DEPLOYMENT_TYPE" == "starter" ]]; then
-            # For starter deployment, always set generate_sample_network_policies: true
-            info "For starter deployment, always setting \"generate_sample_network_policies\" as \"true\" in the final custom resource."
-            GENERATE_SAMPLE_NETWORK_POLICIES="true"
         fi
-
-        if [[ "$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
-
-            # whether wfps authoring require LDAP
-            if [[ "${#pattern_cr_arr[@]}" -eq "1" && "${pattern_cr_arr[@]}" =~ "workflow-process-service" ]]; then
-                select_ldap_type_for_wfps_authoring
-            fi
-
-            if [[ -z $LDAP_WFPS_AUTHORING || $LDAP_WFPS_AUTHORING == "Yes" ]]; then
-                select_ldap_type
-            fi
-
-        fi
-    elif [[ "$INSTALLATION_TYPE" == "existing" ]]
-    then
-        existing_infra_name=`cat $CP4A_EXISTING_BAK | ${YQ_CMD} r - spec.shared_configuration.sc_deployment_hostname_suffix`
-        if [ ! -z "$existing_infra_name" ]; then
-            chrlen=${#existing_infra_name}
-            INFRA_NAME=${existing_infra_name:21:chrlen}
-        fi
-        existing_ldap_type=`cat $CP4A_EXISTING_BAK | ${YQ_CMD} r - spec.ldap_configuration.lc_selected_ldap_type`
-        if [[ "$existing_ldap_type" == "Microsoft Active Directory" ]];then
-            LDAP_TYPE="AD"
-
-        elif [[ "$existing_ldap_type" == "IBM Security Directory Server" ]]
-        then
-            LDAP_TYPE="TDS"
-        fi
-        existing_docker_reg_server=`cat $CP4A_EXISTING_BAK | ${YQ_CMD} r - spec.shared_configuration.sc_image_repository`
-        if [[ "$existing_docker_reg_server" == *"icr.io"* ]]; then
-            use_entitlement="yes"
-        fi
-
-        local_registry_server=`cat $CP4A_EXISTING_BAK | ${YQ_CMD} r - spec.shared_configuration.sc_image_repository`
-        DOCKER_REG_SERVER="${existing_docker_reg_server}"
-        LOCAL_REGISTRY_SERVER=${local_registry_server}
-        OIFS=$IFS
-        IFS='/' read -r -a docker_reg_url_array <<< "$local_registry_server"
-        delim=""
-        joined=""
-        for item in "${docker_reg_url_array[@]}"; do
-                joined="$joined$delim$item"
-                delim="\/"
-        done
-        IFS=$OIFS
-        CONVERT_LOCAL_REGISTRY_SERVER=${joined}
-        DOCKER_RES_SECRET_NAME=`cat $CP4A_EXISTING_BAK | ${YQ_CMD} r - spec.shared_configuration.image_pull_secrets.[0]`
-        STORAGE_CLASS_NAME=`cat $CP4A_EXISTING_BAK | ${YQ_CMD} r - spec.shared_configuration.storage_configuration.sc_dynamic_storage_classname`
-        SLOW_STORAGE_CLASS_NAME=`cat $CP4A_EXISTING_BAK | ${YQ_CMD} r - spec.shared_configuration.storage_configuration.sc_slow_file_storage_classname`
-        MEDIUM_STORAGE_CLASS_NAME=`cat $CP4A_EXISTING_BAK | ${YQ_CMD} r - spec.shared_configuration.storage_configuration.sc_medium_file_storage_classname`
-        FAST_STORAGE_CLASS_NAME=`cat $CP4A_EXISTING_BAK | ${YQ_CMD} r - spec.shared_configuration.storage_configuration.sc_fast_file_storage_classname`
-        BLOCK_STORAGE_CLASS_NAME=`cat $CP4A_EXISTING_BAK | ${YQ_CMD} r - spec.shared_configuration.storage_configuration.sc_block_storage_classname`
-    fi
-
-    if [[ "$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
-        if [[ " ${pattern_cr_arr[@]}" =~ "content" || " ${pattern_cr_arr[@]}" =~ "document_processing" ]]; then
-            select_objectstore_number
-        fi
-    fi
-    if [[ $DEPLOYMENT_TYPE == "starter" || $DEPLOYMENT_WITH_PROPERTY == "No" ]]; then
+        
+    elif [[ "$DEPLOYMENT_TYPE" == "starter" ]]; then
+        FIPS_ENABLED="false"
+        # For starter deployment, always set generate_sample_network_policies: true
+        info "For starter deployment, always setting \"generate_sample_network_policies\" as \"true\" in the final custom resource."
+        GENERATE_SAMPLE_NETWORK_POLICIES="true"
+        
         select_cpe_full_storage
 
         containsElement "document_processing_designer" "${PATTERNS_CR_SELECTED[@]}"

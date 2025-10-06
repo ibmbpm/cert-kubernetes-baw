@@ -8608,7 +8608,7 @@ clear
 
 if [[ $RUNTIME_MODE == "property" ]]; then
     check_cp4ba_separate_operand $TARGET_PROJECT_NAME
-    # IF the variable UPDATE_COMPONENTS is set that means we are trying to update the list of deployment patterns or optional components 
+    # IF the variable UPDATE_COMPONENTS is set that means we are trying to update the list of optional components 
     if [[ ! -z $UPDATE_COMPONENTS ]]; then
         echo
         update_components_mode
