@@ -348,7 +348,7 @@ function prompt_license(){
                     #esac
                 #done
             CONTENT_DEPLOYED="No"
-            echo -e "Starting to Install the Cloud Pak for Business Automation Operator...\n"
+            echo -e "Starting to Install the Operator...\n"
             IBM_LICENS="Accept"
             validate_cli
             break
@@ -4559,7 +4559,8 @@ function input_information(){
     mkdir -p $FINAL_CR_FOLDER >/dev/null 2>&1
 
     
-    select_deployment_type
+    # select_deployment_type
+    DEPLOYMENT_TYPE="production"
     if [[ $DEPLOYMENT_TYPE == "production" ]]; then
         # The script will load the temp property file only for production
         # IF the script can not find property files it will exit out.
@@ -4575,10 +4576,10 @@ function input_information(){
         else
             error "The script could not find all property files required to generate the Custom Resource (CR) for this deployment."
             echo
-            info  "Before executing the \"cp4a-deployment.sh\" script to generate a Custom Resource (CR) file,you must first run \"cp4a-prerequisites.sh\" in the following modes:"
-            info  "1. \" cp4a-prerequisites.sh -m property -n $TARGET_PROJECT_NAME \""
-            info  "2. \" cp4a-prerequisites.sh -m generate -n $TARGET_PROJECT_NAME \""
-            info  "3. \" cp4a-prerequisites.sh -m validate -n $TARGET_PROJECT_NAME \""
+            info  "Before executing the \"baw-deployment.sh\" script to generate a Custom Resource (CR) file,you must first run \"baw-prerequisites.sh\" in the following modes:"
+            info  "1. \" baw-prerequisites.sh -m property -n $TARGET_PROJECT_NAME \""
+            info  "2. \" baw-prerequisites.sh -m generate -n $TARGET_PROJECT_NAME \""
+            info  "3. \" baw-prerequisites.sh -m validate -n $TARGET_PROJECT_NAME \""
             info  "For more information, refer to the documentation at: https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE?topic=pycc-recommended-preparing-databases-secrets-your-chosen-capabilities-by-running-script"
             info  "The script will now exit."
             echo 
