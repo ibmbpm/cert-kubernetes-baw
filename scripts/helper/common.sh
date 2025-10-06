@@ -207,6 +207,8 @@ LDAP_SECRET_FILE=${SECRET_FILE_FOLDER}/ldap-bind-secret.yaml
 # CP4BA_RELEASE_BASE is for fetch content/foundation operator pod, only need to change for major release.
 CP4BA_RELEASE_BASE="25.0.1"
 BAW_PATCH_VERSION="GA"
+# For 25.0.1_GA we will remove the Starter option and EDB option.
+VERSION_TO_SKIP_EDB="25.0.1_GA"
 # CP4BA_RELEASE_BASE_MAJOR_VERSION is used in certain checks where we used to hardcode to see if a upgrade is not ifix to ifix,change this only for major release
 CP4BA_RELEASE_BASE_MAJOR_VERSION="25.0"
 # CP4BA_CSV_VERSION is for checking CP4BA operator upgrade status, need to update for each IFIX
@@ -1393,4 +1395,16 @@ function retrieve_network_details(){
     fi
 
 
+}
+#DBACLD-194974: Version to remove EDB and skip Starter deployment option for CP4BA 25.0.1 by checking the version $BAW_PATCH_VERSION and $CP4BA_RELEASE_BASE
+#Update the version and patch here to skip EDB and Starter deployment option.  
+function skip_edb_for_2501() {
+    local _existing_cp4ba_version=${CP4BA_RELEASE_BASE}_${BAW_PATCH_VERSION}
+    local _version_to_skip="$VERSION_TO_SKIP_EDB"
+
+    if [[ "$_existing_cp4ba_version" == "$_version_to_skip" ]]; then
+        return 0  # Skip EDB
+    else
+        return 1  # Do not skip EDB
+    fi
 }
