@@ -8594,7 +8594,10 @@ function update_components_mode(){
         if [[ " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
             select_external_cert_opensearch_kafka
         fi
-    fi  
+    fi 
+
+    create_temp_property_file
+}
 ################################################
 #### Begin - Main step for install operator ####
 ################################################
@@ -8622,6 +8625,7 @@ if [[ $RUNTIME_MODE == "property" ]]; then
     fi
     clean_up_temp_file
 fi
+
 if [[ $RUNTIME_MODE == "generate" ]]; then
     check_cp4ba_separate_operand $TARGET_PROJECT_NAME
     # reload db type and OS number
