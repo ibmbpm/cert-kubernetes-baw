@@ -7142,14 +7142,14 @@ function select_external_postgresdb_for_im_zen(){
         echo "${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/$CS_CHANNEL_KC?topic=im-setting-up-external-edb-postgresql-database-server#dbcreate${RESET_TEXT}"
         
         if skip_edb_for_2501; then
-            printf "\x1B[1mFor this "$CP4BA_RELEASE_BASE"-"$CP4BA_PATCH_VERSION" version, you must use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THE POSTGRESQL DBs BY YOURSELF FIRST BEFORE APPLYING THE CP4BA CUSTOM RESOURCE${RESET_TEXT}] \x1B[1mfor IM and Zen services in this CP4BA deployment.\x1B[0m"
+            printf "\x1B[1mFor this "$CP4BA_RELEASE_BASE"-"$CP4BA_PATCH_VERSION" version, you must use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THE POSTGRESQL DBs BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1mfor IM and Zen services in this BAW deployment.\x1B[0m"
             printf "\n"
             ans="Yes"
             EXTERNAL_POSTGRESDB_FOR_IM="true"
             EXTERNAL_POSTGRESDB_FOR_ZEN="true"
             break
         else
-            printf "\x1B[1mDo you want to use an external Postgres DB for IM and Zen \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THE POSTGRESQL DBs BY YOURSELF FIRST BEFORE APPLYING THE CP4BA CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for for IM and Zen services in this CP4BA deployment?\x1B[0m (Yes/No, default: No): "
+            printf "\x1B[1mDo you want to use an external Postgres DB for IM and Zen \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THE POSTGRESQL DBs BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for for IM and Zen services in this BAW deployment?\x1B[0m (Yes/No, default: No): "
             printf "\n"
             read -rp "" ans
 
@@ -7182,14 +7182,14 @@ function select_external_postgresdb_for_bts(){
         #DBACLD-194974: Since there no EDB, we won't ask customer whether they want to use external Postgres DB for BTS.  They must use external Postgres DB if they want to install BTS with 25.0.1-GA
         echo "${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/$CS_CHANNEL_KC?topic=service-external-database#configuring-an-external-database-with-the-bts-custom-resource${RESET_TEXT}"
         if skip_edb_for_2501; then
-            printf "\x1B[1mFor this "$CP4BA_RELEASE_BASE"-"$CP4BA_PATCH_VERSION" version, you must use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THE POSTGRESQL DBs BY YOURSELF FIRST BEFORE APPLYING THE CP4BA CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for BTS service in this CP4BA deployment.\x1B[0m"
+            printf "\x1B[1mFor this "$CP4BA_RELEASE_BASE"-"$CP4BA_PATCH_VERSION" version, you must use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THE POSTGRESQL DBs BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for BTS service in this BAW deployment.\x1B[0m"
             printf "\n"
             ans="Yes"
             EXTERNAL_POSTGRESDB_FOR_BTS="true"
             break
         else
         
-            printf "\x1B[1mDo you want to use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THIS POSTGRESQL DB BY YOURSELF FIRST BEFORE APPLYING THE CP4BA CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for this CP4BA deployment?\x1B[0m (Yes/No, default: No): "
+            printf "\x1B[1mDo you want to use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THIS POSTGRESQL DB BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for this BAW deployment?\x1B[0m (Yes/No, default: No): "
             read -rp "" ans
             ans=$(echo "$ans" | tr '[:upper:]' '[:lower:]')
             case "$ans" in
@@ -7544,11 +7544,6 @@ function input_information(){
     select_external_postgresdb_for_im_zen
     EXTERNAL_POSTGRESDB_FOR_IM="true"
     EXTERNAL_POSTGRESDB_FOR_ZEN="true"
-
-    enable_instana_monitoring
-
-    #DBACLD-194974: Combine IM/Zen question for ext. PG.  Ask regardless of DB_TYPE 
-    select_external_postgresdb_for_im_zen
 
     # Create Secret/configMap for BTS metastore external Postgres DB
     containsElement "decisions_ads" "${pattern_cr_arr[@]}"
