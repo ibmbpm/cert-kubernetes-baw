@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:d46687bcfc21940df353ccd964d2de2ec07a40c01acd723d622cf8e9442cc430
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:be3f298b629554ff8f6a79296c9a2249a569e69b5d005461bbb4349c37b0552d
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -118,7 +118,7 @@ spec:
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:d07b322a992b562b4802686f7e967374768a0f0cca4f318ae3c087b81b0b4680
+  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:dcceee75208ee03928ff36f016447728c65d5dec77f1b6acc6be530f9adb31b0
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -161,7 +161,7 @@ spec:
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:eda4b64f714206a0bbf65f6156cd1ce7007de4ca2272e2589472779476f3253b
+  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:b3456fd561804c6f8262bbf4c564cdc436a4fcc515cc392287fe1c8d7e72b140
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -171,7 +171,7 @@ spec:
       interval: 45m
   priority: 100
 ---
-# IBM Zen Operator Catalog 6.2.2+20250923.192533.40
+# IBM Zen Operator Catalog 6.2.2+20250926.160746.44
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
@@ -184,7 +184,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:a9940da1b2bfe607b6d423077185d65a434ec8a1d8f3c6b5b23dac4c48156bbf
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:84a5877c183c1a701999a59dab9747813d08b04ff413187efef1abaf6be4ace4
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -194,41 +194,19 @@ spec:
       interval: 45m
   priority: 100
 ---
-# IBM Events Operator Catalog 5.1.2
+# IBM Events Operator Catalog 5.2.1
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-events-operator-catalog-v5-1-0
+  name: ibm-events-operator-catalog-v5-2-1
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
 spec:
-  displayName: IBM Events Operator Catalog-v5.1.2
+  displayName: IBM Events Operator Catalog-v5.2.1
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-events-operator-catalog@sha256:603a6bf0e616f16b609bf157b9e21415802478aefc9c606e124008d0224a1188
-  secrets:
-  - "ibm-entitlement-key"
-  grpcPodConfig:
-    securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
-  priority: 100
----
-# Cloud Native PostgresSQL Version 1.25.2 (CASE 5.16.0+20250722.134758.2626)(Postgresql Image Version 14.18)
-apiVersion: operators.coreos.com/v1alpha1
-kind: CatalogSource
-metadata:
-  name: cloud-native-postgresql-catalog
-  namespace: openshift-marketplace
-  annotations:
-    bedrock_catalogsource_priority: '1'
-spec:
-  displayName: Cloud Native Postgresql Catalog
-  publisher: IBM
-  sourceType: grpc
-  image: icr.io/cpopen/ibm-cpd-cloud-native-postgresql-operator-catalog@sha256:4b7cf401006cd4d4060a664c8313b3690916746d0df40bd96c9e592f6aba541f
+  image: icr.io/cpopen/ibm-events-operator-catalog@sha256:228ea92d69daa2350e151d1fe6b14e6fb56eadd0d3b5b5872178180747297687
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
