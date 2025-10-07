@@ -1684,6 +1684,8 @@ function load_property_before_generate(){
 }
 
 function validate_docker_podman_cli() {
+    PODMAN_FOUND="Yes"
+    DOCKER_FOUND="Yes"
     if [[ "$machine" == "Mac" ]]; then
         which podman &>/dev/null
         [[ $? -ne 0 ]] && PODMAN_FOUND="No"
