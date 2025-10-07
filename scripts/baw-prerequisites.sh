@@ -8584,6 +8584,10 @@ function update_components_mode(){
     retrieve_current_custom_resource_file "$CP4BA_SERVICES_NS" "prerequisites_script"
     print_current_summary_table "$CP4BA_SERVICES_NS"
     
+    DEPLOYMENT_TYPE="production"
+    PLATFORM_SELECTED="OCP"
+    # this value has to be 1 so that the select patterns and optional component functions that are called here know that this is not to be run for BAW only.(The script should never be executed in baw mode since 25.0.0 but since that code has not been removed , it is initialized here)
+    retVal_baw=1
     # Function to select optional components 
     select_optional_component
 
