@@ -107,7 +107,8 @@ spec:
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
-    securityContextConfig: restrictedpriority: 100    
+    securityContextConfig: restricted
+  priority: 100    
 ---
 # IBM Business Teams Service version 3.35.5
 apiVersion: operators.coreos.com/v1alpha1
