@@ -139,7 +139,7 @@ optional_component_arr=()
 optional_component_cr_arr=()
 foundation_component_arr=()
 FOUNDATION_FULL_ARR=("BAN" "RR" "BAS" "UMS" "AE")
-OPTIONAL_COMPONENT_FULL_ARR=("content_integration" "workstreams" "case" "business_orchestration" "ban" "bai" "css" "cmis" "es" "ier" "iccsap" "tm" "ums" "ads_designer" "ads_runtime" "app_designer" "decisionCenter" "decisionServerRuntime" "decisionRunner" "ae_data_persistence" "baw_authoring" "pfs" "baml" "auto_service" "document_processing_runtime" "document_processing_designer" "wfps_authoring" "kafka" "opensearch")
+OPTIONAL_COMPONENT_FULL_ARR=("content_integration" "workstreams" "case" "business_orchestration" "ban" "bai" "css" "cmis" "es" "ier" "iccsap" "tm" "ums" "ads_designer" "ads_runtime" "app_designer" "decisionCenter" "decisionServerRuntime" "decisionRunner" "ae_data_persistence" "baw_authoring" "pfs" "baml" "auto_service" "document_processing_runtime" "document_processing_designer" "wfps_authoring" "kafka" "opensearch" "Workplace Assistant" "(Preview) Authoring Assistant")
 
 function prompt_license(){
     # clear
@@ -578,6 +578,12 @@ function select_optional_component(){
                 elif [[ "${optional_components_list[i]}" == "Content Integration" ]]
                 then
                     [[ "${choices_component[i]}" ]] && { optional_component_arr=( "${optional_component_arr[@]}" "ContentIntegration" ); msg=""; }
+                elif [[ "${optional_components_list[i]}" == "Workplace Assistant" ]]
+                then
+                    [[ "${choices_component[i]}" ]] && { optional_component_arr=( "${optional_component_arr[@]}" "WorkplaceAssistant" ); msg=""; }
+                elif [[ "${optional_components_list[i]}" == "(Preview) Authoring Assistant" ]]
+                then
+                    [[ "${choices_component[i]}" ]] && { optional_component_arr=( "${optional_component_arr[@]}" "AuthoringAssistant" ); msg=""; }
                 elif [[ "${optional_components_list[i]}" == "IBM Content Navigator" ]]
                 then
                     [[ "${choices_component[i]}" ]] && { optional_component_arr=( "${optional_component_arr[@]}" "IBMContentNavigator" ); msg=""; }
@@ -665,6 +671,12 @@ function select_optional_component(){
                     elif [[ "${optional_components_list[i]}" == "Content Integration" ]]
                     then
                         optional_component_arr=( "${optional_component_arr[@]}" "ContentIntegration" )
+                    elif [[ "${optional_components_list[i]}" == "Workplace Assistant" ]]
+                    then
+                        optional_component_arr=( "${optional_component_arr[@]}" "WorkplaceAssistant" )
+                    elif [[ "${optional_components_list[i]}" == "(Preview) Authoring Assistant" ]]
+                    then
+                        optional_component_arr=( "${optional_component_arr[@]}" "AuthoringAssistant" )
                     elif [[ "${optional_components_list[i]}" == "IBM Content Navigator" ]]
                     then
                         optional_component_arr=( "${optional_component_arr[@]}" "IBMContentNavigator" )
@@ -799,8 +811,8 @@ function select_optional_component(){
                     ;;
                 "(a) Workflow Authoring")
                     if [[ $DEPLOYMENT_TYPE == "production" ]]; then
-                        optional_components_list=("Business Automation Insights" "Data Collector and Data Indexer" "Exposed Kafka Services")
-                        optional_components_cr_list=("bai" "pfs" "kafka")
+                        optional_components_list=("Business Automation Insights" "Data Collector and Data Indexer" "Exposed Kafka Services" "Workplace Assistant" "(Preview) Authoring Assistant")
+                        optional_components_cr_list=("bai" "pfs" "kafka" "workplace_assistant" "workflow_assistant")
                         show_optional_components
                     fi
                     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "cmis" )
@@ -811,8 +823,8 @@ function select_optional_component(){
                     ;;
                 "(b) Workflow Runtime")
                     if [[ $DEPLOYMENT_TYPE == "production" ]]; then
-                        optional_components_list=("Business Automation Insights" "Exposed Kafka Services" "Exposed OpenSearch")
-                        optional_components_cr_list=("bai" "kafka" "opensearch")
+                        optional_components_list=("Business Automation Insights" "Exposed Kafka Services" "Exposed OpenSearch" "Workplace Assistant")
+                        optional_components_cr_list=("bai" "kafka" "opensearch" "workplace_assistant")
                         show_optional_components
                     fi
                     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "cmis" )
@@ -930,8 +942,8 @@ function select_optional_component(){
                     ;;
                 "Workflow Process Service Authoring")
                     if [[ $DEPLOYMENT_TYPE == "production" ]]; then
-                        optional_components_list=("Business Automation Insights" "Data Collector and Data Indexer" "Exposed Kafka Services")
-                        optional_components_cr_list=("bai" "pfs" "kafka")
+                        optional_components_list=("Business Automation Insights" "Data Collector and Data Indexer" "Exposed Kafka Services" "Workplace Assistant" "(Preview) Authoring Assistant")
+                        optional_components_cr_list=("bai" "pfs" "kafka" "workplace_assistant" "workflow_assistant")
                         show_optional_components
                         optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "wfps_authoring" )
                     fi
@@ -940,8 +952,8 @@ function select_optional_component(){
                     break
                     ;;
                 "Business Automation Workflow Authoring")
-                    optional_components_list=("Business Automation Insights" "Data Collector and Data Indexer" "Exposed Kafka Services")
-                    optional_components_cr_list=("bai" "pfs" "kafka")
+                    optional_components_list=("Business Automation Insights" "Data Collector and Data Indexer" "Exposed Kafka Services" "Workplace Assistant" "(Preview) Authoring Assistant")
+                    optional_components_cr_list=("bai" "pfs" "kafka" "workplace_assistant" "workflow_assistant")
                     show_optional_components
                     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "baw_authoring" "cmis")
                     optional_components_list=()
@@ -949,8 +961,8 @@ function select_optional_component(){
                     break
                     ;;
                 "Business Automation Workflow Runtime")
-                    optional_components_list=("Business Automation Insights" "Exposed Kafka Services" "Exposed OpenSearch")
-                    optional_components_cr_list=("bai" "kafka" "opensearch")
+                    optional_components_list=("Business Automation Insights" "Exposed Kafka Services" "Exposed OpenSearch" "Workplace Assistant")
+                    optional_components_cr_list=("bai" "kafka" "opensearch" "workplace_assistant")
                     show_optional_components
                     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "css" )
                     optional_components_list=()
@@ -2203,6 +2215,30 @@ function create_prerequisites() {
             update_secret_template_passwords "$tmp_dbuserpwd" "dbPassword" "$BAS_SECRET_FILE"
         fi
 
+    fi
+
+    if [[ "${optional_component_cr_arr[@]}" =~ "workflow_assistant" || "${optional_component_cr_arr[@]}" =~ "workplace_assistant" ]]; then
+        watsonx_api_key="$(prop_user_profile_property_file WFA.WATSONX_API_KEY)"
+        watsonx_api_key=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_api_key")
+
+        watsonx_project_id="$(prop_user_profile_property_file WFA.WATSONX_PROJECT_ID)"
+        watsonx_project_id=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_project_id")
+
+        watsonx_token="$(prop_user_profile_property_file WFA.WATSONX_TOKEN)"
+        watsonx_token=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_token")
+
+        if [[ "<Optional>" == $watsonx_token ]]; then
+          watsonx_token=""
+        fi
+
+        watsonx_password="$(prop_user_profile_property_file WFA.WATSONX_PASSWORD)"
+        watsonx_password=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_password")
+
+        if [[ "<Optional>" == $watsonx_password ]]; then
+          watsonx_password=""
+        fi
+
+        create_workflow_assistant_secret_template "$watsonx_api_key" "$watsonx_project_id" "$watsonx_token" "$watsonx_password"
     fi
 
     # create AP play back secret
@@ -4834,6 +4870,75 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
         success "Property file for IBM Business Automation Workflow Runtime has been created.\n"
+    fi
+
+
+    # generate property for Workflow ssistants
+    if [[ "${optional_component_cr_arr[@]}" =~ "workflow_assistant" || "${optional_component_cr_arr[@]}" =~ "workplace_assistant" ]]; then
+        # Add user property into user_profile for Workflow Assistant
+        wait_msg "Creating Property file for Workflow Assistant"
+
+        tip="##           USER Property for Workflow Assistant        ##"
+        echo "####################################################" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo $tip >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "####################################################" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "## Provide the API Key for WatsonX" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "WFA.WATSONX_API_KEY=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+
+        echo "## Provide the Project ID of WatsonX" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "WFA.WATSONX_PROJECT_ID=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+
+        echo "## Provide the URL of WatsonX" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "WFA.WATSONX_URL=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+
+        echo "## Flag to run the Workplace Assistant" >> ${USER_PROFILE_PROPERTY_FILE}
+        if [[ "${optional_component_cr_arr[@]}" =~ "workplace_assistant" ]]; then
+          echo "WFA.RUN_WORKPLACE_AGENT=\"true\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        else
+          echo "WFA.RUN_WORKPLACE_AGENT=\"false\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        fi
+        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+
+        echo "## Flag to run the (Preview) Authoring Assistant" >> ${USER_PROFILE_PROPERTY_FILE}
+        if [[ "${optional_component_cr_arr[@]}" =~ "workflow_assistant" ]]; then
+          echo "WFA.RUN_AUTHORING_AGENT=\"true\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        else
+          echo "WFA.RUN_AUTHORING_AGENT=\"false\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        fi
+        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+
+        echo "## Provide the CP4D user name." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "WFA.WATSONX_USERNAME=\"<Optional>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+
+        echo "## Provide the CP4D token." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "WFA.WATSONX_TOKEN=\"<Optional>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+
+        echo "## Provide the CP4D instance ID." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "WFA.WATSONX_INSTANCE_ID=\"<Optional>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+
+        echo "## Provide the CP4D version." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "WFA.WATSONX_VERSION=\"<Optional>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+
+        echo "## Optional - Only required if WATSONX_API_KEY is not set." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "WFA.WATSONX_PASSWORD=\"<Optional>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+
+        echo "## Optional - The ID of the LLM model to use. Default set to meta-llama/llama-3-3-70b-instruct." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "WFA.WATSONX_MODEL_ID=\"<Optional>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+
+        echo "## Optional - Only required if a custom deployment LLM model is being used. If set, will override WATSONX_MODEL_ID value." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "WFA.WATSONX_DEPLOYMENT_ID=\"<Optional>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+
+        success "Property file for Workflow Assistant has been created.\n"
     fi
 
     # generate property for AWS
