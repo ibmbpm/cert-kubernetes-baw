@@ -7497,6 +7497,7 @@ function select_baw_pattern(){
 }
 
 function input_information(){
+    echo "entering input_info fn" 
     EXISTING_OPT_COMPONENT_ARR=()
     EXISTING_PATTERN_ARR=()
     retVal_baw=1
@@ -7505,7 +7506,6 @@ function input_information(){
     select_platform
 
     select_baw_pattern
-
     select_optional_component
 
     select_ldap_type

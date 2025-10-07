@@ -38,14 +38,12 @@ summary_display_values=()
 # Function to set the property file paths for the original property files
 function set_property_file_paths(){
     local directory=$1
-    echo "entering set_property_file_path_fn"
     ORIGINAL_PROPERTY_FILE_FOLDER=${directory}
     ORIGINAL_DB_USER_PROPERTY_FILE=${directory}/baw_db_name_user.property
     ORIGINAL_DB_SERVER_PROPERTY_FILE=${directory}/baw_db_server.property
     ORIGINAL_LDAP_PROPERTY_FILE=${directory}/baw_LDAP.property
     ORIGINAL_USER_PROFILE_PROPERTY_FILE=${directory}/baw_user_profile.property
     ORIGINAL_TMP_PROPERTY_FILE=${directory}/.original_TEMPORARY.property
-    echo "leaving set_property_file_path_fn" 
 }
 
 # Function to retrieve a property value from the original LDAP property file based on a property passed as the first argument
@@ -118,7 +116,6 @@ function print_current_summary_table() {
 
 # Function to copy original property files to a subfolder where the new property files get generated
 function copy_original_property_files(){
-    echo "entering copy_original_property_files fn" 
     if [[ -d "$PROPERTY_FILE_FOLDER/original_property_files" ]]; then
         rm -rf "$PROPERTY_FILE_FOLDER/original_property_files"
     fi
@@ -128,7 +125,6 @@ function copy_original_property_files(){
     cp $ORIGINAL_LDAP_PROPERTY_FILE $PROPERTY_FILE_FOLDER/original_property_files/
     cp $ORIGINAL_USER_PROFILE_PROPERTY_FILE $PROPERTY_FILE_FOLDER/original_property_files/
     set_property_file_paths "$PROPERTY_FILE_FOLDER/original_property_files"
-    echo "leaving copy_original_property_files fn" 
 }
 
 # Function to copy original CR to a subfolder where the new CR gets generated
