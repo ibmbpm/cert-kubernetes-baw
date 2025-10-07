@@ -2934,6 +2934,12 @@ function select_optional_component(){
                 elif [[ "${optional_components_list[i]}" == "IBM Content Navigator" ]]
                 then
                     [[ "${choices_component[i]}" ]] && { optional_component_arr=( "${optional_component_arr[@]}" "IBMContentNavigator" ); msg=""; }
+                elif [[ "${optional_components_list[i]}" == "Workplace Assistant" ]]
+                then
+                    [[ "${choices_component[i]}" ]] && { optional_component_arr=( "${optional_component_arr[@]}" "WorkplaceAssistant" ); msg=""; }
+                elif [[ "${optional_components_list[i]}" == "(Preview) Authoring Assistant" ]]
+                then
+                    [[ "${choices_component[i]}" ]] && { optional_component_arr=( "${optional_component_arr[@]}" "AuthoringAssistant" ); msg=""; }
                 else
                     [[ "${choices_component[i]}" ]] && { optional_component_arr=( "${optional_component_arr[@]}" "${optional_components_list[i]}" ); msg=""; }
                 fi
@@ -3010,6 +3016,12 @@ function select_optional_component(){
                     elif [[ "${optional_components_list[i]}" == "IBM Content Navigator" ]]
                     then
                         optional_component_arr=( "${optional_component_arr[@]}" "IBMContentNavigator" )
+                    elif [[ "${optional_components_list[i]}" == "Workplace Assistant" ]]
+                    then
+                        optional_component_arr=( "${optional_component_arr[@]}" "WorkplaceAssistant" )
+                    elif [[ "${optional_components_list[i]}" == "(Preview) Authoring Assistant" ]]
+                    then
+                        optional_component_arr=( "${optional_component_arr[@]}" "AuthoringAssistant" )
                     else
                         optional_component_arr=( "${optional_component_arr[@]}" "${optional_components_list[i]}" )
                     fi
@@ -3131,8 +3143,8 @@ function select_optional_component(){
                     ;;
                 "(a) Workflow Authoring")
                     if [[ $DEPLOYMENT_TYPE == "production" ]]; then
-                        optional_components_list=("Business Automation Insights" "Data Collector and Data Indexer" "Exposed Kafka Services")
-                        optional_components_cr_list=("bai" "pfs" "kafka")
+                        optional_components_list=("Business Automation Insights" "Data Collector and Data Indexer" "Exposed Kafka Services" "Workplace Assistant" "(Preview) Authoring Assistant")
+                        optional_components_cr_list=("bai" "pfs" "kafka" "workplace_assistant" "workflow_assistant")
                         show_optional_components
                     fi
                     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "cmis" )
@@ -3143,8 +3155,8 @@ function select_optional_component(){
                     ;;
                 "(b) Workflow Runtime")
                     if [[ $DEPLOYMENT_TYPE == "production" ]]; then
-                        optional_components_list=("Business Automation Insights" "Exposed Kafka Services" "Exposed OpenSearch")
-                        optional_components_cr_list=("bai" "kafka" "opensearch")
+                        optional_components_list=("Business Automation Insights" "Exposed Kafka Services" "Exposed OpenSearch" "Workplace Assistant")
+                        optional_components_cr_list=("bai" "kafka" "opensearch" "workplace_assistant")
                         show_optional_components
                     fi
                     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "cmis" )
@@ -3157,8 +3169,8 @@ function select_optional_component(){
                     break
                     ;;
                 "Business Automation Workflow Authoring")
-                    optional_components_list=( "Data Collector and Data Indexer" "Exposed Kafka Services")
-                    optional_components_cr_list=( "pfs" "kafka")
+                    optional_components_list=( "Data Collector and Data Indexer" "Exposed Kafka Services" "Workplace Assistant" "(Preview) Authoring Assistant")
+                    optional_components_cr_list=( "pfs" "kafka" "workplace_assistant" "workflow_assistant")
                     show_optional_components
                     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "cmis" )
                     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "baw_authoring" )
@@ -3168,8 +3180,8 @@ function select_optional_component(){
                     ;;
                 "Business Automation Workflow Runtime")
 
-                    optional_components_list=( "Exposed Kafka Services" "Exposed OpenSearch")
-                    optional_components_cr_list=("kafka" "opensearch")
+                    optional_components_list=( "Exposed Kafka Services" "Exposed OpenSearch" "Workplace Assistant")
+                    optional_components_cr_list=("kafka" "opensearch" "workplace_assistant")
                     show_optional_components
                     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "css" )
                     optional_components_list=()
@@ -3288,8 +3300,8 @@ function select_optional_component(){
                     ;;
                 "Workflow Process Service Authoring")
                     if [[ $DEPLOYMENT_TYPE == "production" ]]; then
-                        optional_components_list=("Business Automation Insights" "Data Collector and Data Indexer" "Exposed Kafka Services")
-                        optional_components_cr_list=("bai" "pfs" "kafka")
+                        optional_components_list=("Business Automation Insights" "Data Collector and Data Indexer" "Exposed Kafka Services" "Workplace Assistant" "(Preview) Authoring Assistant")
+                        optional_components_cr_list=("bai" "pfs" "kafka" "workplace_assistant" "workflow_assistant")
                         show_optional_components
                         optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "wfps_authoring" )
                     fi
@@ -5270,6 +5282,14 @@ function merge_optional_components(){
                     fi
                     break
                     ;;
+                "workflow_assistant")
+                    ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration
+                    break
+                    ;;
+                "workplace_assistant")
+                    ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration
+                    break
+                    ;;
                 "ads_designer")
                     break
                     ;;
@@ -6948,6 +6968,112 @@ function sync_property_into_final_cr(){
         # Applying user profile for BAW runtime
         tmp_baw_runtime_admin="$(prop_user_profile_property_file BAW_RUNTIME.ADMIN_USER)"
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.baw_configuration.[0].admin_user "\"$tmp_baw_runtime_admin\""
+    fi
+
+    # Applying value in Workflow Assistant property file into final CR
+    tmp_is_run_workflow_agent_enabled="$(prop_user_profile_property_file WFA.RUN_WORKPLACE_AGENT)"
+    tmp_is_run_workflow_agent_enabled=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_is_run_workflow_agent_enabled")
+
+    tmp_is_run_authoring_agent_enabled="$(prop_user_profile_property_file WFA.RUN_AUTHORING_AGENT)"
+    tmp_is_run_authoring_agent_enabled=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_is_run_authoring_agent_enabled")
+
+    if [[ "true" == $tmp_is_run_workflow_agent_enabled || "true" == $tmp_is_run_authoring_agent_enabled ]]; then
+        tmp_watsonx_url="$(prop_user_profile_property_file WFA.WATSONX_URL)"
+        tmp_watsonx_url=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_watsonx_url")
+
+        tmp_watsonx_username="$(prop_user_profile_property_file WFA.WATSONX_USERNAME)"
+        tmp_watsonx_username=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_watsonx_username")
+
+        tmp_watsonx_instance_id="$(prop_user_profile_property_file WFA.WATSONX_INSTANCE_ID)"
+        tmp_watsonx_instance_id=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_watsonx_instance_id")
+
+        tmp_watsonx_version="$(prop_user_profile_property_file WFA.WATSONX_VERSION)"
+        tmp_watsonx_version=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_watsonx_version")
+
+        tmp_watsonx_model_id="$(prop_user_profile_property_file WFA.WATSONX_MODEL_ID)"
+        tmp_watsonx_model_id=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_watsonx_model_id")
+
+        tmp_watsonx_deployment_id="$(prop_user_profile_property_file WFA.WATSONX_DEPLOYMENT_ID)"
+        tmp_watsonx_deployment_id=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_watsonx_deployment_id")
+
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.watsonx_url "\"$tmp_watsonx_url\""
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.run_workflow_agent "\"$tmp_is_run_workflow_agent_enabled\""
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.run_authoring_agent "\"$tmp_is_run_authoring_agent_enabled\""
+
+        if [[ "<Optional>" != $tmp_watsonx_username ]]; then
+          ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.watsonx_username "\"$tmp_watsonx_username\""
+        fi
+
+        if [[ "<Optional>" != $tmp_watsonx_instance_id ]]; then
+          ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.watsonx_instance_id "\"$tmp_watsonx_instance_id\""
+        fi
+
+        if [[ "<Optional>" != $tmp_watsonx_version ]]; then
+          ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.watsonx_version "\"$tmp_watsonx_version\""
+        fi
+
+        if [[ "<Optional>" != $tmp_watsonx_model_id ]]; then
+          ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.watsonx_model_id "\"$tmp_watsonx_model_id\""
+        fi
+
+        if [[ "<Optional>" != $tmp_watsonx_deployment_id ]]; then
+          ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.watsonx_deployment_id "\"$tmp_watsonx_deployment_id\""
+        fi
+
+
+        domain_name=$(${CLI_CMD} get configmap ibm-cp4ba-common-config -n $CP4BA_SERVICES_NS -o jsonpath='{.data.domain_name}')
+
+        # Define common Zen front door host (shared domain for cookie support)
+        zen_frontdoor_host="https://cpd-${CP4BA_SERVICES_NS}.${domain_name}"
+
+        if [[ "$tmp_is_run_workflow_agent_enabled" == "true" ]]; then
+            xml_data_workplace=" <server merge=\"mergeChildren\">
+                <portal merge=\"mergeChildren\">
+                    <agent-enable merge=\"replace\">true</agent-enable>
+                    <agent-endpoint merge=\"replace\">${zen_frontdoor_host}/agent/runtimeChat</agent-endpoint>
+                </portal>
+            </server>
+            "
+        fi
+
+        if [[ "$tmp_is_run_authoring_agent_enabled" == "true" ]]; then
+            xml_data_authoring=" <authoring-environment>
+                <authoring-agent-endpoint merge=\"replace\">${zen_frontdoor_host}/agent</authoring-agent-endpoint>
+            </authoring-environment>
+            "
+        fi
+
+        # For workflow-authoring and wfps authoring
+        if [[ "${pattern_cr_arr[@]}" =~ "workflow-authoring" || "${pattern_cr_arr[@]}" =~ "workflow-process-service" ]]; then
+            SECRET_NAME="lombardi-custom-xml-secret"
+            # Delete existing secret if exists
+            if ${CLI_CMD} get secret "$SECRET_NAME" -n "$CP4BA_SERVICES_NS" >/dev/null 2>&1; then
+                ${CLI_CMD} delete secret "$SECRET_NAME" -n "$CP4BA_SERVICES_NS"
+            fi
+
+            if [[ -n "$xml_data_authoring" ]]; then
+                export authoring_xml_literal=$'<properties>\n'"$xml_data_authoring"$'\n</properties>\n\n'
+                ${YQ_CMD} w -i "${CP4A_PATTERN_FILE_TMP}" spec.bastudio_configuration.bastudio_custom_xml "${authoring_xml_literal}"
+            fi
+
+            if [[ -n "$xml_data_workplace" ]]; then
+                export runtime_xml=$'<properties>\n'"$xml_data_workplace"$'</properties>\n\n'
+                ${CLI_CMD} create secret generic "$SECRET_NAME" --from-literal=sensitiveCustomConfig="${runtime_xml}" -n "$CP4BA_SERVICES_NS"
+                ${YQ_CMD} w -i "${CP4A_PATTERN_FILE_TMP}" "spec.workflow_authoring_configuration.lombardi_custom_xml_secret_name" "lombardi-custom-xml-secret"
+
+            fi
+        elif [[ "${pattern_cr_arr[@]}" =~ "workflow-runtime" ]]; then
+            if [[ -n "$xml_data_workplace" ]]; then
+                SECRET_NAME="lombardi-custom-xml-secret"
+
+                # Check if the secret exists
+                if ${CLI_CMD} get secret "$SECRET_NAME" -n "$CP4BA_SERVICES_NS" >/dev/null 2>&1; then
+                    ${CLI_CMD} delete secret "$SECRET_NAME" -n "$CP4BA_SERVICES_NS"
+                fi
+                ${CLI_CMD} create secret generic "$SECRET_NAME" --from-literal=sensitiveCustomConfig="${xml_data_workplace}" -n "$CP4BA_SERVICES_NS"
+                ${YQ_CMD} w -i "${CP4A_PATTERN_FILE_TMP}" "spec.baw_configuration.[0].lombardi_custom_xml_secret_name" "lombardi-custom-xml-secret"
+            fi
+        fi
     fi
 
     # Applying value in BAW Runtime+Workstreams property file into final CR
@@ -8989,6 +9115,12 @@ function show_summary_pattern_selected(){
             elif [[ "${each_opt_component}" == "IBMContentNavigator" ]]
             then
                 printf '   * %s\n' "IBM Content Navigator"
+            elif [[ "${each_opt_component}" == "WorkplaceAssistant" ]]
+            then
+                printf '   * %s\n' "Workplace Assistant"
+            elif [[ "${each_opt_component}" == "AuthoringAssistant" ]]
+            then
+                printf '   * %s\n' "(Preview) Authoring Assistant"
             elif [[ "${each_opt_component}" == "ContentIntegration" ]]
             then
                 printf '   * %s\n' "Content Integration"
@@ -9091,6 +9223,12 @@ function show_summary(){
             elif [[ "${each_opt_component}" == "IBMContentNavigator" ]]
             then
                 printf '   * %s\n' "IBM Content Navigator"
+            elif [[ "${each_opt_component}" == "WorkplaceAssistant" ]]
+            then
+                printf '   * %s\n' "Workplace Assistant"
+            elif [[ "${each_opt_component}" == "AuthoringAssistant" ]]
+            then
+                printf '   * %s\n' "(Preview) Authoring Assistant"
             elif [[ "${each_opt_component}" == "ContentIntegration" ]]
             then
                 printf '   * %s\n' "Content Integration"
