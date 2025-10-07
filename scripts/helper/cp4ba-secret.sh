@@ -1078,7 +1078,7 @@ kind: ConfigMap
 metadata:
   name: ibm-bts-config-extension
   namespace: "$CP4BA_SERVICES_NS"
-  data:
+data:
   serverName: "<DatabaseHostName>"
   portNumber: "<DatabasePort>"
   databaseName: <DatabaseName>
