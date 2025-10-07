@@ -8,7 +8,7 @@ scripts/cp4ba-upgrade/*
 .vscode/*
 scripts/generated-cr/*
 scripts/.bak
-scripts/cp4a-script-logs/*
+scripts/baw-script-logs/*
 scripts/baw-script-logs/*
 scripts/baw-prerequisites-backup/*
 *.log
