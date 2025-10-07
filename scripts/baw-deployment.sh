@@ -1683,28 +1683,34 @@ function load_property_before_generate(){
     PROFILE_TYPE=$(prop_tmp_property_file PROFILE_SIZE_FLAG)
 }
 
-function validate_docker_podman_cli(){
-    if [[ $OCP_VERSION == "3.11" || "$machine" == "Mac" ]];then
+function validate_docker_podman_cli() {
+    if [[ "$machine" == "Mac" ]]; then
         which podman &>/dev/null
-        if [[ $? -ne 0 ]]; then
-            PODMAN_FOUND="No"
-
-            which docker &>/dev/null
-            [[ $? -ne 0 ]] && \
-                DOCKER_FOUND="No"
-            if [[ $DOCKER_FOUND == "No" && $PODMAN_FOUND == "No" ]]; then
-                echo -e "\x1B[1;31mUnable to locate docker and podman. Install either of them first.\x1B[0m" && \
-                exit 1
-            fi
-        fi
-    elif [[ $OCP_VERSION == "4.4OrLater" ]]
-    then
-        which podman &>/dev/null
-        [[ $? -ne 0 ]] && \
-            echo -e "\x1B[1;31mUnable to locate podman. Install it first.\x1B[0m" && \
+        [[ $? -ne 0 ]] && PODMAN_FOUND="No"
+        which docker &>/dev/null
+        [[ $? -ne 0 ]] && DOCKER_FOUND="No"
+        if [[ $DOCKER_FOUND == "No" && $PODMAN_FOUND == "No" ]]; then
+            echo -e "\033[1;31mUnable to locate docker or podman. Install either of them first.\033[0m"
             exit 1
+        fi
+    elif [[ $OCP_VERSION =~ ^4\. || $OCP_VERSION == "4.4OrLater" ]]; then
+        which podman &>/dev/null
+        [[ $? -ne 0 ]] && {
+            echo -e "\033[1;31mUnable to locate podman. Install it first.\033[0m"
+            exit 1
+        }
+    else
+        which podman &>/dev/null
+        [[ $? -ne 0 ]] && PODMAN_FOUND="No"
+        which docker &>/dev/null
+        [[ $? -ne 0 ]] && DOCKER_FOUND="No"
+        if [[ $DOCKER_FOUND == "No" && $PODMAN_FOUND == "No" ]]; then
+            echo -e "\033[1;31mUnable to locate docker or podman. Install either of them first.\033[0m"
+            exit 1
+        fi
     fi
 }
+
 
 function select_project() {
     while [[ $TARGET_PROJECT_NAME == "" ]];
