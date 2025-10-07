@@ -23,9 +23,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
 ---
 # IBM CS Flink Operator Catalog 1.18.1 (2.0.5+20250528.100000)
 apiVersion: operators.coreos.com/v1alpha1
@@ -43,9 +40,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
   priority: 100
 ---
 # IBM CS Opensearch Operator Catalog 1.1.2452
@@ -63,9 +57,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
   priority: 100
 ---
 # IBM Certificate Manager 4.2.17
@@ -83,9 +74,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
 ---
 # IBM License Manager 4.2.17
 apiVersion: operators.coreos.com/v1alpha1
@@ -102,9 +90,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
 ---
 # IBM Cloud Foundational Services 4.15.0
 apiVersion: operators.coreos.com/v1alpha1
@@ -122,11 +107,7 @@ spec:
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
-    securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
-  priority: 100    
+    securityContextConfig: restrictedpriority: 100    
 ---
 # IBM Business Teams Service version 3.35.5
 apiVersion: operators.coreos.com/v1alpha1
@@ -145,9 +126,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
 ---
 # IBM CS IM Operator Catalog 4.14.0
 apiVersion: operators.coreos.com/v1alpha1
@@ -166,9 +144,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
   priority: 100
 ---
 # IBM Zen Operator Catalog 6.2.2+20250926.160746.44
@@ -189,9 +164,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
   priority: 100
 ---
 # IBM Events Operator Catalog 5.2.1
@@ -211,9 +183,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
   priority: 100
 ---
 # IBM FileNet Content Manager Standalone catalog for 5.7.0
@@ -231,6 +200,3 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
