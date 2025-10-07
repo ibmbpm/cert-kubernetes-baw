@@ -23,9 +23,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
 ---
 # IBM CS Flink Operator Catalog 1.18.1 (2.0.5+20250528.100000)
 apiVersion: operators.coreos.com/v1alpha1
@@ -43,9 +40,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
   priority: 100
 ---
 # IBM CS Opensearch Operator Catalog 1.1.2452
@@ -63,9 +57,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
   priority: 100
 ---
 # IBM Certificate Manager 4.2.15
@@ -83,9 +74,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
 ---
 # IBM License Manager 4.2.15
 apiVersion: operators.coreos.com/v1alpha1
@@ -102,9 +90,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
 ---
 # IBM Cloud Foundational Services 4.14.0
 apiVersion: operators.coreos.com/v1alpha1
@@ -123,9 +108,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
   priority: 100    
 ---
 # IBM Business Teams Service version 3.35.5
@@ -145,9 +127,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
 ---
 # IBM CS IM Operator Catalog 4.13.0
 apiVersion: operators.coreos.com/v1alpha1
@@ -166,9 +145,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
   priority: 100
 ---
 # IBM Zen Operator Catalog 6.2.1+20250818.110231.113
@@ -190,9 +166,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
   priority: 100
 ---
 # IBM Events Operator Catalog 5.1.2
@@ -212,9 +185,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
   priority: 100
 ---
 # Cloud Native PostgresSQL Version 1.25.2 (CASE 5.16.0+20250722.134758.2626)(Postgresql Image Version 14.18)
@@ -234,9 +204,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
   priority: 100
 ---
 # IBM FileNet Content Manager Standalone catalog for 5.7.0
@@ -254,6 +221,3 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  updateStrategy:
-    registryPoll:
-      interval: 45m
