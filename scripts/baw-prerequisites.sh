@@ -14,6 +14,7 @@ CUR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PARENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 source ${CUR_DIR}/helper/common.sh
+source "${CUR_DIR}/baw-storage-validation.sh"
 
 function show_help() {
     echo -e "\nUsage: baw-prerequisites.sh -m [modetype] -n [cp4baNamespace]\n"
@@ -8662,6 +8663,7 @@ if [[ $RUNTIME_MODE == "validate" ]]; then
     validate_utility_tool_for_validation
     load_property_before_generate
     validate_prerequisites
+    storage_and_performance_validation_tests $TARGET_PROJECT_NAME
 fi
 ################################################
 #### End - Main step for install operator ####

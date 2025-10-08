@@ -1,0 +1,26 @@
+#!/bin/bash
+###############################################################################
+#
+# LICENSED MATERIALS - PROPERTY OF IBM
+#
+# (C) COPYRIGHT IBM CORP. 2022. ALL RIGHTS RESERVED.
+#
+# US GOVERNMENT USERS RESTRICTED RIGHTS - USE, DUPLICATION OR
+# DISCLOSURE RESTRICTED BY GSA ADP SCHEDULE CONTRACT WITH IBM CORP.
+#
+###############################################################################
+
+# Simple wrapper script for baw-storage-validation.sh
+# Usage: storage_validation <namespace>
+
+if [ $# -ne 1 ]; then
+    echo "Usage: storage_validation <namespace>"
+    echo "Example: storage_validation my-namespace"
+    exit 1
+fi
+
+NAMESPACE="$1"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Call the main script with appropriate flags
+"$SCRIPT_DIR/baw-storage-validation.sh" -m storage_validation -n "$NAMESPACE"
