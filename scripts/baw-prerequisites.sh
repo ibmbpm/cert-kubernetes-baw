@@ -953,7 +953,7 @@ function select_optional_component(){
                     optional_components_list=("Business Automation Insights" "Exposed Kafka Services" "Exposed OpenSearch")
                     optional_components_cr_list=("bai" "kafka" "opensearch")
                     show_optional_components
-                    optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "css" )
+                    optional_component_cr_arr=( "${optional_component_cr_arr[@]}")
                     optional_components_list=()
                     optional_components_cr_list=()
                     break
