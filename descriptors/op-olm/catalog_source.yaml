@@ -8,7 +8,7 @@
 # disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
 #
 ###############################################################################
-# CP4BA 2501.SP19 catalog
+# CP4BA 2501.RC1 catalog
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:be3f298b629554ff8f6a79296c9a2249a569e69b5d005461bbb4349c37b0552d
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:56124feac61d0d12d229be03b73da71b4ca822174e0f80cc77c84923efdc94f0
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -103,7 +103,7 @@ spec:
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:dcceee75208ee03928ff36f016447728c65d5dec77f1b6acc6be530f9adb31b0
+  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:f32182f50b17ccfb186a6dc0d9fd6be2ac0db481ec9e3d12cd86c68a8651933e
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -140,7 +140,7 @@ spec:
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:b3456fd561804c6f8262bbf4c564cdc436a4fcc515cc392287fe1c8d7e72b140
+  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:a62e7bd4371d60ec7f90c3c68e75f0d15665c6907e17fb5507d48706670cd0ec
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
