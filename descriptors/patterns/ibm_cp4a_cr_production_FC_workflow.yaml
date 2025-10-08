@@ -46,7 +46,7 @@ spec:
 
     ## The deployment context, which has a default value of "CP4A".  Unless you are instructed to change this value or
     ## know the reason to change this value, please leave the default value.
-    sc_deployment_context: "CP4A"
+    sc_deployment_context: "BAW"
 
     ## All CP4A components must use/share the image_pull_secrets to pull images
     image_pull_secrets:
