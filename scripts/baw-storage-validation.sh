@@ -13,9 +13,9 @@
 function show_help() {
     echo -e "\nUsage: ./baw-storage-validation.sh -m <mode> -n <BAW_NAMESPACE>\n"
     echo "Modes:"
-    echo "  storage_validation                    : Run only Storage validation"
-    echo "  performance_validation                : Run only Storage Performance validation"
-    echo "  storage_and_performance_validation    : Run Storage validation and Storage Performance validation"
+    echo "  storage_validation                    : Run only Storage Validation"
+    echo "  performance_validation                : Run only Storage Performance Validation"
+    echo "  storage_and_performance_validation    : Run Storage Validation and Storage Performance Validation"
     echo
     echo "Examples:"
     echo "  ./baw-storage-validation.sh -m storage_validation -n <BAW_NAMESPACE>"
@@ -28,6 +28,9 @@ function show_help() {
 function check_prerequisites() {
   CUR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
   source "${CUR_DIR}/helper/common.sh"
+  echo
+  echo "Next, checking prerequisites for Storage Validation/Storage Performance Validation. For details, refer to the topic 'Storage Validation and Storage Performance Validation': https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/${CP4BA_RELEASE_BASE}?topic=pycc-recommended-preparing-databases-secrets-your-chosen-capabilities-by-running-script"
+  
   echo -e "${WHITE}${BOLD}Checking prerequisites...${RESET}"
   echo
     all_ok=true
@@ -154,7 +157,7 @@ function prompt_user_for_validation() {
     echo
     INFO "STORAGE VALIDATION AND STORAGE PERFORMANCE VALIDATION"
     # Prompt user about running validation
-    info "Next step is to perform Storage validation and Storage Performance Validation. This step will validate fast file storage (RWX) and block storage (RWO)."
+    info "Next step is to perform Storage Validation and Storage Performance Validation. This step will validate fast file storage (RWX) and block storage (RWO)."
     echo
 
     echo "Validation might take:"
@@ -173,54 +176,36 @@ function prompt_user_for_validation() {
     run_perf=$(echo "$run_perf" | tr '[:upper:]' '[:lower:]')
 }
 
-function prompt_validate_namespace() {
-        echo
-        echo -e "${WHITE}${BOLD}Please provide a namespace to run Storage validation / Storage Performance Validation:${RESET}"
-        echo -e "${WHITE}${BOLD}Note: This namespace is used only for Storage validation / Storage Performance Validation purposes, keeps the tests separate from your BAW namespace.${RESET}"
 
-        read -p "Please enter namespace: " VALIDATE_NS
-        VALIDATE_NS=$(echo "$VALIDATE_NS" | tr -d '[:space:]')
-
-        if [[ -z "$VALIDATE_NS" ]]; then
-            echo -e "${RED}Namespace cannot be empty. Please re-run the script and provide a valid namespace.${RESET}"
-            return 1
-        fi
-
-        if ! ${CLI_CMD} get namespace "$VALIDATE_NS" &>/dev/null; then
-            echo -e "${WHITE}${BOLD}Namespace '$VALIDATE_NS' does not exist. Creating it...${RESET}"
-            ${CLI_CMD} create namespace "$VALIDATE_NS"
-        else
-            echo -e "${WHITE}${BOLD}Namespace '$VALIDATE_NS' already exists. Enter a different name.${RESET}"
-        fi
-}
 function cleanup_storage_resources() {
-        CUR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-        source "${CUR_DIR}/helper/common.sh"
-        local ns="$1"   # pass the namespace to clean
+    CUR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    source "${CUR_DIR}/helper/common.sh"
+    local ns="$1"
 
-        echo -e "\n${YELLOW}${BOLD}Next step: Cleaning up resources created for storage validation${RESET}"
-        echo -e "${YELLOW}Note: This will remove all resources created for storage validation along with the namespace '$ns'.${RESET}"
-        read -p "Type 'yes' or 'y' to proceed, anything else to cancel: " confirm
+    echo -e "\n${YELLOW}${BOLD}Next step: Cleaning up resources created for storage validation${RESET}"
+    echo -e "${YELLOW}Note: This will remove specific resources created for Storage Validation in the namespace '$ns'.${RESET}"
+    read -p "Type 'yes' or 'y' to proceed, anything else to cancel: " confirm
 
-        if [[ "$confirm" =~ ^([yY]|[yY][eE][sS])$ ]]; then
-            echo -e "\n${WHITE}${BOLD}Cleaning up storage validation resources in namespace: $ns${RESET}"
+    if [[ "$confirm" =~ ^([yY]|[yY][eE][sS])$ ]]; then
+        echo -e "\n${WHITE}${BOLD}Cleaning up Storage Validation resources in namespace: $ns${RESET}"
 
-            # Delete Jobs, ConfigMaps, PVCs
-            ${CLI_CMD} delete job --all -n "$ns" --ignore-not-found
-            ${CLI_CMD} delete cm --all -n "$ns" --ignore-not-found
-            ${CLI_CMD} delete pvc --all -n "$ns" --ignore-not-found
+        ${CLI_CMD} get jobs -n "$ns" --no-headers | awk '/^readiness-|^sysbench-/{print $1}' | \
+            xargs -r ${CLI_CMD} delete job -n "$ns" --ignore-not-found
 
-            # Delete the entire namespace/project
-            ${CLI_CMD} delete project "$ns" --ignore-not-found
+        for cm in consumer-cm consumer-nocheck-cm producer-cm; do
+            ${CLI_CMD} delete cm "$cm" -n "$ns" --ignore-not-found
+        done
 
-            # Delete the custom SCC
-            ${CLI_CMD} delete scc zz-fsgroup-scc --ignore-not-found
+        ${CLI_CMD} get pvc -n "$ns" --no-headers | awk '/readiness-|sysbench-/{print $1}' | \
+            xargs -r ${CLI_CMD} delete pvc -n "$ns" --ignore-not-found
 
-            success "Cleanup completed successfully"
-        else
-            echo -e "Cleanup skipped."
-        fi
-  }
+        ${CLI_CMD} delete scc zz-fsgroup-scc --ignore-not-found
+
+        success "Cleanup completed successfully"
+    else
+        echo -e "Cleanup skipped."
+    fi
+}
 
 
 # Update params.yml only if storage selected
@@ -242,12 +227,11 @@ function run_storage_validation() {
           $SED_COMMAND "s|^ocp_token:.*|ocp_token: $OCP_TOKEN|" "$PARAMS_FILE"
           $SED_COMMAND "s|^storageClass_ReadWriteOnce:.*|storageClass_ReadWriteOnce: $tmp_storage_classname_block|" "$PARAMS_FILE"
           $SED_COMMAND "s|^storageClass_ReadWriteMany:.*|storageClass_ReadWriteMany: $tmp_storage_classname|" "$PARAMS_FILE"
-          $SED_COMMAND "s|^storage_validation_namespace:.*|storage_validation_namespace: $VALIDATE_NS|" "$PARAMS_FILE"
+          $SED_COMMAND "s|^storage_validation_namespace:.*|storage_validation_namespace: $STORAGE_NS|" "$PARAMS_FILE"
 
          (
               SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-              LOGS_DIR="$SCRIPT_DIR/baw-script-logs/project/$VALIDATE_NS"
-              [[ ! -d "$LOGS_DIR" ]] && mkdir -p "$LOGS_DIR"
+              LOGS_DIR="$SCRIPT_DIR/baw-script-logs/project/$STORAGE_NS"
               LOG_FILE="$LOGS_DIR/storage-validation-output.log"
               : > "$LOG_FILE"
                 
@@ -289,12 +273,13 @@ function run_storage_validation() {
           
           # Only clean up here if storage-perf is NOT selected
           if [[ "$run_perf" != "yes" && "$run_perf" != "y" && "$run_perf" != "YES" && "$run_perf" != "Y" ]]; then
-              cleanup_storage_resources "$VALIDATE_NS"
+              cleanup_storage_resources "$STORAGE_NS"
               exit 0 
           fi
 }
 
 function run_perf_validation() {
+    local STORAGE_NS="$1"
     CUR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     source "${CUR_DIR}/helper/common.sh"
     PARAMS_FILE="$PERF_REPO_DIR/params-all-metrics.yml"
@@ -312,7 +297,7 @@ function run_perf_validation() {
     $SED_COMMAND 's|^ocp_apikey:.*|ocp_apikey: ""|' "$PARAMS_FILE"
     $SED_COMMAND "s|^storageClass_ReadWriteOnce:.*|storageClass_ReadWriteOnce: $tmp_storage_classname_block|" "$PARAMS_FILE"
     $SED_COMMAND "s|^storageClass_ReadWriteMany:.*|storageClass_ReadWriteMany: $tmp_storage_classname|" "$PARAMS_FILE"
-    $SED_COMMAND "s|^storage_perf_namespace:.*|storage_perf_namespace: $VALIDATE_NS|" "$PARAMS_FILE"
+    $SED_COMMAND "s|^storage_perf_namespace:.*|storage_perf_namespace: $STORAGE_NS|" "$PARAMS_FILE"
 
     # ------------------ Image accessibility check ------------------
     IMAGE_TO_CHECK="quay.io/ibm-cp4d-public/xsysbench:1.1"
@@ -344,7 +329,7 @@ EOF
         echo -e "\033[1;37mThis image may not be directly accessible on an airgap cluster.\033[0m"
         echo -e "\033[1;37mTo resolve this, follow the steps below to download the image onto an intermediary host and then copy it to the airgap cluster's private registry:\033[0m"
         echo
-        echo "Please refer to the topic 'Storage and Storage Performance Validation': https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/${CP4BA_RELEASE_BASE}?topic=pycc-recommended-preparing-databases-secrets-your-chosen-capabilities-by-running-script"
+        echo "Please refer to the topic 'Storage Validation and Storage Performance Validation': https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/${CP4BA_RELEASE_BASE}?topic=pycc-recommended-preparing-databases-secrets-your-chosen-capabilities-by-running-script"
        
         echo -e "\n\033[1;37m# On an intermediary host that can access the image\033[0m"
         echo "podman pull $IMAGE_TO_CHECK"
@@ -366,12 +351,12 @@ EOF
         echo -e "\n\033[1;37mAfter completing the above Loading and Pushing image steps, run the storage performance validation using:\033[0m"
 
         # Prompt user to run the script
-        echo -e "./baw-storage-validation.sh -m run_storage_performance -n $VALIDATE_NS\n"
+        echo -e "./baw-storage-validation.sh -m run_storage_performance -n $STORAGE_NS\n"
         return
      fi
         # -----------------------------------------------------------------
         echo -e "\n\033[1;37mImage is accessible from the cluster. Running the storage performance validation:\033[0m"
-        run_storage_performance $VALIDATE_NS
+        run_storage_performance $STORAGE_NS
 
 }
 
@@ -383,17 +368,23 @@ function run_storage_performance() {
 
     cleanup_storage_performance_resources() {
         echo -e "\n\033[1mNext step: Cleaning up resources created for storage performance validation\033[0m"
-        echo -e "Note: This will remove all resources created for storage performance validation along with the namespace '$STORAGE_NS'.\033[0m"
+        echo -e "Note: This will remove all resources created for storage performance validation in the namespace '$STORAGE_NS'.\033[0m"
         read -p "Type 'yes' or 'y' to proceed, anything else to cancel: " confirm
 
         if [[ "$confirm" =~ ^([yY]|[yY][eE][sS])$ ]]; then
             echo -e "\n\033[1;37mCleaning up storage performance validation resources in namespace: $STORAGE_NS\033[0m"
 
-            ${CLI_CMD} delete job --all -n "$STORAGE_NS" --ignore-not-found
-            ${CLI_CMD} delete cm --all -n "$STORAGE_NS" --ignore-not-found
-            ${CLI_CMD} delete pvc --all -n "$STORAGE_NS" --ignore-not-found
-            ${CLI_CMD} delete project "$STORAGE_NS" --ignore-not-found
-            ${CLI_CMD} delete scc zz-fsgroup-scc --ignore-not-found
+            ${CLI_CMD} get jobs -n "$STORAGE_NS" --no-headers | awk '/^readiness-|^sysbench-/{print $1}' | \
+            xargs -r ${CLI_CMD} delete job -n "$STORAGE_NS" --ignore-not-found
+
+        for cm in consumer-cm consumer-nocheck-cm producer-cm; do
+            ${CLI_CMD} delete cm "$cm" -n "$STORAGE_NS" --ignore-not-found
+        done
+
+        ${CLI_CMD} get pvc -n "$STORAGE_NS" --no-headers | awk '/readiness-|sysbench-/{print $1}' | \
+            xargs -r ${CLI_CMD} delete pvc -n "$STORAGE_NS" --ignore-not-found
+
+        ${CLI_CMD} delete scc zz-fsgroup-scc --ignore-not-found
 
             success "Cleanup completed successfully"
         else
@@ -405,7 +396,6 @@ function run_storage_performance() {
     PERF_REPO_DIR="storage-validation/k8s-storage-perf"
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     LOGS_DIR="$SCRIPT_DIR/baw-script-logs/project/$STORAGE_NS"
-    [[ ! -d "$LOGS_DIR" ]] && mkdir -p "$LOGS_DIR"
     PERF_LOG_FILE="$LOGS_DIR/performance-validation-output.log"
     : > "$PERF_LOG_FILE"
 
@@ -472,8 +462,9 @@ function run_storage_performance() {
         echo ' </Worksheet>'
         echo '</Workbook>'
         } > "$EXCEL_FILE"
-
-        echo -e "\nYou can view the storage performance test results in Excel file: $EXCEL_FILE"
+        
+        echo -e "You can view the storage performance test results in CSV file: $CSV_FILE"
+        echo -e "\nYou can also view the same storage performance test results in Excel file: $EXCEL_FILE"
     else
         echo "Error: $CSV_FILE not found. Cannot convert to Excel."
     fi
@@ -503,15 +494,12 @@ function storage_and_performance_validation() {
         return 1
     fi
 
-  USER_PROFILE_PROPERTY_FILE="${CUR_DIR}/baw-prerequisites/project/${NAMESPACE}/propertyfile/baw_user_profile.property"
-  
     prompt_user_for_validation
     if [[ "$run_storage" != "yes" && "$run_storage" != "y" && "$run_perf" != "yes" && "$run_perf" != "y" ]]; then
-    echo -e "\n${WHITE}${BOLD}You did not select any storage validation or storage performance validation to run.${RESET}"
+    echo -e "\n${WHITE}${BOLD}You did not select any Storage Validation or storage performance validation to run.${RESET}"
     return
     fi
-    check_prerequisites
-    prompt_validate_namespace
+    check_prerequisites   
      if [[ "$run_storage" == "yes" || "$run_storage" == "y" ]]; then
         run_storage_validation "$NAMESPACE"
      fi
@@ -543,25 +531,15 @@ function performance_validation(){
     fi
     
   echo -e "\n${WHITE}${BOLD}Now Storage Performance Validation will be performed...${RESET}"
-  # Set property file path dynamically
-  USER_PROFILE_PROPERTY_FILE="${CUR_DIR}/baw-prerequisites/project/${NAMESPACE}/propertyfile/baw_user_profile.property"
-  check_prerequisites
-  prompt_validate_namespace
+  check_prerequisites 
   run_perf_validation $NAMESPACE
 }
 
 function storage_validation(){
   local NAMESPACE="$1"
-  [[ -z "$NAMESPACE" ]] && { echo "Error: Namespace must be provided"; return 1; }
   CUR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
   source "${CUR_DIR}/helper/common.sh"
-
-  if ! ${CLI_CMD} get namespace "$NAMESPACE" &>/dev/null; then
-    echo "Error: Namespace '$NAMESPACE' does not exist in the cluster"
-    return 1
-  fi
-
-  echo -e "\n${WHITE}${BOLD}Now Storage validation will be performed...${RESET}"
+  echo -e "\n${WHITE}${BOLD}Now Storage Validation will be performed...${RESET}"
   
   STORAGE_DIR="storage-validation"
   STORAGE_REPO_DIR="${STORAGE_DIR}/k8s-storage-tests"
@@ -571,10 +549,7 @@ function storage_validation(){
     if [[ -z "$NAMESPACE" ]]; then
         return 1
     fi
-  # Set property file path dynamically
-  USER_PROFILE_PROPERTY_FILE="${CUR_DIR}/baw-prerequisites/project/${NAMESPACE}/propertyfile/baw_user_profile.property"
   check_prerequisites
-  prompt_validate_namespace
   run_storage_validation $NAMESPACE
 }
 
@@ -598,7 +573,7 @@ function storage_and_performance_validation_tests() {
     BOLD='\033[1m'
     RESET='\033[0m'
     echo -e "\n${WHITE}${BOLD}No validation option was selected.${RESET}"
-    echo -e "${WHITE}${BOLD}If you want to run Storage Validation and Storage Performance validation later, you can do so by executing below command:${RESET}"
+    echo -e "${WHITE}${BOLD}If you want to run Storage Validation and Storage Performance Validation later, you can do so by executing below command:${RESET}"
     echo
     echo -e "./baw-storage-validation.sh -m storage_and_performance_validation -n ${TARGET_PROJECT_NAME}\n"
     return
@@ -610,31 +585,30 @@ function storage_and_performance_validation_tests() {
     echo -e "${WHITE}${BOLD}If you want to run storage performance validation later, execute:${RESET}"
     echo -e "./baw-storage-validation.sh -m performance_validation -n ${TARGET_PROJECT_NAME}\n"
     check_prerequisites
-    prompt_validate_namespace
     run_storage_validation $NAMESPACE
     return
   fi
 
   # ------------------ Case 3: Only performance ------------------
 if [[ ( "$run_perf" = "yes" || "$run_perf" = "y" ) && "$run_storage" != "yes" && "$run_storage" != "y" ]]; then
-    echo -e "\n${WHITE}${BOLD}Now Storage Performance validation will be performed...${RESET}"
-    echo -e "${WHITE}${BOLD}If you want to run storage validation later, execute:${RESET}"
+    echo -e "\n${WHITE}${BOLD}Now Storage Performance Validation will be performed...${RESET}"
+    echo -e "${WHITE}${BOLD}If you want to run Storage Validation later, execute:${RESET}"
     echo -e "./baw-storage-validation.sh -m storage_validation -n ${TARGET_PROJECT_NAME} \n"
     check_prerequisites
-    prompt_validate_namespace
     run_perf_validation $NAMESPACE
     return
   fi
   # ------------------ Case 4: Both selected ------------------
    echo -e "\n${WHITE}${BOLD}Now Storage Validation and Storage Performance Validation will be performed...${RESET}"
     check_prerequisites
-    prompt_validate_namespace
     run_storage_validation $NAMESPACE
     run_perf_validation $NAMESPACE
 }
    
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    CUR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    source "${CUR_DIR}/helper/common.sh"
     chmod +x "${BASH_SOURCE[0]}"
 
     # Show help if no arguments or help flag
@@ -671,7 +645,14 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
     # Namespace required
     if [[ -z "$NAMESPACE" ]]; then
-        echo -e "\nError: Missing required '-n <BAW_NAMESPACE>' argument."
+        echo -e "\nError: Missing required '-n <CP4BA_NAMESPACE>' argument."
+        show_help
+        exit 1
+    fi
+    
+    # Validate namespace existence in cluster
+    if ! ${CLI_CMD} get ns "$NAMESPACE" >/dev/null 2>&1; then
+        echo -e "\nError: Namespace '$NAMESPACE' does not exist in the cluster."
         show_help
         exit 1
     fi
@@ -679,7 +660,3 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     # Execute the selected mode function
     "$MODE" "$NAMESPACE"
 fi
-
-
-
-
