@@ -7461,7 +7461,7 @@ function select_baw_pattern(){
     pattern_cr_arr=()
     printf "\n"
     if [[ ! -z $UPDATE_COMPONENTS ]]; then
-        echo "\x1B[1mSelect the previously selected IBM Business Automation Workflow capability which installed: \x1B[0m"
+        echo -e "\x1B[1mSelect the previously selected IBM Business Automation Workflow capability which installed: \x1B[0m"
     else
         echo -e "\x1B[1mSelect the IBM Business Automation Workflow capability to install: \x1B[0m"
     fi
