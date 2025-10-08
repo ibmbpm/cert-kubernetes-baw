@@ -7497,7 +7497,6 @@ function select_baw_pattern(){
 }
 
 function input_information(){
-    echo "entering input_info fn" 
     EXISTING_OPT_COMPONENT_ARR=()
     EXISTING_PATTERN_ARR=()
     retVal_baw=1
@@ -8588,9 +8587,8 @@ function update_components_mode(){
     PLATFORM_SELECTED="OCP"
     # this value has to be 1 so that the select patterns and optional component functions that are called here know that this is not to be run for BAW only.(The script should never be executed in baw mode since 25.0.0 but since that code has not been removed , it is initialized here)
     retVal_baw=1
-    # Function to select optional components 
+    select_baw_pattern
     select_optional_component
-
     # This array (current_cr_optional_components_array) stores the current optional components selected.
     # We should only ask if external certificate should be used by kafka if "bai" was not selected initially but added later.
     # Both variables get set in the function retrieve_current_custom_resource_file function
