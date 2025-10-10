@@ -230,12 +230,12 @@ CS_CATALOG_VERSION="ibm-cs-install-catalog-v4-15-0"
 ZEN_OPERATOR_VERSION="v6.2.2"
 # BTS_CHANNEL_VERSION is for for BTS, need to update for each IFIX
 BTS_CHANNEL_VERSION="v3.35"
-# BTS_CATALOG_VERSION is for BTS 3.35.2.
+# BTS_CATALOG_VERSION is for BTS 3.35.6.
 BTS_CATALOG_VERSION="bts-operator-v3-35-3"
 # REQUIREDVER_BTS is for checking bts operator upgrade status before run removal_iaf.sh, need to update for each IFIX
-REQUIREDVER_BTS="3.35.3"
+REQUIREDVER_BTS="3.35.6"
 # REQUIREDVER_POSTGRESQL is for checking postgresql operator upgrade status before run removal_iaf.sh, need to update for each IFIX
-REQUIREDVER_POSTGRESQL="1.25.2"
+REQUIREDVER_POSTGRESQL="1.25.3"
 # EVENTS_OPERATOR_VERSION is for checking IBM Events operator upgrade status, need to update for each IFIX
 EVENTS_OPERATOR_VERSION="v5.2.1"
 # List of BAW versions that are supported for upgrade to $CP4BA_CSV_VERSION
