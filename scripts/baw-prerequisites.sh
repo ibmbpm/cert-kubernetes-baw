@@ -8593,14 +8593,25 @@ function update_components_mode(){
     retVal_baw=1
     select_baw_pattern
     select_optional_component
-    # This array (current_cr_optional_components_array) stores the current optional components selected.
-    # We should only ask if external certificate should be used by kafka if "bai" was not selected initially but added later.
+
+    # This array (current_cr_deployment_patterns_array) stores the current patterns deployed , and we should only ask if they want to use external postgres for BTS if they add any of the patterns that need BTS while running the script to update components
+    # This variable gets set in the function retrieve_current_custom_resource_file function
+    
+    if ! [[ " ${current_cr_deployment_patterns_array[@]} " =~ "workflow-authoring" || " ${current_cr_deployment_patterns_array[@]} " =~ "workflow-runtime" || " ${current_cr_optional_components_array[@]} " =~ "bai" ]]; then
+        if [[ " ${pattern_cr_arr[@]} " =~ "workflow-authoring" || " ${pattern_cr_arr[@]} " =~ "workflow-runtime" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
+            #DBACLD-194974: Combine IM/Zen question for ext. PG.  Ask regardless of DB_TYPE 
+            select_external_postgresdb_for_bts
+        fi
+    fi
+    
+    # This array (current_cr_deployment_patterns_array) stores the current patterns deployed and  current_cr_optional_components_array stores the current optional components selected.
+    # We should only ask if external certificate should be used by kafka if the below patterns/optional components were not selected initially and later added
     # Both variables get set in the function retrieve_current_custom_resource_file function
-    if ! [[ " ${current_cr_optional_components_array[@]} " =~ "bai" ]]; then
-        if [[ " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
+    if ! [[ " ${current_cr_deployment_patterns_array[@]} " =~ "workflow-authoring" || " ${current_cr_deployment_patterns_array[@]} " =~ "workflow-runtime" || " ${current_cr_optional_components_array[@]} " =~ "bai" ]]; then
+        if [[ " ${pattern_cr_arr[@]} " =~ "workflow-authoring" || " ${pattern_cr_arr[@]} " =~ "workflow-runtime" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
             select_external_cert_opensearch_kafka
         fi
-    fi 
+    fi
 
     create_temp_property_file
 }

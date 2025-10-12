@@ -357,12 +357,17 @@ function retrieve_current_optional_components(){
     EXISTING_OPT_COMPONENT_ARR=("${current_cr_optional_components_array[@]}")
     for input in "${current_cr_optional_components_array[@]}"; do
         if [[ "$input" == "baw_authoring" ]]; then
-            EXISTING_PATTERN_ARR+=("workflow-authoring")
-        fi
-        if [[ "$input" == "document_processing_designer" ||  "$input" == "document_processing_runtime" ]]; then
+            current_cr_deployment_patterns_name_array+=("workflow-authoring")
             EXISTING_PATTERN_ARR+=("workflow-authoring")
         fi
     done
+
+    # If workflow pattern is selected, either workflow authoring or workflow runtime is selected NOT BOTH
+    # If baw_authoring is there in the optional components then workflow authoring is selected and if its not then we know workflow runtime was selected
+    if [[ $workflow_pattern_selected == "true" && !(" ${EXISTING_OPT_COMPONENT_ARR[@]} " =~ "baw_authoring") ]]; then
+        EXISTING_PATTERN_ARR+=("workflow-runtime")
+        current_cr_deployment_patterns_name_array+=("workflow-runtime")
+    fi
 
     # Creating a summary dictionary to display the different configurations currently chosen
     # # %? strips the last character, which i want to do because it would be a trailing comma
@@ -609,30 +614,24 @@ function retrieve_gpu_value(){
 # Function to retrieve if external postgresql has been enabled for any of IM/BTS/ZEN from the original user property file
 function retrieve_current_external_zen_configurations(){
     # THESE VARIABLES that are getting assigned must not change.
-    # These variables are referenced by the functions in cp4a-prerequisites.sh to generate property files and in different code areas.
-    if [[ $DB_TYPE == "postgresql" ]]; then
-        check_external_im_property="$(prop_original_user_profile_property_file CP4BA.IM_EXTERNAL_POSTGRES_DATABASE_USER)"
-        if [[ -z "$check_im_property" ]]; then
-            EXTERNAL_POSTGRESDB_FOR_IM="false"
-        else
-            EXTERNAL_POSTGRESDB_FOR_IM="true"
-        fi
-        check_external_zen_property="$(prop_original_user_profile_property_file CP4BA.ZEN_EXTERNAL_POSTGRES_DATABASE_USER)"
-        if [[ -z "$check_im_property" ]]; then
-            EXTERNAL_POSTGRESDB_FOR_ZEN="false"
-        else
-            EXTERNAL_POSTGRESDB_FOR_ZEN="true"
-        fi
-        check_external_bts_property="$(prop_original_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER)"
-        if [[ -z "$check_im_property" ]]; then
-            EXTERNAL_POSTGRESDB_FOR_BTS="false"
-        else
-            EXTERNAL_POSTGRESDB_FOR_BTS="true"
-        fi
-    else
+    # These variables are referenced by the functions in baw-prerequisites.sh to generate property files and in different code areas.
+    check_external_im_property="$(prop_original_user_profile_property_file CP4BA.IM_EXTERNAL_POSTGRES_DATABASE_USER)"
+    if [[ -z "$check_external_im_property" ]]; then
         EXTERNAL_POSTGRESDB_FOR_IM="false"
+    else
+        EXTERNAL_POSTGRESDB_FOR_IM="true"
+    fi
+    check_external_zen_property="$(prop_original_user_profile_property_file CP4BA.ZEN_EXTERNAL_POSTGRES_DATABASE_USER)"
+    if [[ -z "$check_external_zen_property" ]]; then
         EXTERNAL_POSTGRESDB_FOR_ZEN="false"
+    else
+        EXTERNAL_POSTGRESDB_FOR_ZEN="true"
+    fi
+    check_external_bts_property="$(prop_original_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER)"
+    if [[ -z "$check_external_bts_property" ]]; then
         EXTERNAL_POSTGRESDB_FOR_BTS="false"
+    else
+        EXTERNAL_POSTGRESDB_FOR_BTS="true"
     fi
 
     # Creating a summary dictionary to display the different configurations currently chosen
