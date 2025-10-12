@@ -164,7 +164,7 @@ function prompt_user_for_validation() {
     echo " - Storage Validation               (might take up to 25 minutes)"
     echo " - Storage Performance Validation   (might take up to 1 hour)"
     echo
-    echo -e "${WHITE}${BOLD}Note: These tests only verify the basic readiness of your storage and are intended as an initial pre-check before deploying any actual Cloud Pak workloads in the environment.${RESET}"
+    echo -e "${WHITE}${BOLD}Note: These tests only verify the basic readiness of your storage and are intended as an initial pre-check before deploying any actual BAW workloads in the environment.${RESET}"
     echo
 
     read -p "Run Storage Validation? (yes/no) [default: no]: " run_storage
@@ -178,34 +178,34 @@ function prompt_user_for_validation() {
 
 
 function cleanup_storage_resources() {
-    CUR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-    source "${CUR_DIR}/helper/common.sh"
-    local ns="$1"
+        CUR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+        source "${CUR_DIR}/helper/common.sh"
+        local ns="$1"
 
-    echo -e "\n${YELLOW}${BOLD}Next step: Cleaning up resources created for storage validation${RESET}"
-    echo -e "${YELLOW}Note: This will remove specific resources created for Storage Validation in the namespace '$ns'.${RESET}"
-    read -p "Type 'yes' or 'y' to proceed, anything else to cancel: " confirm
+        echo -e "\n${YELLOW}${BOLD}Next step: Cleaning up resources created for Storage Validation${RESET}"
+        echo -e "${YELLOW}Note: This will remove all resources created for Storage Validation in the namespace '$ns'.${RESET}"
+        read -p "Type 'yes' or 'y' to proceed, anything else to cancel: " confirm
 
-    if [[ "$confirm" =~ ^([yY]|[yY][eE][sS])$ ]]; then
-        echo -e "\n${WHITE}${BOLD}Cleaning up Storage Validation resources in namespace: $ns${RESET}"
+        if [[ "$confirm" =~ ^([yY]|[yY][eE][sS])$ ]]; then
+            echo -e "\n${WHITE}${BOLD}Cleaning up Storage Validation resources in namespace: $ns${RESET}"
 
-        ${CLI_CMD} get jobs -n "$ns" --no-headers | awk '/^readiness-|^sysbench-/{print $1}' | \
+            ${CLI_CMD} get jobs -n "$ns" --no-headers | awk '/^readiness-|^sysbench-/{print $1}' | \
             xargs -r ${CLI_CMD} delete job -n "$ns" --ignore-not-found
 
-        for cm in consumer-cm consumer-nocheck-cm producer-cm; do
-            ${CLI_CMD} delete cm "$cm" -n "$ns" --ignore-not-found
-        done
+            for cm in consumer-cm consumer-nocheck-cm producer-cm; do
+                ${CLI_CMD} delete cm "$cm" -n "$ns" --ignore-not-found
+            done
 
-        ${CLI_CMD} get pvc -n "$ns" --no-headers | awk '/readiness-|sysbench-/{print $1}' | \
+            ${CLI_CMD} get pvc -n "$ns" --no-headers | awk '/readiness-|sysbench-/{print $1}' | \
             xargs -r ${CLI_CMD} delete pvc -n "$ns" --ignore-not-found
 
-        ${CLI_CMD} delete scc zz-fsgroup-scc --ignore-not-found
+            ${CLI_CMD} delete scc zz-fsgroup-scc --ignore-not-found
 
-        success "Cleanup completed successfully"
-    else
-        echo -e "Cleanup skipped."
-    fi
-}
+            success "Cleanup completed successfully"
+        else
+            echo -e "Cleanup skipped."
+        fi
+  }
 
 
 # Update params.yml only if storage selected
@@ -374,15 +374,15 @@ function run_storage_performance() {
         if [[ "$confirm" =~ ^([yY]|[yY][eE][sS])$ ]]; then
             echo -e "\n\033[1;37mCleaning up storage performance validation resources in namespace: $STORAGE_NS\033[0m"
 
-            ${CLI_CMD} get jobs -n "$STORAGE_NS" --no-headers | awk '/^readiness-|^sysbench-/{print $1}' | \
-            xargs -r ${CLI_CMD} delete job -n "$STORAGE_NS" --ignore-not-found
+        ${CLI_CMD} get jobs -n "$STORAGE_NS" --no-headers | awk '/^readiness-|^sysbench-/{print $1}' | \
+        xargs -r ${CLI_CMD} delete job -n "$STORAGE_NS" --ignore-not-found
 
         for cm in consumer-cm consumer-nocheck-cm producer-cm; do
             ${CLI_CMD} delete cm "$cm" -n "$STORAGE_NS" --ignore-not-found
         done
 
         ${CLI_CMD} get pvc -n "$STORAGE_NS" --no-headers | awk '/readiness-|sysbench-/{print $1}' | \
-            xargs -r ${CLI_CMD} delete pvc -n "$STORAGE_NS" --ignore-not-found
+        xargs -r ${CLI_CMD} delete pvc -n "$STORAGE_NS" --ignore-not-found
 
         ${CLI_CMD} delete scc zz-fsgroup-scc --ignore-not-found
 
