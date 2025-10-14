@@ -7555,11 +7555,9 @@ function select_baw_pattern(){
 
     update_components_tips="\x1B[1m Please note that  Business Automation Workflow Authoring and Business Automation Workflow Runtime cannot be deployed together.\n Please deselect any conflicting components before proceeding with your selection.\n\x1B[0m"
    
-    if [[ $DEPLOYMENT_TYPE == "production"]]; then
-        if [[ $UPDATE_COMPONENTS == "true"]]; then
-            echo -e "${update_components_tips}"
-            echo
-        fi
+    if [[ $DEPLOYMENT_TYPE == "production" && $UPDATE_COMPONENTS == "true"]]; then
+        echo -e "${update_components_tips}"
+        echo
     fi
 }
 
