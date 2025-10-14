@@ -2037,7 +2037,7 @@ function check_airgap_mode(){
         done
     else
         AIRGAP_INSTALL=$BAW_AUTO_AIRGAP_MODE
-        echo -e "\x1B[1mWould you like to set up the cluster for an online based $BAW_FULL_NAME deployment or for an airgap/offline based BAW deployment :\x1B[0m $BAW_AUTO_AIGRAP_MODE"
+        echo -e "\x1B[1mWould you like to set up the cluster for an online based $BAW_FULL_NAME deployment or for an airgap/offline based BAW deployment :\x1B[0m $BAW_AUTO_AIRGAP_MODE"
     fi
 }
 
