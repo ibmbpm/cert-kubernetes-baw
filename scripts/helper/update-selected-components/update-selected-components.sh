@@ -116,9 +116,9 @@ function print_current_summary_table() {
 
 # Function to copy original property files to a subfolder where the new property files get generated
 function copy_original_property_files(){
-    if [[ -d "$PROPERTY_FILE_FOLDER/original_property_files" ]]; then
-        rm -rf "$PROPERTY_FILE_FOLDER/original_property_files"
-    fi
+    # if [[ -d "$PROPERTY_FILE_FOLDER/original_property_files" ]]; then
+    #     rm -rf "$PROPERTY_FILE_FOLDER/original_property_files"
+    # fi
     mkdir -p $PROPERTY_FILE_FOLDER/original_property_files
     cp $ORIGINAL_DB_USER_PROPERTY_FILE $PROPERTY_FILE_FOLDER/original_property_files/
     cp $ORIGINAL_DB_SERVER_PROPERTY_FILE $PROPERTY_FILE_FOLDER/original_property_files/
