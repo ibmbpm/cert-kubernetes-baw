@@ -17,7 +17,7 @@
 ################################################################################
 
 deployment_pattern_names=("Business Automation Workflow Authoring" "Business Automation Workflow Runtime")
-deployment_pattern_cr_names=("workflow,workflow-authoring" "workflow,workflow-runtime")
+deployment_pattern_cr_names=("workflow-authoring" "workflow-runtime")
 optional_components_names=("Business Automation Insights" "Data Collector and Data Indexer" "Exposed Kafka Services","Exposed Opensearch")
 optional_components_cr_names=("bai" "pfs" "kafka" "opensearch")
 

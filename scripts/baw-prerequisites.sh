@@ -7158,47 +7158,79 @@ function create_db_script(){
     echo "DB_USER_PWD_LIST=$db_user_pwd_joined" >> ${TEMPORARY_PROPERTY_FILE}
 }
 
-function select_external_postgresdb_for_im(){
+function select_external_postgresdb_for_bts(){
     printf "\n"
     echo ""
     while true; do
-        printf "\x1B[1mDo you want to use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THIS POSTGRESQL DB BY YOURSELF FIRST BEFORE APPLY BAW CUSTOM RESOURCE${RESET_TEXT}. ${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.11?topic=im-setting-up-external-edb-postgresql-database-server#dbcreate${RESET_TEXT}] \x1B[1mas IM metastore DB for this BAW deployment?\x1B[0m ${YELLOW_TEXT}(Notes: IM service can use an external Postgres DB to store IM data. If select \"Yes\", IM service uses an external Postgres DB as IM metastore DB. If select \"No\", IM service uses an embedded cloud native postgresql DB as IM metastore DB.)${RESET_TEXT} (Yes/No, default: No): "
-        read -rp "" ans
-        case "$ans" in
-        "y"|"Y"|"yes"|"Yes"|"YES")
-            EXTERNAL_POSTGRESDB_FOR_IM="true"
+        #DBACLD-194974: Since there no EDB, we won't ask customer whether they want to use external Postgres DB for BTS.  They must use external Postgres DB if they want to install BTS with 25.0.1-GA
+        echo "${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/$CS_CHANNEL_KC?topic=service-external-database#configuring-an-external-database-with-the-bts-custom-resource${RESET_TEXT}"
+        if skip_edb_for_2501; then
+            printf "\x1B[1mFor this "$CP4BA_RELEASE_BASE"-"$CP4BA_PATCH_VERSION" version, you must use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THE POSTGRESQL DBs BY YOURSELF FIRST BEFORE APPLYING THE CP4BA CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for BTS service in this CP4BA deployment.\x1B[0m"
+            printf "\n"
+            ans="Yes"
+            EXTERNAL_POSTGRESDB_FOR_BTS="true"
             break
-            ;;
-        "n"|"N"|"no"|"No"|"NO"|"")
-            EXTERNAL_POSTGRESDB_FOR_IM="false"
-            break
-            ;;
-        *)
-            echo -e "Answer must be \"Yes\" or \"No\"\n"
-            ;;
-        esac
+        else
+        
+            printf "\x1B[1mDo you want to use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THIS POSTGRESQL DB BY YOURSELF FIRST BEFORE APPLYING THE CP4BA CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for this CP4BA deployment?\x1B[0m (Yes/No, default: No): "
+            read -rp "" ans
+            ans=$(echo "$ans" | tr '[:upper:]' '[:lower:]')
+            case "$ans" in
+            "y"|"yes")
+                EXTERNAL_POSTGRESDB_FOR_BTS="true"
+                break
+                ;;
+            "n"|"no"|"")
+                EXTERNAL_POSTGRESDB_FOR_BTS="false"
+                break
+                ;;
+            *)
+                echo -e "Answer must be \"Yes\" or \"No\"\n"
+                ;;
+            esac
+        fi
+
     done
 }
 
-function select_external_postgresdb_for_zen(){
+function select_external_postgresdb_for_im_zen(){
     printf "\n"
     echo ""
     while true; do
-        printf "\x1B[1mDo you want to use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THIS POSTGRESQL DB BY YOURSELF FIRST BEFORE APPLY BAW CUSTOM RESOURCE${RESET_TEXT}. ${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.11?topic=im-setting-up-external-edb-postgresql-database-server#dbcreate${RESET_TEXT}]\x1B[1m as Zen metastore DB for this BAW deployment?\x1B[0m ${YELLOW_TEXT}(Notes: Zen stores all metadata such as users, groups, service instances, vault integration and secret references in metastore DB. If select \"Yes\", Zen service uses an external Postgres DB as Zen metastore DB. If select \"No\", Zen service uses an embedded cloud native postgresql DB as Zen metastore DB )${RESET_TEXT} (Yes/No, default: No): "
-        read -rp "" ans
-        case "$ans" in
-        "y"|"Y"|"yes"|"Yes"|"YES")
+        #DBACLD-194974: Since there no EDB, we won't ask customer whether they want to use external Postgres DB for IM/Zen.  They must use external Postgres DB if they want to install IM/Zen for 25.0.1-GA
+        # Display Knowledge Center link once
+        echo "${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/$CS_CHANNEL_KC?topic=im-setting-up-external-edb-postgresql-database-server#dbcreate${RESET_TEXT}"
+        
+        if skip_edb_for_2501; then
+            printf "\x1B[1mFor this "$CP4BA_RELEASE_BASE"-"$CP4BA_PATCH_VERSION" version, you must use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THE POSTGRESQL DBs BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1mfor IM and Zen services in this BAW deployment.\x1B[0m"
+            printf "\n"
+            ans="Yes"
+            EXTERNAL_POSTGRESDB_FOR_IM="true"
             EXTERNAL_POSTGRESDB_FOR_ZEN="true"
             break
-            ;;
-        "n"|"N"|"no"|"No"|"NO"|"")
-            EXTERNAL_POSTGRESDB_FOR_ZEN="false"
-            break
-            ;;
-        *)
-            echo -e "Answer must be \"Yes\" or \"No\"\n"
-            ;;
-        esac
+        else
+            printf "\x1B[1mDo you want to use an external Postgres DB for IM and Zen \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THE POSTGRESQL DBs BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for for IM and Zen services in this BAW deployment?\x1B[0m (Yes/No, default: No): "
+            printf "\n"
+            read -rp "" ans
+
+            ans=$(echo "$ans" | tr '[:upper:]' '[:lower:]')
+
+            case "$ans" in
+            "y"|"yes")
+                EXTERNAL_POSTGRESDB_FOR_IM="true"
+                EXTERNAL_POSTGRESDB_FOR_ZEN="true"
+                break
+                ;;
+            "n"|"no"|"")
+                EXTERNAL_POSTGRESDB_FOR_IM="false"
+                EXTERNAL_POSTGRESDB_FOR_ZEN="false"
+                break
+                ;;
+            *)
+                echo -e "Answer must be \"Yes\" or \"No\"\n"
+                ;;
+            esac
+        fi
     done
 }
 
@@ -7533,14 +7565,12 @@ function input_information(){
     fi
     generate_sample_network_policies
 
-    ### <https://jsw.ibm.com/browse/DBACLD-170742> - We only prompt the user to ask if they want to use external PostgreSQL for Zen and IM when external PostgreSQL is selected.
-    if [[ $DB_TYPE == "postgresql" ]]; then
-        select_external_postgresdb_for_im
-        select_external_postgresdb_for_zen
-    else
-        EXTERNAL_POSTGRESDB_FOR_IM="false"
-        EXTERNAL_POSTGRESDB_FOR_ZEN="false"
-    fi
+    # Ask regardless of DB_Type
+    select_external_postgresdb_for_im_zen
+    
+    if [[ " ${pattern_cr_arr[@]} " =~ "workflow-authoring" || " ${pattern_cr_arr[@]} " =~ "workflow-runtime" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
+            select_external_postgresdb_for_bts
+        fi
 
     if [[ " ${optional_component_cr_arr[@]} " =~ "pfs" || " ${optional_component_cr_arr[@]} " =~ "opensearch" || " ${optional_component_cr_arr[@]} " =~ "kafka" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
         select_external_cert_opensearch_kafka
@@ -8599,7 +8629,6 @@ function update_components_mode(){
     
     if ! [[ " ${current_cr_deployment_patterns_array[@]} " =~ "workflow-authoring" || " ${current_cr_deployment_patterns_array[@]} " =~ "workflow-runtime" || " ${current_cr_optional_components_array[@]} " =~ "bai" ]]; then
         if [[ " ${pattern_cr_arr[@]} " =~ "workflow-authoring" || " ${pattern_cr_arr[@]} " =~ "workflow-runtime" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
-            #DBACLD-194974: Combine IM/Zen question for ext. PG.  Ask regardless of DB_TYPE 
             select_external_postgresdb_for_bts
         fi
     fi
