@@ -3130,10 +3130,18 @@ function create_property_file(){
         mkdir -p "$tmp_property_file_dir" >/dev/null 2>&1
         ${COPY_CMD} -rf "${PROPERTY_FILE_FOLDER}" "${tmp_property_file_dir}"
     fi
-    rm -rf $PROPERTY_FILE_FOLDER >/dev/null 2>&1
-    mkdir -p $PROPERTY_FILE_FOLDER >/dev/null 2>&1
+
+    rm -f $PROPERTY_FILE_FOLDER/baw_db_name_user.property >/dev/null 2>&1
+    rm -f $PROPERTY_FILE_FOLDER/baw_db_server.property >/dev/null 2>&1
+    rm -f $PROPERTY_FILE_FOLDER/baw_LDAP.property >/dev/null 2>&1
+    rm -f $PROPERTY_FILE_FOLDER/baw_user_profile.property >/dev/null 2>&1
+    
+
+    rm -rf $SSL_CERT_FOLDER >/dev/null 2>&1
+    mkdir -p $SSL_CERT_FOLDER >/dev/null 2>&1
     mkdir -p $LDAP_SSL_CERT_FOLDER >/dev/null 2>&1
     mkdir -p $DB_SSL_CERT_FOLDER >/dev/null 2>&1
+
 
     > ${DB_SERVER_INFO_PROPERTY_FILE}
     if (( db_server_number > 0 )); then
@@ -7544,6 +7552,15 @@ function select_baw_pattern(){
     FOUNDATION_DELETE_LIST=($(echo "${FOUNDATION_CR_SELECTED[@]}" "${FOUNDATION_FULL_ARR[@]}" | tr ' ' '\n' | sort | uniq -u))
 
     PATTERNS_CR_SELECTED=($(echo "${pattern_cr_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+
+    update_components_tips="\x1B[1m Please note that  Business Automation Workflow Authoring and Business Automation Workflow Runtime cannot be deployed together.\n Please deselect any conflicting components before proceeding with your selection.\n\x1B[0m"
+   
+    if [[ $DEPLOYMENT_TYPE == "production"]]; then
+        if [[ $UPDATE_COMPONENTS == "true"]]; then
+            echo -e "${update_components_tips}"
+            echo
+        fi
+    fi
 }
 
 function input_information(){
