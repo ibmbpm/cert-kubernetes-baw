@@ -115,17 +115,50 @@ function print_current_summary_table() {
 }
 
 # Function to copy original property files to a subfolder where the new property files get generated
+# function copy_original_property_files(){
+#     # if [[ -d "$PROPERTY_FILE_FOLDER/original_property_files" ]]; then
+#     #     rm -rf "$PROPERTY_FILE_FOLDER/original_property_files"
+#     # fi
+
+#     mkdir -p $PROPERTY_FILE_FOLDER/original_property_files
+#      # testing 
+#     echo "PROPERTY_FILE_FOLDER=$PROPERTY_FILE_FOLDER"
+#     echo "ORIGINAL_LDAP_PROPERTY_FILE=$ORIGINAL_LDAP_PROPERTY_FILE"
+#     cp $ORIGINAL_DB_USER_PROPERTY_FILE $PROPERTY_FILE_FOLDER/original_property_files/
+#     cp $ORIGINAL_DB_SERVER_PROPERTY_FILE $PROPERTY_FILE_FOLDER/original_property_files/
+#     cp $ORIGINAL_LDAP_PROPERTY_FILE $PROPERTY_FILE_FOLDER/original_property_files/
+#     cp $ORIGINAL_USER_PROFILE_PROPERTY_FILE $PROPERTY_FILE_FOLDER/original_property_files/
+#     set_property_file_paths "$PROPERTY_FILE_FOLDER/original_property_files"
+# }
+
 function copy_original_property_files(){
-    # if [[ -d "$PROPERTY_FILE_FOLDER/original_property_files" ]]; then
-    #     rm -rf "$PROPERTY_FILE_FOLDER/original_property_files"
-    # fi
-    mkdir -p $PROPERTY_FILE_FOLDER/original_property_files
-    cp $ORIGINAL_DB_USER_PROPERTY_FILE $PROPERTY_FILE_FOLDER/original_property_files/
-    cp $ORIGINAL_DB_SERVER_PROPERTY_FILE $PROPERTY_FILE_FOLDER/original_property_files/
-    cp $ORIGINAL_LDAP_PROPERTY_FILE $PROPERTY_FILE_FOLDER/original_property_files/
-    cp $ORIGINAL_USER_PROFILE_PROPERTY_FILE $PROPERTY_FILE_FOLDER/original_property_files/
-    set_property_file_paths "$PROPERTY_FILE_FOLDER/original_property_files"
+    local dest_dir="$PROPERTY_FILE_FOLDER/original_property_files"
+    mkdir -p "$dest_dir"
+
+    echo "[INFO] Copying original property files to $dest_dir"
+
+    # Verify each file before copying
+    for file in \
+        "$ORIGINAL_DB_USER_PROPERTY_FILE" \
+        "$ORIGINAL_DB_SERVER_PROPERTY_FILE" \
+        "$ORIGINAL_LDAP_PROPERTY_FILE" \
+        "$ORIGINAL_USER_PROFILE_PROPERTY_FILE"; do
+
+        if [[ -f "$file" ]]; then
+            cp "$file" "$dest_dir/"
+        else
+            echo "[WARNING] Source file missing: $file"
+        fi
+    done
+
+    # Only set property paths if all copied successfully
+    if [[ -f "$dest_dir/baw_LDAP.property" ]]; then
+        set_property_file_paths "$dest_dir"
+    else
+        echo "[ERROR] Required property files missing in $dest_dir"
+    fi
 }
+
 
 # Function to copy original CR to a subfolder where the new CR gets generated
 function copy_original_cr(){
