@@ -355,6 +355,12 @@ function select_optional_component(){
             clear
             echo -e "\x1B[1;31mPattern \"$item_pattern\": \x1B[0m\x1B[1mSelect optional components: \x1B[0m"
             # echo -e "\x1B[1mSelect optional components: \x1B[0m"
+            # Change for DBACLD : 196732
+            if [[ $item_pattern  == "Business Automation Worklfow Runtime" ]]; then
+                info "css will be added along with optional components by default."
+            elif [[ $item_pattern == "Business Automation Workflow Authoring" ]]; then
+                info "cmis will be added along with optional components by default."
+            fi
             containsElement "bai" "${EXISTING_OPT_COMPONENT_ARR[@]}"
             bai_cr_retVal=$?
             for i in ${!optional_components_list[@]}; do
