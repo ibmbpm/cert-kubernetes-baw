@@ -831,11 +831,31 @@ function retrieve_current_custom_resource_file(){
     cluster_cr_type=""
     cluster_cr_name=""
  
+    ${CLI_CMD} get crd |grep contents.icp4a.ibm.com >/dev/null 2>&1
+    if [[ $? -eq 0 ]]; then
+        cluster_cr_name=$(${CLI_CMD} get content -n $cr_namespace --no-headers --ignore-not-found | awk '{print $1}')
+        if [[ ! -z $cluster_cr_name ]]; then
+            owner_ref=$(${CLI_CMD} get content $cluster_cr_name -n $cr_namespace -o yaml | ${YQ_CMD} '.metadata.ownerReferences.[0].kind' -)
+            if [[ ${owner_ref} != "ICP4ACluster" ]]; then
+                cluster_cr_type="content"                
+            fi
+        fi
+    fi
+
+    if [[ -z "$cluster_cr_type" ]]; then
+        cluster_cr_name=$(${CLI_CMD} get icp4acluster -n $cr_namespace --no-headers --ignore-not-found | awk '{print $1}')
+        if [[ ! -z $cluster_cr_name ]]; then
+            cluster_cr_type="icp4acluster"
+        fi
+    fi
+
+    
     # ${CLI_CMD} get crd |grep contents.icp4a.ibm.com >/dev/null 2>&1
     # Always check for ICP4ACluster CR
-    cluster_cr_name=$(${CLI_CMD} get icp4acluster -n $cr_namespace --no-headers --ignore-not-found | awk '{print $1}')
+    # cr_output="$(${CLI_CMD} get "$cluster_cr_type" "$cr_name" -n "$cr_namespace" -o yaml)"
+    # cluster_cr_name=$(${CLI_CMD} get icp4acluster -n $cr_namespace --no-headers --ignore-not-found | awk '{print $1}')
     # if [[ ! -z $cluster_cr_name ]]; then
-    cluster_cr_type="icp4acluster"
+    # cluster_cr_type="icp4acluster"
     # fi
 
     if [[ -z "$cluster_cr_type" || -z "$cluster_cr_name" ]]; then
