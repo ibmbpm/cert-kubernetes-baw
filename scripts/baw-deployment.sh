@@ -4571,7 +4571,7 @@ function input_information(){
             if [[ "$UPDATE_COMPONENTS" == "true" ]]; then
                 # Import functions used only for the update components mode
                 source ${CUR_DIR}/helper/update-selected-components/update-selected-components.sh
-                retrieve_current_custom_resource_file "$CP4BA_SERVICES_NS" "deployment_script"
+                retrieve_current_custom_resource_file "$TARGET_PROJECT_NAME" "deployment_script"
             fi
         else
             error "The script could not find all property files required to generate the Custom Resource (CR) for this deployment."
