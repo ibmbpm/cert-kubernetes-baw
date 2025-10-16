@@ -828,8 +828,6 @@ function retrieve_existing_property_files() {
 function retrieve_current_custom_resource_file(){
     local cr_namespace=$1
     local script_request=$2
-    echo " printing ns: "$1
-    echo "printing script request" : $2
     cluster_cr_type=""
     cluster_cr_name=""
     
@@ -839,9 +837,6 @@ function retrieve_current_custom_resource_file(){
     if [[ ! -z $cluster_cr_name ]]; then
         cluster_cr_type="icp4acluster"
     fi
-    
-    echo "Printing cr_name: "$cluster_cr_name
-    echo "Printing cr_type: "$cluster_cr_type
 
     if [[ -z "$cluster_cr_type" || -z "$cluster_cr_name" ]]; then
         error "Could not find a IC4ACluster Kind Custom Resource file in the $cr_namespace namespace. The script will now exit."

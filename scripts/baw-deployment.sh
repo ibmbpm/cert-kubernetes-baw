@@ -4558,8 +4558,8 @@ function input_information(){
     mkdir -p $BAK_FOLDER >/dev/null 2>&1
     mkdir -p $FINAL_CR_FOLDER >/dev/null 2>&1
 
-    
-    select_deployment_type
+    # Don't want options to choose for deployment type
+    # select_deployment_type
     DEPLOYMENT_TYPE="production"
     if [[ $DEPLOYMENT_TYPE == "production" ]]; then
         # The script will load the temp property file only for production
