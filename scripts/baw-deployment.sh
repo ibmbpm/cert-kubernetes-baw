@@ -1583,8 +1583,8 @@ function is_scim_enabled(){
   fi
 }
 
-function set_script_mode(){
-    if [[ -f $TEMPORARY_PROPERTY_FILE && -f $DB_NAME_USER_PROPERTY_FILE && -f $DB_SERVER_INFO_PROPERTY_FILE && -f $LDAP_PROPERTY_FILE ]]; then
+function detect_property_files(){
+    if [[ -f $TEMPORARY_PROPERTY_FILE && -f $DB_NAME_USER_PROPERTY_FILE && -f $DB_SERVER_INFO_PROPERTY_FILE && -f $LDAP_PROPERTY_FILE && -f $USER_PROFILE_PROPERTY_FILE ]]; then
         DEPLOYMENT_WITH_PROPERTY="Yes"
     else
         DEPLOYMENT_WITH_PROPERTY="No"
@@ -4559,7 +4559,7 @@ function input_information(){
     mkdir -p $FINAL_CR_FOLDER >/dev/null 2>&1
 
     
-    # select_deployment_type
+    select_deployment_type
     DEPLOYMENT_TYPE="production"
     if [[ $DEPLOYMENT_TYPE == "production" ]]; then
         # The script will load the temp property file only for production
@@ -9470,7 +9470,7 @@ if [[ ($SCRIPT_MODE == "" && $RUNTIME_MODE == "") || ($SCRIPT_MODE == "dev" && $
 then
     prompt_license
 
-    set_script_mode
+    detect_property_files
 
     input_information
 
