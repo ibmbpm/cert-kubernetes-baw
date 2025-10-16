@@ -832,12 +832,14 @@ function retrieve_current_custom_resource_file(){
     cluster_cr_name=""
     
     # Always check for ICP4ACluster CR
-    echo $cr_namespace
+    echo "Printing namespace : "$cr_namespace
     cluster_cr_name=$(${CLI_CMD} get icp4acluster -n $cr_namespace --no-headers --ignore-not-found | awk '{print $1}')
     if [[ ! -z $cluster_cr_name ]]; then
         cluster_cr_type="icp4acluster"
     fi
-    echo $cluster_cr_type
+    
+    echo "Printing cr_name: "$cluster_cr_name
+    echo "Printing cr_type: "$cluster_cr_type
 
     if [[ -z "$cluster_cr_type" || -z "$cluster_cr_name" ]]; then
         error "Could not find a IC4ACluster Kind Custom Resource file in the $cr_namespace namespace. The script will now exit."
