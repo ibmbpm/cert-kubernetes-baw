@@ -828,6 +828,8 @@ function retrieve_existing_property_files() {
 function retrieve_current_custom_resource_file(){
     local cr_namespace=$1
     local script_request=$2
+    echo " printing ns: "$1
+    echo "printing script request" : $2
     cluster_cr_type=""
     cluster_cr_name=""
     
