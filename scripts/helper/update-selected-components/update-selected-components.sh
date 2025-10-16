@@ -830,33 +830,14 @@ function retrieve_current_custom_resource_file(){
     local script_request=$2
     cluster_cr_type=""
     cluster_cr_name=""
- 
-    ${CLI_CMD} get crd |grep contents.icp4a.ibm.com >/dev/null 2>&1
-    if [[ $? -eq 0 ]]; then
-        cluster_cr_name=$(${CLI_CMD} get content -n $cr_namespace --no-headers --ignore-not-found | awk '{print $1}')
-        if [[ ! -z $cluster_cr_name ]]; then
-            owner_ref=$(${CLI_CMD} get content $cluster_cr_name -n $cr_namespace -o yaml | ${YQ_CMD} '.metadata.ownerReferences.[0].kind' -)
-            if [[ ${owner_ref} != "ICP4ACluster" ]]; then
-                cluster_cr_type="content"                
-            fi
-        fi
-    fi
-
-    if [[ -z "$cluster_cr_type" ]]; then
-        cluster_cr_name=$(${CLI_CMD} get icp4acluster -n $cr_namespace --no-headers --ignore-not-found | awk '{print $1}')
-        if [[ ! -z $cluster_cr_name ]]; then
-            cluster_cr_type="icp4acluster"
-        fi
-    fi
-
     
-    # ${CLI_CMD} get crd |grep contents.icp4a.ibm.com >/dev/null 2>&1
     # Always check for ICP4ACluster CR
-    # cr_output="$(${CLI_CMD} get "$cluster_cr_type" "$cr_name" -n "$cr_namespace" -o yaml)"
-    # cluster_cr_name=$(${CLI_CMD} get icp4acluster -n $cr_namespace --no-headers --ignore-not-found | awk '{print $1}')
-    # if [[ ! -z $cluster_cr_name ]]; then
-    # cluster_cr_type="icp4acluster"
-    # fi
+    echo $cr_namespace
+    cluster_cr_name=$(${CLI_CMD} get icp4acluster -n $cr_namespace --no-headers --ignore-not-found | awk '{print $1}')
+    if [[ ! -z $cluster_cr_name ]]; then
+        cluster_cr_type="icp4acluster"
+    fi
+    echo $cluster_cr_type
 
     if [[ -z "$cluster_cr_type" || -z "$cluster_cr_name" ]]; then
         error "Could not find a IC4ACluster Kind Custom Resource file in the $cr_namespace namespace. The script will now exit."
