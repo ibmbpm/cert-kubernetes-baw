@@ -4635,7 +4635,7 @@ function input_information(){
             PATTERNS_CR_SELECTED=($(echo "${pattern_cr_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
         fi
     else
-       select_baw_only
+       select_baw_pattern
     fi
 
     if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
@@ -9155,6 +9155,9 @@ function prepare_pattern_file(){
     else
         DEPLOY_TYPE_IN_FILE_NAME="starter"
     fi
+
+    # debug log
+    echo "Deployment type: " $DEPLOY_TYPE_IN_FILE_NAME
 
     FOUNDATION_PATTERN_FILE=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_foundation.yaml
 

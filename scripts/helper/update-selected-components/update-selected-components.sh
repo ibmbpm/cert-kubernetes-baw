@@ -832,7 +832,7 @@ function retrieve_current_custom_resource_file(){
     cluster_cr_name=""
     
     # Always check for ICP4ACluster CR
-    echo "Printing namespace : "$cr_namespace
+    
     cluster_cr_name=$(${CLI_CMD} get icp4acluster -n $cr_namespace --no-headers --ignore-not-found | awk '{print $1}')
     if [[ ! -z $cluster_cr_name ]]; then
         cluster_cr_type="icp4acluster"
