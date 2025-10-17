@@ -8975,21 +8975,21 @@ function show_summary(){
     echo -e "\x1B[1m                    Summary of input                   \x1B[0m"
     echo -e "\x1B[1m*******************************************************\x1B[0m"
     
-    if [[ -z $UPDATE_COMPONENTS == "true" ]]; then
-        echo -e "\x1B[1;31m1. Business Automation Workflow capability to deploy: \x1B[0m"
-        if [ "${#pattern_arr[@]}" -eq "0" ]; then
-            printf '   * %s\n' "None"
-        else
-            for each_pattern in "${pattern_arr[@]}"
-            do
-                if [[ "$each_pattern" =~ .*"Workflow Authoring".* || "$each_pattern" =~ .*"Workflow Runtime".* || "$each_pattern" =~ .*"Development Environment".* || "$each_pattern" =~ .*"Runtime Environment".* ]];then
-                    printf '     %s\n' "${each_pattern}"
-                else
-                    printf '   * %s\n' "${each_pattern}"
-                fi
-            done
-        fi
+    
+    echo -e "\x1B[1;31m1. Business Automation Workflow capability to deploy: \x1B[0m"
+    if [ "${#pattern_arr[@]}" -eq "0" ]; then
+        printf '   * %s\n' "None"
+    else
+        for each_pattern in "${pattern_arr[@]}"
+        do
+            if [[ "$each_pattern" =~ .*"Workflow Authoring".* || "$each_pattern" =~ .*"Workflow Runtime".* || "$each_pattern" =~ .*"Development Environment".* || "$each_pattern" =~ .*"Runtime Environment".* ]];then
+                printf '     %s\n' "${each_pattern}"
+            else
+                printf '   * %s\n' "${each_pattern}"
+            fi
+        done
     fi
+    
 
     echo -e "\x1B[1;31m2. Optional components to deploy: \x1B[0m"
     if [ "${#optional_component_arr[@]}" -eq "0" ]; then
