@@ -4,6 +4,16 @@
 function check_command() {
     local command=$1
 
+    if [[ $command == 'oc' ]]; then
+        if which oc >/dev/null 2>&1; then
+            command=oc
+        elif which kubectl >/dev/null 2>&1; then
+            command=kubectl
+        else
+            echo -e  "\x1B[1;31mUnable to locate Kubernetes CLI or OpenShift CLI. You must install it to run this script.\x1B[0m" && \
+            exit 1
+        fi
+    fi
     if [[ -z "$(command -v ${command} 2> /dev/null)" ]]; then
         error "${command} command not available"
     else

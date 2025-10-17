@@ -778,9 +778,6 @@ EOF
             ${YQ} -i eval '.metadata.resourceVersion = "'${resource_version}'"' ${PREVIEW_DIR}/commonservice.yaml
         fi
 
-        ${YQ} -i eval '.spec.channel = "'${CHANNEL}'"' ${PREVIEW_DIR}/commonservice.yaml
-        ${YQ} -i eval '.spec.startingCSV = "'ibm-common-service-operator.${CHANNEL}.0'"' ${PREVIEW_DIR}/commonservice.yaml
-
         cat "${PREVIEW_DIR}/commonservice.yaml" | ${OC_CMD} apply -f -
 
         # Check if the patch was successful
