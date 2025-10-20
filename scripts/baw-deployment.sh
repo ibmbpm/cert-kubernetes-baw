@@ -4667,7 +4667,7 @@ function input_information(){
         # Only ask the deployment type question if the script is being used for a fresh install
         # Otherwise if it is being used to generate a new CR with an updated list of components , then we get this information from the live CR 
         # debug log
-        if [[ "$UPDATE_COMPONENTS" == "false" || "$UPDATE_COMPONENTS" == "true"]]; then
+        if [[ "$UPDATE_COMPONENTS" == "false" || "$UPDATE_COMPONENTS" == "true" ]]; then
             SLOW_STORAGE_CLASS_NAME=$(prop_user_profile_property_file BAW.SLOW_FILE_STORAGE_CLASSNAME)
             MEDIUM_STORAGE_CLASS_NAME=$(prop_user_profile_property_file BAW.MEDIUM_FILE_STORAGE_CLASSNAME)
             FAST_STORAGE_CLASS_NAME=$(prop_user_profile_property_file BAW.FAST_FILE_STORAGE_CLASSNAME)
