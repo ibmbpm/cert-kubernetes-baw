@@ -9152,6 +9152,8 @@ function prepare_pattern_file(){
 
     if [[ "$DEPLOYMENT_TYPE" == "production" ]];then
         DEPLOY_TYPE_IN_FILE_NAME="production"
+        # debug log
+        echo "DEPLOY_TYPE_IN_FILE_NAME: " $DEPLOY_TYPE_IN_FILE_NAME
     else
         DEPLOY_TYPE_IN_FILE_NAME="starter"
     fi
