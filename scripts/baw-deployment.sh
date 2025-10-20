@@ -9153,16 +9153,16 @@ function prepare_pattern_file(){
     ${COPY_CMD} -rf "${OPERATOR_FILE}" "${OPERATOR_FILE_BAK}"
     # ${COPY_CMD} -rf "${OPERATOR_PVC_FILE}" "${OPERATOR_PVC_FILE_BAK}"
 
-    # if [[ "$DEPLOYMENT_TYPE" == "production" ]];then
-    #     DEPLOY_TYPE_IN_FILE_NAME="production"
-    #     # debug log
-    #     echo "DEPLOY_TYPE_IN_FILE_NAME: " $DEPLOY_TYPE_IN_FILE_NAME
-    # else
-    #     DEPLOY_TYPE_IN_FILE_NAME="starter"
-    # fi
+    if [[ "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" ]];then
+        DEPLOY_TYPE_IN_FILE_NAME="production"
+        # debug log
+        # echo "DEPLOY_TYPE_IN_FILE_NAME: " $DEPLOY_TYPE_IN_FILE_NAME
+    else
+        DEPLOY_TYPE_IN_FILE_NAME="starter"
+    fi
 
     # make the deploy type in file as production itself as starter is not supported as of now
-    DEPLOY_TYPE_IN_FILE_NAME="production"
+    # DEPLOY_TYPE_IN_FILE_NAME="production"
 
     FOUNDATION_PATTERN_FILE=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_foundation.yaml
 
