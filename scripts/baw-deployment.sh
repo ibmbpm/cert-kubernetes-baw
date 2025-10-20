@@ -8263,17 +8263,17 @@ function apply_pattern_cr(){
     esac
 
     # Set sc_deployment_hostname_suffix
-#    if [ -z "$existing_infra_name" ]; then
-#        echo ""
-#    else
-#        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.sc_deployment_hostname_suffix "$existing_infra_name"
-#        if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]];
-#        then
-#            ${SED_COMMAND} "s|sc_deployment_hostname_suffix:.*|sc_deployment_hostname_suffix: \"{{ meta.namespace }}.${INFRA_NAME}\"|g" ${CP4A_PATTERN_FILE_TMP}
-#        else
-#            ${SED_COMMAND} "s|sc_deployment_hostname_suffix:.*|sc_deployment_hostname_suffix: \"{{ meta.namespace }}\"|g" ${CP4A_PATTERN_FILE_TMP}
-#        fi
-#    fi
+    #    if [ -z "$existing_infra_name" ]; then
+    #        echo ""
+    #    else
+    #        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.sc_deployment_hostname_suffix "$existing_infra_name"
+    #        if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]];
+    #        then
+    #            ${SED_COMMAND} "s|sc_deployment_hostname_suffix:.*|sc_deployment_hostname_suffix: \"{{ meta.namespace }}.${INFRA_NAME}\"|g" ${CP4A_PATTERN_FILE_TMP}
+    #        else
+    #            ${SED_COMMAND} "s|sc_deployment_hostname_suffix:.*|sc_deployment_hostname_suffix: \"{{ meta.namespace }}\"|g" ${CP4A_PATTERN_FILE_TMP}
+    #        fi
+    #    fi
 
     if  [[ $PLATFORM_SELECTED != "OCP" ]];then
         update_hostname_suffix
@@ -8292,7 +8292,7 @@ function apply_pattern_cr(){
             ${SED_COMMAND} "s|lc_selected_ldap_type:.*|lc_selected_ldap_type: \"IBM Security Directory Server\"|g" ${CP4A_PATTERN_FILE_TMP}
         fi
     fi
-#TODO will CNCFsupport FIPS
+    #TODO will CNCFsupport FIPS
     # Set fips_enable
     if  [[ ("$DEPLOYMENT_TYPE" == "starter" || ("$DEPLOYMENT_TYPE" == "production" && $DEPLOYMENT_WITH_PROPERTY == "No")) && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
         if [[ $FIPS_ENABLED == "true" ]]; then
@@ -8300,7 +8300,7 @@ function apply_pattern_cr(){
         else
             ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.enable_fips "false"
         fi
-#TODO will CNCFsupport FIPS
+    #TODO will CNCFsupport FIPS
     elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
          fips_flag="$(prop_user_profile_property_file CP4BA.ENABLE_FIPS)"
         fips_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$fips_flag")
@@ -9077,6 +9077,8 @@ function show_summary(){
     fi
     if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]];
     then
+        # debug logs
+        echo "Storage classname : " $SLOW_STORAGE_CLASS_NAME
         if [ -z "$existing_infra_name" ]; then
             if  [[ $DEPLOYMENT_TYPE == "starter" && $PLATFORM_SELECTED == "OCP" ]];
             then
@@ -9158,11 +9160,8 @@ function prepare_pattern_file(){
     #     DEPLOY_TYPE_IN_FILE_NAME="starter"
     # fi
 
-    
+    # make the deploy type in file as production itself as starter is not supported as of now
     DEPLOY_TYPE_IN_FILE_NAME="production"
-
-    # debug log
-    echo "Deployment type: " $DEPLOYMENT_TYPE
 
     FOUNDATION_PATTERN_FILE=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_foundation.yaml
 
