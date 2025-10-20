@@ -3552,7 +3552,7 @@ function get_storage_class_name(){
             fi
         done
         fi
-    elif [[ ($DEPLOYMENT_TYPE == "production" && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "other")) || $PLATFORM_SELECTED == "ROKS" ]]
+    elif [[ ("$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "other")) || $PLATFORM_SELECTED == "ROKS" ]]
     then
         printf "\x1B[1mTo provision the persistent volumes and volume claims\n\x1B[0m"
         while [[ $sc_slow_file_storage_classname == "" ]] # While get slow storage clase name
@@ -4640,7 +4640,7 @@ function input_information(){
 
     if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
         select_optional_component
-    elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && $DEPLOYMENT_TYPE == "production" ]]; then
+    elif [[ "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" ]]; then
         OPT_COMPONENTS_CR_SELECTED=($(echo "${optional_component_cr_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
         OPTIONAL_COMPONENT_DELETE_LIST=($(echo "${OPT_COMPONENTS_CR_SELECTED[@]}" "${OPTIONAL_COMPONENT_FULL_ARR[@]}" | tr ' ' '\n' | sort | uniq -u))
         KEEP_COMPOMENTS=($(echo ${FOUNDATION_CR_SELECTED_LOWCASE[@]} ${OPTIONAL_COMPONENT_DELETE_LIST[@]} | tr ' ' '\n' | sort | uniq -d | uniq))
@@ -8992,11 +8992,11 @@ function show_summary(){
     
 
     echo -e "\x1B[1;31m2. Optional components to deploy: \x1B[0m"
-    if [ "${#optional_component_arr[@]}" -eq "0" ]; then
+    if [ "${#OPT_COMPONENTS_SELECTED[@]}" -eq "0" ]; then
         printf '   * %s\n' "None"
     else
         # printf '   * %s\n' "${OPT_COMPONENTS_SELECTED[@]}"
-        for each_opt_component in "${optional_component_arr[@]}"
+        for each_opt_component in "${OPT_COMPONENTS_SELECTED[@]}"
         do
             if [[ ${each_opt_component} == "ExternalShare" ]]; then
                 printf '   * %s\n' "External Share"
@@ -9157,7 +9157,7 @@ function prepare_pattern_file(){
     fi
 
     # debug log
-    echo "Deployment type: " $DEPLOY_TYPE_IN_FILE_NAME
+    echo "Deployment type: " $DEPLOYMENT_TYPE
 
     FOUNDATION_PATTERN_FILE=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_foundation.yaml
 
@@ -9200,7 +9200,7 @@ function prepare_pattern_file(){
         #WW_PATTERN_FILE_BAK=$BAK_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_authoring-workstreams.yaml
         ${COPY_CMD} -rf "${WORKFLOW_PATTERN_FILE}" "${WORKFLOW_PATTERN_FILE_BAK}"
         #${COPY_CMD} -rf "${WW_PATTERN_FILE}" "${WW_PATTERN_FILE_BAK}"
-    elif [[ "$DEPLOYMENT_TYPE" == "production" ]]
+    elif [[ "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" ]]
     then
         WORKFLOW_PATTERN_FILE=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow.yaml
         WORKFLOW_PATTERN_FILE_TMP=$TEMP_FOLDER/.ibm_cp4a_cr_${DEPLOY_TYPE_IN_FILE_NAME}_workflow_tmp.yaml
