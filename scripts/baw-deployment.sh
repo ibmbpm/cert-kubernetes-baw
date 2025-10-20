@@ -9150,13 +9150,16 @@ function prepare_pattern_file(){
     ${COPY_CMD} -rf "${OPERATOR_FILE}" "${OPERATOR_FILE_BAK}"
     # ${COPY_CMD} -rf "${OPERATOR_PVC_FILE}" "${OPERATOR_PVC_FILE_BAK}"
 
-    if [[ "$DEPLOYMENT_TYPE" == "production" ]];then
-        DEPLOY_TYPE_IN_FILE_NAME="production"
-        # debug log
-        echo "DEPLOY_TYPE_IN_FILE_NAME: " $DEPLOY_TYPE_IN_FILE_NAME
-    else
-        DEPLOY_TYPE_IN_FILE_NAME="starter"
-    fi
+    # if [[ "$DEPLOYMENT_TYPE" == "production" ]];then
+    #     DEPLOY_TYPE_IN_FILE_NAME="production"
+    #     # debug log
+    #     echo "DEPLOY_TYPE_IN_FILE_NAME: " $DEPLOY_TYPE_IN_FILE_NAME
+    # else
+    #     DEPLOY_TYPE_IN_FILE_NAME="starter"
+    # fi
+
+    
+    DEPLOY_TYPE_IN_FILE_NAME="production"
 
     # debug log
     echo "Deployment type: " $DEPLOYMENT_TYPE
