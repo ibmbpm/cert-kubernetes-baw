@@ -275,7 +275,7 @@ spec:
     ## You may need to enable the feature gate `StatefulSetMaxUnavailable` in your cluster to use this feature. For OCP: https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/nodes/working-with-clusters#nodes-cluster-enabling
     ## Not recommended to set maxUnavailable to more than 1 for BAW Server deployment.
     rolling_update:
-      max_unavailable: 1
+      max_unavailable: "1"
     ## The database configuration for Workflow Server
     database:
       ##Whether to use EDB. If you set it to true, just set db_cert_secret_name, type, server_name, database_name, port and secret_name as "", and set enable_ssl to true.
