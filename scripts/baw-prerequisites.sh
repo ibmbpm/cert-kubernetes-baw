@@ -7173,39 +7173,10 @@ function create_db_script(){
     echo "DB_USER_PWD_LIST=$db_user_pwd_joined" >> ${TEMPORARY_PROPERTY_FILE}
 }
 
-function select_external_postgresdb_for_bts(){
 function select_external_postgresdb_for_im_zen(){
     printf "\n"
     echo ""
     while true; do
-        #DBACLD-194974: Since there no EDB, we won't ask customer whether they want to use external Postgres DB for BTS.  They must use external Postgres DB if they want to install BTS with 25.0.1-GA
-        echo "${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/$CS_CHANNEL_KC?topic=service-external-database#configuring-an-external-database-with-the-bts-custom-resource${RESET_TEXT}"
-        if skip_edb_for_2501; then
-            printf "\x1B[1mFor this "$CP4BA_RELEASE_BASE"-"$BAW_PATCH_VERSION" version, you must use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THE POSTGRESQL DBs BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for BTS service in this BAW deployment.\x1B[0m"
-            printf "\n"
-            ans="Yes"
-            EXTERNAL_POSTGRESDB_FOR_BTS="true"
-            break
-        else
-        
-            printf "\x1B[1mDo you want to use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THIS POSTGRESQL DB BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for this BAW deployment?\x1B[0m (Yes/No, default: No): "
-            read -rp "" ans
-            ans=$(echo "$ans" | tr '[:upper:]' '[:lower:]')
-            case "$ans" in
-            "y"|"yes")
-                EXTERNAL_POSTGRESDB_FOR_BTS="true"
-                break
-                ;;
-            "n"|"no"|"")
-                EXTERNAL_POSTGRESDB_FOR_BTS="false"
-                break
-                ;;
-            *)
-                echo -e "Answer must be \"Yes\" or \"No\"\n"
-                ;;
-            esac
-        fi
-
         #DBACLD-194974: Since there no EDB, we won't ask customer whether they want to use external Postgres DB for IM/Zen.  They must use external Postgres DB if they want to install IM/Zen for 25.0.1-GA
         # Display Knowledge Center link once
         echo "${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/$CS_CHANNEL_KC?topic=im-setting-up-external-edb-postgresql-database-server#dbcreate${RESET_TEXT}"
@@ -7243,7 +7214,6 @@ function select_external_postgresdb_for_im_zen(){
     done
 }
 
-function select_external_postgresdb_for_im_zen(){
 
 function select_external_postgresdb_for_bts(){
     printf "\n"
