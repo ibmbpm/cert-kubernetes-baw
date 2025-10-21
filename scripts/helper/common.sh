@@ -1401,6 +1401,7 @@ function retrieve_network_details(){
 
 
 }
+
 #DBACLD-194974: Version to remove EDB and skip Starter deployment option for CP4BA 25.0.1 by checking the version $BAW_PATCH_VERSION and $CP4BA_RELEASE_BASE
 #Update the version and patch here to skip EDB and Starter deployment option.  
 function skip_edb_for_2501() {
@@ -1413,3 +1414,4 @@ function skip_edb_for_2501() {
         return 1  # Do not skip EDB
     fi
 }
+

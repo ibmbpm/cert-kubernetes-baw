@@ -17,7 +17,7 @@ source ${CUR_DIR}/helper/common.sh
 source "${CUR_DIR}/baw-storage-validation.sh"
 
 function show_help() {
-    echo -e "\nUsage: baw-prerequisites.sh -m [modetype] -n [cp4baNamespace]\n"
+    echo -e "\nUsage: baw-prerequisites.sh -m [modetype] -n [bawNamespace]\n"
     echo "Options:"
     echo "  -h  Display help"
     echo "  -m  The valid mode types are: [property], [generate], or [validate]"
@@ -27,6 +27,12 @@ function show_help() {
     echo "      STEP3: Run the script in [generate] mode. Generates the DB SQL statement files and YAML templates for the secrets based on the values in the property files."
     echo "      STEP4: Create the databases and secrets by using the modified DB SQL statement files and YAML templates for the secrets."
     echo "      STEP5: Run the script in [validate] mode. Checks whether the databases and the secrets are created before you install BAW."
+    echo "  --update-components"
+    echo "      Updates deployment patterns and optional components in an existing installation,then regenerates property files with the new configuration."
+    echo "      Prerequisites:"
+    echo "        - Active deployment in the namespace specified with \"-n\"."
+    echo "        - Original property files must be available."
+    echo "        - Must be used exclusively with \"-m property\" mode."
 }
 
 function parse_arguments() {
@@ -83,6 +89,10 @@ function parse_arguments() {
         -h | --help | \?)
             show_help
             exit 0
+            ;;
+        # Flag to decide if the baw-prerequisites.sh is being 
+        --update-components)
+            UPDATE_COMPONENTS="true"
             ;;
         *)
             echo "Invalid option"
@@ -355,6 +365,12 @@ function select_optional_component(){
             clear
             echo -e "\x1B[1;31mPattern \"$item_pattern\": \x1B[0m\x1B[1mSelect optional components: \x1B[0m"
             # echo -e "\x1B[1mSelect optional components: \x1B[0m"
+            # Change for DBACLD : 196732
+            if [[ $item_pattern  == "Business Automation Worklfow Runtime" ]]; then
+                info "css will be added along with optional components by default."
+            elif [[ $item_pattern == "Business Automation Workflow Authoring" ]]; then
+                info "cmis will be added along with optional components by default."
+            fi
             containsElement "bai" "${EXISTING_OPT_COMPONENT_ARR[@]}"
             bai_cr_retVal=$?
             for i in ${!optional_components_list[@]}; do
@@ -3097,6 +3113,14 @@ function create_temp_property_file(){
 
     # save profile size
     echo "PROFILE_SIZE_FLAG=$PROFILE_TYPE" >> ${TEMPORARY_PROPERTY_FILE}
+
+    # Writing a flag to the temp property file so that we can detect if the script is being used for updating the deployment patterns.
+    # This flag will help the baw-deployment.sh script perform the neccessary logic to generate the CR
+    if [[ -z $UPDATE_COMPONENTS ]]; then
+        echo "UPDATE_COMPONENTS=false" >> ${TEMPORARY_PROPERTY_FILE}
+    else
+        echo "UPDATE_COMPONENTS=true" >> ${TEMPORARY_PROPERTY_FILE}
+    fi
 }
 
 function create_property_file(){
@@ -3113,10 +3137,18 @@ function create_property_file(){
         mkdir -p "$tmp_property_file_dir" >/dev/null 2>&1
         ${COPY_CMD} -rf "${PROPERTY_FILE_FOLDER}" "${tmp_property_file_dir}"
     fi
-    rm -rf $PROPERTY_FILE_FOLDER >/dev/null 2>&1
-    mkdir -p $PROPERTY_FILE_FOLDER >/dev/null 2>&1
+
+    rm -f $PROPERTY_FILE_FOLDER/baw_db_name_user.property >/dev/null 2>&1
+    rm -f $PROPERTY_FILE_FOLDER/baw_db_server.property >/dev/null 2>&1
+    rm -f $PROPERTY_FILE_FOLDER/baw_LDAP.property >/dev/null 2>&1
+    rm -f $PROPERTY_FILE_FOLDER/baw_user_profile.property >/dev/null 2>&1
+    
+
+    rm -rf $SSL_CERT_FOLDER >/dev/null 2>&1
+    mkdir -p $SSL_CERT_FOLDER >/dev/null 2>&1
     mkdir -p $LDAP_SSL_CERT_FOLDER >/dev/null 2>&1
     mkdir -p $DB_SSL_CERT_FOLDER >/dev/null 2>&1
+
 
     > ${DB_SERVER_INFO_PROPERTY_FILE}
     if (( db_server_number > 0 )); then
@@ -3716,18 +3748,18 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
         # ltpaPassword/keystorePassword for FNCM
         echo "## Provide a string for ltpaPassword in the ibm-fncm-secret that will be used when creating the ltpakey." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## If password has special characters then xor encoded with {xor} prefix, otherwise use plain text. (NOTES: CONTENT.LTPA_PASSWORD must match BAN.LTPA_PASSWORD)" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "CONTENT.LTPA_PASSWORD=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "## If password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text. (NOTES: CONTENT.LTPA_PASSWORD must match BAN.LTPA_PASSWORD)" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "CONTENT.LTPA_PASSWORD=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "## Provide a string for keystorePassword in the ibm-fncm-secret that will be used when creating the keystore." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## If password has special characters then xor encoded with {xor} prefix, otherwise use plain text. (NOTES: CONTENT.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled.)" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "CONTENT.KEYSTORE_PASSWORD=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "## If password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text. (NOTES: CONTENT.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled.)" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "CONTENT.KEYSTORE_PASSWORD=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
         # If select ICCSAP, add keystorePassword
         if [[ " ${optional_component_cr_arr[@]} " =~ "iccsap" ]]; then
             echo "## Provide a string for keystorePassword in the ibm-iccsap-secret that will be used when creating the keystore." >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "## If password has special characters then xor encoded with {xor} prefix, otherwise use plain text. (NOTES: ICCSAP.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled.)" >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "ICCSAP.KEYSTORE_PASSWORD=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "## If password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text. (NOTES: ICCSAP.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled.)" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "ICCSAP.KEYSTORE_PASSWORD=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
             echo "" >> ${USER_PROFILE_PROPERTY_FILE}
         fi
         # If select ICC Archive, add ARCHIVE_USERID/ARCHIVE_PASSWORD
@@ -3744,8 +3776,8 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         # if select IER
         if [[ " ${optional_component_cr_arr[@]} " =~ "ier" ]]; then
             echo "## Provide a string for keystorePassword in the ibm-ier-secret that will be used when creating the keystore." >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "## If password has special characters then xor encoded with {xor} prefix, otherwise use plain text. (NOTES: IER.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled.)" >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "IER.KEYSTORE_PASSWORD=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "## If password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text. (NOTES: IER.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled.)" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "IER.KEYSTORE_PASSWORD=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
             echo "" >> ${USER_PROFILE_PROPERTY_FILE}
         fi
 
@@ -4287,12 +4319,12 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
             echo "" >> ${USER_PROFILE_PROPERTY_FILE}
             # ltpaPassword/keystorePassword for BAN
             echo "## Provide a string for ltpaPassword in the ibm-ban-secret that will be used when creating the ltpakey." >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "## If password has special characters then xor encoded with {xor} prefix, otherwise use plain text.(NOTES: BAN.LTPA_PASSWORD must match CONTENT.LTPA_PASSWORD)" >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "BAN.LTPA_PASSWORD=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "## If password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text.(NOTES: BAN.LTPA_PASSWORD must match CONTENT.LTPA_PASSWORD)" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "BAN.LTPA_PASSWORD=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
             echo "" >> ${USER_PROFILE_PROPERTY_FILE}
             echo "## Provide a string for keystorePassword in the ibm-ban-secret that will be used when creating the keystore." >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "## If password has special characters then xor encoded with {xor} prefix, otherwise use plain text. (NOTES: BAN.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled.)" >> ${USER_PROFILE_PROPERTY_FILE}
-            echo "BAN.KEYSTORE_PASSWORD=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "## If password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text. (NOTES: BAN.KEYSTORE_PASSWORD must exceed 16 characters when fips enabled.)" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "BAN.KEYSTORE_PASSWORD=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
             echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
             # jMailUsername/jMailPassword for BAN
@@ -4525,16 +4557,16 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         echo "## Provide the service user name for ADP. For example: \"CN=sampleServiceUser,DC=sampleDC,DC=com\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "ADP.SERVICE_USER_NAME=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## Provide the service user password (if password has special characters then xor encoded with {xor} prefix, otherwise use plain text) for ADP." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "ADP.SERVICE_USER_PASSWORD=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "## Provide the service user password (if password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text) for ADP." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "ADP.SERVICE_USER_PASSWORD=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
         # serviceUserBas/servicePwdBas for ADP
 	echo "## Fully Qualified Distinguished Name (FQDN) for the user is required for this setting." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "## Provide the service base name for ADP. For example: \"CN=sampleBaseUser,DC=sampleDC,DC=com\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "ADP.SERVICE_USER_NAME_BASE=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## Provide the service base password (if password has special characters then xor encoded with {xor} prefix, otherwise use plain text) for ADP." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "ADP.SERVICE_USER_PASSWORD_BASE=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "## Provide the service base password (if password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text) for ADP." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "ADP.SERVICE_USER_PASSWORD_BASE=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
         # serviceUserCa/servicePwdCa for ADP
@@ -4542,8 +4574,8 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         echo "## Provide the service ca name for ADP. For example: \"CN=sampleCAUser,DC=sampleDC,DC=com\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "ADP.SERVICE_USER_NAME_CA=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## Provide the service ca password (if password has special characters then xor encoded with {xor} prefix, otherwise use plain text) for ADP." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "ADP.SERVICE_USER_PASSWORD_CA=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "## Provide the service ca password (if password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text) for ADP." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "ADP.SERVICE_USER_PASSWORD_CA=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
         # envOwnerUser/envOwnerPwd for ADP
@@ -4551,8 +4583,8 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         echo "## Provide the environment owner name for ADP. For example: \"CN=sampleOwnerUser,DC=sampleDC,DC=com\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "ADP.ENV_OWNER_USER_NAME=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## Provide the environment owner password (if password has special characters then xor encoded with {xor} prefix, otherwise use plain text) for ADP." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "ADP.ENV_OWNER_USER_PASSWORD=\"{xor}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "## Provide the environment owner password (if password has special characters then Base64 encoded with {Base64} prefix, otherwise use plain text) for ADP." >> ${USER_PROFILE_PROPERTY_FILE}
+        echo "ADP.ENV_OWNER_USER_PASSWORD=\"{Base64}<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
         if [[ " ${pattern_cr_arr[@]}" =~ "document_processing_runtime" ]]; then
@@ -5424,7 +5456,7 @@ fi
     fi
 
     if [[ ! ("${#pattern_cr_arr[@]}" -eq "1" && "${pattern_cr_arr[@]}" =~ "workflow-process-service" && $LDAP_WFPS_AUTHORING == "No") ]]; then
-        ${SED_COMMAND} "s|LDAP_BIND_DN_PASSWORD=\"\"|LDAP_BIND_DN_PASSWORD=\"{xor}<Required>\"|g" ${LDAP_PROPERTY_FILE}
+        ${SED_COMMAND} "s|LDAP_BIND_DN_PASSWORD=\"\"|LDAP_BIND_DN_PASSWORD=\"{Base64}<Required>\"|g" ${LDAP_PROPERTY_FILE}
         ${SED_COMMAND} "s|=\"\"|=\"<Required>\"|g" ${LDAP_PROPERTY_FILE}
         ${SED_COMMAND} 's/LC_AD_GC_HOST="<Required>"/LC_AD_GC_HOST=""/g' ${LDAP_PROPERTY_FILE}
         ${SED_COMMAND} 's/LC_AD_GC_PORT="<Required>"/LC_AD_GC_PORT=""/g' ${LDAP_PROPERTY_FILE}
@@ -5432,7 +5464,7 @@ fi
     fi
 
     if [[ $SET_EXT_LDAP == "Yes" ]]; then
-        ${SED_COMMAND} "s|LDAP_BIND_DN_PASSWORD=\"\"|LDAP_BIND_DN_PASSWORD=\"{xor}<Required>\"|g" ${EXTERNAL_LDAP_PROPERTY_FILE}
+        ${SED_COMMAND} "s|LDAP_BIND_DN_PASSWORD=\"\"|LDAP_BIND_DN_PASSWORD=\"{Base64}<Required>\"|g" ${EXTERNAL_LDAP_PROPERTY_FILE}
         ${SED_COMMAND} "s|=\"\"|=\"<Required>\"|g" ${EXTERNAL_LDAP_PROPERTY_FILE}
         ${SED_COMMAND} 's/LC_AD_GC_HOST="<Required>"/LC_AD_GC_HOST=""/g' ${EXTERNAL_LDAP_PROPERTY_FILE}
         ${SED_COMMAND} 's/LC_AD_GC_PORT="<Required>"/LC_AD_GC_PORT=""/g' ${EXTERNAL_LDAP_PROPERTY_FILE}
@@ -5447,6 +5479,10 @@ fi
     msgRed   "The value in the property file must be within double quotes."
     msgRed   "The value for User/Password in [baw_user_profile.property] file should NOT include special characters: single quotation \"'\""
     msgRed   "The value in [baw_LDAP.property] or [baw_External_LDAP.property] [baw_user_profile.property] file should NOT include special character '\"'"
+    # This is an important note for to display to the user which is only applicable while adding /removing new patterns
+    if [[ ! -z $UPDATE_COMPONENTS ]]; then
+        msgRed "If you have selected a new deployment pattern/optional component that is not supported with the existing Database Type, you must update the property files to choose a supported Database Type for the new deployment patterns/optional components selected\n"
+    fi
 
     if (( db_server_number > 0 )); then
         echo -e  "\x1b[32m* [baw_db_server.property]:\x1B[0m"
@@ -5587,6 +5623,9 @@ function load_property_before_generate(){
     # load LDAP/DB required flag for wfps
     LDAP_WFPS_AUTHORING=$(prop_tmp_property_file LDAP_WFPS_AUTHORING_FLAG)
     EXTERNAL_DB_WFPS_AUTHORING=$(prop_tmp_property_file EXTERNAL_DB_WFPS_AUTHORING_FLAG)
+
+    # load the flag that detects whether the script is being run to generate a CR to with updated list of components
+    UPDATE_COMPONENTS=$(prop_tmp_property_file UPDATE_COMPONENTS)
 }
 
 function create_db_script(){
@@ -7138,6 +7177,34 @@ function select_external_postgresdb_for_im_zen(){
     printf "\n"
     echo ""
     while true; do
+        #DBACLD-194974: Since there no EDB, we won't ask customer whether they want to use external Postgres DB for BTS.  They must use external Postgres DB if they want to install BTS with 25.0.1-GA
+        echo "${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/$CS_CHANNEL_KC?topic=service-external-database#configuring-an-external-database-with-the-bts-custom-resource${RESET_TEXT}"
+        if skip_edb_for_2501; then
+            printf "\x1B[1mFor this "$CP4BA_RELEASE_BASE"-"$BAW_PATCH_VERSION" version, you must use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THE POSTGRESQL DBs BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for BTS service in this BAW deployment.\x1B[0m"
+            printf "\n"
+            ans="Yes"
+            EXTERNAL_POSTGRESDB_FOR_BTS="true"
+            break
+        else
+
+            printf "\x1B[1mDo you want to use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THIS POSTGRESQL DB BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for this BAW deployment?\x1B[0m (Yes/No, default: No): "
+            read -rp "" ans
+            ans=$(echo "$ans" | tr '[:upper:]' '[:lower:]')
+            case "$ans" in
+            "y"|"yes")
+                EXTERNAL_POSTGRESDB_FOR_BTS="true"
+                break
+                ;;
+            "n"|"no"|"")
+                EXTERNAL_POSTGRESDB_FOR_BTS="false"
+                break
+                ;;
+            *)
+                echo -e "Answer must be \"Yes\" or \"No\"\n"
+                ;;
+            esac
+        fi
+
         #DBACLD-194974: Since there no EDB, we won't ask customer whether they want to use external Postgres DB for IM/Zen.  They must use external Postgres DB if they want to install IM/Zen for 25.0.1-GA
         # Display Knowledge Center link once
         echo "${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/$CS_CHANNEL_KC?topic=im-setting-up-external-edb-postgresql-database-server#dbcreate${RESET_TEXT}"
@@ -7180,6 +7247,40 @@ function select_external_postgresdb_for_bts(){
     printf "\n"
     echo ""
     while true; do
+        #DBACLD-194974: Since there no EDB, we won't ask customer whether they want to use external Postgres DB for IM/Zen.  They must use external Postgres DB if they want to install IM/Zen for 25.0.1-GA
+        # Display Knowledge Center link once
+        echo "${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/$CS_CHANNEL_KC?topic=im-setting-up-external-edb-postgresql-database-server#dbcreate${RESET_TEXT}"
+        
+        if skip_edb_for_2501; then
+            printf "\x1B[1mFor this "$CP4BA_RELEASE_BASE"-"$BAW_PATCH_VERSION" version, you must use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THE POSTGRESQL DBs BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1mfor IM and Zen services in this BAW deployment.\x1B[0m"
+            printf "\n"
+            ans="Yes"
+            EXTERNAL_POSTGRESDB_FOR_IM="true"
+            EXTERNAL_POSTGRESDB_FOR_ZEN="true"
+            break
+        else
+            printf "\x1B[1mDo you want to use an external Postgres DB for IM and Zen \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THE POSTGRESQL DBs BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for for IM and Zen services in this BAW deployment?\x1B[0m (Yes/No, default: No): "
+            printf "\n"
+            read -rp "" ans
+
+            ans=$(echo "$ans" | tr '[:upper:]' '[:lower:]')
+
+            case "$ans" in
+            "y"|"yes")
+                EXTERNAL_POSTGRESDB_FOR_IM="true"
+                EXTERNAL_POSTGRESDB_FOR_ZEN="true"
+                break
+                ;;
+            "n"|"no"|"")
+                EXTERNAL_POSTGRESDB_FOR_IM="false"
+                EXTERNAL_POSTGRESDB_FOR_ZEN="false"
+                break
+                ;;
+            *)
+                echo -e "Answer must be \"Yes\" or \"No\"\n"
+                ;;
+            esac
+        fi
         #DBACLD-194974: Since there no EDB, we won't ask customer whether they want to use external Postgres DB for BTS.  They must use external Postgres DB if they want to install BTS with 25.0.1-GA
         echo "${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/$CS_CHANNEL_KC?topic=service-external-database#configuring-an-external-database-with-the-bts-custom-resource${RESET_TEXT}"
         if skip_edb_for_2501; then
@@ -7388,6 +7489,22 @@ function select_db_type(){
     printf "\n"
     COLUMNS=12
     echo -e "\x1B[1mWhat is the Database type that is used for this deployment? \x1B[0m"
+    info "\x1B[1m${YELLOW_TEXT}NOTE: \"EDB Postgres deployed by the CP4BA Operator\" option is not supported in "$VERSION_TO_SKIP_EDB". Similar option will be available in the upcoming iFix and next release.\x1B[0m${RESET_TEXT}"
+    options=("IBM Db2 Database" "Oracle" "External PostgreSQL" "EDB Postgres (deployed by BAW operator)")
+    #DBACLD-194974: Remove the "EDB Postgres (deployed by the CP4BA Operator)" option out of options when skip_edb_for_2501 returns 0
+    if skip_edb_for_2501; then
+        # Rebuild the options array without "EDB Postgres (deployed by the CP4BA Operator)"
+        new_options=()
+        for option in "${options[@]}"; do
+            if [[ "$option" != "EDB Postgres (deployed by the CP4BA Operator)" ]]; then
+                new_options+=("$option")
+            fi
+        done
+        
+        options=("${new_options[@]}")
+        PS3="Enter a valid option [1 to ${#options[@]}]: "
+    fi
+   
     # options=("IBM Db2 Database" "Oracle" "External PostgreSQL" "EDB Postgres (deployed by BAW operator)")
     options=("IBM Db2 Database" "Oracle" "PostgreSQL")
     # PS3='Enter a valid option [1 to 4]: '
@@ -7471,7 +7588,11 @@ function select_baw_pattern(){
     pattern_arr=()
     pattern_cr_arr=()
     printf "\n"
-    echo -e "\x1B[1mSelect the IBM Business Automation Workflow capability to install: \x1B[0m"
+    if [[ ! -z $UPDATE_COMPONENTS ]]; then
+        echo -e "\x1B[1mSelect the previously selected IBM Business Automation Workflow capability which installed: \x1B[0m"
+    else
+        echo -e "\x1B[1mSelect the IBM Business Automation Workflow capability to install: \x1B[0m"
+    fi
     COLUMNS=12
 
     options=("Business Automation Workflow Authoring" "Business Automation Workflow Runtime")
@@ -7481,13 +7602,13 @@ function select_baw_pattern(){
         case $opt in
             "Business Automation Workflow Authoring")
                 pattern_arr=("Business Automation Workflow Authoring")
-                pattern_cr_arr=("workflow,workflow-authoring")
+                pattern_cr_arr=("workflow-authoring")
                 foundation_baw=("BAN" "BAS")
                 break
                 ;;
             "Business Automation Workflow Runtime")
                 pattern_arr=("Business Automation Workflow Runtime")
-                pattern_cr_arr=("workflow,workflow-runtime")
+                pattern_cr_arr=("workflow-runtime")
                 foundation_baw=("BAN" "AE")
                 break
                 ;;
@@ -7505,6 +7626,13 @@ function select_baw_pattern(){
     FOUNDATION_DELETE_LIST=($(echo "${FOUNDATION_CR_SELECTED[@]}" "${FOUNDATION_FULL_ARR[@]}" | tr ' ' '\n' | sort | uniq -u))
 
     PATTERNS_CR_SELECTED=($(echo "${pattern_cr_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+
+    update_components_tips="\x1B[1m Please note that  Business Automation Workflow Authoring and Business Automation Workflow Runtime cannot be deployed together.\n Please deselect any conflicting components before proceeding with your selection.\n\x1B[0m"
+   
+    if [[ $DEPLOYMENT_TYPE == "production" && $UPDATE_COMPONENTS == "true" ]]; then
+        echo -e "${update_components_tips}"
+        echo
+    fi
 }
 
 function input_information(){
@@ -7516,7 +7644,6 @@ function input_information(){
     select_platform
 
     select_baw_pattern
-
     select_optional_component
 
     select_ldap_type
@@ -7541,6 +7668,12 @@ function input_information(){
     fi
     generate_sample_network_policies
 
+    # Ask regardless of DB_Type
+    select_external_postgresdb_for_im_zen
+    
+    if [[ " ${pattern_cr_arr[@]} " =~ "workflow-authoring" || " ${pattern_cr_arr[@]} " =~ "workflow-runtime" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
+            select_external_postgresdb_for_bts
+        fi
     ### We are removing embedded postgres for 2501
     select_external_postgresdb_for_im_zen
     EXTERNAL_POSTGRESDB_FOR_IM="true"
@@ -7880,7 +8013,10 @@ function validate_prerequisites(){
         tmp_user=$( $CLI_CMD get secret -n "$CP4BA_SERVICES_NS" -l name=ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapUsername | base64 --decode )
         ## <https://jsw.ibm.com/browse/DBACLD-172803> - We are now asking user to use {xor} for special characters in password, so we need to use decode_xor_password to get the password decoded before validation.
         cp4a_operator=$( $CLI_CMD get pods -l name=ibm-cp4a-operator --no-headers --ignore-not-found -n $TARGET_PROJECT_NAME | awk '{print $1}' )
-        tmp_userpwd=$( decode_xor_password $( $CLI_CMD get secret -n "$CP4BA_SERVICES_NS" -l name=ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapPassword | base64 --decode ) $TARGET_PROJECT_NAME $cp4a_operator | sed  's/\$/\\$/g' )
+        tmp_userpwd=$( $CLI_CMD get secret -n "$CP4BA_SERVICES_NS" -l name=ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapPassword | base64 --decode )
+        if [[ "$tmp_userpwd" =~ "{xor}" ]]; then
+            tmp_userpwd=$(decode_xor_password $tmp_userpwd $cp4ba_operators_namespace $cp4a_operator)
+        fi
 
         tmp_servername=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_servername")
         tmp_serverport=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_serverport")
@@ -7912,7 +8048,10 @@ function validate_prerequisites(){
             tmp_user=$( $CLI_CMD get secret -n "$CP4BA_SERVICES_NS" -l name=ext-ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapUsername | base64 --decode )
             ## <https://jsw.ibm.com/browse/DBACLD-172803> - We are now asking user to use {xor} for special characters in password, so we need to use decode_xor_password to get the password decoded before validation.
             cp4a_operator=$( $CLI_CMD get pods -l name=ibm-cp4a-operator --no-headers --ignore-not-found -n $TARGET_PROJECT_NAME | awk '{print $1}' )
-            tmp_userpwd=$( decode_xor_password $( $CLI_CMD get secret -n "$CP4BA_SERVICES_NS" -l name=ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapPassword | base64 --decode ) $TARGET_PROJECT_NAME $cp4a_operator | sed  's/\$/\\$/g' )
+            tmp_userpwd=$( $CLI_CMD get secret -n "$CP4BA_SERVICES_NS" -l name=ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapPassword | base64 --decode )
+            if [[ "$tmp_userpwd" =~ "{xor}" ]]; then
+                tmp_userpwd=$(decode_xor_password $tmp_userpwd $cp4ba_operators_namespace $cp4a_operator)
+            fi
 
             tmp_servername=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_servername")
             tmp_serverport=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_serverport")
@@ -8592,6 +8731,41 @@ function validate_prerequisites(){
     info "After BAW is deployed, please refer to the documentation for post-deployment steps."
 }
 
+# Main function that performs the different functionalities required for adding/removing patterns and optional components
+function update_components_mode(){
+    # Import functions used only for the update components mode
+    source ${CUR_DIR}/helper/update-selected-components/update-selected-components.sh
+    retrieve_existing_property_files
+    retrieve_current_custom_resource_file "$CP4BA_SERVICES_NS" "prerequisites_script"
+    print_current_summary_table "$CP4BA_SERVICES_NS"
+    
+    DEPLOYMENT_TYPE="production"
+    PLATFORM_SELECTED="OCP"
+    # this value has to be 1 so that the select patterns and optional component functions that are called here know that this is not to be run for BAW only.(The script should never be executed in baw mode since 25.0.0 but since that code has not been removed , it is initialized here)
+    retVal_baw=1
+    select_baw_pattern
+    select_optional_component
+
+    # This array (current_cr_deployment_patterns_array) stores the current patterns deployed , and we should only ask if they want to use external postgres for BTS if they add any of the patterns that need BTS while running the script to update components
+    # This variable gets set in the function retrieve_current_custom_resource_file function
+    
+    if ! [[ " ${current_cr_deployment_patterns_array[@]} " =~ "workflow-authoring" || " ${current_cr_deployment_patterns_array[@]} " =~ "workflow-runtime" || " ${current_cr_optional_components_array[@]} " =~ "bai" ]]; then
+        if [[ " ${pattern_cr_arr[@]} " =~ "workflow-authoring" || " ${pattern_cr_arr[@]} " =~ "workflow-runtime" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
+            select_external_postgresdb_for_bts
+        fi
+    fi
+    
+    # This array (current_cr_deployment_patterns_array) stores the current patterns deployed and  current_cr_optional_components_array stores the current optional components selected.
+    # We should only ask if external certificate should be used by kafka if the below patterns/optional components were not selected initially and later added
+    # Both variables get set in the function retrieve_current_custom_resource_file function
+    if ! [[ " ${current_cr_deployment_patterns_array[@]} " =~ "workflow-authoring" || " ${current_cr_deployment_patterns_array[@]} " =~ "workflow-runtime" || " ${current_cr_optional_components_array[@]} " =~ "bai" ]]; then
+        if [[ " ${pattern_cr_arr[@]} " =~ "workflow-authoring" || " ${pattern_cr_arr[@]} " =~ "workflow-runtime" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
+            select_external_cert_opensearch_kafka
+        fi
+    fi
+
+    create_temp_property_file
+}
 ################################################
 #### Begin - Main step for install operator ####
 ################################################
@@ -8599,12 +8773,27 @@ function validate_prerequisites(){
 # prompt_license
 clear
 
+
 if [[ $RUNTIME_MODE == "property" ]]; then
     check_cp4ba_separate_operand $TARGET_PROJECT_NAME
-    input_information
+    # IF the variable UPDATE_COMPONENTS is set that means we are trying to update the list of optional components 
+    if [[ ! -z $UPDATE_COMPONENTS ]]; then
+        echo
+        update_components_mode
+    fi
+    
+    if [[ -z $UPDATE_COMPONENTS ]]; then
+        input_information
+    fi
     create_property_file
+    
+    # IF the variable UPDATE_COMPONENTS is set that means we are trying to update the list of deployment patterns or optional components 
+    if [[ ! -z $UPDATE_COMPONENTS ]]; then
+        update_property_files
+    fi
     clean_up_temp_file
 fi
+
 if [[ $RUNTIME_MODE == "generate" ]]; then
     check_cp4ba_separate_operand $TARGET_PROJECT_NAME
     # reload db type and OS number

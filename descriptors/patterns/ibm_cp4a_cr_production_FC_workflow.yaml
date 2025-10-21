@@ -835,6 +835,14 @@ spec:
     ## If you don't want to use a customized CA to sign the external TLS certificate, leave it empty.
     external_tls_ca_secret:
 
+    ## Rolling update settings for BAW Server deployment.
+    ## The default is 1 max unavailable pod to ensure availability during upgrade. The values can be overridden by setting the max_unavailable below. The values can be expressed in percentage (e.g., '25%') or absolute number (e.g., 1).
+    ## NOTE: The maxUnavailable is still a feature gate and may be disabled in some environments. See here (https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#maximum-unavailable-pods) and here (https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/) for more details.
+    ## You may need to enable the feature gate `StatefulSetMaxUnavailable` in your cluster to use this feature. For OCP: https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/nodes/working-with-clusters#nodes-cluster-enabling
+    ## Not recommended to set maxUnavailable to more than 1 for BAW Server deployment.
+    rolling_update:
+      max_unavailable: 1
+
     tls:
       ## Workflow Server TLS secret that contains tls.key and tls.crt.
       ## If you want to use a customized Workflow Server TLS certificate, ensure it is signed by the CA in shared_configuration.root_ca_secret.
