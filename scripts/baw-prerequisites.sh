@@ -7173,7 +7173,6 @@ function create_db_script(){
     echo "DB_USER_PWD_LIST=$db_user_pwd_joined" >> ${TEMPORARY_PROPERTY_FILE}
 }
 
-function select_external_postgresdb_for_bts(){
 function select_external_postgresdb_for_im_zen(){
     printf "\n"
     echo ""
@@ -7187,7 +7186,7 @@ function select_external_postgresdb_for_im_zen(){
             EXTERNAL_POSTGRESDB_FOR_BTS="true"
             break
         else
-        
+
             printf "\x1B[1mDo you want to use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THIS POSTGRESQL DB BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for this BAW deployment?\x1B[0m (Yes/No, default: No): "
             read -rp "" ans
             ans=$(echo "$ans" | tr '[:upper:]' '[:lower:]')
@@ -7243,7 +7242,6 @@ function select_external_postgresdb_for_im_zen(){
     done
 }
 
-function select_external_postgresdb_for_im_zen(){
 
 function select_external_postgresdb_for_bts(){
     printf "\n"
