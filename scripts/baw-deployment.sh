@@ -5707,7 +5707,7 @@ function sync_property_into_final_cr(){
     # This should happen regardless if a new CR type is being created or the same CR type is being updated
     # $cluster_cr_name is set from the retrieve_current_custom_resource_file() function in update-selected-components.sh helper script
     if [[ "$UPDATE_COMPONENTS" == true ]]; then
-        ${YQ_CMD} -i ".metadata.name = \"$cluster_cr_name\"" ${CP4A_PATTERN_FILE_TMP}
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} "metadata.name" "$cluster_cr_name"
     fi
 
     # Applying global value in user profile property into final CR
