@@ -4626,7 +4626,7 @@ function input_information(){
         if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
             #select_patternNOTUSED
             select_baw_pattern
-        elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && $DEPLOYMENT_TYPE == "production" ]]; then
+        elif [[ "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" ]]; then
             FOUNDATION_CR_SELECTED=($(echo "${foundation_component_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
 
             x=0;while [ ${x} -lt ${#FOUNDATION_CR_SELECTED[*]} ] ; do FOUNDATION_CR_SELECTED_LOWCASE[$x]=$(tr [A-Z] [a-z] <<< ${FOUNDATION_CR_SELECTED[$x]}); let x++; done
@@ -4979,7 +4979,7 @@ function merge_pattern(){
                     ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.baw_configuration
 
 
-                    if [[ $DEPLOYMENT_TYPE == "production" ]];then
+                    if [[ "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" ]]; then
                         # if [[ $INSTALLATION_TYPE == "existing" && (" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-authoring") ]]; then
                         #     ${YQ_CMD} d -i ${WORKFLOW_AUTHOR_PATTERN_FILE_BAK} spec.datasource_configuration.dc_os_datasources
                         #     ${YQ_CMD} d -i ${WORKFLOW_AUTHOR_PATTERN_FILE_BAK} spec.initialize_configuration
@@ -4994,7 +4994,7 @@ function merge_pattern(){
                     ;;
                 "workflow-runtime")
                     # set_ldap_type_workstreams_pattern
-                    if [[ $DEPLOYMENT_TYPE == "production" ]];then
+                    if [[ "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" ]]; then
                         if [[ " ${PATTERNS_CR_SELECTED[@]} " =~ "workstreams" && " ${PATTERNS_CR_SELECTED[@]} " =~ "workflow-runtime" ]]; then
                             break
                         else
@@ -8827,11 +8827,11 @@ function apply_pattern_cr(){
         else
             echo -e "\x1B[1;31mFailed\x1B[0m"
         fi
-    elif  [[ "$DEPLOYMENT_TYPE" == "production" && "$INSTALLATION_TYPE" == "new" && "$DEPLOYMENT_WITH_PROPERTY" == "Yes" ]]
+    elif  [[ "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" ]]; then
     then
         ## CP4BA_APPLY_CR is going to be a environment variable to apply the CR for silent install.
         if [[ "$CP4BA_APPLY_CR" == "Yes" || "$CP4BA_APPLY_CR" == "YES" || "$CP4BA_APPLY_CR" == "yes" || "$CP4BA_APPLY_CR" == "True"  || "$CP4BA_APPLY_CR" == "TRUE"  || "$CP4BA_APPLY_CR" == "true" ]]; then
-           echo -e "\x1B[1mInstalling the selected Cloud Pak capability...\x1B[0m"
+           echo -e "\x1B[1mInstalling the selected Business Automation workflow capability...\x1B[0m"
            echo -e "${CP4A_PATTERN_FILE_BAK}"
            APPLY_CUSTOM_RESOURCE_CMD="${CLI_CMD} apply -f ${CP4A_PATTERN_FILE_BAK} -n $CP4BA_SERVICES_NS"
            if $APPLY_CUSTOM_RESOURCE_CMD ; then
@@ -9153,7 +9153,7 @@ function prepare_pattern_file(){
     ${COPY_CMD} -rf "${OPERATOR_FILE}" "${OPERATOR_FILE_BAK}"
     # ${COPY_CMD} -rf "${OPERATOR_PVC_FILE}" "${OPERATOR_PVC_FILE_BAK}"
 
-    if [[ "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" ]];then
+    if [[ "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" ]]; then
         DEPLOY_TYPE_IN_FILE_NAME="production"
         # debug log
         # echo "DEPLOY_TYPE_IN_FILE_NAME: " $DEPLOY_TYPE_IN_FILE_NAME
