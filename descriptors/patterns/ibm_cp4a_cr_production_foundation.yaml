@@ -96,7 +96,7 @@ spec:
 
     ## The deployment context, which has a default value of "CP4A".  Unless you are instructed to change this value or
     ## know the reason to change this value, please leave the default value.
-    sc_deployment_context: "CP4A"
+    sc_deployment_context: "BAW"
 
     ## All CP4A components must use/share the image_pull_secrets to pull images
     image_pull_secrets:
@@ -288,6 +288,13 @@ spec:
     #-----------------------------------------------------------------------
     # Designate an existing LDAP user for the BAStudio admin user.
     admin_user:  "<Required>"
+    ## Rolling update settings for BAStudio deployment.
+    ## The default is 1 max unavailable pod to ensure availability during upgrade. The values can be overridden by setting the max_unavailable below. The values can be expressed in percentage (e.g., '25%') or absolute number (e.g., 1).
+    ## NOTE: The maxUnavailable is still a feature gate and may be disabled in some environments. See here (https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#maximum-unavailable-pods) and here (https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/) for more details.
+    ## You may need to enable the feature gate `StatefulSetMaxUnavailable` in your cluster to use this feature. For OCP: https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/nodes/working-with-clusters#nodes-cluster-enabling
+    ## Not recommended to set maxUnavailable to more than 1 for BAStudio deployment.
+    rolling_update:
+      max_unavailable: 1
     database:
       #-----------------------------------------------------------------------
       # Configuration required for configure DB2 for BA Studio server
@@ -594,3 +601,9 @@ spec:
       # If you are using Redis V6 and above with username fill in this field.
       # Otherwise leave this field as empty
       username:
+        
+    # Rolling update settings for ae deployment.
+    # The default is '25%' max unavailable pod and '25%' max surge pod. The values can be overridden by setting the max_unavailable and max_surge below. The values can be expressed in percentage (e.g., '25%') or absolute number (e.g., 1).
+    rolling_update:
+      max_unavailable: '25%'
+      max_surge: '25%'

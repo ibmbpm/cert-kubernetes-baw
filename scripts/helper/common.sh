@@ -207,6 +207,8 @@ LDAP_SECRET_FILE=${SECRET_FILE_FOLDER}/ldap-bind-secret.yaml
 # CP4BA_RELEASE_BASE is for fetch content/foundation operator pod, only need to change for major release.
 CP4BA_RELEASE_BASE="25.0.1"
 BAW_PATCH_VERSION="GA"
+# For 25.0.1_GA we will remove the Starter option and EDB option.
+VERSION_TO_SKIP_EDB="25.0.1_GA"
 # CP4BA_RELEASE_BASE_MAJOR_VERSION is used in certain checks where we used to hardcode to see if a upgrade is not ifix to ifix,change this only for major release
 CP4BA_RELEASE_BASE_MAJOR_VERSION="25.0"
 # CP4BA_CSV_VERSION is for checking CP4BA operator upgrade status, need to update for each IFIX
@@ -233,9 +235,9 @@ BTS_CATALOG_VERSION="bts-operator-v3-35-3"
 # REQUIREDVER_BTS is for checking bts operator upgrade status before run removal_iaf.sh, need to update for each IFIX
 REQUIREDVER_BTS="3.35.3"
 # REQUIREDVER_POSTGRESQL is for checking postgresql operator upgrade status before run removal_iaf.sh, need to update for each IFIX
-REQUIREDVER_POSTGRESQL="1.25.1"
+REQUIREDVER_POSTGRESQL="1.25.2"
 # EVENTS_OPERATOR_VERSION is for checking IBM Events operator upgrade status, need to update for each IFIX
-EVENTS_OPERATOR_VERSION="v5.1.2"
+EVENTS_OPERATOR_VERSION="v5.2.1"
 # List of BAW versions that are supported for upgrade to $CP4BA_CSV_VERSION
 MINIMUM_SUPPORTED_UPGRADE_VERSIONS=("24.1." "25.0." )
 
@@ -1188,26 +1190,31 @@ function get_domain_name() {
 
 #This function is used to validate the docker and podman CLI
 # Used by both baw-clusteradmin-setup script and baw-deployment.sh so its being moved here
-function validate_docker_podman_cli(){
-    if [[ $OCP_VERSION == "" || $OCP_VERSION == "3.11" || "$machine" == "Mac" ]];then
+function validate_docker_podman_cli() {
+    if [[ "$machine" == "Mac" ]]; then
         which podman &>/dev/null
-        if [[ $? -ne 0 ]]; then
-            PODMAN_FOUND="No"
-
-            which docker &>/dev/null
-            [[ $? -ne 0 ]] && \
-                DOCKER_FOUND="No"
-            if [[ $DOCKER_FOUND == "No" && $PODMAN_FOUND == "No" ]]; then
-                echo -e "\x1B[1;31mUnable to locate docker and podman. Install either of them first.\x1B[0m" && \
-                exit 1
-            fi
-        fi
-    elif [[ $OCP_VERSION == "4.4OrLater" ]]
-    then
-        which podman &>/dev/null
-        [[ $? -ne 0 ]] && \
-            echo -e "\x1B[1;31mUnable to locate podman. Install it first.\x1B[0m" && \
+        [[ $? -ne 0 ]] && PODMAN_FOUND="No"
+        which docker &>/dev/null
+        [[ $? -ne 0 ]] && DOCKER_FOUND="No"
+        if [[ $DOCKER_FOUND == "No" && $PODMAN_FOUND == "No" ]]; then
+            echo -e "\033[1;31mUnable to locate docker or podman. Install either of them first.\033[0m"
             exit 1
+        fi
+    elif [[ $OCP_VERSION =~ ^4\. || $OCP_VERSION == "4.4OrLater" ]]; then
+        which podman &>/dev/null
+        [[ $? -ne 0 ]] && {
+            echo -e "\033[1;31mUnable to locate podman. Install it first.\033[0m"
+            exit 1
+        }
+    else
+        which podman &>/dev/null
+        [[ $? -ne 0 ]] && PODMAN_FOUND="No"
+        which docker &>/dev/null
+        [[ $? -ne 0 ]] && DOCKER_FOUND="No"
+        if [[ $DOCKER_FOUND == "No" && $PODMAN_FOUND == "No" ]]; then
+            echo -e "\033[1;31mUnable to locate docker or podman. Install either of them first.\033[0m"
+            exit 1
+        fi
     fi
 }
 
