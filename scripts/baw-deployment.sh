@@ -5707,7 +5707,7 @@ function sync_property_into_final_cr(){
     # This should happen regardless if a new CR type is being created or the same CR type is being updated
     # $cluster_cr_name is set from the retrieve_current_custom_resource_file() function in update-selected-components.sh helper script
     if [[ "$UPDATE_COMPONENTS" == true ]]; then
-        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} "metadata.name" "$cluster_cr_name"
+        ${YQ_CMD} -i ".metadata.name = \"$cluster_cr_name\"" ${CP4A_PATTERN_FILE_TMP}
     fi
 
     # Applying global value in user profile property into final CR
@@ -8282,8 +8282,8 @@ function apply_pattern_cr(){
 
     # Set lc_selected_ldap_type
 
-    if [[ $DEPLOYMENT_TYPE == "production" ]];then
-        if [[ $LDAP_TYPE == "AD" ]];then
+    if [[ "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" ]]; then
+        if [[ $LDAP_TYPE == "AD" ]]; then
             # ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.ldap_configuration.lc_selected_ldap_type "\"Microsoft Active Directory\""
             ${SED_COMMAND} "s|lc_selected_ldap_type:.*|lc_selected_ldap_type: \"Microsoft Active Directory\"|g" ${CP4A_PATTERN_FILE_TMP}
 
@@ -8645,7 +8645,7 @@ function apply_pattern_cr(){
     fi
 
     # Apply value in property file into final cr
-    if [[ $DEPLOYMENT_TYPE == "production" && $DEPLOYMENT_WITH_PROPERTY == "Yes" ]]; then
+    if [[ "$(echo "$DEPLOYMENT_TYPE" | tr '[:upper:]' '[:lower:]')" == "production" && $DEPLOYMENT_WITH_PROPERTY == "Yes" ]]; then
         sync_property_into_final_cr
     fi
 
