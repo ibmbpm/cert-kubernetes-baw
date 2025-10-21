@@ -8015,7 +8015,7 @@ function validate_prerequisites(){
         tmp_user=$( $CLI_CMD get secret -n "$CP4BA_SERVICES_NS" -l name=ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapUsername | base64 --decode )
         ## <https://jsw.ibm.com/browse/DBACLD-172803> - We are now asking user to use {xor} for special characters in password, so we need to use decode_xor_password to get the password decoded before validation.
         cp4a_operator=$( $CLI_CMD get pods -l name=ibm-cp4a-operator --no-headers --ignore-not-found -n $TARGET_PROJECT_NAME | awk '{print $1}' )
-        tmp_userpwd=$($CLI_CMD get secret -n "$CP4BA_SERVICES_NS" -l name=ldap-bind-secret -o yaml | ${YQ_CMD} '.items.[0].data.ldapPassword' - | base64 --decode)
+        tmp_userpwd=$( $CLI_CMD get secret -n "$CP4BA_SERVICES_NS" -l name=ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapPassword | base64 --decode )
         if [[ "$tmp_userpwd" =~ "{xor}" ]]; then
             tmp_userpwd=$(decode_xor_password $tmp_userpwd $cp4ba_operators_namespace $cp4a_operator)
         fi
@@ -8050,7 +8050,7 @@ function validate_prerequisites(){
             tmp_user=$( $CLI_CMD get secret -n "$CP4BA_SERVICES_NS" -l name=ext-ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapUsername | base64 --decode )
             ## <https://jsw.ibm.com/browse/DBACLD-172803> - We are now asking user to use {xor} for special characters in password, so we need to use decode_xor_password to get the password decoded before validation.
             cp4a_operator=$( $CLI_CMD get pods -l name=ibm-cp4a-operator --no-headers --ignore-not-found -n $TARGET_PROJECT_NAME | awk '{print $1}' )
-            tmp_userpwd=$($CLI_CMD get secret -n "$CP4BA_SERVICES_NS" -l name=ldap-bind-secret -o yaml | ${YQ_CMD} '.items.[0].data.ldapPassword' - | base64 --decode)
+            tmp_userpwd=$( $CLI_CMD get secret -n "$CP4BA_SERVICES_NS" -l name=ldap-bind-secret -o yaml | ${YQ_CMD} r - items.[0].data.ldapPassword | base64 --decode )
             if [[ "$tmp_userpwd" =~ "{xor}" ]]; then
                 tmp_userpwd=$(decode_xor_password $tmp_userpwd $cp4ba_operators_namespace $cp4a_operator)
             fi
