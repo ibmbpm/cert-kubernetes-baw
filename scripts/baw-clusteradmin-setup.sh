@@ -41,6 +41,7 @@ CNCF_OLM_NAMESPACE="olm"
 WFPS_CNCF_CATALOG_NAMESPACE="olm" ## CNCF reuse olm namespace to deploy catalog source
 WFPS_CNCF_PROJ_NAME_ALL_NAMESPACE="operators" ## CNCF namespace to support watch all namespace
 CNCF_DOMAIN_NAME=""
+SEPARATE_OPERATOR="No"
 
 # OPERATOR_PVC_FILE=${PARENT_DIR}/descriptors/operator-shared-pvc.yaml
 # OPERATOR_PVC_FILE_TMP1=${TEMP_FOLDER}/.operator-shared-pvc_tmp1.yaml
@@ -2972,6 +2973,7 @@ select_deployment_type
 
 select_private_catalog
 
+# Seperation of duties will be scoped in future (maybe from 2600)
 # if [[ $DEPLOYMENT_TYPE == "production" ]]; then
 #     select_separate_operator
 # fi
