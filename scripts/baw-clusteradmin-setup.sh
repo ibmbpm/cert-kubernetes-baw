@@ -1629,6 +1629,12 @@ function verify_entitlement_key() {
         DOCKER_REG_USER="iamapikey"
         reg_key="${entitlement_key#*:}"
         DOCKER_REG_KEY="${entitlement_key#*:}"
+        
+        # Also handle staging registry if we're using it
+        if [[ "$USER_DOCKER_REG_SERVER" == "cp.stg.icr.io" ]]; then
+           DOCKER_REG_USER_STG="iamapikey"
+           DOCKER_REG_KEY_STG="${entitlement_key#*:}"
+        fi
       else
         if [[ "$USER_DOCKER_REG_SERVER" == "cp.stg.icr.io" ]]; then
            DOCKER_REG_KEY_STG=$entitlement_key
@@ -1759,6 +1765,14 @@ function get_stg_entitlement_registry(){
     # If env vars are set, skip interactive prompts
     USER_DOCKER_REG_SERVER="cp.stg.icr.io"
     if [ -n "$BAW_AUTO_STG_ENTITLEMENT_KEY" ]; then
+        # Check if the key starts with iamapikey: and handle accordingly
+        if [[ "$BAW_AUTO_STG_ENTITLEMENT_KEY" == iamapikey:* ]]; then
+            DOCKER_REG_USER_STG="iamapikey"
+            DOCKER_REG_KEY_STG="${BAW_AUTO_STG_ENTITLEMENT_KEY#*:}"
+        else
+            DOCKER_REG_USER_STG="cp"
+            DOCKER_REG_KEY_STG="$BAW_AUTO_STG_ENTITLEMENT_KEY"
+        fi
         DOCKER_REG_KEY=$BAW_AUTO_STG_ENTITLEMENT_KEY
         echo -e "\x1B[1mUsing entitlement key from env var.\x1B[0m"
         verify_entitlement_key $USER_DOCKER_REG_SERVER
