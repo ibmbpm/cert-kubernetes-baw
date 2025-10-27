@@ -723,6 +723,36 @@ EOF
   success "Created Application Engine playback server secret YAML template\n"
 }
 
+function create_workflow_assistant_secret_template(){
+  local watsonx_api_key=$1
+  local watsonx_project_id=$2
+  local watsonx_token=$3
+  local watsonx_password=$4
+
+  wait_msg "Creating IBM Workflow Assistant secret YAML template"
+
+cat << EOF > "${SECRET_FILE_FOLDER}/workflow-assistant-secrets.yaml"
+# YAML template for ibm-workflow-assistant-secret secret
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ibm-workflow-assistant-secrets
+  namespace: "$CP4BA_SERVICES_NS"
+  labels:
+    app.kubernetes.io/name: ibm-workflow-assistant-secrets
+    cp4ba.ibm.com/backup-type: mandatory
+type: Opaque
+stringData:
+  WATSONX_TOKEN: "$watsonx_token"
+  WATSONX_API_KEY: "$watsonx_api_key"
+  WATSONX_PASSWORD: "$watsonx_password"
+  WATSONX_PROJECT_ID: "$watsonx_project_id"
+
+EOF
+  success "Created IBM Workflow Assistant secret YAML template\n"
+}
+
 function create_baw_authoring_secret_template(){
   local dbname=$1
   local dbserver=$2
