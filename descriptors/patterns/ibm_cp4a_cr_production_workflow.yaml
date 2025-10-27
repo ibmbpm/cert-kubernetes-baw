@@ -357,9 +357,23 @@ spec:
     ## Intelligent Task Prioritization configuration
     ## if this configuration is enabled, setting bai_configuration.bpmn.install to true
     intelligent_task_prioritization:
+      ## Number of replicas for Intelligent Task Prioritization.
+      ## This value takes priority when both profile size and replica properties are specified.
+      replicas: 1
+      ## Linux Cron expression that defines when the Intelligent Task Prioritization server retrains the model.
+      ## The model uses data retrieved from the Business Automation Insights server.
+      ## Default value: 
+          ##'* 3 * * 0' (Every Sunday at 3:00 AM UTC)
+      ## Examples:
+          ##   '* 3 * * *' — Every day at 3:00 AM UTC
+          ##   '*/50 * * * *' — Every 50 minutes
+      retrain_model_schedule: ""
     ## Workforce Insights configuration
     ## if this configuration is enabled, setting bai_configuration.bpmn.install to true and bai_configuration.bpmn.force_elasticsearch_timeseries to true
     workforce_insights:
+      ## Number of replicas for Workforce Insights.
+      ## This value takes priority when both profile size and replica properties are specified.
+      replicas: 1
 
   ########################################################################
   ########  IBM FileNet Content Manager initialize configuration  ########
