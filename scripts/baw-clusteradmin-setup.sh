@@ -654,6 +654,7 @@ data:
   services_namespace: "$project_name_cs_service"
   network_type: "$network_type_value"
   network_cidr: "$network_cidr_value"
+  domain_name: "$OTHER_PLATFORM_TYPE_DOMAIN"
 EOF
     ${CLI_CMD} delete -f ${TEMP_FOLDER}/ibm-cp4ba-common-config-configmap.yaml >/dev/null 2>&1
     ${CLI_CMD} apply -f ${TEMP_FOLDER}/ibm-cp4ba-common-config-configmap.yaml >/dev/null 2>&1

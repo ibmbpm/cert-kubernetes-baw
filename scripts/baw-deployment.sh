@@ -3144,7 +3144,7 @@ function select_optional_component(){
                 "(a) Workflow Authoring")
                     if [[ $DEPLOYMENT_TYPE == "production" ]]; then
                         optional_components_list=("Business Automation Insights" "Data Collector and Data Indexer" "Exposed Kafka Services" "Workplace Assistant" "(Preview) Authoring Assistant")
-                        optional_components_cr_list=("bai" "pfs" "kafka" "wp_a" "wf_a")
+                        optional_components_cr_list=("bai" "pfs" "kafka" "workplace_assistant" "workflow_assistant")
                         show_optional_components
                     fi
                     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "cmis" )
@@ -3156,7 +3156,7 @@ function select_optional_component(){
                 "(b) Workflow Runtime")
                     if [[ $DEPLOYMENT_TYPE == "production" ]]; then
                         optional_components_list=("Business Automation Insights" "Exposed Kafka Services" "Exposed OpenSearch" "Workplace Assistant")
-                        optional_components_cr_list=("bai" "kafka" "opensearch" "wp_a")
+                        optional_components_cr_list=("bai" "kafka" "opensearch" "workplace_assistant")
                         show_optional_components
                     fi
                     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "cmis" )
@@ -3169,8 +3169,8 @@ function select_optional_component(){
                     break
                     ;;
                 "Business Automation Workflow Authoring")
-                    optional_components_list=( "Data Collector and Data Indexer" "Exposed Kafka Services")
-                    optional_components_cr_list=( "pfs" "kafka")
+                    optional_components_list=( "Data Collector and Data Indexer" "Exposed Kafka Services" "Workplace Assistant" "(Preview) Authoring Assistant")
+                    optional_components_cr_list=( "pfs" "kafka" "workplace_assistant" "workflow_assistant")
                     show_optional_components
                     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "cmis" )
                     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "baw_authoring" )
@@ -3180,8 +3180,8 @@ function select_optional_component(){
                     ;;
                 "Business Automation Workflow Runtime")
 
-                    optional_components_list=( "Exposed Kafka Services" "Exposed OpenSearch")
-                    optional_components_cr_list=("kafka" "opensearch")
+                    optional_components_list=( "Exposed Kafka Services" "Exposed OpenSearch" "Workplace Assistant")
+                    optional_components_cr_list=("kafka" "opensearch" "workplace_assistant")
                     show_optional_components
                     optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "css" )
                     optional_components_list=()
@@ -3300,8 +3300,8 @@ function select_optional_component(){
                     ;;
                 "Workflow Process Service Authoring")
                     if [[ $DEPLOYMENT_TYPE == "production" ]]; then
-                        optional_components_list=("Business Automation Insights" "Data Collector and Data Indexer" "Exposed Kafka Services")
-                        optional_components_cr_list=("bai" "pfs" "kafka")
+                        optional_components_list=("Business Automation Insights" "Data Collector and Data Indexer" "Exposed Kafka Services" "Workplace Assistant" "(Preview) Authoring Assistant")
+                        optional_components_cr_list=("bai" "pfs" "kafka" "workplace_assistant" "workflow_assistant")
                         show_optional_components
                         optional_component_cr_arr=( "${optional_component_cr_arr[@]}" "wfps_authoring" )
                     fi
@@ -5282,11 +5282,11 @@ function merge_optional_components(){
                     fi
                     break
                     ;;
-                "wf_a")
+                "workflow_assistant")
                     ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration
                     break
                     ;;
-                "wp_a")
+                "workplace_assistant")
                     ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration
                     break
                     ;;
@@ -7021,26 +7021,19 @@ function sync_property_into_final_cr(){
         fi
 
 
-        domain_name=$(${CLI_CMD} get configmap ibm-cpp-config -n $CP4BA_SERVICES_NS -o jsonpath='{.data.domain_name}')
+        domain_name=$(${CLI_CMD} get configmap ibm-cp4ba-common-config -n $CP4BA_SERVICES_NS -o jsonpath='{.data.domain_name}')
 
         # Define common Zen front door host (shared domain for cookie support)
-        zen_frontdoor_host="https://cpd-${CP4BA_SERVICES_NS}.${domain_name}"
+        zen_frontdoor_host="https://${CP4BA_SERVICES_NS}-cpd.${domain_name}"
 
-        if [[ "$tmp_is_run_workplace_agent_enabled" == "true" ]]; then
-            xml_data_workplace+=" <server merge=\"mergeChildren\">
-                <portal merge=\"mergeChildren\">
-                    <agent-enable merge=\"replace\">true</agent-enable>
-                    <agent-endpoint merge=\"replace\">${zen_frontdoor_host}/agent/runtimeChat</agent-endpoint>
-                </portal>
-            </server>
-            "
+        # --- authoring agent XML ---
+        if [[ "$tmp_is_run_authoring_agent_enabled" == "true" ]]; then
+            xml_data_authoring="<authoring-environment><authoring-agent-endpoint merge=\"replace\">${zen_frontdoor_host}/agent</authoring-agent-endpoint></authoring-environment>"
         fi
 
-        if [[ "$tmp_is_run_authoring_agent_enabled" == "true" ]]; then
-            xml_data_authoring+=" <authoring-environment>
-                <authoring-agent-endpoint merge=\"replace\">${zen_frontdoor_host}/agent</authoring-agent-endpoint>
-            </authoring-environment>
-            "
+        # --- runtime agent XML ---
+        if [[ "$tmp_is_run_workflow_agent_enabled" == "true" ]]; then
+            xml_data_workplace="<server merge=\"mergeChildren\"><portal merge=\"mergeChildren\"><agent-enable merge=\"replace\">true</agent-enable><agent-endpoint merge=\"replace\">${zen_frontdoor_host}/agent/runtimeChat</agent-endpoint></portal></server>"
         fi
 
         # For workflow-authoring and wfps authoring
@@ -7051,16 +7044,18 @@ function sync_property_into_final_cr(){
                 ${CLI_CMD} delete secret "$SECRET_NAME" -n "$CP4BA_SERVICES_NS"
             fi
 
+            # --- update properties without newline escapes ---
             if [[ -n "$xml_data_authoring" ]]; then
-                export authoring_xml_literal=$'<properties>\n'"$xml_data_authoring"$'\n</properties>\n\n'
-                ${YQ_CMD} w -i "${CP4A_PATTERN_FILE_TMP}" "spec.bastudio_configuration.bastudio_custom_xml" 'env(authoring_xml_literal) | .style="literal"'
+                authoring_xml_literal="<properties>${xml_data_authoring}</properties>"
+                ${YQ_CMD} w -i "${CP4A_PATTERN_FILE_TMP}" spec.bastudio_configuration.bastudio_custom_xml "${authoring_xml_literal}"
             fi
 
             if [[ -n "$xml_data_workplace" ]]; then
-                export runtime_xml=$'<properties>\n'"$xml_data_workplace"$'</properties>\n\n'
+                runtime_xml="<properties>${xml_data_workplace}</properties>"
+                SECRET_NAME="lombardi-custom-xml-secret"
+                ${CLI_CMD} delete secret "$SECRET_NAME" -n "$CP4BA_SERVICES_NS" >/dev/null 2>&1 || true
                 ${CLI_CMD} create secret generic "$SECRET_NAME" --from-literal=sensitiveCustomConfig="${runtime_xml}" -n "$CP4BA_SERVICES_NS"
                 ${YQ_CMD} w -i "${CP4A_PATTERN_FILE_TMP}" "spec.workflow_authoring_configuration.lombardi_custom_xml_secret_name" "lombardi-custom-xml-secret"
-
             fi
         elif [[ "${pattern_cr_arr[@]}" =~ "workflow-runtime" ]]; then
             if [[ -n "$xml_data_workplace" ]]; then
