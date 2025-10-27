@@ -41,6 +41,7 @@ CNCF_OLM_NAMESPACE="olm"
 WFPS_CNCF_CATALOG_NAMESPACE="olm" ## CNCF reuse olm namespace to deploy catalog source
 WFPS_CNCF_PROJ_NAME_ALL_NAMESPACE="operators" ## CNCF namespace to support watch all namespace
 CNCF_DOMAIN_NAME=""
+SEPARATE_OPERATOR="No"
 
 # OPERATOR_PVC_FILE=${PARENT_DIR}/descriptors/operator-shared-pvc.yaml
 # OPERATOR_PVC_FILE_TMP1=${TEMP_FOLDER}/.operator-shared-pvc_tmp1.yaml
@@ -451,7 +452,7 @@ function select_private_catalog(){
     fi
 }
 
-# Function to ask the customer if they wish to use a seperation of duties option for the installation of BAI Standalone operators
+# Function to ask the customer if they wish to use a seperation of duties option for the installation of BAW Standalone operators
 function select_separate_operator(){
     printf "\n"
     echo "${YELLOW_TEXT}[NOTES] $BAW_FULL_NAME deployment supports separation of operators and operands, the script can deploy BAW operators and BAW runtime pods in different projects.${RESET_TEXT}"
@@ -2972,9 +2973,10 @@ select_deployment_type
 
 select_private_catalog
 
-if [[ $DEPLOYMENT_TYPE == "production" ]]; then
-    select_separate_operator
-fi
+# Seperation of duties will be scoped in future (maybe from 2600)
+# if [[ $DEPLOYMENT_TYPE == "production" ]]; then
+#     select_separate_operator
+# fi
 
 if [[ $SEPARATE_OPERATOR == "No" ]]; then
     select_project
