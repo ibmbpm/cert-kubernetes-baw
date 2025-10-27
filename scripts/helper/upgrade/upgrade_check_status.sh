@@ -107,7 +107,7 @@ function check_cp4ba_operator_version(){
                 valid_version=true
             elif [[ "$cp4a_operator_csv_version" == "$blocked_version"* ]]; then
                 info "The version of IBM Cloud Pak for Business Automation Operator found is \"$cp4a_operator_csv_version\" ."
-                fail "Please upgrade to CP4BA v25.0.0 or a later iFix first before you can upgrade to CP4BA $CP4BA_CSV_VERSION"
+                fail "Please upgrade to BAW on Containers v25.0.0 or a later iFix first before you can upgrade to BAW on Containers $CP4BA_CSV_VERSION"
                 exit 1
             fi
         done
@@ -949,9 +949,6 @@ function check_cp4ba_deployment_status(){
             if [[ $odm_Val -eq 0 ]]; then
                 source ${CUR_DIR}/helper/upgrade/deployment_check/odm_status.sh
             fi
-
-            #################### RR #######################
-            source ${CUR_DIR}/helper/upgrade/deployment_check/rr_status.sh
 
             #################### BAA AE Multiple instance #######################
             AE_ENGINE_DEPLOYMENT=`cat $UPGRADE_STATUS_FILE | ${YQ_CMD} r - spec.application_engine_configuration`

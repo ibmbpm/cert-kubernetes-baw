@@ -24,5 +24,5 @@ elif [ -z "${isInstalled}"  ]; then
     CP4BA_BAA_WORKSPACE_AAE_DEPLOYMENT_STATUS="${YELLOW_TEXT}Not Installed${RESET_TEXT}"
 fi
 
-printHeaderMessage "CP4BA Upgrade Status - AE instance: ${ae_config_name}"
+printHeaderMessage "BAW on Containers Upgrade Status - AE instance: ${ae_config_name}"
 echo "Application Engine Service Upgrade Status   :  ${CP4BA_BAA_WORKSPACE_AAE_DEPLOYMENT_STATUS}"

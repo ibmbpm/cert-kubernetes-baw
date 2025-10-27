@@ -104,7 +104,7 @@ elif [ -z "$isInstalled"  ]; then
     CP4BA_ADP_ACA_DEPLOYMENT_STATUS="${YELLOW_TEXT}Not Installed${RESET_TEXT}"
 fi
 
-printHeaderMessage "CP4BA Upgrade Status - ADP"
+printHeaderMessage "BAW on Containers Upgrade Status - ADP"
 echo "ADP ACA Upgrade Status                      :  ${CP4BA_ADP_ACA_DEPLOYMENT_STATUS}"
 echo "ADP Viewone Upgrade Status                  :  ${CP4BA_ADP_VIEWONE_DEPLOYMENT_STATUS}"
 echo "ADP CDRA Upgrade Status                     :  ${CP4BA_ADP_CDRA_DEPLOYMENT_STATUS}"

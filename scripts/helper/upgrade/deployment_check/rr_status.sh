@@ -39,6 +39,6 @@ elif [ -z "${isInstalled}"  ]; then
     CP4BA_RR_SERVICE_DEPLOYMENT_STATUS="${YELLOW_TEXT}Not Installed${RESET_TEXT}"
 fi
 
-printHeaderMessage "CP4BA Upgrade Status - Resource Registry"
+printHeaderMessage "BAW on Containers Upgrade Status - Resource Registry"
 echo "RR Cluster Upgrade Status                   :  ${CP4BA_RR_CLUSTER_DEPLOYMENT_STATUS}"
 echo "RR Service Upgrade Status                   :  ${CP4BA_RR_SERVICE_DEPLOYMENT_STATUS}"

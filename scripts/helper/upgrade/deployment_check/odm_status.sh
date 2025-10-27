@@ -73,7 +73,7 @@ elif [ -z "${isInstalled}"  ]; then
     CP4BA_ODM_DECISIONSERVER_RUNTIME_DEPLOYMENT_STATUS="${YELLOW_TEXT}Not Installed${RESET_TEXT}"
 fi
 
-printHeaderMessage "CP4BA Upgrade Status - ODM"
+printHeaderMessage "BAW on Containers Upgrade Status - ODM"
 echo "ODM Decision Center Upgrade Status          :  ${CP4BA_ODM_DECISION_CENTER_DEPLOYMENT_STATUS}"
 echo "ODM Decision Runner Upgrade Status          :  ${CP4BA_ODM_DECISION_RUNNER_DEPLOYMENT_STATUS}"
 echo "ODM Decision Server Console Upgrade Status  :  ${CP4BA_ODM_DECISIONSERVER_CONSOLE_DEPLOYMENT_STATUS}"

@@ -153,7 +153,7 @@ elif [ -z "${isInstalled}"  ]; then
     CP4BA_ADS_RUNTIME_SERVICE_DEPLOYMENT_STATUS="${YELLOW_TEXT}Not Installed${RESET_TEXT}"
 fi
 
-printHeaderMessage "CP4BA Upgrade Status - ADS"
+printHeaderMessage "BAW on Containers Upgrade Status - ADS"
 echo "ADS Build Service Upgrade Status            :  ${CP4BA_ADS_BUILD_SERVICE_DEPLOYMENT_STATUS}"
 echo "ADS Credentials Service Upgrade Status      :  ${CP4BA_ADS_CREDENTIALS_SERVICE_DEPLOYMENT_STATUS}"
 echo "ADS GitService Upgrade Status               :  ${CP4BA_ADS_GIT_SERVICE_DEPLOYMENT_STATUS}"

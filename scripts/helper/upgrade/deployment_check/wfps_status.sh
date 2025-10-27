@@ -42,6 +42,6 @@ elif [ -z "${isInstalled}"  ]; then
 fi
 
 
-printHeaderMessage "CP4BA Upgrade Status - WfPS(instance: $cr_metaname)"
+printHeaderMessage "BAW on Containers Upgrade Status - WfPS(instance: $cr_metaname)"
 echo "WfPS Deployment Upgrade Status       :  ${CP4BA_WFPS_DEPLOYMENT_DEPLOYMENT_STATUS}"
 echo "WfPS Service Upgrade Status          :  ${CP4BA_WFPS_SERVICE_DEPLOYMENT_STATUS}"

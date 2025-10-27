@@ -43,7 +43,7 @@ if [[ ! -z "$PLAYBAK_DEPLOYMENT" ]]; then
     fi
 fi
 
-printHeaderMessage "CP4BA Upgrade Status - BAStudio"
+printHeaderMessage "BAW on Containers Upgrade Status - BAStudio"
 echo "BAStudio Upgrade Status                     :  ${CP4BA_BASTUDIO_DEPLOYMENT_STATUS}"
 if [[ ! -z "$PLAYBAK_DEPLOYMENT" ]]; then
 echo "Application Playback Upgrade Status         :  ${CP4BA_BAA_PBK_DEPLOYMENT_STATUS}"

@@ -25,5 +25,5 @@ elif [ -z "${isInstalled}"  ]; then
     CP4BA_PFS_DEPLOYMENT_STATUS="${YELLOW_TEXT}Not Installed${RESET_TEXT}"
 fi
 
-printHeaderMessage "CP4BA Upgrade Status - PFS"
+printHeaderMessage "BAW on Containers Upgrade Status - PFS"
 echo "PFS Deployment Upgrade Status          :  ${CP4BA_PFS_DEPLOYMENT_STATUS}"

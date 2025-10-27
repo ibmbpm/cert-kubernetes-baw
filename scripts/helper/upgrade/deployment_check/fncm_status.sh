@@ -144,7 +144,7 @@ elif [ -z "${isInstalled}"  ]; then
     CP4BA_ES_DEPLOYMENT_STATUS="${YELLOW_TEXT}Not Installed${RESET_TEXT}"
 fi
 
-printHeaderMessage "CP4BA Upgrade Status - Content"
+printHeaderMessage "BAW on Containers Upgrade Status - Content"
 echo "CPE Upgrade Status                          :  ${CP4BA_CPE_DEPLOYMENT_STATUS}"
 echo "CSS Upgrade Status                          :  ${CP4BA_CSS_DEPLOYMENT_STATUS}"
 echo "CMIS Upgrade Status                         :  ${CP4BA_CMIS_DEPLOYMENT_STATUS}"

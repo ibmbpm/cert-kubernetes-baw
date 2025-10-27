@@ -24,5 +24,5 @@ elif [ -z "${isInstalled}"  ]; then
     CP4BA_BAI_DEPLOYMENT_STATUS="${YELLOW_TEXT}Not Installed${RESET_TEXT}"
 fi
 
-printHeaderMessage "CP4BA Upgrade Status - BAI"
+printHeaderMessage "BAW on Containers Upgrade Status - BAI"
 echo "BAI Service Upgrade Status                  :  ${CP4BA_BAI_DEPLOYMENT_STATUS}"

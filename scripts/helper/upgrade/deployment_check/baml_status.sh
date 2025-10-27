@@ -28,5 +28,5 @@ elif [ -z "${isInstalled}"  ]; then
     CP4BA_BAML_DEPLOYMENT_STATUS="${YELLOW_TEXT}Not Installed${RESET_TEXT}"
 fi
 
-printHeaderMessage "CP4BA Upgrade Status - BAML"
+printHeaderMessage "BAW on Containers Upgrade Status - BAML"
 echo "BAML Service Upgrade Status                 :  ${CP4BA_BAML_DEPLOYMENT_STATUS}"

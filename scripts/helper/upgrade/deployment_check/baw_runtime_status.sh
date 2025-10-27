@@ -28,5 +28,5 @@ elif [ -z "$isInstalled"  ]; then
 fi
 
 
-printHeaderMessage "CP4BA Upgrade Status - BAW Runtime instance: ${baw_instance_name}"
+printHeaderMessage "BAW on Containers Upgrade Status - BAW Runtime instance: ${baw_instance_name}"
 echo "BAW Runtime Upgrade Status                  :  ${CP4BA_BAW_DEPLOYMENT_STATUS}"

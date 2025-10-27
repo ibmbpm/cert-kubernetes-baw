@@ -219,7 +219,7 @@ function dryrun(){
     # Run kubectl apply with dry-run
     output=$(kubectl apply -f "$FILE" --dry-run=server 2>&1)
     exit_code=$?
-    info "Validating the CP4BA Custom Resource file by executing a dry run..."
+    info "Validating the BAW on Containers Custom Resource file by executing a dry run..."
     printf "\n"
     # Check the exit code and output to handle different cases
     if [ $exit_code -eq 0 ]; then

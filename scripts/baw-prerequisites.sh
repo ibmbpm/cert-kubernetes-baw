@@ -16,7 +16,7 @@ PARENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 source ${CUR_DIR}/helper/common.sh
 
 function show_help() {
-    echo -e "\nUsage: baw-prerequisites.sh -m [modetype] -n [cp4baNamespace]\n"
+    echo -e "\nUsage: baw-prerequisites.sh -m [modetype] -n [bawOnContainersNamespace]\n"
     echo "Options:"
     echo "  -h  Display help"
     echo "  -m  The valid mode types are: [property], [generate], or [validate]"
@@ -100,7 +100,7 @@ if [[ -z "$RUNTIME_MODE" ]]; then
     exit 1
 fi
 if [[ -z "$TARGET_PROJECT_NAME" ]]; then
-    echo -e "\x1B[1;31mPlease input value for \"-n <CP4BA_NAMESPACE>\" option.\n\x1B[0m"
+    echo -e "\x1B[1;31mPlease input value for \"-n <BAW_ON_CONTAINERS_NAMESPACE>\" option.\n\x1B[0m"
     show_help
     exit 1
 fi

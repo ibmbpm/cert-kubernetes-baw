@@ -12760,7 +12760,7 @@ if [[ "$RUNTIME_MODE" == "upgradeDeploymentStatus" ]]; then
             CP4BA_DEPLOYMENT_STATUS="Getting Upgrade Status ..."
             printf '%s %s\n' "$(date)" "[refresh interval: 30s]"
             echo -en "[Press Ctrl+C to exit] \t\t"
-            printHeaderMessage "CP4BA Upgrade Status"
+            printHeaderMessage "BAW on Containers Upgrade Status"
             echo -en "${GREEN_TEXT}$CP4BA_DEPLOYMENT_STATUS${RESET_TEXT}"
             sleep 30
         else
@@ -12792,7 +12792,7 @@ if [[ "$RUNTIME_MODE" == "upgradeDeploymentStatus" ]]; then
                 echo -en "[Press Ctrl+C to exit] \t\t"
                 printf "\n"
                 echo "${YELLOW_TEXT}$CP4BA_DEPLOYMENT_STATUS${RESET_TEXT}"
-                printHeaderMessage "CP4BA Upgrade Status"
+                printHeaderMessage "BAW on Containers Upgrade Status"
                 if [[ "$zenservice_version" == "${ZEN_OPERATOR_VERSION//v/}" ]]; then
                     echo "zenService Version (Expected - ${ZEN_OPERATOR_VERSION//v/})       : ${GREEN_TEXT}$zenservice_version${RESET_TEXT}"
                 else
@@ -12828,7 +12828,7 @@ if [[ "$RUNTIME_MODE" == "upgradeDeploymentStatus" ]]; then
         printf "\n"
         echo "${YELLOW_TEXT}$CP4BA_DEPLOYMENT_STATUS${RESET_TEXT}"
         info "Starting all CP4BA Operators to upgrade CP4BA capabilities"
-        printHeaderMessage "CP4BA Upgrade Status"
+        printHeaderMessage "BAW on Containers Upgrade Status"
         if [[ "$zenservice_version" == "${ZEN_OPERATOR_VERSION//v/}" ]]; then
             echo "zenService Version        : ${GREEN_TEXT}$zenservice_version${RESET_TEXT}"
         else
