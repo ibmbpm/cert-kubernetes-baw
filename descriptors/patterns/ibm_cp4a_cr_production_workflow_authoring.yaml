@@ -295,8 +295,8 @@ spec:
       ## Default value: 
           ##'* 3 * * 0' (Every Sunday at 3:00 AM UTC)
       ## Examples:
-          ##   '* 3 * * *' — Every day at 3:00 AM UTC
-          ##   '*/50 * * * *' — Every 50 minutes
+          ##   '* 3 * * *' (Every day at 3:00 AM UTC)
+          ##   '*/50 * * * *' (Every 50 minutes)
       retrain_model_schedule: ""
     ## Workforce Insights configuration
     ## if this configuration is enabled, setting bai_configuration.bpmn.install to true and bai_configuration.bpmn.force_elasticsearch_timeseries to true
