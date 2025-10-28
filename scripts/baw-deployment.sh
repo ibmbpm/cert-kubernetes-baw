@@ -9277,7 +9277,7 @@ function startup_operator(){
     info "$CP4BA_OPERATOR_LIST"
     for operator in $CP4BA_OPERATOR_LIST; do
         if [[ "$operator" == "ibm-dpe-operator" ]]; then
-            arch_type=$(kubectl get cm cluster-config-v1 -n kube-system -o yaml | grep -i architecture|tail -1| awk '{print $2}')
+            arch_type=$(kubectl get cm cluster-config-v1 -n kube-system -o yaml 2>/dev/null | grep -i architecture|tail -1| awk '{print $2}')
             if [[ "$arch_type" == "amd64" ]]; then
                 info "Scaling up \"$operator\" operator"
                 kubectl scale --replicas=1 deployment $operator -n $project_name >/dev/null 2>&1
