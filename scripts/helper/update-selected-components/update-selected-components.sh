@@ -16,8 +16,8 @@
 #### Start of Variables used by different functions defined in this script #####
 ################################################################################
 
-deployment_pattern_names=("Business Automation Workflow Authoring" "Business Automation Workflow Runtime")
-deployment_pattern_cr_names=("workflow-authoring" "workflow-runtime")
+deployment_pattern_names=("Business Automation Workflow" "Business Automation Workflow Authoring" "Business Automation Workflow Runtime")
+deployment_pattern_cr_names=("workflow" "workflow-authoring" "workflow-runtime")
 optional_components_names=("Business Automation Insights" "Data Collector and Data Indexer" "Exposed Kafka Services" "Exposed Opensearch" "Workplace Assistant" "(Preview) Authoring Assistant")
 optional_components_cr_names=("bai" "pfs" "kafka" "opensearch" "workplace_assistant" "workflow_assistant")
 
