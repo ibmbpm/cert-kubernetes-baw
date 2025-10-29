@@ -12774,6 +12774,8 @@ if [[ "$RUNTIME_MODE" == "upgradeDeploymentStatus" ]]; then
     if [[ ! -z "$zen_service_name" ]]; then
         clear
         maxRetry=360
+        # The control variable used to detect if the strimzi patch function has to be executed.
+        strimzi_patched=false
         for ((retry=0;retry<=${maxRetry};retry++)); do
             # As workaround for https://github.ibm.com/IBMPrivateCloud/roadmap/issues/64207
             # update secret postgresql-operator-controller-manager-config in <cp4ba> namespace and/or ibm-common-services namespace and add this annotation ibm-bts/skip-updates: "true"
@@ -12897,6 +12899,14 @@ if [[ "$RUNTIME_MODE" == "upgradeDeploymentStatus" ]]; then
     # show_cp4ba_upgrade_status
     while true
     do
+        # Each refresh of the zen upgrade , we check if we need to update the kafka strimzi podset
+        # The function patch_strimzi_podset which is defined in common.sh will set strimzi_patched  to true once the patch is completed
+        # For upgrades to 24.0.1 or newer, kafka tasks in the foundation-operator happen after zen is upgraded so this block is after zen upgrade completes
+        # For upgrades to 24.0.0, kafka tasks in the foundation-operator happen before zen is upgraded, however there might be a timing issue for an IFIX to IFIX upgrade as there is no channel switch involved
+        # To handle that , this function is being called twice, and the second call only occurs if the strimzi pods have not yet been patched
+        if [[ $strimzi_patched == "false" ]]; then
+            patch_strimzi_podset $cp4ba_operators_namespace $cp4ba_services_namespace
+        fi
         printf '%s\n' "$(clear; show_cp4ba_upgrade_status)"
         sleep 30
     done
