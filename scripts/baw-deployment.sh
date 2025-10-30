@@ -12934,7 +12934,7 @@ if [ "$RUNTIME_MODE" == "upgradePostconfig" ]; then
 
     source ${CUR_DIR}/helper/upgrade/upgrade_merge_yaml.sh $TARGET_PROJECT_NAME $ALLOW_DIRECT_UPGRADE
 
-    info "Starting to execute script for post CP4BA upgrade"
+    info "Starting to execute script for post BAW ON CONTAINERS upgrade"
     # Retrieve existing WfPSRuntime CR
     exist_wfps_cr_array=($(${CLI_CMD} get WfPSRuntime -n $CP4BA_SERVICES_NS --no-headers --ignore-not-found | awk '{print $1}'))
     if [ ! -z $exist_wfps_cr_array ]; then
@@ -13057,5 +13057,5 @@ if [ "$RUNTIME_MODE" == "upgradePostconfig" ]; then
             fi
         fi
     fi
-    success "Completed to execute script for post CP4BA upgrade"
+    success "Completed to execute script for post BAW ON CONTAINERS upgrade"
 fi
