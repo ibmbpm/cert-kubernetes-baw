@@ -8036,7 +8036,7 @@ function sync_property_into_final_cr(){
 
 
     # comment out sc_ingress_tls_secret_name if OCP platform
-    if [[ $PLATFORM_SELECTED == "OCP" ]]; then
+    if [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "other" ]]; then
         ${SED_COMMAND} "s/sc_ingress_tls_secret_name: /# sc_ingress_tls_secret_name: /g" ${CP4A_PATTERN_FILE_TMP}
     fi
 
