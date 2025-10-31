@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:db8db62c5ba733753454e604177a14dac5b95152926503189e68a8d92894b88a
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:ee6eae0a51506fd1f8ba4d975a3d607271f472961cbeb3c7249dea5b974d5843
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -205,7 +205,7 @@ spec:
     securityContextConfig: restricted
   priority: 100
 ---
-# IBM FileNet Content Manager Standalone catalog for 5.7.0
+# IBM FileNet Content Manager Standalone catalog for 5.7.0-IF001
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
