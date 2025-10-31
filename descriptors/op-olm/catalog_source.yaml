@@ -42,7 +42,7 @@ spec:
     securityContextConfig: restricted
   priority: 100
 ---
-# IBM CS Opensearch Operator Catalog 1.1.2452
+# IBM CS Opensearch Operator Catalog 1.1.4005
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -52,7 +52,7 @@ spec:
   displayName: IBM CS Opencontent Opensearch Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/opencontent-ibm-opensearch-operator-catalog@sha256:6fbe960c6a5168c54632e771960da89d45cfedafc0498c768c7747d11161a979
+  image: icr.io/cpopen/opencontent-ibm-opensearch-operator-catalog@sha256:7ff897a206d020b973949df4176be388f5d19a27595937e3a43ec34a9f78711e
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -186,7 +186,7 @@ spec:
     securityContextConfig: restricted
   priority: 100
 ---
-# IBM FileNet Content Manager Standalone catalog for 5.7.0
+# IBM FileNet Content Manager Standalone catalog for 5.7.0-IF001
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
