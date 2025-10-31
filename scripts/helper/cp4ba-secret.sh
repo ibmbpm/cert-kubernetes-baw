@@ -728,6 +728,7 @@ function create_workflow_assistant_secret_template(){
   local watsonx_project_id=$2
   local watsonx_token=$3
   local watsonx_password=$4
+  local watsonx_url=$5
 
   wait_msg "Creating IBM Workflow Assistant secret YAML template"
 
@@ -748,6 +749,7 @@ stringData:
   WATSONX_API_KEY: "$watsonx_api_key"
   WATSONX_PASSWORD: "$watsonx_password"
   WATSONX_PROJECT_ID: "$watsonx_project_id"
+  WATSONX_URL: "$watsonx_url"
 
 EOF
   success "Created IBM Workflow Assistant secret YAML template\n"
