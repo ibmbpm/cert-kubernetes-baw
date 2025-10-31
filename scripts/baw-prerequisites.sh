@@ -2244,6 +2244,9 @@ function create_prerequisites() {
         watsonx_token="$(prop_user_profile_property_file WFA.WATSONX_TOKEN)"
         watsonx_token=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_token")
 
+        watsonx_url="$(prop_user_profile_property_file WFA.WATSONX_URL)"
+        watsonx_url=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_url")
+
         if [[ "<Optional>" == $watsonx_token ]]; then
           watsonx_token=""
         fi
@@ -2255,7 +2258,7 @@ function create_prerequisites() {
           watsonx_password=""
         fi
 
-        create_workflow_assistant_secret_template "$watsonx_api_key" "$watsonx_project_id" "$watsonx_token" "$watsonx_password"
+        create_workflow_assistant_secret_template "$watsonx_api_key" "$watsonx_project_id" "$watsonx_token" "$watsonx_password" "$watsonx_url"
     fi
 
     # create AP play back secret
