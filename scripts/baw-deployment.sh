@@ -6941,8 +6941,8 @@ function sync_property_into_final_cr(){
     tmp_is_run_authoring_agent_enabled=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_is_run_authoring_agent_enabled")
 
     if [[ "true" == $tmp_is_run_workflow_agent_enabled || "true" == $tmp_is_run_authoring_agent_enabled ]]; then
-        tmp_watsonx_url="$(prop_user_profile_property_file WFA.WATSONX_URL)"
-        tmp_watsonx_url=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_watsonx_url")
+        # tmp_watsonx_url="$(prop_user_profile_property_file WFA.WATSONX_URL)"
+        # tmp_watsonx_url=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_watsonx_url")
 
         tmp_watsonx_username="$(prop_user_profile_property_file WFA.WATSONX_USERNAME)"
         tmp_watsonx_username=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_watsonx_username")
@@ -6959,7 +6959,7 @@ function sync_property_into_final_cr(){
         tmp_watsonx_deployment_id="$(prop_user_profile_property_file WFA.WATSONX_DEPLOYMENT_ID)"
         tmp_watsonx_deployment_id=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_watsonx_deployment_id")
 
-        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.watsonx_url "\"$tmp_watsonx_url\""
+        # ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.watsonx_url "\"$tmp_watsonx_url\""
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.run_workflow_agent "\"$tmp_is_run_workflow_agent_enabled\""
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.run_authoring_agent "\"$tmp_is_run_authoring_agent_enabled\""
 
