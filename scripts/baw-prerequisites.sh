@@ -3565,7 +3565,9 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
 
     echo "## Enable/disable FIPS mode for the deployment (default value is \"false\")." >> ${USER_PROFILE_PROPERTY_FILE}
     echo "## Note: If set as \"true\", in order to complete enablement of FIPS for BAW, please refer to \"FIPS wall\" configuration in IBM documentation." >> ${USER_PROFILE_PROPERTY_FILE}
-    echo "CP4BA.ENABLE_FIPS=\"$FIPS_ENABLED\"" >> ${USER_PROFILE_PROPERTY_FILE}
+    if [[ $PLATFORM_SELECTED != "other" ]]; then
+       echo "CP4BA.ENABLE_FIPS=\"$FIPS_ENABLED\"" >> ${USER_PROFILE_PROPERTY_FILE}
+    fi
     echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
     echo "## Enable or disable egress access to external systems." >> ${USER_PROFILE_PROPERTY_FILE}
