@@ -4655,7 +4655,7 @@ function input_information(){
             PATTERNS_CR_SELECTED=($(echo "${pattern_cr_arr[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
         fi
     else
-       select_baw_pattern
+       select_baw_only
     fi
 
     if [[ $DEPLOYMENT_TYPE == "starter" ]]; then
