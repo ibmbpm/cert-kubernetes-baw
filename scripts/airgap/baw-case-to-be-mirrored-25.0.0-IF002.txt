@@ -45,7 +45,7 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-cert-manager
-  version: 4.2.17
+  version: 4.2.18
   catalogGeneration:
     ocMirror:
       disableMerge: true
@@ -55,7 +55,7 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-licensing
-  version: 4.2.17
+  version: 4.2.18
   catalogGeneration:
     ocMirror:
       disableMerge: true
