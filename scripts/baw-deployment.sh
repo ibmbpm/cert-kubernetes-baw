@@ -6960,7 +6960,7 @@ function sync_property_into_final_cr(){
         tmp_watsonx_deployment_id=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_watsonx_deployment_id")
 
         # ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.watsonx_url "\"$tmp_watsonx_url\""
-        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.run_workflow_agent "\"$tmp_is_run_workflow_agent_enabled\""
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.run_workplace_agent "\"$tmp_is_run_workflow_agent_enabled\""
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.run_authoring_agent "\"$tmp_is_run_authoring_agent_enabled\""
 
         if [[ "<Optional>" != $tmp_watsonx_username ]]; then
