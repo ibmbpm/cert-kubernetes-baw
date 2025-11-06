@@ -348,7 +348,7 @@ function prompt_license(){
                     #esac
                 #done
             CONTENT_DEPLOYED="No"
-            echo -e "Starting to Install the Operator...\n"
+            # echo -e "Starting to Install the Operator...\n"
             IBM_LICENS="Accept"
             validate_cli
             break

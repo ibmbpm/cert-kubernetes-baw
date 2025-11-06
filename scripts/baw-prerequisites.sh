@@ -7287,34 +7287,6 @@ function select_external_postgresdb_for_im_zen(){
     printf "\n"
     echo ""
     while true; do
-        #DBACLD-194974: Since there no EDB, we won't ask customer whether they want to use external Postgres DB for BTS.  They must use external Postgres DB if they want to install BTS with 25.0.1-GA
-        echo "${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/$CS_CHANNEL_KC?topic=service-external-database#configuring-an-external-database-with-the-bts-custom-resource${RESET_TEXT}"
-        if skip_edb_for_2501; then
-            printf "\x1B[1mFor this "$CP4BA_RELEASE_BASE"-"$BAW_PATCH_VERSION" version, you must use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THE POSTGRESQL DBs BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for BTS service in this BAW deployment.\x1B[0m"
-            printf "\n"
-            ans="Yes"
-            EXTERNAL_POSTGRESDB_FOR_BTS="true"
-            break
-        else
-
-            printf "\x1B[1mDo you want to use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THIS POSTGRESQL DB BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for this BAW deployment?\x1B[0m (Yes/No, default: No): "
-            read -rp "" ans
-            ans=$(echo "$ans" | tr '[:upper:]' '[:lower:]')
-            case "$ans" in
-            "y"|"yes")
-                EXTERNAL_POSTGRESDB_FOR_BTS="true"
-                break
-                ;;
-            "n"|"no"|"")
-                EXTERNAL_POSTGRESDB_FOR_BTS="false"
-                break
-                ;;
-            *)
-                echo -e "Answer must be \"Yes\" or \"No\"\n"
-                ;;
-            esac
-        fi
-
         #DBACLD-194974: Since there no EDB, we won't ask customer whether they want to use external Postgres DB for IM/Zen.  They must use external Postgres DB if they want to install IM/Zen for 25.0.1-GA
         # Display Knowledge Center link once
         echo "${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/$CS_CHANNEL_KC?topic=im-setting-up-external-edb-postgresql-database-server#dbcreate${RESET_TEXT}"
@@ -7357,40 +7329,6 @@ function select_external_postgresdb_for_bts(){
     printf "\n"
     echo ""
     while true; do
-        #DBACLD-194974: Since there no EDB, we won't ask customer whether they want to use external Postgres DB for IM/Zen.  They must use external Postgres DB if they want to install IM/Zen for 25.0.1-GA
-        # Display Knowledge Center link once
-        echo "${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/$CS_CHANNEL_KC?topic=im-setting-up-external-edb-postgresql-database-server#dbcreate${RESET_TEXT}"
-        
-        if skip_edb_for_2501; then
-            printf "\x1B[1mFor this "$CP4BA_RELEASE_BASE"-"$BAW_PATCH_VERSION" version, you must use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THE POSTGRESQL DBs BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1mfor IM and Zen services in this BAW deployment.\x1B[0m"
-            printf "\n"
-            ans="Yes"
-            EXTERNAL_POSTGRESDB_FOR_IM="true"
-            EXTERNAL_POSTGRESDB_FOR_ZEN="true"
-            break
-        else
-            printf "\x1B[1mDo you want to use an external Postgres DB for IM and Zen \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THE POSTGRESQL DBs BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for for IM and Zen services in this BAW deployment?\x1B[0m (Yes/No, default: No): "
-            printf "\n"
-            read -rp "" ans
-
-            ans=$(echo "$ans" | tr '[:upper:]' '[:lower:]')
-
-            case "$ans" in
-            "y"|"yes")
-                EXTERNAL_POSTGRESDB_FOR_IM="true"
-                EXTERNAL_POSTGRESDB_FOR_ZEN="true"
-                break
-                ;;
-            "n"|"no"|"")
-                EXTERNAL_POSTGRESDB_FOR_IM="false"
-                EXTERNAL_POSTGRESDB_FOR_ZEN="false"
-                break
-                ;;
-            *)
-                echo -e "Answer must be \"Yes\" or \"No\"\n"
-                ;;
-            esac
-        fi
         #DBACLD-194974: Since there no EDB, we won't ask customer whether they want to use external Postgres DB for BTS.  They must use external Postgres DB if they want to install BTS with 25.0.1-GA
         echo "${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/$CS_CHANNEL_KC?topic=service-external-database#configuring-an-external-database-with-the-bts-custom-resource${RESET_TEXT}"
         if skip_edb_for_2501; then
@@ -7776,33 +7714,31 @@ function input_information(){
     if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]]; then
         select_fips_enable
     fi
-    generate_sample_network_policies
 
-    # Ask regardless of DB_Type
-    select_external_postgresdb_for_im_zen
+    generate_sample_network_policies
+        
+    if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" || $PLATFORM_SELECTED == "other" ]]; then
     
-    if [[ " ${pattern_cr_arr[@]} " =~ "workflow-authoring" || " ${pattern_cr_arr[@]} " =~ "workflow-runtime" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
+        # Create Secret/configMap for BTS metastore external Postgres DB
+        containsElement "decisions_ads" "${pattern_cr_arr[@]}"
+        ads_Val=$?
+
+        if [[ $ads_Val -eq 0 || " ${pattern_cr_arr[@]} " =~ "workflow-authoring" || " ${pattern_cr_arr[@]} " =~ "workflow-runtime" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
+            #DBACLD-194974: Combine IM/Zen question for ext. PG.  Ask regardless of DB_TYPE 
             select_external_postgresdb_for_bts
         fi
-    ### We are removing embedded postgres for 2501
-    select_external_postgresdb_for_im_zen
-    EXTERNAL_POSTGRESDB_FOR_IM="true"
-    EXTERNAL_POSTGRESDB_FOR_ZEN="true"
 
-    # Create Secret/configMap for BTS metastore external Postgres DB
-    containsElement "decisions_ads" "${pattern_cr_arr[@]}"
-    ads_Val=$?
+        ### We are removing embedded postgres for 2501 
+        select_external_postgresdb_for_im_zen
+        EXTERNAL_POSTGRESDB_FOR_IM="true"
+        EXTERNAL_POSTGRESDB_FOR_ZEN="true"
 
-    if [[ $ads_Val -eq 0 || " ${pattern_cr_arr[@]} " =~ "workflow-authoring" || " ${pattern_cr_arr[@]} " =~ "document_processing" || " ${pattern_cr_arr[@]} " =~ "application" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
-        #DBACLD-194974: Combine IM/Zen question for ext. PG.  Ask regardless of DB_TYPE 
-        select_external_postgresdb_for_bts
+        if [[ " ${optional_component_cr_arr[@]} " =~ "pfs" || " ${optional_component_cr_arr[@]} " =~ "opensearch" || " ${optional_component_cr_arr[@]} " =~ "kafka" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
+            select_external_cert_opensearch_kafka
+        fi
+
+        create_temp_property_file
     fi
-
-    if [[ " ${optional_component_cr_arr[@]} " =~ "pfs" || " ${optional_component_cr_arr[@]} " =~ "opensearch" || " ${optional_component_cr_arr[@]} " =~ "kafka" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
-        select_external_cert_opensearch_kafka
-    fi
-
-    create_temp_property_file
 }
 
 # Function to select the platform type being used
