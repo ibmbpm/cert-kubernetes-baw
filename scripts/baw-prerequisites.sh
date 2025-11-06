@@ -7718,17 +7718,20 @@ function input_information(){
     if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]]; then
         generate_sample_network_policies
 
-        # Ask regardless of DB_Type
-        select_external_postgresdb_for_im_zen
 
         # Create Secret/configMap for BTS metastore external Postgres DB
         containsElement "decisions_ads" "${pattern_cr_arr[@]}"
         ads_Val=$?
 
-        if [[ $ads_Val -eq 0 || " ${pattern_cr_arr[@]} " =~ "workflow-authoring" || " ${pattern_cr_arr[@]} " =~ "document_processing" || " ${pattern_cr_arr[@]} " =~ "application" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
+        if [[ $ads_Val -eq 0 || " ${pattern_cr_arr[@]} " =~ "workflow-authoring" || " ${pattern_cr_arr[@]} " =~ "workflow-runtime" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
             #DBACLD-194974: Combine IM/Zen question for ext. PG.  Ask regardless of DB_TYPE 
             select_external_postgresdb_for_bts
         fi
+
+        ### We are removing embedded postgres for 2501 
+        select_external_postgresdb_for_im_zen
+        EXTERNAL_POSTGRESDB_FOR_IM="true"
+        EXTERNAL_POSTGRESDB_FOR_ZEN="true"
 
         if [[ " ${optional_component_cr_arr[@]} " =~ "pfs" || " ${optional_component_cr_arr[@]} " =~ "opensearch" || " ${optional_component_cr_arr[@]} " =~ "kafka" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
             select_external_cert_opensearch_kafka
