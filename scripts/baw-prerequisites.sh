@@ -7717,7 +7717,7 @@ function input_information(){
 
     generate_sample_network_policies
         
-    if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" ]]; then
+    if  [[ $PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" || $PLATFORM_SELECTED == "other" ]]; then
     
         # Create Secret/configMap for BTS metastore external Postgres DB
         containsElement "decisions_ads" "${pattern_cr_arr[@]}"
