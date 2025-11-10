@@ -3678,7 +3678,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
     fi
 
-    if [[ $EXTERNAL_POSTGRESDB_FOR_BTS == "true" && ( " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ) ]]; then
+    if [[ "$EXTERNAL_POSTGRESDB_FOR_BTS" == "true" && ( " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ) ]]; then
         rm -rf $BTS_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         mkdir -p $BTS_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         echo "## Configuration for external Postgres DB as BTS metastore DB." >> ${USER_PROFILE_PROPERTY_FILE}
