@@ -2802,45 +2802,42 @@ function create_prerequisites() {
     tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_BTS_FLAG)")
     tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
     if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
-        create_bts_external_db_secret_template
-        #  replace secret file folder
-        bts_external_db_cert_folder="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_SSL_CERT_FILE_FOLDER)"
-        bts_external_db_cert_folder=$(sed -e 's/^"//' -e 's/"$//' <<<"$bts_external_db_cert_folder")
-        if [[ -z $bts_external_db_cert_folder || $bts_external_db_cert_folder == "" ]]; then
-            bts_external_db_cert_folder=$BTS_DB_SSL_CERT_FOLDER
+
+        if [[ "$EXTERNAL_POSTGRESDB_FOR_BTS" == "true" && ( " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ) ]]; then
+
+            # BTS create secret start
+            create_bts_external_db_secret_template
+            #  replace secret file folder
+            bts_external_db_cert_folder="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_SSL_CERT_FILE_FOLDER)"
+            bts_external_db_cert_folder=$(sed -e 's/^"//' -e 's/"$//' <<<"$bts_external_db_cert_folder")
+            if [[ -z $bts_external_db_cert_folder || $bts_external_db_cert_folder == "" ]]; then
+                bts_external_db_cert_folder=$BTS_DB_SSL_CERT_FOLDER
+            fi
+            ${SED_COMMAND} "s|<cp4a-db-crt-file-in-local>|$bts_external_db_cert_folder|g" ${BTS_SSL_SECRET_FILE}
+
+            create_bts_external_db_configmap_template
+            #  replace <DatabaseHostName>
+            tmp_name="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_HOSTNAME)"
+            tmp_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_name")
+            ${SED_COMMAND} "s|<DatabaseHostName>|$tmp_name|g" ${BTS_CONFIGMAP_FILE}
+
+            #  replace <DatabasePort>
+            tmp_name="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_PORT)"
+            tmp_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_name")
+            ${SED_COMMAND} "s|<DatabasePort>|$tmp_name|g" ${BTS_CONFIGMAP_FILE}
+
+            #  replace <DatabaseName>
+            tmp_name="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_NAME)"
+            tmp_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_name")
+            ${SED_COMMAND} "s|<DatabaseName>|$tmp_name|g" ${BTS_CONFIGMAP_FILE}
+
+            #  replace <DatabaseUserName>
+            tmp_name="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER_NAME)"
+            tmp_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_name")
+            ${SED_COMMAND} "s|<DatabaseUserName>|$tmp_name|g" ${BTS_CONFIGMAP_FILE}
+
+            # BTS create secret end
         fi
-        ${SED_COMMAND} "s|<cp4a-db-crt-file-in-local>|$bts_external_db_cert_folder|g" ${BTS_SSL_SECRET_FILE}
-
-        # #  replace <DatabaseUser>
-        # tmp_name="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER_NAME)"
-        # tmp_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_name")
-        # ${SED_COMMAND} "s|<USERNAME>|$tmp_name|g" ${BTS_SECRET_FILE}
-
-        # #  replace <DatabaseUser_password>
-        # tmp_name="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER_PASSWORD)"
-        # tmp_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_name")
-        # ${SED_COMMAND} "s|<PASSWORD>|$tmp_name|g" ${BTS_SECRET_FILE}
-
-        create_bts_external_db_configmap_template
-        #  replace <DatabaseHostName>
-        tmp_name="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_HOSTNAME)"
-        tmp_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_name")
-        ${SED_COMMAND} "s|<DatabaseHostName>|$tmp_name|g" ${BTS_CONFIGMAP_FILE}
-
-        #  replace <DatabasePort>
-        tmp_name="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_PORT)"
-        tmp_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_name")
-        ${SED_COMMAND} "s|<DatabasePort>|$tmp_name|g" ${BTS_CONFIGMAP_FILE}
-
-        #  replace <DatabaseName>
-        tmp_name="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_NAME)"
-        tmp_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_name")
-        ${SED_COMMAND} "s|<DatabaseName>|$tmp_name|g" ${BTS_CONFIGMAP_FILE}
-
-        #  replace <DatabaseUserName>
-        tmp_name="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER_NAME)"
-        tmp_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_name")
-        ${SED_COMMAND} "s|<DatabaseUserName>|$tmp_name|g" ${BTS_CONFIGMAP_FILE}
     fi
 
     # Create Issuer to make Opensearch/Kafka use external certificate
