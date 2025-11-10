@@ -319,7 +319,7 @@ function validate_utility_tool_for_validation(){
 }
 
 function containsElement(){
-    local e match="$1"
+    local e match="$1" 
     shift
     for e; do [[ "$e" == "$match" ]] && return 0; done
     return 1
@@ -1426,14 +1426,19 @@ function check_property_file(){
         cert_dir_array=( "${cert_dir_array[@]}" "${zen_external_db_cert_folder}" )
     fi
 
-    # BTS metastore external Postgres DB
+    # BTS optional check start
     tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_BTS_FLAG)")
     tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
-    if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
-        bts_external_db_cert_folder="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_SSL_CERT_FILE_FOLDER)"
-        bts_external_db_cert_folder=$(sed -e 's/^"//' -e 's/"$//' <<<"$bts_external_db_cert_folder")
-        cert_dir_array=( "${cert_dir_array[@]}" "${bts_external_db_cert_folder}" )
+    if [[ "$EXTERNAL_POSTGRESDB_FOR_BTS" == "true" && ( " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ) ]]; then
+        if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
+            bts_external_db_cert_folder="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_SSL_CERT_FILE_FOLDER)"
+            bts_external_db_cert_folder=$(sed -e 's/^"//' -e 's/"$//' <<<"$bts_external_db_cert_folder")
+            cert_dir_array=( "${cert_dir_array[@]}" "${bts_external_db_cert_folder}" )
+        fi
     fi
+    # BTS optional check end
+
+
     # Issuer to make Opensearch/Kafka use external certificate
     tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_CERT_OPENSEARCH_KAFKA_FLAG)")
     tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
@@ -3673,7 +3678,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
     fi
 
-    if [[ $EXTERNAL_POSTGRESDB_FOR_BTS == "true" && " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
+    if [[ "$EXTERNAL_POSTGRESDB_FOR_BTS" == "true" && ( " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ) ]]; then
         rm -rf $BTS_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         mkdir -p $BTS_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         echo "## Configuration for external Postgres DB as BTS metastore DB." >> ${USER_PROFILE_PROPERTY_FILE}
