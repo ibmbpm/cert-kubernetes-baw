@@ -8432,7 +8432,7 @@ function apply_pattern_cr(){
             ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.enable_fips "false"
         fi
     #TODO will CNCFsupport FIPS
-    elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
+    elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" || $PLATFORM_SELECTED == "other") ]]; then
          fips_flag="$(prop_user_profile_property_file CP4BA.ENABLE_FIPS)"
         fips_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$fips_flag")
         fips_flag=$(echo $fips_flag | tr '[:upper:]' '[:lower:]')
