@@ -2803,6 +2803,7 @@ function create_prerequisites() {
     tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
     if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
 
+        //TODO: Add condition when edb is reenabled 
         if [[ " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ]]; then
 
             # BTS create secret start
@@ -8733,6 +8734,7 @@ function validate_prerequisites(){
         success "Checked DB connection for \"$dbname\" on database server \"$dbserver\", PASSED!"
     fi
 
+    //TODO: Add condition when edb is reenabled 
     if [[ " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ]]; then
         tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_BTS_FLAG)")
         tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
