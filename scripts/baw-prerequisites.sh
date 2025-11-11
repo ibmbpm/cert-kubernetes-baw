@@ -3579,7 +3579,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
     echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
     if [[ $EXTERNAL_POSTGRESDB_FOR_IM == "true" ]]; then
-        rm -rf $IM_DB_SSL_CERT_FOLDER >/dev/null 2>&1
+        # rm -rf $IM_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         mkdir -p $IM_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         echo "## Configuration for external Postgres DB as IM metastore DB." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "## YOU NEED TO CREATE THIS POSTGRES DB BY YOURSELF FISTLY BEFORE APPLY BAW CUSTOM RESOURCE." >> ${USER_PROFILE_PROPERTY_FILE}
@@ -3618,7 +3618,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
 
 
     if [[ $EXTERNAL_POSTGRESDB_FOR_ZEN == "true" ]]; then
-        rm -rf $ZEN_DB_SSL_CERT_FOLDER >/dev/null 2>&1
+        # rm -rf $ZEN_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         mkdir -p $ZEN_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         echo "## Configuration for external Postgres DB as Zen metastore DB." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "## YOU NEED TO CREATE THIS POSTGRES DB BY YOURSELF FISTLY BEFORE APPLY BAW CUSTOM RESOURCE." >> ${USER_PROFILE_PROPERTY_FILE}
@@ -3676,7 +3676,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
     fi
 
     if [[ "$EXTERNAL_POSTGRESDB_FOR_BTS" == "true" && ( " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ) ]]; then
-        rm -rf $BTS_DB_SSL_CERT_FOLDER >/dev/null 2>&1
+        # rm -rf $BTS_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         mkdir -p $BTS_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         echo "## Configuration for external Postgres DB as BTS metastore DB." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "## YOU NEED TO CREATE THIS POSTGRES DB BY YOURSELF FISTLY BEFORE APPLY BAW CUSTOM RESOURCE." >> ${USER_PROFILE_PROPERTY_FILE}
@@ -3709,7 +3709,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
     fi
 
     if [[ $EXTERNAL_CERT_OPENSEARCH_KAFKA == "true" ]]; then
-        rm -rf $CP4BA_TLS_ISSUER_CERT_FOLDER >/dev/null 2>&1
+        # rm -rf $CP4BA_TLS_ISSUER_CERT_FOLDER >/dev/null 2>&1
         mkdir -p $CP4BA_TLS_ISSUER_CERT_FOLDER >/dev/null 2>&1
         echo "## Configuration for external certificate used by Opensearch/Kafka." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
