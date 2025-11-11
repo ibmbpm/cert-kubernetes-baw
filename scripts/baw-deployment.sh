@@ -6983,11 +6983,13 @@ function sync_property_into_final_cr(){
           ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.watsonx_deployment_id "\"$tmp_watsonx_deployment_id\""
         fi
 
-
-        domain_name=$(${CLI_CMD} get configmap ibm-cp4ba-common-config -n $CP4BA_SERVICES_NS -o jsonpath='{.data.domain_name}')
-
-        # Define common Zen front door host (shared domain for cookie support)
-        zen_frontdoor_host="https://${CP4BA_SERVICES_NS}-cpd.${domain_name}"
+        if [[ $PLATFORM_SELECTED == "OCP" ]]; then
+            domain_name=$(${CLI_CMD} get IngressController default -n openshift-ingress-operator --no-headers --ignore-not-found -o jsonpath='{.status.domain}')
+            zen_frontdoor_host="https://cpd-${CP4BA_SERVICES_NS}.${domain_name}"
+        else
+            domain_name=$(${CLI_CMD} get configmap ibm-cp4ba-common-config -n $CP4BA_SERVICES_NS -o jsonpath='{.data.domain_name}')
+            zen_frontdoor_host="https://${CP4BA_SERVICES_NS}-cpd.${domain_name}"
+        fi
 
         # --- authoring agent XML ---
         if [[ "$tmp_is_run_authoring_agent_enabled" == "true" ]]; then
