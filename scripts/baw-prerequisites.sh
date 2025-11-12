@@ -7470,6 +7470,248 @@ function select_fips_enable(){
     fi
 }
 
+function validate_fips() {
+    set -e  # Exit this function on any error
+    set -u  # Treat unset variables as errors
+
+    # Color codes
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    BLUE='\033[0;34m'
+    NC='\033[0m'
+
+    # Clear any existing PostgreSQL environment variables
+    unset PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
+    unset PGSSLMODE PGSSLCERT PGSSLKEY PGSSLROOTCERT PGSSLCRL
+
+    # Get DB details
+    db_alias=$(prop_db_server_property_file DB_SERVER_LIST)
+    server_name=$(prop_db_server_property_file ${db_alias}.DATABASE_SERVERNAME)
+    db_port=$(prop_db_server_property_file ${db_alias}.DATABASE_PORT)
+    db_ssl_mode=$(prop_db_server_property_file ${db_alias}.POSTGRESQL_SSL_MODE)
+    # db_user=$(prop_db_name_user_property_file ${db_alias}.DATABASE_SERVERNAME)
+
+    certificate_folder=$(prop_db_server_property_file ${db_alias}.DATABASE_SSL_CERT_FILE_FOLDER)
+    client_certificate_file=$(ls "${certificate_folder}"/*client*.crt 2>/dev/null | head -n 1)
+    client_certificate_key=$(ls "${certificate_folder}"/*client*.key 2>/dev/null | head -n 1)
+    root_certificate_file=$(ls "${certificate_folder}"/*root*.crt 2>/dev/null | head -n 1)
+
+
+    # Configuration (customize or externalize these)
+    DB_HOST= $server_name
+    DB_PORT= $db_port
+    # DB_NAME="imcnpdb"
+    # DB_USER="authadmin"
+    SSL_MODE= $db_ssl_mode
+    CLIENT_CERT= $client_certificate_file
+    CLIENT_KEY= $client_certificate_key
+    ROOT_CA= $root_certificate_file
+
+    echo "========================================="
+    echo "PostgreSQL Connection Validation"
+    echo "========================================="
+    echo -e "${BLUE}Test Configuration:${NC}"
+    echo "  Host: $DB_HOST"
+    echo "  Port: $DB_PORT"
+    echo "  SSL Mode: $SSL_MODE"
+    echo "  Client Cert: $CLIENT_CERT"
+    echo "  Client Key: $CLIENT_KEY"
+    echo "  Root CA: $ROOT_CA"
+    echo "========================================="
+    echo ""
+
+    # Step 1: Verify psql is installed
+    echo -e "${YELLOW}[1/5] Checking if psql is installed...${NC}"
+    if ! command -v psql &> /dev/null; then
+        echo -e "${RED}✗ FAILED: psql not found. Please Install Postgres client in your machine and run ./baw-prerequisite.sh -m validate script again.${NC}"
+        return 1
+    fi
+    echo -e "${GREEN}✓ PASSED: psql is installed ($(psql --version))${NC}"
+    echo ""
+
+    # Step 2: Verify certificate files exist
+    echo -e "${YELLOW}[2/5] Checking certificate files...${NC}"
+    for f in "$CLIENT_CERT" "$CLIENT_KEY" "$ROOT_CA"; do
+        if [[ ! -f "$f" ]]; then
+            echo -e "${RED}✗ FAILED: Missing certificate file: $f${NC}"
+            return 1
+        fi
+    done
+    echo -e "${GREEN}✓ PASSED: All certificate files exist${NC}"
+    echo ""
+
+    # Step 3: Verify certificate validity
+    echo -e "${YELLOW}[3/5] Validating certificates...${NC}"
+    if ! openssl x509 -in "$CLIENT_CERT" -noout -checkend 0 2>/dev/null; then
+        echo -e "${RED}✗ FAILED: Client certificate is expired or invalid${NC}"
+        return 1
+    fi
+    echo -e "${GREEN}✓ PASSED: Client certificate is valid${NC}"
+    echo ""
+
+    # Step 4: Test network connectivity
+    echo -e "${YELLOW}[4/5] Testing network connectivity to $DB_HOST...${NC}"
+    if ! ping -c 1 -W 3 "$DB_HOST" &> /dev/null; then
+        echo -e "${RED}✗ FAILED: Cannot reach host $DB_HOST${NC}"
+        return 1
+    fi
+    echo -e "${GREEN}✓ PASSED: Host is reachable${NC}"
+    echo ""
+
+    # Step 5: Test port connectivity
+    echo -e "${YELLOW}[5/5] Testing port connectivity to $DB_HOST:$DB_PORT...${NC}"
+    if ! timeout 5 bash -c "cat < /dev/null > /dev/tcp/$DB_HOST/$DB_PORT" 2>/dev/null; then
+        echo -e "${RED}✗ FAILED: Port $DB_PORT is not accessible${NC}"
+        return 1
+    fi
+    echo -e "${GREEN}✓ PASSED: Port $DB_PORT is accessible${NC}"
+    echo ""
+
+    echo "========================================="
+    echo -e "${GREEN}✓ EXTERNAL POSTGRES SERVER CONNECTION IS SUCCESSFUL. CHECKING FOR DATABASE CONNECTIONS${NC}"
+    echo "========================================="
+  
+    # DB connection for GCDDB
+    if [[ " ${pattern_cr_arr[@]}" =~ "workflow-runtime" || " ${pattern_cr_arr[@]}" =~ "workflow-authoring" ]]; then
+        tmp_dbname="$(prop_db_name_user_property_file $tmp_dbserver.GCD_DB_NAME)"
+        tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=ibm-fncm-secret -o yaml | ${YQ_CMD} r - items.[0].data.gcdDBUsername | base64 --decode`
+        verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}" 
+    fi
+
+    # DB connection for FNCM object store
+    if (( content_os_number > 0 )); then
+        for ((j=0;j<${content_os_number};j++))
+        do
+            tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=ibm-fncm-secret -o yaml | ${YQ_CMD} r - items.[0].data.os$((j+1))DBUsername | base64 --decode`
+            tmp_dbname="$(prop_db_name_user_property_file $tmp_dbserver.OS$((j+1))_DB_NAME)"
+            verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}" 
+        done
+    fi
+
+    # DB connection for object store used by BAW authoring/BAW Runtime
+    if [[ " ${pattern_cr_arr[@]}" =~ "workflow-authoring" || " ${pattern_cr_arr[@]}" =~ "workflow-runtime" ]]; then
+        for i in "${!BAW_AUTH_OS_ARR[@]}"; do
+            tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=ibm-fncm-secret -o yaml | ${YQ_CMD} r - items.[0].data.${tmp_label}DBUsername | base64 --decode`
+            tmp_dbname="$(prop_db_name_user_property_file $tmp_dbserver.${BAW_AUTH_OS_ARR[i]}_DB_NAME)"
+            verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}" 
+        done
+      
+        # DB connection for case history
+        tmp_dbserver="$(prop_db_name_user_property_file_for_server_name CHOS_DB_USER_NAME)"
+        if [[ $tmp_dbserver != \#* ]] ; then
+            check_dbserver_name_valid $tmp_dbserver "CHOS_DB_USER_NAME"
+            tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=ibm-fncm-secret -o yaml | ${YQ_CMD} r - items.[0].data.chDBUsername | base64 --decode`
+            tmp_dbname="$(prop_db_name_user_property_file $tmp_dbserver.CHOS_DB_NAME)"
+            verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}"
+        fi
+    fi
+
+    # DB connection for ICN
+    if [[ " ${foundation_component_arr[@]}" =~ "BAN" ]]; then
+        tmp_dbname="$(prop_db_name_user_property_file ICN_DB_NAME)"
+        tmp_dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbname")
+        tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=${tmp_dbname} -o yaml | ${YQ_CMD} r - items.[0].data.navigatorDBUsername | base64 --decode`
+        verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}"
+    fi
+
+    # DB connection for BAW runtime
+    if [[ " ${pattern_cr_arr[@]}" =~ "workflow-runtime" ]]; then
+        tmp_dbname="$(prop_db_name_user_property_file BAW_RUNTIME_DB_NAME)"
+        tmp_dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbname")
+        tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=${tmp_dbname} -o yaml | ${YQ_CMD} r - items.[0].data.dbUser | base64 --decode`
+        verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}"
+    fi
+
+    # DB connection for BAS
+    if [[ "${pattern_cr_arr[@]}" =~ "workflow-authoring" ]]; then
+        tmp_dbname="$(prop_db_name_user_property_file STUDIO_DB_NAME)"
+        tmp_dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbname")
+        tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=${tmp_dbname} -o yaml | ${YQ_CMD} r - items.[0].data.dbUsername | base64 --decode`
+        verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}"
+    fi
+
+    # DB connection for IM/BTS/Zen for external postgres db
+    # IM
+    tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_IM_FLAG)")
+    tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
+    if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
+        dbname="$(prop_user_profile_property_file CP4BA.IM_EXTERNAL_POSTGRES_DATABASE_NAME)"
+        dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbname")
+        dbuser="$(prop_user_profile_property_file CP4BA.IM_EXTERNAL_POSTGRES_DATABASE_USER)"
+        dbuser=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbuser")
+        verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${dbname}" "${dbuser}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}"
+    fi
+
+    # Zen
+    tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_ZEN_FLAG)")
+    tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
+    if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
+        dbname="$(prop_user_profile_property_file CP4BA.ZEN_EXTERNAL_POSTGRES_DATABASE_NAME)"
+        dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbname")
+        dbuser="$(prop_user_profile_property_file CP4BA.ZEN_EXTERNAL_POSTGRES_DATABASE_USER)"
+        dbuser=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbuser")
+        verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${dbname}" "${dbuser}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}"
+    fi
+
+    # BTS
+    tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_BTS_FLAG)")
+    tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
+    if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
+        dbname="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_NAME)"
+        dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbname")
+        dbuser="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER_NAME)"
+        dbuser=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbuser")
+        verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${dbname}" "${dbuser}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}"
+    fi
+
+
+    echo "========================================="
+    echo -e "${GREEN}✓ ALL TESTS PASSED${NC}"
+    echo "========================================="
+
+    return 0
+}
+
+function verify_fips_db_connection(){
+    local DB_HOST=$1
+    local DB_PORT=$2
+    local DB_NAME=$3
+    local DB_USER=$4
+    local SSL_MODE=$5
+    local CLIENT_CERT=$6
+    local CLIENT_KEY=$7
+    local ROOT_CA=$8
+    
+    echo -e "${YELLOW} Testing PostgreSQL DB connection for ${DB_NAME}...${NC}"
+
+    CONN_STRING="host=$DB_HOST port=$DB_PORT dbname=$DB_NAME user=$DB_USER sslmode=$SSL_MODE sslcert=$CLIENT_CERT sslkey=$CLIENT_KEY sslrootcert=$ROOT_CA"
+    OUTPUT=$(psql "$CONN_STRING" -c "SELECT version();" 2>&1)
+    EXIT_CODE=$?
+
+    if [[ $EXIT_CODE -ne 0 ]]; then
+        echo -e "${RED}✗ FAILED: PostgreSQL connection failed for ${DB_NAME}...${NC}"
+        echo "Error output:"
+        echo "$OUTPUT"
+        return 1
+    fi
+    echo -e "${GREEN}✓ PASSED: PostgreSQL connection successful for ${DB_NAME} ...${NC}"
+    echo ""
+
+    echo -e "${YELLOW} Verifying connection details...${NC}"
+    DETAILS=$(psql "$CONN_STRING" -t -c "SELECT current_database(), current_user, inet_server_addr(), inet_server_port();")
+    if [[ $? -ne 0 ]]; then
+        echo -e "${RED}✗ FAILED: Could not retrieve connection details${NC}"
+        return 1
+    fi
+    echo -e "${GREEN}✓ PASSED: Connection details retrieved${NC}"
+    echo ""
+    echo "Connection Details:"
+    echo "$DETAILS"
+    echo ""
+}
+
+
 function select_ldap_type(){
     printf "\n"
     COLUMNS=12
@@ -8114,8 +8356,13 @@ function validate_prerequisites(){
         fi
     fi
 
+    # For Rancher FIPS with SSL enabled external DB validation
+    if [[ "$PLATFORM_SELECTED" == "other" && "$fips_flag" == "true" ]]; then
+        validate_fips
+    fi
+
     # Validate DB connection for CP4BA
-    if [[ $DB_TYPE != "postgresql-edb" ]]; then
+    if [[ $DB_TYPE != "postgresql-edb" && ("$PLATFORM_SELECTED" != "other" && "$fips_flag" != "true" )]]; then
 
         INFO "Checking DB connection required by Business Automation Workflow"
 
