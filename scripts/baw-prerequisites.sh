@@ -7487,26 +7487,26 @@ function validate_fips() {
 
     # Get DB details
     db_alias=$(prop_db_server_property_file DB_SERVER_LIST)
-    server_name=$(prop_db_server_property_file ${db_alias}.DATABASE_SERVERNAME)
-    db_port=$(prop_db_server_property_file ${db_alias}.DATABASE_PORT)
-    db_ssl_mode=$(prop_db_server_property_file ${db_alias}.POSTGRESQL_SSL_MODE)
+    server_name=$(prop_db_server_property_file "${db_alias}.DATABASE_SERVERNAME")
+    db_port=$(prop_db_server_property_file "${db_alias}.DATABASE_PORT")
+    db_ssl_mode=$(prop_db_server_property_file "${db_alias}.POSTGRESQL_SSL_MODE")
     # db_user=$(prop_db_name_user_property_file ${db_alias}.DATABASE_SERVERNAME)
 
-    certificate_folder=$(prop_db_server_property_file ${db_alias}.DATABASE_SSL_CERT_FILE_FOLDER)
+    certificate_folder=$(prop_db_server_property_file "${db_alias}.DATABASE_SSL_CERT_FILE_FOLDER")
     client_certificate_file=$(ls "${certificate_folder}"/*client*.crt 2>/dev/null | head -n 1)
     client_certificate_key=$(ls "${certificate_folder}"/*client*.key 2>/dev/null | head -n 1)
     root_certificate_file=$(ls "${certificate_folder}"/*root*.crt 2>/dev/null | head -n 1)
 
 
     # Configuration (customize or externalize these)
-    DB_HOST= $server_name
-    DB_PORT= $db_port
+    DB_HOST="$server_name"
+    DB_PORT="$db_port"
     # DB_NAME="imcnpdb"
     # DB_USER="authadmin"
-    SSL_MODE= $db_ssl_mode
-    CLIENT_CERT= $client_certificate_file
-    CLIENT_KEY= $client_certificate_key
-    ROOT_CA= $root_certificate_file
+    SSL_MODE="$db_ssl_mode"
+    CLIENT_CERT="$client_certificate_file"
+    CLIENT_KEY="$client_certificate_key"
+    ROOT_CA="$root_certificate_file"
 
     echo "========================================="
     echo "PostgreSQL Connection Validation"
