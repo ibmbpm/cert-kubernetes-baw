@@ -8897,133 +8897,136 @@ function validate_prerequisites(){
             fi
         fi
     fi
+    
+    if [[("$PLATFORM_SELECTED" != "other" && "$fips_flag" != "true" )]]; then
 
-    # Check db connection for im/zen/bts external postgresql db
-    local DB_JDBC_NAME=${JDBC_DRIVER_DIR}/postgresql
-    local DB_CONNECTION_JAR_PATH=${CUR_DIR}/helper/verification/postgresql
+        # Check db connection for im/zen/bts external postgresql db
+        local DB_JDBC_NAME=${JDBC_DRIVER_DIR}/postgresql
+        local DB_CONNECTION_JAR_PATH=${CUR_DIR}/helper/verification/postgresql
 
-    tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_IM_FLAG)")
-    tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
-    if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
-        printf "\n"
-        im_external_db_cert_folder="$(prop_user_profile_property_file CP4BA.IM_EXTERNAL_POSTGRES_DATABASE_SSL_CERT_FILE_FOLDER)"
-        im_external_db_cert_folder=$(sed -e 's/^"//' -e 's/"$//' <<<"$im_external_db_cert_folder")
+        tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_IM_FLAG)")
+        tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
+        if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
+            printf "\n"
+            im_external_db_cert_folder="$(prop_user_profile_property_file CP4BA.IM_EXTERNAL_POSTGRES_DATABASE_SSL_CERT_FILE_FOLDER)"
+            im_external_db_cert_folder=$(sed -e 's/^"//' -e 's/"$//' <<<"$im_external_db_cert_folder")
 
-        dbserver="$(prop_user_profile_property_file CP4BA.IM_EXTERNAL_POSTGRES_DATABASE_RW_ENDPOINT)"
-        dbserver=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbserver")
-        dbport="$(prop_user_profile_property_file CP4BA.IM_EXTERNAL_POSTGRES_DATABASE_PORT)"
-        dbport=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbport")
-        dbname="$(prop_user_profile_property_file CP4BA.IM_EXTERNAL_POSTGRES_DATABASE_NAME)"
-        dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbname")
-        dbuser="$(prop_user_profile_property_file CP4BA.IM_EXTERNAL_POSTGRES_DATABASE_USER)"
-        dbuser=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbuser")
-        dbuserpwd="changit" # client auth does not need dbuserpwd
+            dbserver="$(prop_user_profile_property_file CP4BA.IM_EXTERNAL_POSTGRES_DATABASE_RW_ENDPOINT)"
+            dbserver=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbserver")
+            dbport="$(prop_user_profile_property_file CP4BA.IM_EXTERNAL_POSTGRES_DATABASE_PORT)"
+            dbport=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbport")
+            dbname="$(prop_user_profile_property_file CP4BA.IM_EXTERNAL_POSTGRES_DATABASE_NAME)"
+            dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbname")
+            dbuser="$(prop_user_profile_property_file CP4BA.IM_EXTERNAL_POSTGRES_DATABASE_USER)"
+            dbuser=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbuser")
+            dbuserpwd="changit" # client auth does not need dbuserpwd
 
-        info "Checking connection for IM metastore external Postgres database \"${dbname}\" belongs to database instance \"${dbserver}\"...."
+            info "Checking connection for IM metastore external Postgres database \"${dbname}\" belongs to database instance \"${dbserver}\"...."
 
-        postgres_cafile="${im_external_db_cert_folder}/root.crt"
-        postgres_clientkeyfile="${im_external_db_cert_folder}/client.key"
-        postgres_clientcertfile="${im_external_db_cert_folder}/client.crt"
+            postgres_cafile="${im_external_db_cert_folder}/root.crt"
+            postgres_clientkeyfile="${im_external_db_cert_folder}/client.key"
+            postgres_clientcertfile="${im_external_db_cert_folder}/client.crt"
 
-        rm -rf ${im_external_db_cert_folder}/clientkey.pk8 2>&1 </dev/null
-        openssl pkcs8 -topk8 -outform DER -in $postgres_clientkeyfile -out ${im_external_db_cert_folder}/clientkey.pk8 -nocrypt 2>&1 </dev/null
+            rm -rf ${im_external_db_cert_folder}/clientkey.pk8 2>&1 </dev/null
+            openssl pkcs8 -topk8 -outform DER -in $postgres_clientkeyfile -out ${im_external_db_cert_folder}/clientkey.pk8 -nocrypt 2>&1 </dev/null
 
-        output=$(java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${im_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
-        retVal_verify_db_tmp=$?
-        connection_time=$(echo $output | awk -F 'Round Trip time: ' '{print $2}' | awk '{print $1}')
-        if [[ ! -z $connection_time ]]; then
-            display_latency_warning $connection_time "Database"
+            output=$(java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${im_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
+            retVal_verify_db_tmp=$?
+            connection_time=$(echo $output | awk -F 'Round Trip time: ' '{print $2}' | awk '{print $1}')
+            if [[ ! -z $connection_time ]]; then
+                display_latency_warning $connection_time "Database"
+            fi
+
+            [[ retVal_verify_db_tmp -ne 0 ]] && \
+            warning "Execute: java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${im_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
+            fail "Unable to connect to database \"$dbname\" on database server \"$dbserver\", please check the configuration again."
+            [[ retVal_verify_db_tmp -eq 0 ]] && \
+            success "Checked DB connection for \"$dbname\" on database server \"$dbserver\", PASSED!"
         fi
 
-        [[ retVal_verify_db_tmp -ne 0 ]] && \
-        warning "Execute: java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${im_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
-        fail "Unable to connect to database \"$dbname\" on database server \"$dbserver\", please check the configuration again."
-        [[ retVal_verify_db_tmp -eq 0 ]] && \
-        success "Checked DB connection for \"$dbname\" on database server \"$dbserver\", PASSED!"
-    fi
+        tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_ZEN_FLAG)")
+        tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
+        if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
+            printf "\n"
+            zen_external_db_cert_folder="$(prop_user_profile_property_file CP4BA.ZEN_EXTERNAL_POSTGRES_DATABASE_SSL_CERT_FILE_FOLDER)"
+            zen_external_db_cert_folder=$(sed -e 's/^"//' -e 's/"$//' <<<"$zen_external_db_cert_folder")
 
-    tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_ZEN_FLAG)")
-    tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
-    if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
-        printf "\n"
-        zen_external_db_cert_folder="$(prop_user_profile_property_file CP4BA.ZEN_EXTERNAL_POSTGRES_DATABASE_SSL_CERT_FILE_FOLDER)"
-        zen_external_db_cert_folder=$(sed -e 's/^"//' -e 's/"$//' <<<"$zen_external_db_cert_folder")
+            dbserver="$(prop_user_profile_property_file CP4BA.ZEN_EXTERNAL_POSTGRES_DATABASE_RW_ENDPOINT)"
+            dbserver=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbserver")
+            dbport="$(prop_user_profile_property_file CP4BA.ZEN_EXTERNAL_POSTGRES_DATABASE_PORT)"
+            dbport=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbport")
+            dbname="$(prop_user_profile_property_file CP4BA.ZEN_EXTERNAL_POSTGRES_DATABASE_NAME)"
+            dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbname")
+            dbuser="$(prop_user_profile_property_file CP4BA.ZEN_EXTERNAL_POSTGRES_DATABASE_USER)"
+            dbuser=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbuser")
+            dbuserpwd="changit" # client auth does not need dbuserpwd
 
-        dbserver="$(prop_user_profile_property_file CP4BA.ZEN_EXTERNAL_POSTGRES_DATABASE_RW_ENDPOINT)"
-        dbserver=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbserver")
-        dbport="$(prop_user_profile_property_file CP4BA.ZEN_EXTERNAL_POSTGRES_DATABASE_PORT)"
-        dbport=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbport")
-        dbname="$(prop_user_profile_property_file CP4BA.ZEN_EXTERNAL_POSTGRES_DATABASE_NAME)"
-        dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbname")
-        dbuser="$(prop_user_profile_property_file CP4BA.ZEN_EXTERNAL_POSTGRES_DATABASE_USER)"
-        dbuser=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbuser")
-        dbuserpwd="changit" # client auth does not need dbuserpwd
+            info "Checking connection for Zen metastore external Postgres database \"${dbname}\" belongs to database instance \"${dbserver}\"...."
 
-        info "Checking connection for Zen metastore external Postgres database \"${dbname}\" belongs to database instance \"${dbserver}\"...."
+            postgres_cafile="${zen_external_db_cert_folder}/root.crt"
+            postgres_clientkeyfile="${zen_external_db_cert_folder}/client.key"
+            postgres_clientcertfile="${zen_external_db_cert_folder}/client.crt"
 
-        postgres_cafile="${zen_external_db_cert_folder}/root.crt"
-        postgres_clientkeyfile="${zen_external_db_cert_folder}/client.key"
-        postgres_clientcertfile="${zen_external_db_cert_folder}/client.crt"
+            rm -rf ${zen_external_db_cert_folder}/clientkey.pk8 2>&1 </dev/null
+            openssl pkcs8 -topk8 -outform DER -in $postgres_clientkeyfile -out ${zen_external_db_cert_folder}/clientkey.pk8 -nocrypt 2>&1 </dev/null
 
-        rm -rf ${zen_external_db_cert_folder}/clientkey.pk8 2>&1 </dev/null
-        openssl pkcs8 -topk8 -outform DER -in $postgres_clientkeyfile -out ${zen_external_db_cert_folder}/clientkey.pk8 -nocrypt 2>&1 </dev/null
+            output=$(java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${zen_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
+            retVal_verify_db_tmp=$?
+            connection_time=$(echo $output | awk -F 'Round Trip time: ' '{print $2}' | awk '{print $1}')
+            if [[ ! -z $connection_time ]]; then
+                display_latency_warning $connection_time "Database"
+            fi
 
-        output=$(java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${zen_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
-        retVal_verify_db_tmp=$?
-        connection_time=$(echo $output | awk -F 'Round Trip time: ' '{print $2}' | awk '{print $1}')
-        if [[ ! -z $connection_time ]]; then
-            display_latency_warning $connection_time "Database"
+            [[ retVal_verify_db_tmp -ne 0 ]] && \
+            warning "Execute: java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${zen_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
+            fail "Unable to connect to database \"$dbname\" on database server \"$dbserver\", please check the configuration again."
+            [[ retVal_verify_db_tmp -eq 0 ]] && \
+            success "Checked DB connection for \"$dbname\" on database server \"$dbserver\", PASSED!"
         fi
 
-        [[ retVal_verify_db_tmp -ne 0 ]] && \
-        warning "Execute: java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${zen_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
-        fail "Unable to connect to database \"$dbname\" on database server \"$dbserver\", please check the configuration again."
-        [[ retVal_verify_db_tmp -eq 0 ]] && \
-        success "Checked DB connection for \"$dbname\" on database server \"$dbserver\", PASSED!"
-    fi
+        tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_BTS_FLAG)")
+        tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
+        if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
+            printf "\n"
+            bts_external_db_cert_folder="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_SSL_CERT_FILE_FOLDER)"
+            bts_external_db_cert_folder=$(sed -e 's/^"//' -e 's/"$//' <<<"$bts_external_db_cert_folder")
 
-    tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_BTS_FLAG)")
-    tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
-    if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
-        printf "\n"
-        bts_external_db_cert_folder="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_SSL_CERT_FILE_FOLDER)"
-        bts_external_db_cert_folder=$(sed -e 's/^"//' -e 's/"$//' <<<"$bts_external_db_cert_folder")
+            dbserver="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_HOSTNAME)"
+            dbserver=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbserver")
+            dbport="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_PORT)"
+            dbport=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbport")
+            dbname="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_NAME)"
+            dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbname")
+            dbuser="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER_NAME)"
+            dbuser=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbuser")
+            dbuserpwd="changit" # client auth does not need dbuserpwd
 
-        dbserver="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_HOSTNAME)"
-        dbserver=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbserver")
-        dbport="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_PORT)"
-        dbport=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbport")
-        dbname="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_NAME)"
-        dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbname")
-        dbuser="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER_NAME)"
-        dbuser=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbuser")
-        dbuserpwd="changit" # client auth does not need dbuserpwd
+            info "Checking connection for BTS metastore external Postgres database \"${dbname}\" belongs to database instance \"${dbserver}\"...."
 
-        info "Checking connection for BTS metastore external Postgres database \"${dbname}\" belongs to database instance \"${dbserver}\"...."
+            postgres_cafile="${bts_external_db_cert_folder}/root.crt"
+            postgres_clientkeyfile="${bts_external_db_cert_folder}/client.key"
+            postgres_clientcertfile="${bts_external_db_cert_folder}/client.crt"
 
-        postgres_cafile="${bts_external_db_cert_folder}/root.crt"
-        postgres_clientkeyfile="${bts_external_db_cert_folder}/client.key"
-        postgres_clientcertfile="${bts_external_db_cert_folder}/client.crt"
+            rm -rf ${bts_external_db_cert_folder}/clientkey.pk8 2>&1 </dev/null
+            openssl pkcs8 -topk8 -outform DER -in $postgres_clientkeyfile -out ${bts_external_db_cert_folder}/clientkey.pk8 -nocrypt 2>&1 </dev/null
 
-        rm -rf ${bts_external_db_cert_folder}/clientkey.pk8 2>&1 </dev/null
-        openssl pkcs8 -topk8 -outform DER -in $postgres_clientkeyfile -out ${bts_external_db_cert_folder}/clientkey.pk8 -nocrypt 2>&1 </dev/null
+            output=$(java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${bts_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
+            retVal_verify_db_tmp=$?
+            connection_time=$(echo $output | awk -F 'Round Trip time: ' '{print $2}' | awk '{print $1}')
+            if [[ ! -z $connection_time ]]; then
+                display_latency_warning $connection_time "Database"
+            fi
 
-        output=$(java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${bts_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
-        retVal_verify_db_tmp=$?
-        connection_time=$(echo $output | awk -F 'Round Trip time: ' '{print $2}' | awk '{print $1}')
-        if [[ ! -z $connection_time ]]; then
-            display_latency_warning $connection_time "Database"
+            [[ retVal_verify_db_tmp -ne 0 ]] && \
+            warning "Execute: java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${bts_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
+            fail "Unable to connect to database \"$dbname\" on database server \"$dbserver\", please check the configuration again."
+            [[ retVal_verify_db_tmp -eq 0 ]] && \
+            success "Checked DB connection for \"$dbname\" on database server \"$dbserver\", PASSED!"
         fi
 
-        [[ retVal_verify_db_tmp -ne 0 ]] && \
-        warning "Execute: java -Dsemeru.fips=$fips_flag -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${bts_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
-        fail "Unable to connect to database \"$dbname\" on database server \"$dbserver\", please check the configuration again."
-        [[ retVal_verify_db_tmp -eq 0 ]] && \
-        success "Checked DB connection for \"$dbname\" on database server \"$dbserver\", PASSED!"
+        info "If all prerequisites check PASSED, you can run baw-deployment.sh to deploy BAW. Otherwise, please check the configuration again."
+        info "After BAW is deployed, please refer to the documentation for post-deployment steps."
     fi
-
-    info "If all prerequisites check PASSED, you can run baw-deployment.sh to deploy BAW. Otherwise, please check the configuration again."
-    info "After BAW is deployed, please refer to the documentation for post-deployment steps."
 }
 
 # Main function that performs the different functionalities required for adding/removing patterns and optional components
