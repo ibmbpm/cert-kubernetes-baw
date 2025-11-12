@@ -7847,7 +7847,8 @@ function sync_property_into_final_cr(){
     fi
 
     # Applying value in Automation Application server property file into final CR
-    if [[ " ${pattern_cr_arr[@]}" =~ "document_processing" || " ${pattern_cr_arr[@]}" =~ "application" || " ${pattern_cr_arr[@]}" =~ "workflow-runtime" || " ${pattern_cr_arr[@]}" =~ "workstreams" || " ${pattern_cr_arr[@]}" =~ "workflow-authoring" ]]; then
+    #DBACLD-201161: Removed the workflow-runtime and workflow-authoring check to avoid AE section in case of baw-on-containers env
+    if [[ " ${pattern_cr_arr[@]}" =~ "document_processing" || " ${pattern_cr_arr[@]}" =~ "application" || " ${pattern_cr_arr[@]}" =~ "workstreams" ]]; then
 
         tmp_ae_db_servername="$(prop_db_name_user_property_file_for_server_name APP_ENGINE_DB_USER_NAME)"
         tmp_ae_db_servername=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_ae_db_servername")
