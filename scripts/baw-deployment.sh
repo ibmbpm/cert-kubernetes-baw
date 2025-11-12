@@ -8137,7 +8137,7 @@ function apply_pattern_cr(){
         if [[ "${DEPLOYMENT_TYPE}" == "starter" ]]; then
             pattern_joined="$pattern_joined$delim$item"
             delim=","
-        elif [[ ${DEPLOYMENT_TYPE} == "production" ]]
+        elif [[ ${DEPLOYMENT_TYPE} == "production" || "${DEPLOYMENT_TYPE}" == "Production" ]]
         then
             case "$item" in
             "workflow-authoring"|"workflow-runtime"|"workflow-workstreams"|"document_processing_designer"|"document_processing_runtime")
