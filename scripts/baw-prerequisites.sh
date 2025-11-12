@@ -8900,7 +8900,7 @@ function validate_prerequisites(){
         fi
     fi
     
-    if [[("$PLATFORM_SELECTED" != "other" && "$fips_flag" != "true" )]]; then
+    if [[ $PLATFORM_SELECTED != "other" && $fips_flag != "true" ]]; then
 
         # Check db connection for im/zen/bts external postgresql db
         local DB_JDBC_NAME=${JDBC_DRIVER_DIR}/postgresql
