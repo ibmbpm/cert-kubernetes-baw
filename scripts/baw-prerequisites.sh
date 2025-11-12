@@ -7471,8 +7471,8 @@ function select_fips_enable(){
 }
 
 function validate_fips() {
-    set -e  # Exit this function on any error
-    set -u  # Treat unset variables as errors
+    # set -e  # Exit this function on any error
+    # set -u  # Treat unset variables as errors
 
     # Color codes
     RED='\033[0;31m'
