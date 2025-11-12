@@ -7574,6 +7574,7 @@ function validate_fips() {
   
     # DB connection for GCDDB
     if [[ " ${pattern_cr_arr[@]}" =~ "workflow-runtime" || " ${pattern_cr_arr[@]}" =~ "workflow-authoring" ]]; then
+        tmp_dbserver=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=ibm-fncm-secret -o yaml | ${YQ_CMD} r - items.[0].metadata.labels.gcd-db-server`
         tmp_dbname="$(prop_db_name_user_property_file $tmp_dbserver.GCD_DB_NAME)"
         tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=ibm-fncm-secret -o yaml | ${YQ_CMD} r - items.[0].data.gcdDBUsername | base64 --decode`
         verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}" 
@@ -7583,6 +7584,7 @@ function validate_fips() {
     if (( content_os_number > 0 )); then
         for ((j=0;j<${content_os_number};j++))
         do
+            tmp_dbserver="$(prop_db_name_user_property_file_for_server_name OS$((j+1))_DB_USER_NAME)"
             tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=ibm-fncm-secret -o yaml | ${YQ_CMD} r - items.[0].data.os$((j+1))DBUsername | base64 --decode`
             tmp_dbname="$(prop_db_name_user_property_file $tmp_dbserver.OS$((j+1))_DB_NAME)"
             verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}" 
@@ -7592,6 +7594,7 @@ function validate_fips() {
     # DB connection for object store used by BAW authoring/BAW Runtime
     if [[ " ${pattern_cr_arr[@]}" =~ "workflow-authoring" || " ${pattern_cr_arr[@]}" =~ "workflow-runtime" ]]; then
         for i in "${!BAW_AUTH_OS_ARR[@]}"; do
+            tmp_dbserver="$(prop_db_name_user_property_file_for_server_name ${BAW_AUTH_OS_ARR[i]}_DB_USER_NAME)"
             tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=ibm-fncm-secret -o yaml | ${YQ_CMD} r - items.[0].data.${tmp_label}DBUsername | base64 --decode`
             tmp_dbname="$(prop_db_name_user_property_file $tmp_dbserver.${BAW_AUTH_OS_ARR[i]}_DB_NAME)"
             verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}" 
@@ -8357,12 +8360,12 @@ function validate_prerequisites(){
     fi
 
     # For Rancher FIPS with SSL enabled external DB validation
-    if [[ "$PLATFORM_SELECTED" == "other" && "$fips_flag" == "true" ]]; then
+    if [[ $PLATFORM_SELECTED == "other" && $fips_flag == "true" ]]; then
         validate_fips
     fi
 
     # Validate DB connection for CP4BA
-    if [[ $DB_TYPE != "postgresql-edb" && ("$PLATFORM_SELECTED" != "other" && "$fips_flag" != "true" )]]; then
+    if [[ $DB_TYPE != "postgresql-edb" && ( $PLATFORM_SELECTED != "other" && $fips_flag != "true" )]]; then
 
         INFO "Checking DB connection required by Business Automation Workflow"
 
