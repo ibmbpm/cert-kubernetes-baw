@@ -7477,7 +7477,7 @@ function validate_fips() {
     # Color codes
     RED='\033[0;31m'
     GREEN='\033[0;32m'
-    YELLOW='\033[1;33m'
+    # YELLOW='\033[1;33m'
     BLUE='\033[0;34m'
     NC='\033[0m'
 
@@ -7511,7 +7511,7 @@ function validate_fips() {
     echo "========================================="
     echo "PostgreSQL Connection Validation"
     echo "========================================="
-    echo -e "${BLUE}Test Configuration:${NC}"
+    echo -e "Test Configuration:"
     echo "  Host: $DB_HOST"
     echo "  Port: $DB_PORT"
     echo "  SSL Mode: $SSL_MODE"
@@ -7522,54 +7522,53 @@ function validate_fips() {
     echo ""
 
     # Step 1: Verify psql is installed
-    echo -e "${YELLOW}[1/5] Checking if psql is installed...${NC}"
+    INFO "[1/5] Checking if psql is installed..."
     if ! command -v psql &> /dev/null; then
-        echo -e "${RED}✗ FAILED: psql not found. Please Install Postgres client in your machine and run ./baw-prerequisite.sh -m validate script again.${NC}"
+        echo -e "${RED}[✗] FAILED: psql not found. Please Install Postgres client in your machine and run ./baw-prerequisite.sh -m validate script again.${NC}"
         return 1
     fi
-    echo -e "${GREEN}✓ PASSED: psql is installed ($(psql --version))${NC}"
+    echo -e "${GREEN}[✓] PASSED: psql is installed ($(psql --version))${NC}"
     echo ""
 
     # Step 2: Verify certificate files exist
-    echo -e "${YELLOW}[2/5] Checking certificate files...${NC}"
+    INFO "[2/5] Checking certificate files..."
     for f in "$CLIENT_CERT" "$CLIENT_KEY" "$ROOT_CA"; do
         if [[ ! -f "$f" ]]; then
-            echo -e "${RED}✗ FAILED: Missing certificate file: $f${NC}"
+            echo -e "${RED}[✗] FAILED: Missing certificate file: $f${NC}"
             return 1
         fi
     done
-    echo -e "${GREEN}✓ PASSED: All certificate files exist${NC}"
+    echo -e "${GREEN}[✓] PASSED: All certificate files exist${NC}"
     echo ""
 
-    # Step 3: Verify certificate validity
-    echo -e "${YELLOW}[3/5] Validating certificates...${NC}"
+    INFO "[3/5] Validating certificates..."
     if ! openssl x509 -in "$CLIENT_CERT" -noout -checkend 0 2>/dev/null; then
-        echo -e "${RED}✗ FAILED: Client certificate is expired or invalid${NC}"
+        echo -e "${RED}[✗] FAILED: Client certificate is expired or invalid${NC}"
         return 1
     fi
-    echo -e "${GREEN}✓ PASSED: Client certificate is valid${NC}"
+    echo -e "${GREEN}[✓] PASSED: Client certificate is valid${NC}"
     echo ""
 
     # Step 4: Test network connectivity
-    echo -e "${YELLOW}[4/5] Testing network connectivity to $DB_HOST...${NC}"
+    INFO "[4/5] Testing network connectivity to $DB_HOST..."
     if ! ping -c 1 -W 3 "$DB_HOST" &> /dev/null; then
-        echo -e "${RED}✗ FAILED: Cannot reach host $DB_HOST${NC}"
+        echo -e "${RED}[✗] FAILED: Cannot reach host $DB_HOST${NC}"
         return 1
     fi
-    echo -e "${GREEN}✓ PASSED: Host is reachable${NC}"
+    echo -e "${GREEN}[✓] PASSED: Host is reachable${NC}"
     echo ""
 
     # Step 5: Test port connectivity
-    echo -e "${YELLOW}[5/5] Testing port connectivity to $DB_HOST:$DB_PORT...${NC}"
+    INFO "[5/5] Testing port connectivity to $DB_HOST:$DB_PORT..."
     if ! timeout 5 bash -c "cat < /dev/null > /dev/tcp/$DB_HOST/$DB_PORT" 2>/dev/null; then
-        echo -e "${RED}✗ FAILED: Port $DB_PORT is not accessible${NC}"
+        echo -e "${RED}[✗] FAILED: Port $DB_PORT is not accessible${NC}"
         return 1
     fi
-    echo -e "${GREEN}✓ PASSED: Port $DB_PORT is accessible${NC}"
+    echo -e "${GREEN}[✓] PASSED: Port $DB_PORT is accessible${NC}"
     echo ""
 
     echo "========================================="
-    echo -e "${GREEN}✓ EXTERNAL POSTGRES SERVER CONNECTION IS SUCCESSFUL. CHECKING FOR DATABASE CONNECTIONS${NC}"
+    echo -e "${GREEN}[✓] EXTERNAL POSTGRES SERVER CONNECTION IS SUCCESSFUL. CHECKING FOR DATABASE CONNECTIONS${NC}"
     echo "========================================="
   
     # DB connection for GCDDB
@@ -7670,7 +7669,7 @@ function validate_fips() {
 
 
     echo "========================================="
-    echo -e "${GREEN}✓ ALL TESTS PASSED${NC}"
+    echo -e "${GREEN}[✓] ALL TESTS PASSED${NC}"
     echo "========================================="
 
     return 0
@@ -7693,21 +7692,21 @@ function verify_fips_db_connection(){
     EXIT_CODE=$?
 
     if [[ $EXIT_CODE -ne 0 ]]; then
-        echo -e "${RED}✗ FAILED: PostgreSQL connection failed for ${DB_NAME}...${NC}"
+        echo -e "${RED}[✗] FAILED: PostgreSQL connection failed for ${DB_NAME}...${NC}"
         echo "Error output:"
         echo "$OUTPUT"
         return 1
     fi
-    echo -e "${GREEN}✓ PASSED: PostgreSQL connection successful for ${DB_NAME} ...${NC}"
+    echo -e "${GREEN}[✓] PASSED: PostgreSQL connection successful for ${DB_NAME} ...${NC}"
     echo ""
 
     echo -e "${YELLOW} Verifying connection details...${NC}"
     DETAILS=$(psql "$CONN_STRING" -t -c "SELECT current_database(), current_user, inet_server_addr(), inet_server_port();")
     if [[ $? -ne 0 ]]; then
-        echo -e "${RED}✗ FAILED: Could not retrieve connection details${NC}"
+        echo -e "${RED}[✗] FAILED: Could not retrieve connection details${NC}"
         return 1
     fi
-    echo -e "${GREEN}✓ PASSED: Connection details retrieved${NC}"
+    echo -e "${GREEN}[✓] PASSED: Connection details retrieved${NC}"
     echo ""
     echo "Connection Details:"
     echo "$DETAILS"
