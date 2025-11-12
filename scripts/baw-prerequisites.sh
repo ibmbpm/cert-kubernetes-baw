@@ -8366,7 +8366,7 @@ function validate_prerequisites(){
     fi
 
     # Validate DB connection for CP4BA
-    if [[ ($DB_TYPE != "postgresql-edb" && ( $PLATFORM_SELECTED == "OCP" && $fips_flag != "true" )) || ($DB_TYPE != "postgresql-edb" && ( $PLATFORM_SELECTED != "OCP" && $fips_flag != "true" ))]]; then
+    if [[ ($DB_TYPE != "postgresql-edb" && ( $PLATFORM_SELECTED == "OCP" && $fips_flag != "true" )) || ($DB_TYPE != "postgresql-edb" && ( $PLATFORM_SELECTED != "OCP" && $fips_flag != "true" )) ]]; then
 
         INFO "Checking DB connection required by Business Automation Workflow"
 
