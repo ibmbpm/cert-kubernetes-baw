@@ -7523,51 +7523,51 @@ function validate_fips() {
     # Step 1: Verify psql is installed
     info "[1/5] Checking if psql is installed..."
     if ! command -v psql &> /dev/null; then
-        echo -e "${RED}[✗] FAILED: psql not found. Please Install Postgres client in your machine and run ./baw-prerequisite.sh -m validate script again.${NC}"
+        error "FAILED: psql not found. Please Install Postgres client in your machine and run ./baw-prerequisite.sh -m validate script again."
         return 1
     fi
-    echo -e "${GREEN}[✓] PASSED: psql is installed ($(psql --version))${NC}"
+    success "PASSED: psql is installed ($(psql --version))"
     echo ""
 
     # Step 2: Verify certificate files exist
     info "[2/5] Checking certificate files..."
     for f in "$CLIENT_CERT" "$CLIENT_KEY" "$ROOT_CA"; do
         if [[ ! -f "$f" ]]; then
-            echo -e "${RED}[✗] FAILED: Missing certificate file: $f${NC}"
+            error "FAILED: Missing certificate file: "
             return 1
         fi
     done
-    echo -e "${GREEN}[✓] PASSED: All certificate files exist${NC}"
+    success "PASSED: All certificate files exist"
     echo ""
 
     info "[3/5] Validating certificates..."
     if ! openssl x509 -in "$CLIENT_CERT" -noout -checkend 0 2>/dev/null; then
-        echo -e "${RED}[✗] FAILED: Client certificate is expired or invalid${NC}"
+        error "FAILED: Client certificate is expired or invalid"
         return 1
     fi
-    echo -e "${GREEN}[✓] PASSED: Client certificate is valid${NC}"
+    success "PASSED: Client certificate is valid"
     echo ""
 
     # Step 4: Test network connectivity
     info "[4/5] Testing network connectivity to $DB_HOST..."
     if ! ping -c 1 -W 3 "$DB_HOST" &> /dev/null; then
-        echo -e "${RED}[✗] FAILED: Cannot reach host $DB_HOST${NC}"
+        error "FAILED: Cannot reach host $DB_HOST"
         return 1
     fi
-    echo -e "${GREEN}[✓] PASSED: Host is reachable${NC}"
+    success "PASSED: Host is reachable"
     echo ""
 
     # Step 5: Test port connectivity
     info "[5/5] Testing port connectivity to $DB_HOST:$DB_PORT..."
     if ! timeout 5 bash -c "cat < /dev/null > /dev/tcp/$DB_HOST/$DB_PORT" 2>/dev/null; then
-        echo -e "${RED}[✗] FAILED: Port $DB_PORT is not accessible${NC}"
+        error "FAILED: Port $DB_PORT is not accessible"
         return 1
     fi
-    echo -e "${GREEN}[✓] PASSED: Port $DB_PORT is accessible${NC}"
+    success "PASSED: Port $DB_PORT is accessible"
     echo ""
 
     echo "========================================="
-    echo -e "${GREEN}[✓] EXTERNAL POSTGRES SERVER CONNECTION IS SUCCESSFUL. CHECKING FOR DATABASE CONNECTIONS${NC}"
+    msgB "EXTERNAL POSTGRES SERVER CONNECTION IS SUCCESSFUL. CHECKING FOR DATABASE CONNECTIONS"
     echo "========================================="
   
     # DB connection for GCDDB
@@ -7672,7 +7672,7 @@ function validate_fips() {
 
 
     echo "========================================="
-    echo -e "${GREEN}[✓] ALL TESTS PASSED${NC}"
+    msgB "ALL TESTS PASSED"
     echo "========================================="
 
     info "If all prerequisites check PASSED, you can run baw-deployment.sh to deploy BAW. Otherwise, please check the configuration again."
@@ -7698,21 +7698,21 @@ function verify_fips_db_connection(){
     EXIT_CODE=$?
 
     if [[ $EXIT_CODE -ne 0 ]]; then
-        echo -e "${RED}[✗] FAILED: PostgreSQL connection failed for ${DB_NAME}...${NC}"
+        error "FAILED: PostgreSQL connection failed for ${DB_NAME}..."
         echo "Error output:"
         echo "$OUTPUT"
         return 1
     fi
-    echo -e "${GREEN}[✓] PASSED: PostgreSQL connection successful for ${DB_NAME} ...${NC}"
+    success "PASSED: PostgreSQL connection successful for ${DB_NAME} ..."
     echo ""
 
     info "Verifying connection details..."
     DETAILS=$(psql "$CONN_STRING" -t -c "SELECT current_database(), current_user, inet_server_addr(), inet_server_port();")
     if [[ $? -ne 0 ]]; then
-        echo -e "${RED}[✗] FAILED: Could not retrieve connection details${NC}"
+        error "FAILED: Could not retrieve connection details"
         return 1
     fi
-    echo -e "${GREEN}[✓] PASSED: Connection details retrieved${NC}"
+    success "PASSED: Connection details retrieved"
     echo ""
     echo "Connection Details:"
     echo "$DETAILS"
