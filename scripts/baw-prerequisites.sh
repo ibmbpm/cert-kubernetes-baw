@@ -7594,6 +7594,7 @@ function validate_fips() {
             for i in "${!BAW_AUTH_OS_ARR[@]}"; do
                 tmp_dbserver="$(prop_db_name_user_property_file_for_server_name ${BAW_AUTH_OS_ARR[i]}_DB_USER_NAME)"
                 check_dbserver_name_valid $tmp_dbserver "${BAW_AUTH_OS_ARR[i]}_DB_USER_NAME"
+                tmp_label=$(echo ${BAW_AUTH_OS_ARR[i]}| tr '[:upper:]' '[:lower:]')
                 tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=ibm-fncm-secret -o yaml | ${YQ_CMD} r - items.[0].data.${tmp_label}DBUsername | base64 --decode`
                 tmp_dbname="$(prop_db_name_user_property_file $tmp_dbserver.${BAW_AUTH_OS_ARR[i]}_DB_NAME)"
                 verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}" 
