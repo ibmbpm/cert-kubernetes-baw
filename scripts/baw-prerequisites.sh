@@ -7659,14 +7659,16 @@ function validate_fips() {
     fi
 
     # BTS
-    tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_BTS_FLAG)")
-    tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
-    if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
-        dbname="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_NAME)"
-        dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbname")
-        dbuser="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER_NAME)"
-        dbuser=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbuser")
-        verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${dbname}" "${dbuser}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}"
+    if [[ " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ]]; then
+        tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_BTS_FLAG)")
+        tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
+        if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
+            dbname="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_NAME)"
+            dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbname")
+            dbuser="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER_NAME)"
+            dbuser=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbuser")
+            verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${dbname}" "${dbuser}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}"
+        fi
     fi
 
 
