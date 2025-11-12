@@ -7508,7 +7508,7 @@ function validate_fips() {
     ROOT_CA="$root_certificate_file"
 
     echo "========================================="
-    echo "PostgreSQL Connection Validation"
+    msg "PostgreSQL Connection Validation"
     echo "========================================="
     echo -e "Test Configuration:"
     echo "  Host: $DB_HOST"
@@ -7566,9 +7566,9 @@ function validate_fips() {
     success "PASSED: Port $DB_PORT is accessible"
     echo ""
 
-    echo "========================================="
-    msgB "EXTERNAL POSTGRES SERVER CONNECTION IS SUCCESSFUL. CHECKING FOR DATABASE CONNECTIONS"
-    echo "========================================="
+    echo "==================================================================================="
+    msg "EXTERNAL POSTGRES SERVER CONNECTION IS SUCCESSFUL. CHECKING FOR DATABASE CONNECTIONS"
+    echo "===================================================================================="
   
     # DB connection for GCDDB
     if [[ " ${pattern_cr_arr[@]}" =~ "workflow-runtime" || " ${pattern_cr_arr[@]}" =~ "workflow-authoring" ]]; then
@@ -7671,9 +7671,9 @@ function validate_fips() {
     fi
 
 
-    echo "========================================="
-    msgB "ALL TESTS PASSED"
-    echo "========================================="
+    echo "=============================="
+    msg "ALL TESTS PASSED"
+    echo "=============================="
 
     info "If all prerequisites check PASSED, you can run baw-deployment.sh to deploy BAW. Otherwise, please check the configuration again."
     info "After BAW is deployed, please refer to the documentation for post-deployment steps."
