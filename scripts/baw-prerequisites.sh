@@ -7521,7 +7521,7 @@ function validate_fips() {
     echo ""
 
     # Step 1: Verify psql is installed
-    INFO "[1/5] Checking if psql is installed..."
+    info "[1/5] Checking if psql is installed..."
     if ! command -v psql &> /dev/null; then
         echo -e "${RED}[✗] FAILED: psql not found. Please Install Postgres client in your machine and run ./baw-prerequisite.sh -m validate script again.${NC}"
         return 1
@@ -7530,7 +7530,7 @@ function validate_fips() {
     echo ""
 
     # Step 2: Verify certificate files exist
-    INFO "[2/5] Checking certificate files..."
+    info "[2/5] Checking certificate files..."
     for f in "$CLIENT_CERT" "$CLIENT_KEY" "$ROOT_CA"; do
         if [[ ! -f "$f" ]]; then
             echo -e "${RED}[✗] FAILED: Missing certificate file: $f${NC}"
@@ -7540,7 +7540,7 @@ function validate_fips() {
     echo -e "${GREEN}[✓] PASSED: All certificate files exist${NC}"
     echo ""
 
-    INFO "[3/5] Validating certificates..."
+    info "[3/5] Validating certificates..."
     if ! openssl x509 -in "$CLIENT_CERT" -noout -checkend 0 2>/dev/null; then
         echo -e "${RED}[✗] FAILED: Client certificate is expired or invalid${NC}"
         return 1
@@ -7549,7 +7549,7 @@ function validate_fips() {
     echo ""
 
     # Step 4: Test network connectivity
-    INFO "[4/5] Testing network connectivity to $DB_HOST..."
+    info "[4/5] Testing network connectivity to $DB_HOST..."
     if ! ping -c 1 -W 3 "$DB_HOST" &> /dev/null; then
         echo -e "${RED}[✗] FAILED: Cannot reach host $DB_HOST${NC}"
         return 1
@@ -7558,7 +7558,7 @@ function validate_fips() {
     echo ""
 
     # Step 5: Test port connectivity
-    INFO "[5/5] Testing port connectivity to $DB_HOST:$DB_PORT..."
+    info "[5/5] Testing port connectivity to $DB_HOST:$DB_PORT..."
     if ! timeout 5 bash -c "cat < /dev/null > /dev/tcp/$DB_HOST/$DB_PORT" 2>/dev/null; then
         echo -e "${RED}[✗] FAILED: Port $DB_PORT is not accessible${NC}"
         return 1
@@ -7691,7 +7691,7 @@ function verify_fips_db_connection(){
     local CLIENT_KEY=$7
     local ROOT_CA=$8
     
-    echo -e "${YELLOW} Testing PostgreSQL DB connection for ${DB_NAME}...${NC}"
+    info "Testing PostgreSQL DB connection for ${DB_NAME}..."
 
     CONN_STRING="host=$DB_HOST port=$DB_PORT dbname=$DB_NAME user=$DB_USER sslmode=$SSL_MODE sslcert=$CLIENT_CERT sslkey=$CLIENT_KEY sslrootcert=$ROOT_CA"
     OUTPUT=$(psql "$CONN_STRING" -c "SELECT version();" 2>&1)
@@ -7706,7 +7706,7 @@ function verify_fips_db_connection(){
     echo -e "${GREEN}[✓] PASSED: PostgreSQL connection successful for ${DB_NAME} ...${NC}"
     echo ""
 
-    echo -e "${YELLOW} Verifying connection details...${NC}"
+    info "Verifying connection details..."
     DETAILS=$(psql "$CONN_STRING" -t -c "SELECT current_database(), current_user, inet_server_addr(), inet_server_port();")
     if [[ $? -ne 0 ]]; then
         echo -e "${RED}[✗] FAILED: Could not retrieve connection details${NC}"
