@@ -8,7 +8,7 @@
 # disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
 #
 ###############################################################################
-# CP4BA 2501.RC2 catalog
+# CP4BA 2501.RC3 catalog
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:1eae73d4f37ad570c4bf0a8eba239461b77fa50e7253a6ca95130177e5e03c47
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:78ad73e10f86710cce8dc05cfe30359a6a677e6d5df52a9eccb5726ab5769324
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -122,7 +122,7 @@ spec:
   displayName: BTS Operator-3.35.6
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:0e018642d7d3cbf3757f86043f7fd88be8ef2ae76d8297c74df7dba62715d876
+  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:f84b1af0e04cd8f8a86502622b40a8600c40f59758ace280108aefaaba6ee7d9
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:

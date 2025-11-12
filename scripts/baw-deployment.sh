@@ -6983,11 +6983,13 @@ function sync_property_into_final_cr(){
           ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.workflow_assistant_configuration.watsonx_deployment_id "\"$tmp_watsonx_deployment_id\""
         fi
 
-
-        domain_name=$(${CLI_CMD} get configmap ibm-cp4ba-common-config -n $CP4BA_SERVICES_NS -o jsonpath='{.data.domain_name}')
-
-        # Define common Zen front door host (shared domain for cookie support)
-        zen_frontdoor_host="https://${CP4BA_SERVICES_NS}-cpd.${domain_name}"
+        if [[ $PLATFORM_SELECTED == "OCP" ]]; then
+            domain_name=$(${CLI_CMD} get IngressController default -n openshift-ingress-operator --no-headers --ignore-not-found -o jsonpath='{.status.domain}')
+            zen_frontdoor_host="https://cpd-${CP4BA_SERVICES_NS}.${domain_name}"
+        else
+            domain_name=$(${CLI_CMD} get configmap ibm-cp4ba-common-config -n $CP4BA_SERVICES_NS -o jsonpath='{.data.domain_name}')
+            zen_frontdoor_host="https://${CP4BA_SERVICES_NS}-cpd.${domain_name}"
+        fi
 
         # --- authoring agent XML ---
         if [[ "$tmp_is_run_authoring_agent_enabled" == "true" ]]; then
@@ -7845,7 +7847,8 @@ function sync_property_into_final_cr(){
     fi
 
     # Applying value in Automation Application server property file into final CR
-    if [[ " ${pattern_cr_arr[@]}" =~ "document_processing" || " ${pattern_cr_arr[@]}" =~ "application" || " ${pattern_cr_arr[@]}" =~ "workflow-runtime" || " ${pattern_cr_arr[@]}" =~ "workstreams" || " ${pattern_cr_arr[@]}" =~ "workflow-authoring" ]]; then
+    #DBACLD-201161: Removed the workflow-runtime and workflow-authoring check to avoid AE section in case of baw-on-containers env
+    if [[ " ${pattern_cr_arr[@]}" =~ "document_processing" || " ${pattern_cr_arr[@]}" =~ "application" || " ${pattern_cr_arr[@]}" =~ "workstreams" ]]; then
 
         tmp_ae_db_servername="$(prop_db_name_user_property_file_for_server_name APP_ENGINE_DB_USER_NAME)"
         tmp_ae_db_servername=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_ae_db_servername")
@@ -8135,7 +8138,7 @@ function apply_pattern_cr(){
         if [[ "${DEPLOYMENT_TYPE}" == "starter" ]]; then
             pattern_joined="$pattern_joined$delim$item"
             delim=","
-        elif [[ ${DEPLOYMENT_TYPE} == "production" ]]
+        elif [[ ${DEPLOYMENT_TYPE} == "production" || "${DEPLOYMENT_TYPE}" == "Production" ]]
         then
             case "$item" in
             "workflow-authoring"|"workflow-runtime"|"workflow-workstreams"|"document_processing_designer"|"document_processing_runtime")
@@ -8432,7 +8435,7 @@ function apply_pattern_cr(){
             ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.enable_fips "false"
         fi
     #TODO will CNCFsupport FIPS
-    elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") ]]; then
+    elif [[ $DEPLOYMENT_WITH_PROPERTY == "Yes" && ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS" || $PLATFORM_SELECTED == "other") ]]; then
          fips_flag="$(prop_user_profile_property_file CP4BA.ENABLE_FIPS)"
         fips_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$fips_flag")
         fips_flag=$(echo $fips_flag | tr '[:upper:]' '[:lower:]')
