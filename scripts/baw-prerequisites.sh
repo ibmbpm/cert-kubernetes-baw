@@ -414,6 +414,7 @@ function select_optional_component(){
                     then
                         printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${optional_components_list[i]}"  "${choices_component[i]}"
                     else
+			choices_component[i]="(Installed)"
                         printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${optional_components_list[i]}"  "(Installed)"
                         if [[ "${optional_components_cr_list[i]}" == "bai" ]];then
                             BAI_SELECTED="Yes"
@@ -517,7 +518,22 @@ function select_optional_component(){
                 then
                     [[ "${choices_component[num]}" ]] && choices_component[num]="" || choices_component[num]=""
                 else
-                    [[ "${choices_component[num]}" ]] && choices_component[num]="" || choices_component[num]="(To Be Uninstalled)"
+                    #If the component currently being looked at already exists in EXISTING_OPT_COMPONENT_ARR that means it is currently installed on the deployment
+                    # Based on the optional_components_removed we can display the pattern has installed or to be uninstalled
+                    # If it is present in the array that means this component was probably showing up for another pattern and during that selection it was chosen to be uninstalled
+                    # https://jsw.ibm.com/browse/DBACLD-200504
+                    containsElement "${optional_components_cr_list[num]}" "${optional_components_removed[@]}"
+                    selected_to_removeVal=$?
+                    if [ $selected_to_removeVal -ne 0 ]; then
+                        choices_component[num]="(To Be Uninstalled)"
+                        # Keep a track of the list of optional components that were already installed and then chosen to be removed
+                        # This is so that if they show up as an optional component for another pattern it will show as uninstalled
+                        optional_components_removed=( "${optional_components_removed[@]}" "${optional_components_cr_list[num]}" )
+                    else
+                        choices_component[num]="(Installed)"
+                        # Since the optional component that was chosen to be uninstalled has been selected again, we can remove it from the array that we used because it is no longer being marked for uninstallation
+                        optional_components_removed=($(remove_component "${optional_components_cr_list[num]}" "${optional_components_removed[@]}"))
+                    fi
                 fi
             fi
         done
