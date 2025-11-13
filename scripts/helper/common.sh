@@ -239,7 +239,8 @@ REQUIREDVER_POSTGRESQL="1.25.3"
 # EVENTS_OPERATOR_VERSION is for checking IBM Events operator upgrade status, need to update for each IFIX
 EVENTS_OPERATOR_VERSION="v5.2.1"
 # List of BAW versions that are supported for upgrade to $CP4BA_CSV_VERSION
-MINIMUM_SUPPORTED_UPGRADE_VERSIONS=("24.1." "25.0." )
+# When setting to an empty array, only fresh installation is supported.
+MINIMUM_SUPPORTED_UPGRADE_VERSIONS=()
 
 
 
@@ -1035,6 +1036,12 @@ function display_latency_warning() {
 function check_valid_baw_operator_version() {
     local current_operator_version=$1
     valid_baw_operator_version=false
+    #Update logic to check for the MINIMUM_SUPPORTED_UPGRADE_VERSIONS array before proceeding with the upgrade checks. If it's empty then we will exit with a message indicating that only refresh installation is supported.
+    if [[ ${#MINIMUM_SUPPORTED_UPGRADE_VERSIONS[@]} -eq 0 ]]; then
+        info "NOTE: Only fresh installation of BAW "$CP4BA_CSV_VERSION" is supported. Upgrading from any previous releases to BAW "$CP4BA_CSV_VERSION" is not supported as it is a Limited Support Release (LSR)"
+        exit 1
+    fi
+
     for version in "${MINIMUM_SUPPORTED_UPGRADE_VERSIONS[@]}"; do
         if [[ "$current_operator_version" == "$version"* && "$current_operator_version" != "${CP4BA_CSV_VERSION#v}" ]]; then
             valid_baw_operator_version=true
