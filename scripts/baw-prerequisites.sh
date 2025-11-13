@@ -414,6 +414,7 @@ function select_optional_component(){
                     then
                         printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${optional_components_list[i]}"  "${choices_component[i]}"
                     else
+			choices_component[i]="(Installed)"
                         printf "%1d) %s \x1B[1m%s\x1B[0m\n" $((i+1)) "${optional_components_list[i]}"  "(Installed)"
                         if [[ "${optional_components_cr_list[i]}" == "bai" ]];then
                             BAI_SELECTED="Yes"
