@@ -59,6 +59,12 @@ function check_cp4ba_operator_version(){
     local maxRetry=5
     info "Checking the version of IBM Cloud Pak for Business Automation Operator"
 
+    #Update logic to check for the MINIMUM_SUPPORTED_UPGRADE_VERSIONS array before proceeding with the upgrade checks. If it's empty then we will exit with a message indicating that only refresh installation is supported.
+    if [[ ${#MINIMUM_SUPPORTED_UPGRADE_VERSIONS[@]} -eq 0 ]]; then
+        info "NOTE: Only fresh installation of BAW on containers "$CP4BA_CSV_VERSION" is supported. Upgrading from any previous releases to BAW on containers "$CP4BA_CSV_VERSION" is not supported as it is a Limited Support Release (LSR)"
+        exit 1
+    fi
+
     cp4a_operator_csv_name_target_ns=$(kubectl get csv -n $project_name --no-headers --ignore-not-found | grep "IBM Cloud Pak for Business Automation" | awk '{print $1}')
     cp4a_operator_csv_name_allnamespace_ns=$(kubectl get csv -n $ALL_NAMESPACE_NAME --no-headers --ignore-not-found | grep "IBM Cloud Pak for Business Automation" | awk '{print $1}')
 
