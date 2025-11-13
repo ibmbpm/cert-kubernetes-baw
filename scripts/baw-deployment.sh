@@ -5824,6 +5824,17 @@ function sync_property_into_final_cr(){
             tmp_admin_user_name=$(prop_user_profile_property_file CONTENT_INITIALIZATION.LDAP_ADMIN_USER_NAME)
             tmp_admin_user_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_admin_user_name")
 
+            #Adding username for bai
+            if [[ "$SCRIPT_MODE" == "dev" ]]; then
+                # Check if bai_configuration section exists
+                if grep -q "bai_configuration:" ${CP4A_PATTERN_FILE_TMP}; then
+                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.admin_user "$tmp_admin_user_name"
+                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.images.keytool_init_container.repository "cp.stg.icr.io/cp/cp4a/bai/dba-keytool-initcontainer"
+                    ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.images.keytool_init_container.tag "cp.stg.icr.io/cp/cp4a/bai/dba-keytool-initcontainer"
+                fi
+            fi
+
+
             tmp_admin_group_name=$(prop_user_profile_property_file CONTENT_INITIALIZATION.LDAP_ADMINS_GROUPS_NAME)
             tmp_admin_group_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_admin_group_name")
 
@@ -8738,6 +8749,62 @@ function apply_pattern_cr(){
     if [[ "$SCRIPT_MODE" == "dev" || "$SCRIPT_MODE" == "review" ]]; then
         ${SED_COMMAND} "s|tag: \"${IMAGE_TAG_FINAL}\"|tag: \"${IMAGE_TAG_DEV}\"|g" ${CP4A_PATTERN_FILE_TMP}
         ${SED_COMMAND} "s|tag: ${IMAGE_TAG_FINAL}|tag: \"${IMAGE_TAG_DEV}\"|g" ${CP4A_PATTERN_FILE_TMP}
+    fi
+
+    # Add custom BAI configuration for dev mode only if bai_configuration exists and doesn't have detailed image configs
+    if [[ "$SCRIPT_MODE" == "dev" ]]; then
+        # Check if bai_configuration section exists
+        if grep -q "bai_configuration:" ${CP4A_PATTERN_FILE_TMP}; then
+            # Check if the existing bai_configuration has detailed image configurations
+            # If it doesn't have image.repository settings, it needs to be enhanced
+            if ! grep -q "cp.stg.icr.io/cp/cp4a/bai" ${CP4A_PATTERN_FILE_TMP}; then
+                # Delete existing bai_configuration section
+                ${YQ_CMD} d -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration
+                
+                # Add custom BAI configuration for dev mode
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.image_pull_policy "Always"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.ads.install "false"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.ads.parallelism "2"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.application_setup.image.repository "cp.stg.icr.io/cp/cp4a/bai/insights-engine-application-setup"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.application_setup.image.tag "$IMAGE_TAG_DEV"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.baml.install "true"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.bawadv.install "false"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.bawadv.parallelism "2"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.bpmn.force_elasticsearch_timeseries "true"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.bpmn.image.repository "cp.stg.icr.io/cp/cp4a/bai/bai-bpmn"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.bpmn.image.tag "$IMAGE_TAG_DEV"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.bpmn.install "true"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.business_performance_center.all_users_access "true"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.business_performance_center.image.repository "cp.stg.icr.io/cp/cp4a/bai/insights-engine-cockpit"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.business_performance_center.image.tag "$IMAGE_TAG_DEV"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.content.force_elasticsearch_timeseries "true"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.content.image.repository "cp.stg.icr.io/cp/cp4a/bai/bai-flink"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.content.image.tag "$IMAGE_TAG_DEV"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.content.install "true"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.flink.create_route "true"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.icm.force_elasticsearch_timeseries "true"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.icm.image.repository "cp.stg.icr.io/cp/cp4a/bai/bai-icm"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.icm.image.tag "$IMAGE_TAG_DEV"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.icm.install "true"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.image_credentials.registry "cp.stg.icr.io/cp/cp4a/bai"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.image_pull_policy "IfNotPresent"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.init_image.image.repository "cp.stg.icr.io/cp/cp4a/bai/bai-init"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.init_image.image.tag "$IMAGE_TAG_DEV"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.management.backend.image.repository "cp.stg.icr.io/cp/cp4a/bai/insights-engine-management-backend"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.management.backend.image.tag "$IMAGE_TAG_DEV"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.management.image.repository "cp.stg.icr.io/cp/cp4a/bai/insights-engine-management"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.management.image.tag "$IMAGE_TAG_DEV"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.navigator.force_elasticsearch_timeseries "true"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.navigator.image.repository "cp.stg.icr.io/cp/cp4a/bai/bai-flink"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.navigator.image.tag "$IMAGE_TAG_DEV"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.navigator.install "true"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.odm.install "false"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.odm.parallelism "2"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.setup.image.repository "cp.stg.icr.io/cp/cp4a/bai/bai-setup"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.setup.image.tag "$IMAGE_TAG_DEV"
+                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.license.accept "true"
+            fi
+        fi
     fi
 
     if [[ "$IMAGE_TAG_DEV" != "$IMAGE_TAG_FINAL" && ( "$SCRIPT_MODE" == "dev" || "$SCRIPT_MODE" == "review") ]]; then
