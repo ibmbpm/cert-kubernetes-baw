@@ -63,7 +63,7 @@ cs_maximal_version_for_ifix="5.0.0" # Maximal supported Common Service version b
 BAW_S_FC_CR=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_production_FC_baw.yaml
 
 #Change required each sprint for using dev mode
-CURRENT_SPRINT_TAG="2500.SP06"
+CURRENT_SPRINT_TAG="2501.RC3"
 CP4BA_SERVICES_NS=""
 CP4BA_OPERATORS_NS=""
 
