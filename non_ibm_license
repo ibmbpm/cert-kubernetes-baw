@@ -1,7 +1,7 @@
 TERMS AND CONDITIONS FOR SEPARATELY LICENSED CODE
 
-IBM Business Automation Workflow Enterprise V25.0.0.0
-IBM Business Automation Workflow Enterprise for Non-Production Environment V25.0.0.0
+IBM Business Automation Workflow Enterprise V25.0.1.0 Limited Support Release
+IBM Business Automation Workflow Enterprise for Non-Production Environment V25.0.1.0 Limited Support Release
 
 The IBM license agreement and any applicable information on the web
 download page for IBM products refers Licensee to this file for details
@@ -22,7 +22,7 @@ shipped with, the Program as Licensee installed it.
 The following are Separately Licensed Code:
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-NON-IBM-LICENSE INFORMATION FOR <PRODUCT_NAME>
+NON-IBM-LICENSE INFORMATION FOR BAW
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -32,15 +32,8 @@ THIS NON-IBM-LICENSE FILE CONSISTS OF THE FOLLOWING SECTIONS:
 
 CC-BY-3.0
 CC-BY-4.0
-GPL-2.0
-  - GPL-2.0
-  - GPL-2.0-only
-  - GPL-2.0-or-later
-GPL-3.0
-  - GPL-3.0
-  - GPL-3.0-only
-  - GPL-3.0-or-later
 OFL-1.1
+RedHat UBI-9.6
 
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -51,7 +44,7 @@ The Program includes some or all of the following works licensed under
 the Creative Commons.
 The url to the license is https://creativecommons.org/licenses/by/3.0/legalcode
 
-spdx-exceptions | No Copyright Found | https://registry.npmjs.org/spdx-exceptions/-/spdx-exceptions-2.5.0.tgz
+spdx-exceptions | Copyright © 2010-2015 Linux Foundation and its Contributors | https://registry.npmjs.org/spdx-exceptions/-/spdx-exceptions-2.5.0.tgz
 
 END OF CREATIVE COMMONS ATTRIBUTION 3.0 NON-IBM-LICENSE INFORMATION
 
@@ -64,153 +57,9 @@ The Program includes some or all of the following works licensed under
 the Creative Commons.
 The url to the license is https://creativecommons.org/licenses/by/4.0/legalcode
 
-caniuse-lite | No Copyright Found | https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001525.tgz
+icomoon  | No Copyright Found | https://www.onlinewebfonts.com/download/0265b98b68ecf1b3d801b5df4dc155e7
 
 END OF CREATIVE COMMONS ATTRIBUTION 4.0 NON-IBM-LICENSE INFORMATION
-
-
-
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-GNU General Public License
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-GNU GENERAL PUBLIC LICENSE, VERSION 2
-
-The Program includes some or all of the following licensed to you
-as Separately Licensed Code under the GNU General Public
-License. For copies of the source code for this software, send an
-email to < email address > identifying the IBM product and the
-GPL-licensed program for which you are requesting the source
-code.
-
-ima-evm-utils
-redhat-release
-subscription-manager-rhsm-certificates
-
-END OF GNU GENERAL PUBLIC LICENSE, VERSION 2 NON-IBM-LICENSE INFORMATION
-
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-GNU GENERAL PUBLIC LICENSE, VERSION 2
-
-The Program includes some or all of the following licensed to you
-as Separately Licensed Code under the GNU General Public
-License. For copies of the source code for this software, send an
-email to < email address > identifying the IBM product and the
-GPL-licensed program for which you are requesting the source
-code.
-
-alternatives
-cloud-what
-
-END OF GNU GENERAL PUBLIC LICENSE, VERSION 2 NON-IBM-LICENSE INFORMATION
-
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-GNU GENERAL PUBLIC LICENSE, VERSION 2
-
-The Program includes some or all of the following licensed to you
-as Separately Licensed Code under the GNU General Public
-License. For copies of the source code for this software, send an
-email to < email address > identifying the IBM product and the
-GPL-licensed program for which you are requesting the source
-code.
-
-acl
-attr
-dmidecode
-dnf
-dnf-data
-hostname
-langpacks-core-en
-langpacks-core-font-en
-langpacks-en
-libcomps
-libreport-filesystem
-libsigsegv
-logrotate
-psmisc
-python3-dnf
-python3-dnf-plugins-core
-python3-libcomps
-python3-rpm
-rpm
-rpm-plugin-selinux
-selinux-policy
-selinux-policy-targeted
-usermode
-virt-what
-yum
-
-END OF GNU GENERAL PUBLIC LICENSE, VERSION 2 NON-IBM-LICENSE INFORMATION
-
-
-
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-GNU General Public License
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-GNU GENERAL PUBLIC LICENSE, VERSION 3
-
-The Program includes some or all of the following licensed to you
-as Separately Licensed Code under the GNU General Public
-License. For copies of the source code for this software, send an
-email to < email address > identifying the IBM product and the
-GPL-licensed program for which you are requesting the source
-code.
-
-which
-
-END OF GNU GENERAL PUBLIC LICENSE, VERSION 3 NON-IBM-LICENSE INFORMATION
-
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-GNU GENERAL PUBLIC LICENSE, VERSION 3
-
-The Program includes some or all of the following licensed to you
-as Separately Licensed Code under the GNU General Public
-License. For copies of the source code for this software, send an
-email to < email address > identifying the IBM product and the
-GPL-licensed program for which you are requesting the source
-code.
-
-envtpl
-
-END OF GNU GENERAL PUBLIC LICENSE, VERSION 3 NON-IBM-LICENSE INFORMATION
-
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-GNU GENERAL PUBLIC LICENSE, VERSION 3
-
-The Program includes some or all of the following licensed to you
-as Separately Licensed Code under the GNU General Public
-License. For copies of the source code for this software, send an
-email to < email address > identifying the IBM product and the
-GPL-licensed program for which you are requesting the source
-code.
-
-bash
-coreutils-single
-findutils
-gdbm-libs
-gnupg2
-grep
-readline
-rsync
-sed
-tar
-
-END OF GNU GENERAL PUBLIC LICENSE, VERSION 3 NON-IBM-LICENSE INFORMATION
 
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -221,8 +70,9 @@ The Program includes some or all of the following that IBM obtained
 under the SIL Open Font License 1.1: 
 
 @ibm/plex
-Font-Awesome
-OpenSans Fonts
+IBM Plex
+font-awesome
+fontawesome
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 
@@ -311,6 +161,18 @@ OR OTHER LIABILITY, INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR
 CONSEQUENTIAL DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM OTHER DEALINGS IN 
 THE FONT SOFTWARE.
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+REDHAT UNIVERSAL BASE IMAGE v9.6
+
+RedHat UBI has been taken under EULA > https://www.redhat.com/licenses/eulas
+
+
+The Program maybe provided with third party software programs subject to their own license terms.  
+
+The license terms either accompany the third party software programs or, in some instances, maybe may be viewed at >
+
+https://access.redhat.com/containers/
 
 
 END OF NON-IBM-LICENSE INFORMATION
@@ -319,6 +181,6 @@ END OF NON-IBM-LICENSE INFORMATION
 END OF NON-IBM-LICENSE INFORMATION FILE
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-L/N: L-FWZS-PUAT9S
-D/N: L-FWZS-PUAT9S
-P/N: L-FWZS-PUAT9S
+L/N: L-BKWX-VWBQKW
+D/N: L-BKWX-VWBQKW
+P/N: L-BKWX-VWBQKW

@@ -63,7 +63,7 @@ cs_maximal_version_for_ifix="5.0.0" # Maximal supported Common Service version b
 BAW_S_FC_CR=${PARENT_DIR}/descriptors/patterns/ibm_cp4a_cr_production_FC_baw.yaml
 
 #Change required each sprint for using dev mode
-CURRENT_SPRINT_TAG="2500.SP06"
+CURRENT_SPRINT_TAG="2501.RC3"
 CP4BA_SERVICES_NS=""
 CP4BA_OPERATORS_NS=""
 
@@ -239,7 +239,8 @@ REQUIREDVER_POSTGRESQL="1.25.3"
 # EVENTS_OPERATOR_VERSION is for checking IBM Events operator upgrade status, need to update for each IFIX
 EVENTS_OPERATOR_VERSION="v5.2.1"
 # List of BAW versions that are supported for upgrade to $CP4BA_CSV_VERSION
-MINIMUM_SUPPORTED_UPGRADE_VERSIONS=("24.1." "25.0." )
+# When setting to an empty array, only fresh installation is supported.
+MINIMUM_SUPPORTED_UPGRADE_VERSIONS=()
 
 
 
