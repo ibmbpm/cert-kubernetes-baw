@@ -7440,257 +7440,6 @@ function select_fips_enable(){
     fi
 }
 
-function validate_fips() {
-    # set -e  # Exit this function on any error
-    # set -u  # Treat unset variables as errors
-
-    # Color codes
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    # YELLOW='\033[1;33m'
-    BLUE='\033[0;34m'
-    NC='\033[0m'
-
-    # Clear any existing PostgreSQL environment variables
-    unset PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
-    unset PGSSLMODE PGSSLCERT PGSSLKEY PGSSLROOTCERT PGSSLCRL
-
-    # Get DB details
-    db_alias=$(prop_db_server_property_file DB_SERVER_LIST)
-    server_name=$(prop_db_server_property_file "${db_alias}.DATABASE_SERVERNAME")
-    db_port=$(prop_db_server_property_file "${db_alias}.DATABASE_PORT")
-    db_ssl_mode=$(prop_db_server_property_file "${db_alias}.POSTGRESQL_SSL_MODE")
-    # db_user=$(prop_db_name_user_property_file ${db_alias}.DATABASE_SERVERNAME)
-
-    certificate_folder=$(prop_db_server_property_file "${db_alias}.DATABASE_SSL_CERT_FILE_FOLDER")
-    client_certificate_file=$(ls "${certificate_folder}"/*client*.crt 2>/dev/null | head -n 1)
-    client_certificate_key=$(ls "${certificate_folder}"/*client*.key 2>/dev/null | head -n 1)
-    root_certificate_file=$(ls "${certificate_folder}"/*root*.crt 2>/dev/null | head -n 1)
-
-
-    # Configuration (customize or externalize these)
-    DB_HOST="$server_name"
-    DB_PORT="$db_port"
-    # DB_NAME="imcnpdb"
-    # DB_USER="authadmin"
-    SSL_MODE="$db_ssl_mode"
-    CLIENT_CERT="$client_certificate_file"
-    CLIENT_KEY="$client_certificate_key"
-    ROOT_CA="$root_certificate_file"
-
-    echo "========================================="
-    msg "PostgreSQL Connection Validation"
-    echo "========================================="
-    echo -e "Test Configuration:"
-    echo "  Host: $DB_HOST"
-    echo "  Port: $DB_PORT"
-    echo "  SSL Mode: $SSL_MODE"
-    echo "  Client Cert: $CLIENT_CERT"
-    echo "  Client Key: $CLIENT_KEY"
-    echo "  Root CA: $ROOT_CA"
-    echo "========================================="
-    echo ""
-
-    # Step 1: Verify psql is installed
-    info "[1/5] Checking if psql is installed..."
-    if ! command -v psql &> /dev/null; then
-        error "FAILED: psql not found. Please Install Postgres client in your machine and run ./baw-prerequisite.sh -m validate script again."
-        return 1
-    fi
-    success "PASSED: psql is installed ($(psql --version))"
-    echo ""
-
-    # Step 2: Verify certificate files exist
-    info "[2/5] Checking certificate files..."
-    for f in "$CLIENT_CERT" "$CLIENT_KEY" "$ROOT_CA"; do
-        if [[ ! -f "$f" ]]; then
-            error "FAILED: Missing certificate file: "
-            return 1
-        fi
-    done
-    success "PASSED: All certificate files exist"
-    echo ""
-
-    info "[3/5] Validating certificates..."
-    if ! openssl x509 -in "$CLIENT_CERT" -noout -checkend 0 2>/dev/null; then
-        error "FAILED: Client certificate is expired or invalid"
-        return 1
-    fi
-    success "PASSED: Client certificate is valid"
-    echo ""
-
-    # Step 4: Test network connectivity
-    info "[4/5] Testing network connectivity to $DB_HOST..."
-    if ! ping -c 1 -W 3 "$DB_HOST" &> /dev/null; then
-        error "FAILED: Cannot reach host $DB_HOST"
-        return 1
-    fi
-    success "PASSED: Host is reachable"
-    echo ""
-
-    # Step 5: Test port connectivity
-    info "[5/5] Testing port connectivity to $DB_HOST:$DB_PORT..."
-    if ! timeout 5 bash -c "cat < /dev/null > /dev/tcp/$DB_HOST/$DB_PORT" 2>/dev/null; then
-        error "FAILED: Port $DB_PORT is not accessible"
-        return 1
-    fi
-    success "PASSED: Port $DB_PORT is accessible"
-    echo ""
-
-    echo "==================================================================================="
-    msg "EXTERNAL POSTGRES SERVER CONNECTION IS SUCCESSFUL. CHECKING FOR DATABASE CONNECTIONS"
-    echo "===================================================================================="
-  
-    # DB connection for GCDDB
-    if [[ " ${pattern_cr_arr[@]}" =~ "workflow-runtime" || " ${pattern_cr_arr[@]}" =~ "workflow-authoring" ]]; then
-        tmp_dbserver=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=ibm-fncm-secret -o yaml | ${YQ_CMD} r - items.[0].metadata.labels.gcd-db-server`
-        tmp_dbname="$(prop_db_name_user_property_file $tmp_dbserver.GCD_DB_NAME)"
-        tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=ibm-fncm-secret -o yaml | ${YQ_CMD} r - items.[0].data.gcdDBUsername | base64 --decode`
-        verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}" 
-        
-        # DB connection for FNCM object store
-        if (( content_os_number > 0 )); then
-            for ((j=0;j<${content_os_number};j++))
-            do
-                tmp_dbserver="$(prop_db_name_user_property_file_for_server_name OS$((j+1))_DB_USER_NAME)"
-                tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=ibm-fncm-secret -o yaml | ${YQ_CMD} r - items.[0].data.os$((j+1))DBUsername | base64 --decode`
-                tmp_dbname="$(prop_db_name_user_property_file $tmp_dbserver.OS$((j+1))_DB_NAME)"
-                verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}" 
-            done
-        fi
-
-        # DB connection for object store used by BAW authoring/BAW Runtime
-        if [[ " ${pattern_cr_arr[@]}" =~ "workflow-authoring" || (" ${pattern_cr_arr[@]}" =~ "workflow-runtime" && (! " ${pattern_cr_arr[@]}" =~ "workflow-workstreams")) || " ${pattern_cr_arr[@]}" =~ "workflow-workstreams" ]]; then
-            for i in "${!BAW_AUTH_OS_ARR[@]}"; do
-                tmp_dbserver="$(prop_db_name_user_property_file_for_server_name ${BAW_AUTH_OS_ARR[i]}_DB_USER_NAME)"
-                check_dbserver_name_valid $tmp_dbserver "${BAW_AUTH_OS_ARR[i]}_DB_USER_NAME"
-                tmp_label=$(echo ${BAW_AUTH_OS_ARR[i]}| tr '[:upper:]' '[:lower:]')
-                tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=ibm-fncm-secret -o yaml | ${YQ_CMD} r - items.[0].data.${tmp_label}DBUsername | base64 --decode`
-                tmp_dbname="$(prop_db_name_user_property_file $tmp_dbserver.${BAW_AUTH_OS_ARR[i]}_DB_NAME)"
-                verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}" 
-            done
-      
-            # DB connection for case history
-            tmp_dbserver="$(prop_db_name_user_property_file_for_server_name CHOS_DB_USER_NAME)"
-            if [[ $tmp_dbserver != \#* ]] ; then
-                check_dbserver_name_valid $tmp_dbserver "CHOS_DB_USER_NAME"
-                tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=ibm-fncm-secret -o yaml | ${YQ_CMD} r - items.[0].data.chDBUsername | base64 --decode`
-                tmp_dbname="$(prop_db_name_user_property_file $tmp_dbserver.CHOS_DB_NAME)"
-                verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}"
-            fi
-        fi
-    fi
-
-    # DB connection for ICN
-    if [[ " ${foundation_component_arr[@]}" =~ "BAN" ]]; then
-        tmp_dbname="$(prop_db_name_user_property_file ICN_DB_NAME)"
-        tmp_dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbname")
-        tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=${tmp_dbname} -o yaml | ${YQ_CMD} r - items.[0].data.navigatorDBUsername | base64 --decode`
-        verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}"
-    fi
-
-    # DB connection for BAW runtime
-    if [[ " ${pattern_cr_arr[@]}" =~ "workflow-runtime" ]]; then
-        tmp_dbname="$(prop_db_name_user_property_file BAW_RUNTIME_DB_NAME)"
-        tmp_dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbname")
-        tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=${tmp_dbname} -o yaml | ${YQ_CMD} r - items.[0].data.dbUser | base64 --decode`
-        verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}"
-    fi
-
-    # DB connection for BAS
-    if [[ "${pattern_cr_arr[@]}" =~ "workflow-authoring" ]]; then
-        tmp_dbname="$(prop_db_name_user_property_file STUDIO_DB_NAME)"
-        tmp_dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_dbname")
-        tmp_dbusername=`kubectl get secret -n "$CP4BA_SERVICES_NS" -l db-name=${tmp_dbname} -o yaml | ${YQ_CMD} r - items.[0].data.dbUsername | base64 --decode`
-        verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${tmp_dbname}" "${tmp_dbusername}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}"
-    fi
-
-    # DB connection for IM/BTS/Zen for external postgres db
-    # IM
-    tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_IM_FLAG)")
-    tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
-    if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
-        dbname="$(prop_user_profile_property_file CP4BA.IM_EXTERNAL_POSTGRES_DATABASE_NAME)"
-        dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbname")
-        dbuser="$(prop_user_profile_property_file CP4BA.IM_EXTERNAL_POSTGRES_DATABASE_USER)"
-        dbuser=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbuser")
-        verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${dbname}" "${dbuser}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}"
-    fi
-
-    # Zen
-    tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_ZEN_FLAG)")
-    tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
-    if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
-        dbname="$(prop_user_profile_property_file CP4BA.ZEN_EXTERNAL_POSTGRES_DATABASE_NAME)"
-        dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbname")
-        dbuser="$(prop_user_profile_property_file CP4BA.ZEN_EXTERNAL_POSTGRES_DATABASE_USER)"
-        dbuser=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbuser")
-        verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${dbname}" "${dbuser}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}"
-    fi
-
-    # BTS
-    if [[ " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ]]; then
-        tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_BTS_FLAG)")
-        tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
-        if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
-            dbname="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_NAME)"
-            dbname=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbname")
-            dbuser="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER_NAME)"
-            dbuser=$(sed -e 's/^"//' -e 's/"$//' <<<"$dbuser")
-            verify_fips_db_connection "${DB_HOST}" "${DB_PORT}" "${dbname}" "${dbuser}" "${SSL_MODE}" "${CLIENT_CERT}" "${CLIENT_KEY}" "${ROOT_CA}"
-        fi
-    fi
-
-
-    echo "=============================="
-    msg "ALL TESTS PASSED"
-    echo "=============================="
-
-    info "If all prerequisites check PASSED, you can run baw-deployment.sh to deploy BAW. Otherwise, please check the configuration again."
-    info "After BAW is deployed, please refer to the documentation for post-deployment steps."
-    
-    return 0
-}
-
-function verify_fips_db_connection(){
-    local DB_HOST=$1
-    local DB_PORT=$2
-    local DB_NAME=$3
-    local DB_USER=$4
-    local SSL_MODE=$5
-    local CLIENT_CERT=$6
-    local CLIENT_KEY=$7
-    local ROOT_CA=$8
-    
-    info "Testing PostgreSQL DB connection for ${DB_NAME}..."
-
-    CONN_STRING="host=$DB_HOST port=$DB_PORT dbname=$DB_NAME user=$DB_USER sslmode=$SSL_MODE sslcert=$CLIENT_CERT sslkey=$CLIENT_KEY sslrootcert=$ROOT_CA"
-    OUTPUT=$(psql "$CONN_STRING" -c "SELECT version();" 2>&1)
-    EXIT_CODE=$?
-
-    if [[ $EXIT_CODE -ne 0 ]]; then
-        error "FAILED: PostgreSQL connection failed for ${DB_NAME}..."
-        echo "Error output:"
-        echo "$OUTPUT"
-        return 1
-    fi
-    success "PASSED: PostgreSQL connection successful for ${DB_NAME} ..."
-    echo ""
-
-    info "Verifying connection details..."
-    DETAILS=$(psql "$CONN_STRING" -t -c "SELECT current_database(), current_user, inet_server_addr(), inet_server_port();")
-    if [[ $? -ne 0 ]]; then
-        error "FAILED: Could not retrieve connection details"
-        return 1
-    fi
-    success "PASSED: Connection details retrieved"
-    echo ""
-    echo "Connection Details:"
-    echo "$DETAILS"
-    echo ""
-}
-
-
 function select_ldap_type(){
     printf "\n"
     COLUMNS=12
@@ -8335,13 +8084,8 @@ function validate_prerequisites(){
         fi
     fi
 
-    # For Rancher FIPS with SSL enabled external DB validation
-    if [[ $PLATFORM_SELECTED != "OCP" && $fips_flag == "true" ]]; then
-        validate_fips
-    fi
-
     # Validate DB connection for CP4BA
-    if [[ ($DB_TYPE != "postgresql-edb" && ( $PLATFORM_SELECTED == "OCP" && $fips_flag != "true" )) || ($DB_TYPE != "postgresql-edb" && ( $PLATFORM_SELECTED != "OCP" && $fips_flag != "true" )) ]]; then
+    if [[ $DB_TYPE != "postgresql-edb" ]]; then
 
         INFO "Checking DB connection required by Business Automation Workflow"
 
@@ -8876,8 +8620,6 @@ function validate_prerequisites(){
             fi
         fi
     fi
-    
-    if [[ $PLATFORM_SELECTED != "other" && $fips_flag != "true" ]]; then
 
         # Check db connection for im/zen/bts external postgresql db
         local DB_JDBC_NAME=${JDBC_DRIVER_DIR}/postgresql
@@ -9008,7 +8750,6 @@ function validate_prerequisites(){
         
         info "If all prerequisites check PASSED, you can run baw-deployment.sh to deploy BAW. Otherwise, please check the configuration again."
         info "After BAW is deployed, please refer to the documentation for post-deployment steps."
-    fi
 }
 
 # Main function that performs the different functionalities required for adding/removing patterns and optional components
