@@ -2756,7 +2756,7 @@ function create_prerequisites() {
     tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
     if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
 
-        //TODO: Add condition when edb is reenabled 
+        # TODO: Add condition when edb is reenabled 
         if [[ " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ]]; then
 
             # BTS create secret start
