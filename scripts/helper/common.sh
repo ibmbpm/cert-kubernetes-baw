@@ -1416,3 +1416,107 @@ function skip_edb_for_2501() {
     fi
 }
 
+
+# DBACLD-198782: check if Java runtime is available and meets the minimum version requirement
+# Parameters:
+# $1 - Required major version of Java (e.g., 17)
+# Consolidated function to validate Java runtime and set JAVA_CMD/KEYTOOL_CMD
+# $1 - (Optional) Custom Java path
+function validate_java_runtime() {
+    local CUSTOM_JAVA_PATH=$1
+    
+    # Step 1: Set JAVA_CMD and KEYTOOL_CMD based on CUSTOM_JAVA_PATH
+    if [[ -n "$CUSTOM_JAVA_PATH" ]]; then
+        # Normalize path - ensure it points to bin directory
+        if [[ "$CUSTOM_JAVA_PATH" != */bin ]]; then
+            CUSTOM_JAVA_PATH="${CUSTOM_JAVA_PATH}/bin"
+        fi
+        
+        JAVA_CMD="${CUSTOM_JAVA_PATH}/java"
+        KEYTOOL_CMD="${CUSTOM_JAVA_PATH}/keytool"
+        
+        # Verify the custom Java path exists and is executable
+        if [[ ! -x "$JAVA_CMD" ]]; then
+            echo -e "\x1B[1;31mError: Java executable not found at specified path: $JAVA_CMD\x1B[0m"
+            echo -e "\x1B[1;31mPlease provide a valid path to Java (JRE) $REQUIRED_JAVA_MAJOR_VERSION or higher installation.\x1B[0m"
+            exit 1
+        fi
+        
+        # Verify keytool exists and is executable
+        if [[ ! -x "$KEYTOOL_CMD" ]]; then
+            echo -e "\x1B[1;31mError: keytool executable not found at specified path: $KEYTOOL_CMD\x1B[0m"
+            echo -e "\x1B[1;31mPlease provide a valid path to Java (JRE) installation.\x1B[0m"
+            exit 1
+        fi
+
+        echo -e "\x1B[1;32mUsing Java (JRE) from custom path: ${CUSTOM_JAVA_PATH}\x1B[0m"
+    else
+        JAVA_CMD="java"
+        KEYTOOL_CMD="keytool"
+        
+        # Verify that default Java is available
+        if ! command -v java &> /dev/null; then
+            echo -e "\x1B[1;31mUnable to locate a Java Runtime. Java (JRE)$REQUIRED_JAVA_MAJOR_VERSION or higher must be installed to run this script.\x1B[0m"
+            echo -e "\x1B[1;31mPlease install Java (JRE) $REQUIRED_JAVA_MAJOR_VERSION or higher manually before continuing.\x1B[0m"
+            echo -e "\x1B[1;33mInstallation instructions:\x1B[0m"
+            echo -e "  - Install any compatible Java (JRE) $REQUIRED_JAVA_MAJOR_VERSION or higher distribution (e.g., IBM Semeru, Oracle JDK, or OpenJDK)"
+            echo -e "  - Ensure the new Java version is added to your PATH environment variable"
+            echo -e "  - Re-run this script"
+            echo -e "\x1B[1;33mAlternatively, you can specify the path to an existing Java (JRE) $REQUIRED_JAVA_MAJOR_VERSION or higher installation:\x1B[0m"
+            echo -e " - Re-run this script with the Java (JRE)path parameter, using --java-path <path_to_java>; e.g., $0 -m validate -n $TARGET_PROJECT_NAME --java-path=/custom/java/path"
+            exit 1
+        fi
+        
+        # Verify that default keytool is available
+        if ! command -v keytool &> /dev/null; then
+            echo -e "\x1B[1;31mUnable to locate keytool. Java (JRE) $REQUIRED_JAVA_MAJOR_VERSION or higher must be installed to run this script.\x1B[0m"
+            echo -e "\x1B[1;31mPlease install Java (JRE) $REQUIRED_JAVA_MAJOR_VERSION or higher manually before continuing.\x1B[0m"
+            exit 1
+        fi
+    fi
+    
+    # Step 2: Validate Java version
+    "$JAVA_CMD" -version &>/dev/null
+    if [[ $? -ne 0 ]]; then
+        echo -e "\x1B[1;31mUnable to execute Java. Please check your Java (JRE) installation.\x1B[0m"
+        exit 1
+    fi
+    
+    # Extract the full version string
+    local CURRENT_JAVA_VERSION=$("$JAVA_CMD" -version 2>&1 | grep -i version | head -n 1 | awk -F '"' '{print $2}')
+    
+    # Extract just the major version for comparison
+    local CURRENT_MAJOR_VERSION=$(echo "$CURRENT_JAVA_VERSION" | awk -F '.' '{print $1}')
+    
+    # If version starts with "1.", use the second number (e.g., 1.8 -> 8)
+    if [[ "$CURRENT_JAVA_VERSION" == 1.* ]]; then
+        CURRENT_MAJOR_VERSION=$(echo "$CURRENT_JAVA_VERSION" | awk -F '.' '{print $2}')
+    fi
+    
+    # Check if current version is less than the required version
+    if [[ -n "$CURRENT_MAJOR_VERSION" && "$CURRENT_MAJOR_VERSION" -lt "$REQUIRED_JAVA_MAJOR_VERSION" ]]; then
+        echo -e "\x1B[1;31mJava version $CURRENT_JAVA_VERSION is installed but does not meet the minimum requirement (version $REQUIRED_JAVA_MAJOR_VERSION).\x1B[0m"
+        echo -e "\x1B[1;31mPlease upgrade to Java (JRE) $REQUIRED_JAVA_MAJOR_VERSION or higher manually before continuing.\x1B[0m"
+        echo -e "\x1B[1;33mJava (JRE) $REQUIRED_JAVA_MAJOR_VERSION or higher upgrade instructions:\x1B[0m"
+        echo -e "  - Install any compatible Java (JRE) $REQUIRED_JAVA_MAJOR_VERSION or higher distribution (e.g., IBM Semeru, Oracle JDK, or OpenJDK)"
+        echo -e "  - Ensure the new Java version is added to your PATH environment variable"
+        echo -e "  - Re-run this script"
+        echo -e "\x1B[1;33mAlternatively, you can specify the path to an existing Java (JRE) $REQUIRED_JAVA_MAJOR_VERSION or higher installation:\x1B[0m"
+        echo -e " - Re-run this script with the Java (JRE) path parameter, using --java-path <path_to_java>; e.g., $0 -m validate -n $TARGET_PROJECT_NAME --java-path=/custom/java/path"
+        exit 1
+    fi
+    
+    echo -e "\x1B[1;32mJava version: $CURRENT_JAVA_VERSION\x1B[0m"
+    
+    # Step 3: Validate keytool
+    "$KEYTOOL_CMD" -help &>/dev/null
+    if [[ $? -ne 0 ]]; then
+        echo -e "\x1B[1;31mUnable to execute keytool. Keytool is required and should be part of your Java (JRE) installation.\x1B[0m"
+        echo -e "\x1B[1;31mPlease ensure you have a complete Java (JRE) $REQUIRED_JAVA_MAJOR_VERSION or higher installation that includes keytool.\x1B[0m"
+        exit 1
+    fi
+    
+    # Step 4: Export the commands so they're available to child scripts
+    export JAVA_CMD
+    export KEYTOOL_CMD
+}
