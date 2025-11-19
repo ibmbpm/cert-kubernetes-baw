@@ -1694,6 +1694,60 @@ function get_entitlement_registry(){
         get_stg_entitlement_registry
     fi
 
+    # For airgap/offline installation, skip entitlement key and get private registry details
+    if [[ $AIRGAP_INSTALL == "Yes" ]]; then
+        printf "\n"
+        info "${YELLOW_TEXT}For airgap/offline installation, provide the private registry details\n${RESET_TEXT}"
+        printf "\x1B[1m\x1B[0m\n"
+        
+        # Get private registry URL with port
+        while [[ -z "$DOCKER_REG_SERVER" ]]; do
+            if [ -z "$BAW_AUTO_PRIVATE_REGISTRY" ]; then
+                printf "\x1B[1mEnter the private registry URL with port (e.g., example.ibm.com:5000): \x1B[0m"
+                read -rp "" DOCKER_REG_SERVER
+            else
+                DOCKER_REG_SERVER=$BAW_AUTO_PRIVATE_REGISTRY
+                echo -e "\x1B[1mPrivate registry URL: \x1B[0m$DOCKER_REG_SERVER"
+            fi
+            if [ -z "$DOCKER_REG_SERVER" ]; then
+                echo -e "\x1B[1;31mPrivate registry URL cannot be empty.\x1B[0m"
+            fi
+        done
+        
+        # Get private registry username
+        while [[ -z "$DOCKER_REG_USER" ]]; do
+            if [ -z "$BAW_AUTO_PRIVATE_REGISTRY_USER" ]; then
+                printf "\x1B[1mEnter the username for the private registry: \x1B[0m"
+                read -rp "" DOCKER_REG_USER
+            else
+                DOCKER_REG_USER=$BAW_AUTO_PRIVATE_REGISTRY_USER
+                echo -e "\x1B[1mPrivate registry username: \x1B[0m$DOCKER_REG_USER"
+            fi
+            if [ -z "$DOCKER_REG_USER" ]; then
+                echo -e "\x1B[1;31mUsername cannot be empty.\x1B[0m"
+            fi
+        done
+        
+        # Get private registry password
+        while [[ -z "$DOCKER_REG_KEY" ]]; do
+            if [ -z "$BAW_AUTO_PRIVATE_REGISTRY_PASSWORD" ]; then
+                printf "\x1B[1mEnter the password for the private registry: \x1B[0m"
+                read -rsp "" DOCKER_REG_KEY
+                printf "\n"
+            else
+                DOCKER_REG_KEY=$BAW_AUTO_PRIVATE_REGISTRY_PASSWORD
+                echo -e "\x1B[1mPrivate registry password: \x1B[0m********"
+            fi
+            if [ -z "$DOCKER_REG_KEY" ]; then
+                echo -e "\x1B[1;31mPassword cannot be empty.\x1B[0m"
+            fi
+        done
+        
+        use_entitlement="no"
+        success "Private registry details collected successfully."
+        return 0
+    fi
+
     # For Entitlement Registry key
     entitlement_key=""
     printf "\n"
@@ -1892,9 +1946,15 @@ function get_domain_name(){
 }
 
 function create_secret_entitlement_registry(){
-    # Create docker-registry secret for Entitlement Registry Key in target project
+    # Determine the secret message based on airgap mode
+    local secret_description="Entitlement Registry"
+    if [[ $AIRGAP_INSTALL == "Yes" ]]; then
+        secret_description="private registry"
+    fi
+    
+    # Create docker-registry secret for Entitlement Registry Key or Private Registry in target project
     if [[ $SEPARATE_OPERATOR == "No" || -z $SEPARATE_OPERATOR ]]; then
-        printf "\x1B[1mCreating docker-registry secret for Entitlement Registry key in project $project_name...\n\x1B[0m"
+        printf "\x1B[1mCreating docker-registry secret for $secret_description in project $project_name...\n\x1B[0m"
 
         ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME" -n "${project_name}" >/dev/null 2>&1
 
@@ -1909,11 +1969,13 @@ function create_secret_entitlement_registry(){
 
         if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
         then
-            create_ibm_stg_entitlement_key
+            if [[ $AIRGAP_INSTALL != "Yes" ]]; then
+                create_ibm_stg_entitlement_key
+            fi
         fi
     else
         # Create docker registry key in the seperate operator scenario
-        printf "\x1B[1mCreating docker-registry secret for Entitlement Registry key in project $project_name_operator...\n\x1B[0m"
+        printf "\x1B[1mCreating docker-registry secret for $secret_description in project $project_name_operator...\n\x1B[0m"
         ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME" -n "${project_name_operator}" >/dev/null 2>&1
 
         CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY --docker-email=ecmtest@ibm.com -n $project_name_operator"
@@ -1925,12 +1987,14 @@ function create_secret_entitlement_registry(){
 
         if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
         then
-            printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $project_name_operator...\n\x1B[0m"
-            
-            create_ibm_stg_entitlement_key
+            if [[ $AIRGAP_INSTALL != "Yes" ]]; then
+                printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $project_name_operator...\n\x1B[0m"
+                
+                create_ibm_stg_entitlement_key
+            fi
         fi
 
-        printf "\x1B[1mCreating docker-registry secret for Entitlement Registry key in project $project_name_cs_service...\n\x1B[0m"
+        printf "\x1B[1mCreating docker-registry secret for $secret_description in project $project_name_cs_service...\n\x1B[0m"
         ${CLI_CMD} delete secret "$DOCKER_RES_SECRET_NAME" -n "${project_name_cs_service}" >/dev/null 2>&1
 
         CREATE_SECRET_CMD="${CLI_CMD} create secret docker-registry $DOCKER_RES_SECRET_NAME --docker-server=$DOCKER_REG_SERVER --docker-username=$DOCKER_REG_USER --docker-password=$DOCKER_REG_KEY --docker-email=ecmtest@ibm.com -n $project_name_cs_service"
@@ -1942,9 +2006,11 @@ function create_secret_entitlement_registry(){
 
         if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
         then
-            printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $project_name_cs_service...\n\x1B[0m"
-            
-            create_ibm_stg_entitlement_key
+            if [[ $AIRGAP_INSTALL != "Yes" ]]; then
+                printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $project_name_cs_service...\n\x1B[0m"
+                
+                create_ibm_stg_entitlement_key
+            fi
         fi
     fi
     if [[ $MULTIPLE_DEPLOYMENT = "Yes" ]]; then
@@ -1961,9 +2027,11 @@ function create_secret_entitlement_registry(){
 
             if [[ "$RUNTIME_MODE" == "dev" || $RUNTIME_MODE == "baw-dev" || $RUNTIME_MODE == "process-flow-dev" ]]
             then
-                printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $item...\n\x1B[0m"
+                if [[ $AIRGAP_INSTALL != "Yes" ]]; then
+                    printf "\x1B[1mCreating docker-registry secret for staging Entitlement Registry key in project $item...\n\x1B[0m"
 
-                create_ibm_stg_entitlement_key
+                    create_ibm_stg_entitlement_key
+                fi
             fi
         done
     fi
@@ -2042,6 +2110,10 @@ function check_airgap_mode(){
             case $opt in
                 "Offline/Airgap")
                     AIRGAP_INSTALL="Yes"
+                    if [[ $RUNTIME_MODE == "dev" ]];then
+                        echo -e "\x1B[1mBAW on containers in DEV mode doesnot support offline installation \x1B[0m"
+                        exit 1
+                    fi
                     break
                     ;;
                 "Online")
