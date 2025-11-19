@@ -5,8 +5,8 @@ LICENSE INFORMATION
 The Programs listed below are licensed under the following License Information terms and conditions in addition to the Program license terms previously agreed to by Client and IBM. If Client does not have previously agreed to license terms in effect for the Program, the International Program License Agreement (i125-3301-15) applies.
 
 Program Name (Program Number):
-IBM Business Automation Workflow Enterprise V25.0.1.0 Limited Support Release (5737-H41)
-IBM Business Automation Workflow Enterprise for Non-Production Environment V25.0.1.0 Limited Support Release (5737-H41)
+IBM Business Automation Workflow Enterprise V25.0.1.0 (5737-H41)
+IBM Business Automation Workflow Enterprise for Non-Production Environment V25.0.1.0 (5737-H41)
 
 The following standard terms apply to Licensee's use of the Program.
 
@@ -250,11 +250,6 @@ IBM Business Automation Insights
 
 Business Automation Application Engine (component of The Program) 
 Use Limitations:   The Licensee shall limit usage of Business Automation Application to only run the Workplace application. The Business Automation Application Engine may use a maximum of the number of VPCs of The Program.
-
-Optional Feature: Workflow Assistant
-Licensee with valid warranty or support entitlement for the Program has access to an optional Workflow Assistant which may use artificial intelligence and may respond to user inputs, provide technical information, suggest technical solutions, track use of the feature, and help with the creation of automated digital workflows. The Workflow Assistant is provided as a Cloud Service hosted on AWS and is accessed by enabling the feature from the Program’s user interface and connecting through the use of API calls which transfer Licensee’s inputs between the Program and the Cloud Service. Licensee’s usage of the Workflow Assistant, and IBM’s use and processing of Licensee’s inputs into the Workflow Assistant (“Input” or “Content”) are governed by the terms of the Cloud Services Agreement for Licensee’s country location available here: https://www.ibm.com/terms/csa (“CSA”). This License Information document is a Transaction Document for the purposes of the CSA. By enabling or using the Workflow Assistant, Licensee agrees to those terms, and that the data protection features of the Workflow Assistant, as set out in the Data Sheet available at https://www.ibm.com/terms/?id=4A4E5A6099FC11ECAB2681C6B89D4420 are sufficient to support Licensee’s use of the Workflow Assistant.
-Licensee is responsible for any Input (including any personal information), and any decision to proceed with, or use, any output from the feature or any technical solutions that are suggested for Licensee's convenience when the Workflow Assistant is used (together “Output”). IBM has no responsibility for any such Output. IBM warranties and support do not apply to such Output; it is used at Licensee's risk. IBM may modify the underlying learning models (and may use Input to do so) to improve the Workflow Assistant. These modifications may be made available in updates or fixes for the Program. In exceptional circumstances it may be necessary for IBM to take steps to suspend or limit unreasonable use by Licensee of the Workflow Assistant.
-
 
 IBM Db2 Standard Edition
 - Use Limitations: Use by Principal Program
