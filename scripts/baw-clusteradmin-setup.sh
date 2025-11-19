@@ -2962,12 +2962,13 @@ if [[ ($PLATFORM_SELECTED == "OCP" || $PLATFORM_SELECTED == "ROKS") && $DEPLOYME
 fi
 
 # FIPS config message shown
+# TODO Update the doc link
 if [[ "$OTHER_PLATFORM_TYPE" == "rancher" ]]; then
     echo "${YELLOW_TEXT}[NOTES] If Rancher is deployed in RHEL and planning to enable FIPS, then make sure to follow steps by https://ibmdocs-test.dcs.ibm.com/docs/en/baw_25.0.1_test?topic=overview-fips-compliance"
 fi
 
 if [[ "$OTHER_PLATFORM_TYPE" == "tanzu" ]]; then
-    echo "${YELLOW_TEXT}[NOTES] If deployment platform tanzu --- FIPS is not supported"
+    echo "${YELLOW_TEXT}[NOTES] FIPS is not supported if platform is Tanzu"
 fi
 
 #Function that handles the platform type rancher or tanzu
