@@ -7695,7 +7695,7 @@ function input_information(){
         containsElement "decisions_ads" "${pattern_cr_arr[@]}"
         ads_Val=$?
 
-        if [[ $ads_Val -eq 0 || " ${pattern_cr_arr[@]} " =~ "workflow-authoring" || " ${pattern_cr_arr[@]} " =~ "workflow-runtime" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
+        if [[ $ads_Val -eq 0 || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
             #DBACLD-194974: Combine IM/Zen question for ext. PG.  Ask regardless of DB_TYPE 
             select_external_postgresdb_for_bts
         fi
@@ -8769,9 +8769,12 @@ function update_components_mode(){
 
     # This array (current_cr_deployment_patterns_array) stores the current patterns deployed , and we should only ask if they want to use external postgres for BTS if they add any of the patterns that need BTS while running the script to update components
     # This variable gets set in the function retrieve_current_custom_resource_file function
-    
-    if [[ ! "${current_cr_optional_components_array[*]}" =~ bai ]] && [[ "${optional_component_cr_arr[*]}" =~ bai ]]; then
-        select_external_postgresdb_for_bts
+    if ! [[ " ${current_cr_optional_components_array[@]} " =~ "bai" ]]; then
+        # The only way that the below IF condition passes is if any of the patterns/optional components listed below are added when selecting while adding new patterns
+        if [[ " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
+            #DBACLD-194974: Combine IM/Zen question for ext. PG.  Ask regardless of DB_TYPE 
+            select_external_postgresdb_for_bts
+        fi
     fi
     
     # This array (current_cr_deployment_patterns_array) stores the current patterns deployed and  current_cr_optional_components_array stores the current optional components selected.
