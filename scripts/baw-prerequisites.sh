@@ -2773,7 +2773,7 @@ function create_prerequisites() {
     if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
 
         # TODO: Add condition when edb is reenabled 
-        if [[ " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ]]; then
+        # if [[ " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ]]; then
 
             # BTS create secret start
             create_bts_external_db_secret_template
@@ -2807,7 +2807,7 @@ function create_prerequisites() {
             ${SED_COMMAND} "s|<DatabaseUserName>|$tmp_name|g" ${BTS_CONFIGMAP_FILE}
 
             # BTS create secret end
-        fi
+        # fi
     fi
 
     # Create Issuer to make Opensearch/Kafka use external certificate
