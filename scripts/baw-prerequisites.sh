@@ -1398,13 +1398,13 @@ function check_property_file(){
     # BTS optional check start
     tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_BTS_FLAG)")
     tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
-    if [[ "$EXTERNAL_POSTGRESDB_FOR_BTS" == "true" && ( " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ) ]]; then
+    # if [[ "$EXTERNAL_POSTGRESDB_FOR_BTS" == "true" && ( " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ) ]]; then
         if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
             bts_external_db_cert_folder="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_SSL_CERT_FILE_FOLDER)"
             bts_external_db_cert_folder=$(sed -e 's/^"//' -e 's/"$//' <<<"$bts_external_db_cert_folder")
             cert_dir_array=( "${cert_dir_array[@]}" "${bts_external_db_cert_folder}" )
         fi
-    fi
+    # fi
     # BTS optional check end
 
 
