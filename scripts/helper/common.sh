@@ -1119,7 +1119,10 @@ function load_properties_from_temp_file(){
 
     # load fips enabled flag
     # FIPS_ENABLED="false"
-    local java_opts="-Dsemeru.fips=false"
+    # DBACLD-202948: remove -Dsemeru.fips option from all java commands for connection verification
+    local java_opts=""
+    
+
 
     # load profile size  flag
     PROFILE_TYPE=$(prop_tmp_property_file PROFILE_SIZE_FLAG)
