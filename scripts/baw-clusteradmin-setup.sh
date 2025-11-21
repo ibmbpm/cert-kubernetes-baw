@@ -2110,10 +2110,6 @@ function check_airgap_mode(){
             case $opt in
                 "Offline/Airgap")
                     AIRGAP_INSTALL="Yes"
-                    if [[ $RUNTIME_MODE == "dev" ]];then
-                        echo -e "\x1B[1mBAW on containers in DEV mode doesnot support offline installation \x1B[0m"
-                        exit 1
-                    fi
                     break
                     ;;
                 "Online")
