@@ -3645,7 +3645,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
 
     # TODO : For embedded , EXTERNAL_POSTGRESDB_FOR_BTS == TRUE condition need to brought up 
     # Defect : https://jsw.ibm.com/browse/DBACLD-202162
-    if [[ $EXTERNAL_POSTGRESDB_FOR_BTS == "true" ]]; then
+    if [[ $EXTERNAL_POSTGRESDB_FOR_BTS == "true" && (" ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " )]]; then
         # rm -rf $BTS_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         mkdir -p $BTS_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         echo "## Configuration for external Postgres DB as BTS metastore DB." >> ${USER_PROFILE_PROPERTY_FILE}
@@ -8706,7 +8706,7 @@ function validate_prerequisites(){
         fi
 
         # TODO: Add condition when edb is reenabled 
-        if [[ $EXTERNAL_POSTGRESDB_FOR_BTS == "true" && ( ${optional_component_cr_arr[@]}  =~ " bai " ||  ${current_cr_optional_components_array[@]}  =~ " bai " ) ]]; then
+        if [[ $EXTERNAL_POSTGRESDB_FOR_BTS == "true" ]]; then
             tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_BTS_FLAG)")
             tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
             if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
