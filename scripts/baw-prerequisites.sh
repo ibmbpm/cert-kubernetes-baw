@@ -3646,7 +3646,8 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
 
     # TODO : For embedded , EXTERNAL_POSTGRESDB_FOR_BTS == TRUE condition need to brought up 
     # Defect : https://jsw.ibm.com/browse/DBACLD-202162
-    if [[ $EXTERNAL_POSTGRESDB_FOR_BTS == "true" || (" ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " )]]; then
+    echo "$EXTERNAL_POSTGRESDB_FOR_BTS <- EXTERNAL_POSTGRESDB_FOR_BTS , ${optional_component_cr_arr[@]} <- optional_component_cr_arr , ${current_cr_optional_components_array[@]} <- current_cr_optional_components"
+    if [[ ( $EXTERNAL_POSTGRESDB_FOR_BTS == "true" && " ${optional_component_cr_arr[@]} " =~ " bai " ) || ( $EXTERNAL_POSTGRESDB_FOR_BTS == "true" && " ${current_cr_optional_components_array[@]} " =~ " bai " ) ]]; then
         # rm -rf $BTS_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         mkdir -p $BTS_DB_SSL_CERT_FOLDER >/dev/null 2>&1
         echo "## Configuration for external Postgres DB as BTS metastore DB." >> ${USER_PROFILE_PROPERTY_FILE}
@@ -8770,12 +8771,13 @@ function update_components_mode(){
 
     # This array (current_cr_deployment_patterns_array) stores the current patterns deployed , and we should only ask if they want to use external postgres for BTS if they add any of the patterns that need BTS while running the script to update components
     # This variable gets set in the function retrieve_current_custom_resource_file function
-    if ! [[ " ${current_cr_optional_components_array[@]} " =~ "bai" ]]; then
+    echo "${current_cr_optional_components_array[@]} <- current_cr_optional_components , ${optional_component_cr_arr[@]} <- optional_components"
+    if [[ " ${current_cr_optional_components_array[@]} " =~ "bai" || " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
         # The only way that the below IF condition passes is if any of the patterns/optional components listed below are added when selecting while adding new patterns
-        if [[ " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
+        # if [[ " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
             #DBACLD-194974: Combine IM/Zen question for ext. PG.  Ask regardless of DB_TYPE 
-            select_external_postgresdb_for_bts
-        fi
+        select_external_postgresdb_for_bts
+        # fi
     fi
     
     # This array (current_cr_deployment_patterns_array) stores the current patterns deployed and  current_cr_optional_components_array stores the current optional components selected.
