@@ -8777,14 +8777,6 @@ function update_components_mode(){
             select_external_postgresdb_for_bts
         fi
     fi
-
-    if [[ " ${current_cr_optional_components_array[@]} " =~ "bai" ]]; then
-        # The only way that the below IF condition passes is if any of the patterns/optional components listed below are added when selecting while adding new patterns
-        if ! [[ " ${optional_component_cr_arr[@]} " =~ "bai" ]]; then
-            #DBACLD-194974: Combine IM/Zen question for ext. PG.  Ask regardless of DB_TYPE 
-            select_external_postgresdb_for_bts
-        fi
-    fi
     
     # This array (current_cr_deployment_patterns_array) stores the current patterns deployed and  current_cr_optional_components_array stores the current optional components selected.
     # We should only ask if external certificate should be used by kafka if the below patterns/optional components were not selected initially and later added
