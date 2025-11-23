@@ -7611,32 +7611,44 @@ function select_baw_pattern(){
     pattern_cr_arr=()
     printf "\n"
     if [[ ! -z $UPDATE_COMPONENTS ]]; then
-        echo -e "\x1B[1mSelect the previously selected IBM Business Automation Workflow capability which installed: \x1B[0m"
+        #echo -e "\x1B[1mSelect the previously selected IBM Business Automation Workflow capability which installed: \x1B[0m"
+        
+        COLUMNS=12
+        
+        pattern_arr=("Business Automation Workflow Runtime")
+        pattern_cr_arr=("workflow,workflow-runtime")
+        foundation_baw=("BAN" "AE")
+       
+        if [[ " ${EXISTING_OPT_COMPONENT_ARR[@]} " =~ " baw_authoring " ]]; then
+            pattern_arr=("Business Automation Workflow Authoring")
+            pattern_cr_arr=("workflow,workflow-authoring")
+            foundation_baw=("BAN" "BAS")
+        fi
     else
         echo -e "\x1B[1mSelect the IBM Business Automation Workflow capability to install: \x1B[0m"
-    fi
-    COLUMNS=12
+        COLUMNS=12
 
-    options=("Business Automation Workflow Authoring" "Business Automation Workflow Runtime")
-    PS3='Enter a valid option [1 to 2]: '
-    select opt in "${options[@]}"
-    do
-        case $opt in
-            "Business Automation Workflow Authoring")
-                pattern_arr=("Business Automation Workflow Authoring")
-                pattern_cr_arr=("workflow,workflow-authoring")
-                foundation_baw=("BAN" "BAS")
-                break
-                ;;
-            "Business Automation Workflow Runtime")
-                pattern_arr=("Business Automation Workflow Runtime")
-                pattern_cr_arr=("workflow,workflow-runtime")
-                foundation_baw=("BAN" "AE")
-                break
-                ;;
-            *) echo "invalid option $REPLY";;
-        esac
-    done
+        options=("Business Automation Workflow Authoring" "Business Automation Workflow Runtime")
+        PS3='Enter a valid option [1 to 2]: '
+        select opt in "${options[@]}"
+        do
+            case $opt in
+                "Business Automation Workflow Authoring")
+                    pattern_arr=("Business Automation Workflow Authoring")
+                    pattern_cr_arr=("workflow,workflow-authoring")
+                    foundation_baw=("BAN" "BAS")
+                    break
+                    ;;
+                "Business Automation Workflow Runtime")
+                    pattern_arr=("Business Automation Workflow Runtime")
+                    pattern_cr_arr=("workflow,workflow-runtime")
+                    foundation_baw=("BAN" "AE")
+                    break
+                    ;;
+                *) echo "invalid option $REPLY";;
+            esac
+        done
+    fi
 
     foundation_component_arr=( "${foundation_component_arr[@]}" "${foundation_baw[@]}" )
     PATTERNS_CR_SELECTED=$( IFS=$','; echo "${pattern_cr_arr[*]}" )
