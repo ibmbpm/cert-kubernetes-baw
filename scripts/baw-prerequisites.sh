@@ -8710,7 +8710,7 @@ function validate_prerequisites(){
         fi
 
         # TODO: Add condition when edb is reenabled 
-        if [[ $EXTERNAL_POSTGRESDB_FOR_BTS == "true" ]]; then
+        # if [[ $EXTERNAL_POSTGRESDB_FOR_BTS == "true" ]]; then
             tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_BTS_FLAG)")
             tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
             if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
@@ -8750,7 +8750,7 @@ function validate_prerequisites(){
                 success "Checked DB connection for \"$dbname\" on database server \"$dbserver\", PASSED!"
             fi
 
-        fi
+        # fi
         
         info "If all prerequisites check PASSED, you can run baw-deployment.sh to deploy BAW. Otherwise, please check the configuration again."
         info "After BAW is deployed, please refer to the documentation for post-deployment steps."
