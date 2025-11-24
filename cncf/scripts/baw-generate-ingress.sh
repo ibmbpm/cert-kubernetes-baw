@@ -64,7 +64,7 @@ function replace() {
     if ${CLI_CMD} get ingress zen-ingress -n ${baw_namespace} >/dev/null 2>&1; then
         ${CLI_CMD} get ingress zen-ingress -n ${baw_namespace} -o yaml | \
         ${CLI_CMD} patch -f - -p '{"metadata":{"creationTimestamp": null, "generation": null, "ownerReferences": null, "resourceVersion": null, "uid": null}, "status":null}' --type=merge --dry-run='client' -o yaml | \
-        ${CLI_CMD} patch -f - -p '{"metadata":{"annotations":{"nginx.ingress.kubernetes.io/proxy-buffer-size":"8k"}}}' --type=merge --dry-run='client' -o yaml \
+        ${CLI_CMD} patch -f - -p '{"metadata":{"annotations":{"nginx.ingress.kubernetes.io/proxy-buffer-size":"8k","cert-manager.io/common-name":"'"${baw_namespace}"'-cpd.'"${domain_name}"'"}}}' --type=merge --dry-run='client' -o yaml \
         > ${tmp_zen_ingress}
     else
         info "zen-ingress not found in namespace ${baw_namespace}. Skipping."
