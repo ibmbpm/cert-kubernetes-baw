@@ -79,7 +79,7 @@ function replace() {
         ${CLI_CMD} patch -f - -p '{"metadata":{"annotations":{"cert-manager.io/issuer":"zen-tls-issuer"}}}' --type=merge --dry-run='client' -o yaml  \
         > ${tmp_zen_ingress_work}
         cat ${tmp_zen_ingress_work} > ${tmp_zen_ingress} && rm ${tmp_zen_ingress_work}
-        ${SED_COMMAND} "s/CPD_HOST/${bai_namespace}-cpd.${domain_name}/g" ${tmp_zen_ingress}
+        ${SED_COMMAND} "s/CPD_HOST/${baw_namespace}-cpd.${domain_name}/g" ${tmp_zen_ingress}
     fi
 
     cat ${tmp_zen_ingress} >> ${output_file}
