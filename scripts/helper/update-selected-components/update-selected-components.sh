@@ -631,7 +631,7 @@ function retrieve_current_external_zen_configurations(){
     fi
     check_external_bts_property="$(prop_original_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER_NAME)"
     if [[ -z "$check_external_bts_property" ]]; then
-        EXTERNAL_POSTGRESDB_FOR_BTS_SUMMAY="false"
+        EXTERNAL_POSTGRESDB_FOR_BTS_SUMMARY="false"
     else
         EXTERNAL_POSTGRESDB_FOR_BTS_SUMMARY="true"
     fi
