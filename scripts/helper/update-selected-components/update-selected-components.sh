@@ -631,15 +631,15 @@ function retrieve_current_external_zen_configurations(){
     fi
     check_external_bts_property="$(prop_original_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER_NAME)"
     if [[ -z "$check_external_bts_property" ]]; then
-        EXTERNAL_POSTGRESDB_FOR_BTS="false"
+        EXTERNAL_POSTGRESDB_FOR_BTS_SUMMAY="false"
     else
-        EXTERNAL_POSTGRESDB_FOR_BTS="true"
+        EXTERNAL_POSTGRESDB_FOR_BTS_SUMMARY="true"
     fi
 
     # Creating a summary dictionary to display the different configurations currently chosen
     add_entry_for_summary "External PostgresDB enabled for IM" "${EXTERNAL_POSTGRESDB_FOR_IM}"
     add_entry_for_summary "External PostgresDB enabled for ZEN" "${EXTERNAL_POSTGRESDB_FOR_ZEN}"
-    add_entry_for_summary "External PostgresDB enabled for BTS" "${EXTERNAL_POSTGRESDB_FOR_BTS}"
+    add_entry_for_summary "External PostgresDB enabled for BTS" "${EXTERNAL_POSTGRESDB_FOR_BTS_SUMMARY}"
 }
 
 # # Function to detect if the new CR is going to be a ICP4ACluster type CR
