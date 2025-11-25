@@ -43,88 +43,93 @@ function get_client_id() {
 }
 
 function replace() {
+    # Create output file if not provided
     if [[ -z ${output_file} ]]; then
         output_file=$(mktemp)
     fi
 
-    info "Writing kubernetes manifests to ${output_file}"
-    cp "${current_dir}/${template_file}" ${output_file}
-    ${SED_COMMAND} "s/NAMESPACE/${baw_namespace}/g" ${output_file}
-    ${SED_COMMAND} "s/HOST/${cp_console_hostname}/g" ${output_file}
-    ${SED_COMMAND} "s/DOMAIN/${domain_name}/g" ${output_file}
-    ${SED_COMMAND} "s/CLIENT_ID/${client_id}/g" ${output_file}
-    ${SED_COMMAND} "s/LICENSING_NS/${licensing_namespace}/g" ${output_file}
+    info "Generating manifests into ${output_file}"
 
-    ###############################################################
-    # BEGIN: Patch zen-ingress (Permanent Fix)
-    ###############################################################
+    #
+    # IMPORTANT: delete existing zen-ingress to force ingress-nginx reload
+    #
+    info "Deleting existing zen-ingress to enforce fresh controller reload"
+    ${CLI_CMD} delete ingress zen-ingress -n ${baw_namespace} --ignore-not-found=true
 
-    echo "" >> ${output_file}
-    echo "---" >> ${output_file}
-
+    #
+    # Generate patched zen-ingress first
+    #
     tmp_zen_ingress=$(mktemp)
 
-    # Check if zen-ingress exists
     if ${CLI_CMD} get ingress zen-ingress -n ${baw_namespace} >/dev/null 2>&1; then
+        info "Extracting and patching zen-ingress from cluster"
 
-        # Clean metadata & prepare base yaml
         ${CLI_CMD} get ingress zen-ingress -n ${baw_namespace} -o yaml | \
-        ${CLI_CMD} patch -f - -p '{"metadata":{"creationTimestamp": null, "generation": null, "ownerReferences": null, "resourceVersion": null, "uid": null}, "status":null}' \
+        ${CLI_CMD} patch -f - \
+            -p '{"metadata":{"creationTimestamp": null, "generation": null, "ownerReferences": null, "resourceVersion": null, "uid": null}, "status":null}' \
             --type=merge --dry-run=client -o yaml | \
-
-        # Add all required annotations (final permanent set)
-        ${CLI_CMD} patch -f - -p '{"metadata":{"annotations":{
-            "nginx.ingress.kubernetes.io/proxy-buffer-size":"8k",
-            "nginx.ingress.kubernetes.io/proxy-body-size":"0",
-            "nginx.ingress.kubernetes.io/backend-protocol":"HTTPS",
-            "nginx.ingress.kubernetes.io/force-ssl-redirect":"true",
-            "cert-manager.io/cluster-issuer":"ingress-issuer",
-            "cert-manager.io/common-name":"'"${baw_namespace}"'-cpd.'"${domain_name}"'",
-            "cert-manager.io/email-sans":"cert@ibm.com",
-            "cert-manager.io/subject-organizations":"IBM",
-            "cert-manager.io/subject-organizationalunits":"Cloud"
-        }}}' \
+        ${CLI_CMD} patch -f - \
+            -p '{"metadata":{"annotations":{"nginx.ingress.kubernetes.io/proxy-buffer-size":"8k"}}}' \
             --type=merge --dry-run=client -o yaml \
         > ${tmp_zen_ingress}
 
     else
-        info "zen-ingress not found in namespace ${baw_namespace}. Skipping."
+        info "zen-ingress does not exist on cluster yet — skipping extraction"
+        # Build empty basis if needed
+        echo "# zen-ingress placeholder will be created by operator" > ${tmp_zen_ingress}
     fi
 
-    # TLS termination logic
+    #
+    # TLS patch if enabled
+    #
     if [[ "${tls_termination}" = true ]]; then
-        tmp_zen_ingress_work=$(mktemp)
+        info "Adding TLS configuration into zen-ingress"
+        tmp_tls_patch=$(mktemp)
 
-        # Add TLS section
         ${CLI_CMD} patch -f ${tmp_zen_ingress} \
-            -p '{"spec":{"tls":[{"hosts":["CPD_HOST"],"secretName":"cpd-ingress-tls-secret"}]}}' \
+            -p '{"spec": {"tls": [{"hosts": ["CPD_HOST"], "secretName": "cpd-ingress-tls-secret"}]}}' \
             --type=merge --dry-run=client -o yaml | \
-
-        # Add cert-manager issuer annotation
         ${CLI_CMD} patch -f - \
             -p '{"metadata":{"annotations":{"cert-manager.io/issuer":"zen-tls-issuer"}}}' \
             --type=merge --dry-run=client -o yaml \
-        > ${tmp_zen_ingress_work}
+        > ${tmp_tls_patch}
 
-        mv ${tmp_zen_ingress_work} ${tmp_zen_ingress}
-
-        # Replace CPD_HOST placeholder
+        mv ${tmp_tls_patch} ${tmp_zen_ingress}
         ${SED_COMMAND} "s/CPD_HOST/${baw_namespace}-cpd.${domain_name}/g" ${tmp_zen_ingress}
     fi
 
-    # Append patched zen-ingress YAML to output
-    cat ${tmp_zen_ingress} >> ${output_file}
-    rm ${tmp_zen_ingress}
 
-    ###############################################################
-    # END: Patch zen-ingress
-    ###############################################################
+    #
+    # WRITE ORDER → ZEN-INGRESS FIRST
+    #
+    info "Writing zen-ingress FIRST into output manifest"
+    cat ${tmp_zen_ingress} > ${output_file}     # overwrite file with zen ingress
+    echo "---" >> ${output_file}
 
-    # Workaround to remove erroneous ""-ending files on macOS
+
+    #
+    # Now append the template contents AFTER zen-ingress
+    #
+    tmp_template=$(mktemp)
+    cp "${current_dir}/${template_file}" ${tmp_template}
+
+    ${SED_COMMAND} "s/NAMESPACE/${baw_namespace}/g"   ${tmp_template}
+    ${SED_COMMAND} "s/HOST/${cp_console_hostname}/g"  ${tmp_template}
+    ${SED_COMMAND} "s/DOMAIN/${domain_name}/g"        ${tmp_template}
+    ${SED_COMMAND} "s/CLIENT_ID/${client_id}/g"       ${tmp_template}
+    ${SED_COMMAND} "s/LICENSING_NS/${licensing_namespace}/g" ${tmp_template}
+
+    info "Appending template manifests AFTER zen-ingress"
+    cat ${tmp_template} >> ${output_file}
+
+    rm -f ${tmp_template} ${tmp_zen_ingress}
+
+    # macOS cleanup
     if [[ -f "$output_file\"\"" ]]; then
-        echo "Removing extra \" from the end of the file name"
         rm -f "${output_file}\"\"" 2>/dev/null
     fi
+
+    info "Manifest generation completed successfully"
 }
 
 function baw_cncf_generate_ingress() {
