@@ -629,7 +629,7 @@ function retrieve_current_external_zen_configurations(){
     else
         EXTERNAL_POSTGRESDB_FOR_ZEN="true"
     fi
-    check_external_bts_property="$(prop_original_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER)"
+    check_external_bts_property="$(prop_original_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER_NAME)"
     if [[ -z "$check_external_bts_property" ]]; then
         EXTERNAL_POSTGRESDB_FOR_BTS="false"
     else
