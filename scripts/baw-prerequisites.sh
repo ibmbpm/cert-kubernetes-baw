@@ -31,7 +31,7 @@ function show_help() {
     echo "      STEP4: Create the databases and secrets by using the modified DB SQL statement files and YAML templates for the secrets."
     echo "      STEP5: Run the script in [validate] mode. Checks whether the databases and the secrets are created before you install BAW."
     echo "  --update-components"
-    echo "      Updates deployment patterns and optional components in an existing installation,then regenerates property files with the new configuration."
+    echo "      Updates optional components in an existing installation,then regenerates property files with the new configuration."
     echo "      Prerequisites:"
     echo "        - Active deployment in the namespace specified with \"-n\"."
     echo "        - Original property files must be available."
