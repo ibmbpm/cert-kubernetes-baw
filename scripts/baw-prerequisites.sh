@@ -3678,6 +3678,8 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         echo "## Name of the database user. The default value is \"btscnp_user\"." >> ${USER_PROFILE_PROPERTY_FILE}
         echo "CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER_NAME=\"btscnp_user\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+    else
+        rm -rf $BTS_DB_SSL_CERT_FOLDER >/dev/null 2>&1
     fi
 
     if [[ $EXTERNAL_CERT_OPENSEARCH_KAFKA == "true" ]]; then
