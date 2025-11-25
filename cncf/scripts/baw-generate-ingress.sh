@@ -55,36 +55,72 @@ function replace() {
     ${SED_COMMAND} "s/CLIENT_ID/${client_id}/g" ${output_file}
     ${SED_COMMAND} "s/LICENSING_NS/${licensing_namespace}/g" ${output_file}
 
-    # add nginx.ingress.kubernetes.io/proxy-buffer-size annotations to zen ingress
+    ###############################################################
+    # BEGIN: Patch zen-ingress (Permanent Fix)
+    ###############################################################
+
     echo "" >> ${output_file}
     echo "---" >> ${output_file}
 
     tmp_zen_ingress=$(mktemp)
 
+    # Check if zen-ingress exists
     if ${CLI_CMD} get ingress zen-ingress -n ${baw_namespace} >/dev/null 2>&1; then
+
+        # Clean metadata & prepare base yaml
         ${CLI_CMD} get ingress zen-ingress -n ${baw_namespace} -o yaml | \
-        ${CLI_CMD} patch -f - -p '{"metadata":{"creationTimestamp": null, "generation": null, "ownerReferences": null, "resourceVersion": null, "uid": null}, "status":null}' --type=merge --dry-run='client' -o yaml | \
-        ${CLI_CMD} patch -f - -p '{"metadata":{"annotations":{"nginx.ingress.kubernetes.io/proxy-buffer-size":"8k","cert-manager.io/common-name":"'"${baw_namespace}"'-cpd.'"${domain_name}"'"}}}' --type=merge --dry-run='client' -o yaml \
+        ${CLI_CMD} patch -f - -p '{"metadata":{"creationTimestamp": null, "generation": null, "ownerReferences": null, "resourceVersion": null, "uid": null}, "status":null}' \
+            --type=merge --dry-run=client -o yaml | \
+
+        # Add all required annotations (final permanent set)
+        ${CLI_CMD} patch -f - -p '{"metadata":{"annotations":{
+            "nginx.ingress.kubernetes.io/proxy-buffer-size":"8k",
+            "nginx.ingress.kubernetes.io/proxy-body-size":"0",
+            "nginx.ingress.kubernetes.io/backend-protocol":"HTTPS",
+            "nginx.ingress.kubernetes.io/force-ssl-redirect":"true",
+            "cert-manager.io/cluster-issuer":"ingress-issuer",
+            "cert-manager.io/common-name":"'"${baw_namespace}"'-cpd.'"${domain_name}"'",
+            "cert-manager.io/email-sans":"cert@ibm.com",
+            "cert-manager.io/subject-organizations":"IBM",
+            "cert-manager.io/subject-organizationalunits":"Cloud"
+        }}}' \
+            --type=merge --dry-run=client -o yaml \
         > ${tmp_zen_ingress}
+
     else
         info "zen-ingress not found in namespace ${baw_namespace}. Skipping."
     fi
 
+    # TLS termination logic
     if [[ "${tls_termination}" = true ]]; then
         tmp_zen_ingress_work=$(mktemp)
-        # add tls section
-        # ${CLI_CMD} patch -f ${tmp_zen_ingress} -p='[{"op": "add", "path": "/spec", "value": {"tls": { "hosts": ["CPD_HOST"], "secretName": "cpd-ingress-tls-secret" }}}]' --type=json --dry-run='client' -o yaml | \
-        ${CLI_CMD} patch -f ${tmp_zen_ingress} -p '{"spec": {"tls": [{"hosts": ["CPD_HOST"], "secretName": "cpd-ingress-tls-secret" }]}}' --type=merge --dry-run='client' -o yaml | \
-        # add annotation
-        ${CLI_CMD} patch -f - -p '{"metadata":{"annotations":{"cert-manager.io/issuer":"zen-tls-issuer"}}}' --type=merge --dry-run='client' -o yaml  \
+
+        # Add TLS section
+        ${CLI_CMD} patch -f ${tmp_zen_ingress} \
+            -p '{"spec":{"tls":[{"hosts":["CPD_HOST"],"secretName":"cpd-ingress-tls-secret"}]}}' \
+            --type=merge --dry-run=client -o yaml | \
+
+        # Add cert-manager issuer annotation
+        ${CLI_CMD} patch -f - \
+            -p '{"metadata":{"annotations":{"cert-manager.io/issuer":"zen-tls-issuer"}}}' \
+            --type=merge --dry-run=client -o yaml \
         > ${tmp_zen_ingress_work}
-        cat ${tmp_zen_ingress_work} > ${tmp_zen_ingress} && rm ${tmp_zen_ingress_work}
+
+        mv ${tmp_zen_ingress_work} ${tmp_zen_ingress}
+
+        # Replace CPD_HOST placeholder
         ${SED_COMMAND} "s/CPD_HOST/${baw_namespace}-cpd.${domain_name}/g" ${tmp_zen_ingress}
     fi
 
+    # Append patched zen-ingress YAML to output
     cat ${tmp_zen_ingress} >> ${output_file}
     rm ${tmp_zen_ingress}
-    #Workaround to move extra file in Mac that has "" at the end of output_file such as ingress_nginx.yaml""
+
+    ###############################################################
+    # END: Patch zen-ingress
+    ###############################################################
+
+    # Workaround to remove erroneous ""-ending files on macOS
     if [[ -f "$output_file\"\"" ]]; then
         echo "Removing extra \" from the end of the file name"
         rm -f "${output_file}\"\"" 2>/dev/null
