@@ -49,104 +49,121 @@ function replace() {
 
     info "Generating ingress manifests into ${output_file}"
 
-    # Temporary file to accumulate patched ingress resources (zen or cncf-*)
+    #
+    # TEMP file to collect patched ingresses
+    #
     tmp_ingresses=$(mktemp)
 
     #
-    # 1. Detect ingress model: legacy zen-ingress vs new cncf-* ingresses
+    # The full list of CNCP identity ingresses (Option C)
+    #
+    CNCP_INGS=(
+        cncf-platform-oidc
+        cncf-platform-auth
+        cncf-platform-id-provider
+        cncf-platform-id-auth
+        cncf-id-mgmt
+        cncf-platform-login
+        cncf-saml-ui-callback
+        cncf-social-login-callback
+    )
+
+    #
+    # 1. Patch all CNCP identity ingresses
+    #
+    for ing in "${CNCP_INGS[@]}"; do
+        if ${CLI_CMD} get ingress "$ing" -n ${baw_namespace} >/dev/null 2>&1; then
+            info "Patching CNCP ingress: $ing"
+
+            tmp_single=$(mktemp)
+
+            ${CLI_CMD} get ingress "$ing" -n ${baw_namespace} -o yaml | \
+            # strip cluster-generated fields
+            ${CLI_CMD} patch -f - \
+                -p '{"metadata":{
+                        "creationTimestamp": null,
+                        "generation": null,
+                        "ownerReferences": null,
+                        "resourceVersion": null,
+                        "uid": null
+                     },
+                     "status":null}' \
+                --type=merge --dry-run=client -o yaml | \
+            # add proxy-buffer-size + proxy-body-size
+            ${CLI_CMD} patch -f - \
+                -p "{
+                      \"metadata\": {
+                        \"annotations\": {
+                          \"nginx.ingress.kubernetes.io/proxy-buffer-size\": \"16k\",
+                          \"nginx.ingress.kubernetes.io/proxy-body-size\": \"0\"
+                        }
+                      }
+                    }" \
+                --type=merge --dry-run=client -o yaml \
+            > ${tmp_single}
+
+            cat ${tmp_single} >> ${tmp_ingresses}
+            echo "---" >> ${tmp_ingresses}
+            rm -f ${tmp_single}
+        else
+            info "CNCP ingress $ing not found — skipping"
+        fi
+    done
+
+    #
+    # 2. Patch legacy zen-ingress (if it exists)
     #
     if ${CLI_CMD} get ingress zen-ingress -n ${baw_namespace} >/dev/null 2>&1; then
-        ####################################################################
-        # Legacy model: zen-ingress present (pre / hybrid 6.2.2 behaviour)
-        ####################################################################
-        info "Detected legacy zen-ingress; patching it"
+        info "Legacy zen-ingress detected — applying buffer-size, body-size, CN"
 
-        tmp_zen_ingress=$(mktemp)
+        tmp_zen=$(mktemp)
 
         ${CLI_CMD} get ingress zen-ingress -n ${baw_namespace} -o yaml | \
-        # strip cluster-managed fields
         ${CLI_CMD} patch -f - \
-            -p '{"metadata":{"creationTimestamp": null, "generation": null, "ownerReferences": null, "resourceVersion": null, "uid": null}, "status":null}' \
+            -p '{"metadata":{
+                    "creationTimestamp": null,
+                    "generation": null,
+                    "ownerReferences": null,
+                    "resourceVersion": null,
+                    "uid": null
+                 },
+                 "status":null}' \
             --type=merge --dry-run=client -o yaml | \
-        # add proxy-buffer-size annotation
         ${CLI_CMD} patch -f - \
-            -p '{"metadata":{"annotations":{"nginx.ingress.kubernetes.io/proxy-buffer-size":"8k"}}}' \
+            -p "{
+                  \"metadata\": {
+                    \"annotations\": {
+                      \"nginx.ingress.kubernetes.io/proxy-buffer-size\": \"16k\",
+                      \"nginx.ingress.kubernetes.io/proxy-body-size\": \"0\",
+                      \"cert-manager.io/common-name\": \"${baw_namespace}-cpd.${domain_name}\"
+                    }
+                  }
+                }" \
             --type=merge --dry-run=client -o yaml \
-        > ${tmp_zen_ingress}
+        > ${tmp_zen}
 
-        # optional TLS termination logic ONLY for legacy zen-ingress
-        if [[ "${tls_termination}" = true ]]; then
-            info "Adding TLS configuration into legacy zen-ingress"
-
-            tmp_zen_tls=$(mktemp)
-
-            ${CLI_CMD} patch -f ${tmp_zen_ingress} \
-                -p '{"spec": {"tls": [{"hosts": ["CPD_HOST"], "secretName": "cpd-ingress-tls-secret" }]}}' \
-                --type=merge --dry-run=client -o yaml | \
-            ${CLI_CMD} patch -f - \
-                -p '{"metadata":{"annotations":{"cert-manager.io/issuer":"zen-tls-issuer"}}}' \
-                --type=merge --dry-run=client -o yaml \
-                > ${tmp_zen_tls}
-
-            mv ${tmp_zen_tls} ${tmp_zen_ingress}
-            ${SED_COMMAND} "s/CPD_HOST/${baw_namespace}-cpd.${domain_name}/g" ${tmp_zen_ingress}
-        fi
-
-        # Add patched zen-ingress to the ingresses buffer
-        cat ${tmp_zen_ingress} >> ${tmp_ingresses}
+        cat ${tmp_zen} >> ${tmp_ingresses}
         echo "---" >> ${tmp_ingresses}
-        rm -f ${tmp_zen_ingress}
-
+        rm -f ${tmp_zen}
     else
-        ####################################################################
-        # New model: cncf-* ingresses (Zen 6.2.2+)
-        ####################################################################
-        info "zen-ingress not found; checking for cncf platform ingresses (Zen 6.2.2+ model)"
-
-        # These are the main identity / OIDC ingresses relevant for logout
-        for ing in cncf-platform-oidc cncf-platform-auth cncf-platform-id-provider; do
-            if ${CLI_CMD} get ingress "${ing}" -n ${baw_namespace} >/dev/null 2>&1; then
-                info "Patching ${ing} with proxy-buffer-size annotation"
-
-                tmp_cncf=$(mktemp)
-
-                ${CLI_CMD} get ingress "${ing}" -n ${baw_namespace} -o yaml | \
-                # strip cluster-managed fields
-                ${CLI_CMD} patch -f - \
-                    -p '{"metadata":{"creationTimestamp": null, "generation": null, "ownerReferences": null, "resourceVersion": null, "uid": null}, "status":null}' \
-                    --type=merge --dry-run=client -o yaml | \
-                # add proxy-buffer-size annotation
-                ${CLI_CMD} patch -f - \
-                    -p '{"metadata":{"annotations":{"nginx.ingress.kubernetes.io/proxy-buffer-size":"8k"}}}' \
-                    --type=merge --dry-run=client -o yaml \
-                > ${tmp_cncf}
-
-                cat ${tmp_cncf} >> ${tmp_ingresses}
-                echo "---" >> ${tmp_ingresses}
-                rm -f ${tmp_cncf}
-            else
-                info "Ingress ${ing} not found in namespace ${baw_namespace}; skipping."
-            fi
-        done
+        info "zen-ingress not found — skipping legacy ingress patch"
     fi
 
     #
-    # 2. Write patched ingresses (if any) FIRST into output_file
+    # 3. Write patched ingresses FIRST
     #
     if [[ -s ${tmp_ingresses} ]]; then
-        info "Writing patched Zen/cncf ingresses at TOP of ${output_file}"
+        info "Writing patched CNCP/zen ingresses at TOP of ${output_file}"
         cat ${tmp_ingresses} > ${output_file}
-        # trailing '---' is already added after each ingress
     else
-        info "No Zen or cncf platform ingresses found to patch; output will contain only template ingress."
-        # truncate output file to start fresh
+        info "No ingresses patched — starting with empty output"
         : > ${output_file}
     fi
 
     rm -f ${tmp_ingresses}
 
     #
-    # 3. Process the static template and append AFTER the patched ingresses
+    # 4. Append the original template after patched ingresses
     #
     tmp_template=$(mktemp)
     cp "${current_dir}/${template_file}" ${tmp_template}
@@ -157,14 +174,16 @@ function replace() {
     ${SED_COMMAND} "s/CLIENT_ID/${client_id}/g"              ${tmp_template}
     ${SED_COMMAND} "s/LICENSING_NS/${licensing_namespace}/g" ${tmp_template}
 
-    info "Appending original template contents AFTER patched ingresses"
-    # If no ingresses were written, this will just be the full file
+    info "Appending template ingress AFTER patched ingresses"
+    echo "---" >> ${output_file}
     cat ${tmp_template} >> ${output_file}
+
     rm -f ${tmp_template}
 
-    # Workaround to remove extra file in Mac that has "" at the end of output_file such as ingress_nginx.yaml""
+    #
+    # 5. macOS file cleanup
+    #
     if [[ -f "$output_file\"\"" ]]; then
-        echo "Removing extra \" from the end of the file name"
         rm -f "${output_file}\"\"" 2>/dev/null
     fi
 
