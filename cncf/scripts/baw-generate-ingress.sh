@@ -50,12 +50,12 @@ function replace() {
     info "Generating ingress manifests into ${output_file}"
 
     #
-    # TEMP file to collect patched ingresses
+    # Temp file to collect patched ingresses (CNCP + zen-ingress)
     #
     tmp_ingresses=$(mktemp)
 
     #
-    # The full list of CNCP identity ingresses (Option C)
+    # CNCP identity ingresses we want to patch (Option C)
     #
     CNCP_INGS=(
         cncf-platform-oidc
@@ -68,17 +68,17 @@ function replace() {
         cncf-social-login-callback
     )
 
-    #
-    # 1. Patch all CNCP identity ingresses
-    #
+    ########################################################################
+    # 1. Patch all CNCP identity ingresses (if they exist)
+    ########################################################################
     for ing in "${CNCP_INGS[@]}"; do
-        if ${CLI_CMD} get ingress "$ing" -n ${baw_namespace} >/dev/null 2>&1; then
+        if ${CLI_CMD} get ingress "$ing" -n "${baw_namespace}" >/dev/null 2>&1; then
             info "Patching CNCP ingress: $ing"
 
             tmp_single=$(mktemp)
 
-            ${CLI_CMD} get ingress "$ing" -n ${baw_namespace} -o yaml | \
-            # strip cluster-generated fields
+            ${CLI_CMD} get ingress "$ing" -n "${baw_namespace}" -o yaml | \
+            # strip cluster-managed metadata
             ${CLI_CMD} patch -f - \
                 -p '{"metadata":{
                         "creationTimestamp": null,
@@ -100,25 +100,32 @@ function replace() {
                       }
                     }" \
                 --type=merge --dry-run=client -o yaml \
-            > ${tmp_single}
+            > "${tmp_single}"
 
-            cat ${tmp_single} >> ${tmp_ingresses}
-            echo "---" >> ${tmp_ingresses}
-            rm -f ${tmp_single}
+            cat "${tmp_single}" >> "${tmp_ingresses}"
+            echo "---" >> "${tmp_ingresses}"
+            rm -f "${tmp_single}"
         else
-            info "CNCP ingress $ing not found — skipping"
+            info "CNCP ingress $ing not found in namespace ${baw_namespace} — skipping"
         fi
     done
 
-    #
+    ########################################################################
     # 2. Patch legacy zen-ingress (if it exists)
-    #
-    if ${CLI_CMD} get ingress zen-ingress -n ${baw_namespace} >/dev/null 2>&1; then
-        info "Legacy zen-ingress detected — applying buffer-size, body-size, CN"
+    #    - buffer-size 16k
+    #    - body-size 0
+    #    - cert-manager.io/issuer = zen-tls-issuer
+    #    - cert-manager.io/common-name = <ns>-cpd.<domain>
+    #    - spec.tls.hosts[0] = <ns>-cpd.<domain>
+    #    - spec.tls.secretName = cpd-ingress-tls-secret
+    ########################################################################
+    if ${CLI_CMD} get ingress zen-ingress -n "${baw_namespace}" >/dev/null 2>&1; then
+        info "zen-ingress detected — patching annotations + TLS"
 
         tmp_zen=$(mktemp)
 
-        ${CLI_CMD} get ingress zen-ingress -n ${baw_namespace} -o yaml | \
+        ${CLI_CMD} get ingress zen-ingress -n "${baw_namespace}" -o yaml | \
+        # strip cluster-managed fields
         ${CLI_CMD} patch -f - \
             -p '{"metadata":{
                     "creationTimestamp": null,
@@ -129,61 +136,79 @@ function replace() {
                  },
                  "status":null}' \
             --type=merge --dry-run=client -o yaml | \
+        # add annotations: buffer/body size + issuer + CN
         ${CLI_CMD} patch -f - \
             -p "{
                   \"metadata\": {
                     \"annotations\": {
                       \"nginx.ingress.kubernetes.io/proxy-buffer-size\": \"16k\",
                       \"nginx.ingress.kubernetes.io/proxy-body-size\": \"0\",
+                      \"cert-manager.io/issuer\": \"zen-tls-issuer\",
                       \"cert-manager.io/common-name\": \"${baw_namespace}-cpd.${domain_name}\"
                     }
                   }
                 }" \
+            --type=merge --dry-run=client -o yaml | \
+        # ensure TLS block exists and uses cpd-ingress-tls-secret
+        ${CLI_CMD} patch -f - \
+            -p "{
+                  \"spec\": {
+                    \"tls\": [
+                      {
+                        \"hosts\": [ \"CPD_HOST\" ],
+                        \"secretName\": \"cpd-ingress-tls-secret\"
+                      }
+                    ]
+                  }
+                }" \
             --type=merge --dry-run=client -o yaml \
-        > ${tmp_zen}
+        > "${tmp_zen}"
 
-        cat ${tmp_zen} >> ${tmp_ingresses}
-        echo "---" >> ${tmp_ingresses}
-        rm -f ${tmp_zen}
+        # replace CPD_HOST placeholder with real host: <ns>-cpd.<domain>
+        ${SED_COMMAND} "s/CPD_HOST/${baw_namespace}-cpd.${domain_name}/g" "${tmp_zen}"
+
+        cat "${tmp_zen}" >> "${tmp_ingresses}"
+        echo "---" >> "${tmp_ingresses}"
+        rm -f "${tmp_zen}"
     else
-        info "zen-ingress not found — skipping legacy ingress patch"
+        info "zen-ingress not found in namespace ${baw_namespace} — skipping zen patch"
     fi
 
-    #
-    # 3. Write patched ingresses FIRST
-    #
-    if [[ -s ${tmp_ingresses} ]]; then
-        info "Writing patched CNCP/zen ingresses at TOP of ${output_file}"
-        cat ${tmp_ingresses} > ${output_file}
+    ########################################################################
+    # 3. Write patched ingresses (if any) at TOP of output_file
+    ########################################################################
+    if [[ -s "${tmp_ingresses}" ]]; then
+        info "Writing patched CNCP/zen ingresses to top of ${output_file}"
+        cat "${tmp_ingresses}" > "${output_file}"
     else
         info "No ingresses patched — starting with empty output"
-        : > ${output_file}
+        : > "${output_file}"
     fi
 
-    rm -f ${tmp_ingresses}
+    rm -f "${tmp_ingresses}"
 
-    #
-    # 4. Append the original template after patched ingresses
-    #
+    ########################################################################
+    # 4. Append original template ingress AFTER patched ingresses
+    ########################################################################
     tmp_template=$(mktemp)
-    cp "${current_dir}/${template_file}" ${tmp_template}
+    cp "${current_dir}/${template_file}" "${tmp_template}"
 
-    ${SED_COMMAND} "s/NAMESPACE/${baw_namespace}/g"          ${tmp_template}
-    ${SED_COMMAND} "s/HOST/${cp_console_hostname}/g"         ${tmp_template}
-    ${SED_COMMAND} "s/DOMAIN/${domain_name}/g"               ${tmp_template}
-    ${SED_COMMAND} "s/CLIENT_ID/${client_id}/g"              ${tmp_template}
-    ${SED_COMMAND} "s/LICENSING_NS/${licensing_namespace}/g" ${tmp_template}
+    ${SED_COMMAND} "s/NAMESPACE/${baw_namespace}/g"          "${tmp_template}"
+    ${SED_COMMAND} "s/HOST/${cp_console_hostname}/g"         "${tmp_template}"
+    ${SED_COMMAND} "s/DOMAIN/${domain_name}/g"               "${tmp_template}"
+    ${SED_COMMAND} "s/CLIENT_ID/${client_id}/g"              "${tmp_template}"
+    ${SED_COMMAND} "s/LICENSING_NS/${licensing_namespace}/g" "${tmp_template}"
 
     info "Appending template ingress AFTER patched ingresses"
-    echo "---" >> ${output_file}
-    cat ${tmp_template} >> ${output_file}
+    echo "---" >> "${output_file}"
+    cat "${tmp_template}" >> "${output_file}"
+    rm -f "${tmp_template}"
 
-    rm -f ${tmp_template}
-
-    #
-    # 5. macOS file cleanup
-    #
+    ########################################################################
+    # 5. macOS extra file cleanup
+    ########################################################################
     if [[ -f "$output_file\"\"" ]]; then
+        echo "Removing extra \" from the end of the file name"
         rm -f "${output_file}\"\"" 2>/dev/null
     fi
 
