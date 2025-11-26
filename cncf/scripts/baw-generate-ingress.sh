@@ -50,12 +50,12 @@ function replace() {
     info "Generating ingress manifests into ${output_file}"
 
     #
-    # TEMP FILE to collect ALL patched CNCP ingresses
+    # TEMP file to collect patched ingresses
     #
     tmp_ingresses=$(mktemp)
 
     #
-    # List of all CNCP identity ingresses to patch
+    # The full list of CNCP identity ingresses (Option C)
     #
     CNCP_INGS=(
         cncf-platform-oidc
@@ -69,7 +69,7 @@ function replace() {
     )
 
     #
-    # 1. Process each CNCP ingress (patch proxy-buffer-size = 16k)
+    # 1. Patch all CNCP identity ingresses
     #
     for ing in "${CNCP_INGS[@]}"; do
         if ${CLI_CMD} get ingress "$ing" -n ${baw_namespace} >/dev/null 2>&1; then
@@ -80,11 +80,25 @@ function replace() {
             ${CLI_CMD} get ingress "$ing" -n ${baw_namespace} -o yaml | \
             # strip cluster-generated fields
             ${CLI_CMD} patch -f - \
-                -p '{"metadata":{"creationTimestamp": null, "generation": null, "ownerReferences": null, "resourceVersion": null, "uid": null}, "status":null}' \
+                -p '{"metadata":{
+                        "creationTimestamp": null,
+                        "generation": null,
+                        "ownerReferences": null,
+                        "resourceVersion": null,
+                        "uid": null
+                     },
+                     "status":null}' \
                 --type=merge --dry-run=client -o yaml | \
-            # add proxy-buffer-size annotation
+            # add proxy-buffer-size + proxy-body-size
             ${CLI_CMD} patch -f - \
-                -p '{"metadata":{"annotations":{"nginx.ingress.kubernetes.io/proxy-buffer-size":"16k"}}}' \
+                -p "{
+                      \"metadata\": {
+                        \"annotations\": {
+                          \"nginx.ingress.kubernetes.io/proxy-buffer-size\": \"16k\",
+                          \"nginx.ingress.kubernetes.io/proxy-body-size\": \"0\"
+                        }
+                      }
+                    }" \
                 --type=merge --dry-run=client -o yaml \
             > ${tmp_single}
 
@@ -97,42 +111,59 @@ function replace() {
     done
 
     #
-    # Optional: Patch legacy zen-ingress if still present (harmless)
+    # 2. Patch legacy zen-ingress (if it exists)
     #
     if ${CLI_CMD} get ingress zen-ingress -n ${baw_namespace} >/dev/null 2>&1; then
-        info "Legacy zen-ingress detected — patching as well"
+        info "Legacy zen-ingress detected — applying buffer-size, body-size, CN"
 
         tmp_zen=$(mktemp)
 
         ${CLI_CMD} get ingress zen-ingress -n ${baw_namespace} -o yaml | \
         ${CLI_CMD} patch -f - \
-            -p '{"metadata":{"creationTimestamp": null, "generation": null, "ownerReferences": null, "resourceVersion": null, "uid": null}, "status":null}' \
+            -p '{"metadata":{
+                    "creationTimestamp": null,
+                    "generation": null,
+                    "ownerReferences": null,
+                    "resourceVersion": null,
+                    "uid": null
+                 },
+                 "status":null}' \
             --type=merge --dry-run=client -o yaml | \
         ${CLI_CMD} patch -f - \
-            -p '{"metadata":{"annotations":{"nginx.ingress.kubernetes.io/proxy-buffer-size":"16k"}}}' \
+            -p "{
+                  \"metadata\": {
+                    \"annotations\": {
+                      \"nginx.ingress.kubernetes.io/proxy-buffer-size\": \"16k\",
+                      \"nginx.ingress.kubernetes.io/proxy-body-size\": \"0\",
+                      \"cert-manager.io/common-name\": \"${baw_namespace}-cpd.${domain_name}\"
+                    }
+                  }
+                }" \
             --type=merge --dry-run=client -o yaml \
         > ${tmp_zen}
 
         cat ${tmp_zen} >> ${tmp_ingresses}
         echo "---" >> ${tmp_ingresses}
         rm -f ${tmp_zen}
+    else
+        info "zen-ingress not found — skipping legacy ingress patch"
     fi
 
     #
-    # 2. WRITE CNCP (and legacy) patched ingresses FIRST in output
+    # 3. Write patched ingresses FIRST
     #
     if [[ -s ${tmp_ingresses} ]]; then
-        info "Writing patched CNCP ingresses to TOP of ${output_file}"
+        info "Writing patched CNCP/zen ingresses at TOP of ${output_file}"
         cat ${tmp_ingresses} > ${output_file}
     else
-        info "No CNCP ingresses found — starting with an empty file"
+        info "No ingresses patched — starting with empty output"
         : > ${output_file}
     fi
 
     rm -f ${tmp_ingresses}
 
     #
-    # 3. Append your original template ingress file AFTER patched ingresses
+    # 4. Append the original template after patched ingresses
     #
     tmp_template=$(mktemp)
     cp "${current_dir}/${template_file}" ${tmp_template}
@@ -143,13 +174,15 @@ function replace() {
     ${SED_COMMAND} "s/CLIENT_ID/${client_id}/g"              ${tmp_template}
     ${SED_COMMAND} "s/LICENSING_NS/${licensing_namespace}/g" ${tmp_template}
 
-    info "Appending template ingress AFTER CNCP ingresses"
+    info "Appending template ingress AFTER patched ingresses"
     echo "---" >> ${output_file}
     cat ${tmp_template} >> ${output_file}
 
     rm -f ${tmp_template}
 
-    # macOS cleanup
+    #
+    # 5. macOS file cleanup
+    #
     if [[ -f "$output_file\"\"" ]]; then
         rm -f "${output_file}\"\"" 2>/dev/null
     fi
