@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:1f5007186c2302e0c63b8a134d48b499acfd63e977903ba570831f56cbaf3908
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:dcc8b77762dd79db7857a52ad09837e84ec5e28c5744d8e4401035814d73a9a5
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -103,14 +103,14 @@ spec:
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:711c18fe47cd575b91d49fe0fcc877480e4e00d8ecbba9f2e3eb98fc814b2963
+  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:8b5dbbe3ee1082741cd7690f7648c919f1a45a71f4fcc9cbe03086ce7c84c1cc
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   priority: 100 
 ---
-# IBM Business Teams Service version 3.35.6
+# IBM Business Teams Service version 3.35.7
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -122,7 +122,7 @@ spec:
   displayName: BTS Operator-3.35.6
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:f84b1af0e04cd8f8a86502622b40a8600c40f59758ace280108aefaaba6ee7d9
+  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:9a2e253c3a4931c579882ba791544f5afd0283a465c2c398e5b22f7416154d6d
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -140,14 +140,14 @@ spec:
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:65aceedab0373cf20c5a8c550cbd44be214509d925ec1be3c737153d8bbd8f0b
+  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:b40fe1d3dcab5dd86019387714cd39c6c9f79c21d0b96c65a361e06eccaf4e41
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   priority: 100
 ---
-# IBM Zen Operator Catalog 6.3.0+20251116.181627.325
+# IBM Zen Operator Catalog 6.3.0+20251126.142709.334
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
@@ -160,7 +160,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:2d9c98395ae5d7d194d65aa16434ebd35854a6268fd24c82f49c30f9a6e23cc6
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:63c3728072619a761fe0f03172f074ed5abc546c4b83e29f475009a93cac16e8
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -215,7 +215,7 @@ spec:
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-fncm-catalog@sha256:5bf6706f7382140532dfc4db55689f9c0b7f84fdb91a7bd2d646c1709797ec9f
+  image: icr.io/cpopen/ibm-fncm-catalog@sha256:4c31099286176b74fce8a038eaef868940d53b9b25fd2da601befa29d96905d1
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
