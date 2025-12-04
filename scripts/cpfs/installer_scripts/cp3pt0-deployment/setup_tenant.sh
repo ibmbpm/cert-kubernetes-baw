@@ -665,6 +665,7 @@ function install_cs_operator() {
                     # config commonservice operator_namespace and service_namespace
                     configure_cs_kind $ns
                     # upgrade operator
+                    warning "Found another ibm-common-service-operator subscription in namespace $ns, please make sure it is needed for CloudPak, checking upgrade...\n"
                     validate_operator_catalogsource $pm $ns $op_source $op_source_ns $CHANNEL op_source op_source_ns
                     update_operator $pm $ns $CHANNEL $op_source $op_source_ns $INSTALL_MODE
                     wait_for_operator_upgrade $ns $pm $CHANNEL $INSTALL_MODE
@@ -775,8 +776,11 @@ EOF
         local resource_version=$(${OC} get commonservice common-service -n ${OPERATOR_NS} -o jsonpath='{.metadata.resourceVersion}' --ignore-not-found)
         if [[ -n "${resource_version}" ]]; then
             debug1 "Updating resourceVersion in commonservice.yaml to ${resource_version}\n"
-            ${YQ} -i eval '.metadata.resourceVersion = "'${resource_version}'"' ${PREVIEW_DIR}/commonservice.yaml
+            ${YQ} -i eval '.metadata.resourceVersion = "'${resource_version}'"' ${PREVIEW_DIR}/commonservice.yaml    
         fi
+
+        ${YQ} -i eval '.spec.channel = "'${CHANNEL}'"' ${PREVIEW_DIR}/commonservice.yaml
+        ${YQ} -i eval '.spec.startingCSV = "'ibm-common-service-operator.${CHANNEL}.0'"' ${PREVIEW_DIR}/commonservice.yaml
 
         cat "${PREVIEW_DIR}/commonservice.yaml" | ${OC_CMD} apply -f -
 
