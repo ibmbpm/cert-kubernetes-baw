@@ -48,6 +48,17 @@ function debug() {
 function check_command() {
     local command=$1
 
+    if [[ $command == 'oc' ]]; then
+         if which oc >/dev/null 2>&1; then
+             command=oc
+         elif which kubectl >/dev/null 2>&1; then
+             command=kubectl
+         else
+             echo -e  "\x1B[1;31mUnable to locate Kubernetes CLI or OpenShift CLI. You must install it to run this script.\x1B[0m" && \
+             exit 1
+         fi
+    fi
+    
     if [[ -z "$(command -v ${command} 2> /dev/null)" ]]; then
         error "${command} command not available"
     else
@@ -108,6 +119,43 @@ function restart_job() {
 function translate_step() {
     local step=$1
     echo "${step}" | tr '[1-9]' '[a-i]'
+}
+
+function check_for_condition() {
+    local condition=$1
+    local retries=$2
+    local sleep_time=$3
+    local wait_message=$4
+    local success_message=$5
+    local error_message=$6
+    local debug_condition=${7:-}
+
+    info "${wait_message}"
+    while true; do
+        result=$(eval "${condition}")
+
+        if [[ ( ${retries} -eq 0 ) && ( -z "${result}" ) ]]; then
+            return 1
+        fi
+
+        sleep ${sleep_time}
+        result=$(eval "${condition}")
+
+        if [[ -z "${result}" ]]; then
+            if [[ ! -z "${debug_condition}" ]]; then
+                debug "${debug_condition} -> \n$(eval "${debug_condition}")\n"
+            fi
+
+            info "RETRYING: ${wait_message} (${retries} left)"
+            retries=$(( retries - 1 ))
+        else
+            break
+        fi
+    done
+
+    if [[ ! -z "${success_message}" ]]; then
+        return 0
+    fi
 }
 
 function wait_for_condition() {
@@ -253,7 +301,7 @@ function wait_for_operator() {
     wait_for_condition "${condition}" ${retries} ${sleep_time} "${wait_message}" "${success_message}" "${error_message}"
 }
 
-function wait_for_issuer() {
+function check_for_issuer() {
     local issuer=$1
     local namespace=$2
     local condition="${OC} -n ${namespace} get issuer.v1.cert-manager.io ${issuer} --ignore-not-found -o jsonpath='{.status.conditions[?(@.type==\"Ready\")].status}' | grep 'True'"
@@ -264,10 +312,11 @@ function wait_for_issuer() {
     local success_message="Issuer ${issuer} in namespace ${namespace} is Ready"
     local error_message="Timeout after ${total_time_mins} minutes waiting for Issuer ${issuer} in namespace ${namespace} to be Ready"
 
-    wait_for_condition "${condition}" ${retries} ${sleep_time} "${wait_message}" "${success_message}" "${error_message}"
+    check_for_condition "${condition}" ${retries} ${sleep_time} "${wait_message}" "${success_message}" "${error_message}"
+    return $?
 }
 
-function wait_for_certificate() {
+function check_for_certificate() {
     local certificate=$1
     local namespace=$2
     local condition="${OC} -n ${namespace} get certificate.v1.cert-manager.io ${certificate} --ignore-not-found -o jsonpath='{.status.conditions[?(@.type==\"Ready\")].status}' | grep 'True'"
@@ -278,7 +327,8 @@ function wait_for_certificate() {
     local success_message="Certificate ${certificate} in namespace ${namespace} is Ready"
     local error_message="Timeout after ${total_time_mins} minutes waiting for Certificate ${certificate} in namespace ${namespace} to be Ready"
 
-    wait_for_condition "${condition}" ${retries} ${sleep_time} "${wait_message}" "${success_message}" "${error_message}"
+    check_for_condition "${condition}" ${retries} ${sleep_time} "${wait_message}" "${success_message}" "${error_message}"
+    return $?
 }
 
 function wait_for_csv() {
@@ -478,11 +528,11 @@ function patch_watch_namespace() {
 function wait_for_deployment() {
     local namespace=$1
     local name=$2
+    local retries="${3:-10}"
     local needReplicas=$(${OC} -n ${namespace} get deployment ${name} --no-headers --ignore-not-found -o jsonpath='{.spec.replicas}' | awk '{print $1}')
     local readyReplicas="${OC} -n ${namespace} get deployment ${name} --no-headers --ignore-not-found -o jsonpath='{.status.readyReplicas}' | grep '${needReplicas}'"
     local replicas="${OC} -n ${namespace} get deployment ${name} --no-headers --ignore-not-found -o jsonpath='{.status.replicas}' | grep '${needReplicas}'"
     local condition="(${readyReplicas} && ${replicas})"
-    local retries=10
     local sleep_time=30
     local total_time_mins=$(( sleep_time * retries / 60))
     local wait_message="Waiting for Deployment ${name} to be ready"
@@ -510,49 +560,6 @@ function wait_for_licensing_instance_deployment() {
         ((retries--))
     done
 
-}
-
-# TODO: need to be removed in the next release
-function patch_workflow_operator() {
-  local namespace=$1
-  local kind="workflowruntime"
-
-  pods=$("$OC" get pods -n "$namespace" | grep workflow-operator  | grep CrashLoopBackOff | awk '{print $1}')
-
-  if [[ -z "$pods" ]]; then
-    echo "No workflow-operator pods found in namespace $namespace"
-    return 0
-  fi
-
-  instances=$("$OC" get "$kind" -n "$namespace" -o jsonpath='{.items[*].metadata.name}')
-
-  if [[ -z "$instances" ]]; then
-    info "No instances of kind $kind found in namespace $namespace"
-    return 0
-  fi
-
-  info "Patching $kind instances in namespace $namespace ..."
-  for instance in $instances; do
-    info "Patching $instance"
-    "$OC" patch "$kind" "$instance" -n "$namespace" --type=merge -p '{
-      "spec": {
-        "zen_performance": {
-          "keepalive": "512",
-          "keepalive_requests": "500",
-          "keepalive_timeout": "30s",
-          "proxy_buffer_size": "256k",
-          "proxy_buffers": "8 512k",
-          "proxy_busy_buffers_size": "512k",
-          "proxy_connect_timeout": "300",
-          "proxy_read_timeout": "300",
-          "proxy_send_timeout": "300"
-        }
-      }
-    }'
-  done
-
-  ${OC} delete pod  $pods
-  success "The $kind instances has been patched successfully!"
 }
 
 # THIS FUNCTION IS ONLY USED FOR DEV MODE
@@ -699,7 +706,6 @@ function wait_for_operator_upgrade() {
     for i in {1..4}; do
       msg "Operator Upgrade iteration $i"
       patch_failed_operator_pods $namespace
-      patch_workflow_operator $namespace
 
       wait_for_condition "${condition}" ${retries}/4 ${sleep_time} "${wait_message}" "${success_message}" "${error_message}" "${debug_condition}" "No"
 
@@ -944,10 +950,15 @@ function cm_smoke_test(){
     cleanup_cm_resources $issuer_name $cert_name $sercret_name $namespace
     create_issuer $issuer_name $namespace
     create_certificate $issuer_name $cert_name $sercret_name $namespace
-    wait_for_issuer $issuer_name $namespace
-    wait_for_certificate $cert_name $namespace
-    if [[ $? -eq 0 ]]; then
-        cleanup_cm_resources $issuer_name $cert_name $sercret_name $namespace
+    check_for_issuer $issuer_name $namespace
+    ret1=$?
+    check_for_certificate $cert_name $namespace
+    ret2=$?
+    cleanup_cm_resources $issuer_name $cert_name $sercret_name $namespace
+    if [[ $ret1 -eq 0 && $ret2 -eq 0 ]]; then
+        return 0
+    else
+        return 1
     fi
 }
 
