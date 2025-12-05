@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:44b2bef5b9fee38a493c8b0ddc77cbac209718ad02a4ed541749022d267541ba
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:da89949ca1de850635d3d17da93467a49966dd0c93ac617b37de88e1049302b8
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
