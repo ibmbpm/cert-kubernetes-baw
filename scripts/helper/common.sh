@@ -1422,7 +1422,7 @@ function patch_strimzi_podset(){
     fi
 
     # Get the subscription channel
-    events_operator_channel=$(${CLI_CMD} get subscription ibm-events-operator -n $operator_namespace -o yaml | ${YQ_CMD} '.spec.channel')
+    events_operator_channel=$(${CLI_CMD} get subscription ibm-events-operator -n $operator_namespace -o yaml | ${YQ_CMD} eval '.spec.channel' -)
 
     echo "Current channel: $events_operator_channel"
 

@@ -11024,6 +11024,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
 
                 patch_failed_operator_pods $TEMP_CATALOG_PROJECT_NAME
                 patch_catalog "ibm-cp4a-operator-catalog" $TEMP_CATALOG_PROJECT_NAME
+                patch_catalog "ibm-fncm-operator-catalog" $TEMP_CATALOG_PROJECT_NAME
             fi
 
             maxRetry=50
