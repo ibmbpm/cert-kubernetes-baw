@@ -193,10 +193,10 @@ function check_operator_status(){
                 printf "\n"
                 warning "Timeout waiting for IBM Cloud Pak foundational operator to start"
                 echo -e "\x1B[1mPlease check the status of Pod by issue cmd:\x1B[0m"
-                echo "oc describe pod $(oc get pod -n $project_name|grep ibm-common-service-operator|awk '{print $1}') -n $project_name"
+                echo "kubectl describe pod $(kubectl get pod -n $project_name|grep ibm-common-service-operator|awk '{print $1}') -n $project_name"
                 printf "\n"
                 echo -e "\x1B[1mPlease check the status of ReplicaSet by issue cmd:\x1B[0m"
-                echo "oc describe rs $(oc get rs -n $project_name|grep ibm-common-service-operator|awk '{print $1}') -n $project_name"
+                echo "kubectl describe rs $(kubectl get rs -n $project_name|grep ibm-common-service-operator|awk '{print $1}') -n $project_name"
                 printf "\n"
                 exit 1
                 else
@@ -281,10 +281,10 @@ function check_operator_status(){
                 printf "\n"
                 warning "Timeout waiting for IBM Cloud Pak for Business Automation (CP4BA) multi-pattern operator to start"
                 echo -e "\x1B[1mPlease check the status of Pod by issue cmd:\x1B[0m"
-                echo "oc describe pod $(oc get pod -n $project_name|grep ibm-cp4a-operator|awk '{print $1}') -n $project_name"
+                echo "kubectl describe pod $(kubectl get pod -n $project_name|grep ibm-cp4a-operator|awk '{print $1}') -n $project_name"
                 printf "\n"
                 echo -e "\x1B[1mPlease check the status of ReplicaSet by issue cmd:\x1B[0m"
-                echo "oc describe rs $(oc get rs -n $project_name|grep ibm-cp4a-operator|awk '{print $1}') -n $project_name"
+                echo "kubectl describe rs $(kubectl get rs -n $project_name|grep ibm-cp4a-operator|awk '{print $1}') -n $project_name"
                 printf "\n"
                 exit 1
                 else
@@ -340,10 +340,10 @@ function check_operator_status(){
                 printf "\n"
                 warning "Timeout waiting for IBM CP4BA FileNet Content Manager operator to start"
                 echo -e "\x1B[1mPlease check the status of Pod by issue cmd:\x1B[0m"
-                echo "oc describe pod $(oc get pod -n $project_name|grep ibm-content-operator|awk '{print $1}') -n $project_name"
+                echo "kubectl describe pod $(kubectl get pod -n $project_name|grep ibm-content-operator|awk '{print $1}') -n $project_name"
                 printf "\n"
                 echo -e "\x1B[1mPlease check the status of ReplicaSet by issue cmd:\x1B[0m"
-                echo "oc describe rs $(oc get rs -n $project_name|grep ibm-content-operator|awk '{print $1}') -n $project_name"
+                echo "kubectl describe rs $(kubectl get rs -n $project_name|grep ibm-content-operator|awk '{print $1}') -n $project_name"
                 printf "\n"
                 exit 1
             else
@@ -398,10 +398,10 @@ function check_operator_status(){
             printf "\n"
             warning "Timeout waiting for CP4BA Foundation operator to start"
             echo -e "\x1B[1mPlease check the status of Pod by issue cmd:\x1B[0m"
-            echo "oc describe pod $(oc get pod -n $project_name|grep icp4a-foundation-operator|awk '{print $1}') -n $project_name"
+            echo "kubectl describe pod $(kubectl get pod -n $project_name|grep icp4a-foundation-operator|awk '{print $1}') -n $project_name"
             printf "\n"
             echo -e "\x1B[1mPlease check the status of ReplicaSet by issue cmd:\x1B[0m"
-            echo "oc describe rs $(oc get rs -n $project_name|grep icp4a-foundation-operator|awk '{print $1}') -n $project_name"
+            echo "kubectl describe rs $(kubectl get rs -n $project_name|grep icp4a-foundation-operator|awk '{print $1}') -n $project_name"
             printf "\n"
             exit 1
             else
@@ -456,10 +456,10 @@ function check_operator_status(){
             printf "\n"
             warning "Timeout waiting for IBM CP4BA Automation Decision Service operator to start"
             echo -e "\x1B[1mPlease check the status of Pod by issue cmd:\x1B[0m"
-            echo "oc describe pod $(oc get pod -n $project_name|grep ibm-ads-operator|awk '{print $1}') -n $project_name"
+            echo "kubectl describe pod $(kubectl get pod -n $project_name|grep ibm-ads-operator|awk '{print $1}') -n $project_name"
             printf "\n"
             echo -e "\x1B[1mPlease check the status of ReplicaSet by issue cmd:\x1B[0m"
-            echo "oc describe rs $(oc get rs -n $project_name|grep ibm-ads-operator|awk '{print $1}') -n $project_name"
+            echo "kubectl describe rs $(kubectl get rs -n $project_name|grep ibm-ads-operator|awk '{print $1}') -n $project_name"
             printf "\n"
             exit 1
             else
@@ -516,10 +516,10 @@ function check_operator_status(){
                 printf "\n"
                 warning "Timeout waiting for IBM Operational Decision Manager operator to start"
                 echo -e "\x1B[1mPlease check the status of Pod by issue cmd:\x1B[0m"
-                echo "oc describe pod $(oc get pod -n $project_name|grep ibm-odm-operator|awk '{print $1}') -n $project_name"
+                echo "kubectl describe pod $(kubectl get pod -n $project_name|grep ibm-odm-operator|awk '{print $1}') -n $project_name"
                 printf "\n"
                 echo -e "\x1B[1mPlease check the status of ReplicaSet by issue cmd:\x1B[0m"
-                echo "oc describe rs $(oc get rs -n $project_name|grep ibm-odm-operator|awk '{print $1}') -n $project_name"
+                echo "kubectl describe rs $(kubectl get rs -n $project_name|grep ibm-odm-operator|awk '{print $1}') -n $project_name"
                 printf "\n"
                 exit 1
                 else
@@ -580,10 +580,10 @@ function check_operator_status(){
                     printf "\n"
                     warning "Timeout waiting for IBM Document Processing Engine operator to start"
                     echo -e "\x1B[1mPlease check the status of Pod by issue cmd:\x1B[0m"
-                    echo "oc describe pod $(oc get pod -n $project_name|grep ibm-dpe-operator|awk '{print $1}') -n $project_name"
+                    echo "kubectl describe pod $(kubectl get pod -n $project_name|grep ibm-dpe-operator|awk '{print $1}') -n $project_name"
                     printf "\n"
                     echo -e "\x1B[1mPlease check the status of ReplicaSet by issue cmd:\x1B[0m"
-                    echo "oc describe rs $(oc get rs -n $project_name|grep ibm-dpe-operator|awk '{print $1}') -n $project_name"
+                    echo "kubectl describe rs $(kubectl get rs -n $project_name|grep ibm-dpe-operator|awk '{print $1}') -n $project_name"
                     printf "\n"
                     exit 1
                     else
@@ -640,10 +640,10 @@ function check_operator_status(){
             printf "\n"
             warning "Timeout waiting for IBM CP4BA Workflow Process Service operator to start"
             echo -e "\x1B[1mPlease check the status of Pod by issue cmd:\x1B[0m"
-            echo "oc describe pod $(oc get pod -n $project_name|grep ibm-cp4a-wfps-operator|awk '{print $1}') -n $project_name"
+            echo "kubectl describe pod $(kubectl get pod -n $project_name|grep ibm-cp4a-wfps-operator|awk '{print $1}') -n $project_name"
             printf "\n"
             echo -e "\x1B[1mPlease check the status of ReplicaSet by issue cmd:\x1B[0m"
-            echo "oc describe rs $(oc get rs -n $project_name|grep ibm-cp4a-wfps-operator|awk '{print $1}') -n $project_name"
+            echo "kubectl describe rs $(kubectl get rs -n $project_name|grep ibm-cp4a-wfps-operator|awk '{print $1}') -n $project_name"
             printf "\n"
             exit 1
             else
@@ -699,10 +699,10 @@ function check_operator_status(){
                 printf "\n"
                 warning "Timeout waiting for IBM CP4BA Insights Engine operator to start"
                 echo -e "\x1B[1mPlease check the status of Pod by issue cmd:\x1B[0m"
-                echo "oc describe pod $(oc get pod -n $project_name|grep ibm-insights-engine-operator|awk '{print $1}') -n $project_name"
+                echo "kubectl describe pod $(kubectl get pod -n $project_name|grep ibm-insights-engine-operator|awk '{print $1}') -n $project_name"
                 printf "\n"
                 echo -e "\x1B[1mPlease check the status of ReplicaSet by issue cmd:\x1B[0m"
-                echo "oc describe rs $(oc get rs -n $project_name|grep ibm-insights-engine-operator|awk '{print $1}') -n $project_name"
+                echo "kubectl describe rs $(kubectl get rs -n $project_name|grep ibm-insights-engine-operator|awk '{print $1}') -n $project_name"
                 printf "\n"
                 exit 1
                 else
@@ -758,10 +758,10 @@ function check_operator_status(){
             printf "\n"
             warning "Timeout waiting for IBM CP4BA Process Federation Server operator to start"
             echo -e "\x1B[1mPlease check the status of Pod by issue cmd:\x1B[0m"
-            echo "oc describe pod $(oc get pod -n $project_name|grep ibm-pfs-operator|awk '{print $1}') -n $project_name"
+            echo "kubectl describe pod $(kubectl get pod -n $project_name|grep ibm-pfs-operator|awk '{print $1}') -n $project_name"
             printf "\n"
             echo -e "\x1B[1mPlease check the status of ReplicaSet by issue cmd:\x1B[0m"
-            echo "oc describe rs $(oc get rs -n $project_name|grep ibm-pfs-operator|awk '{print $1}') -n $project_name"
+            echo "kubectl describe rs $(kubectl get rs -n $project_name|grep ibm-pfs-operator|awk '{print $1}') -n $project_name"
             printf "\n"
             exit 1
             else
@@ -817,10 +817,10 @@ function check_operator_status(){
             printf "\n"
             warning "Timeout waiting for IBM CP4BA Workflow operator to start"
             echo -e "\x1B[1mPlease check the status of Pod by issue cmd:\x1B[0m"
-            echo "oc describe pod $(oc get pod -n $project_name|grep ibm-workflow-operator|awk '{print $1}') -n $project_name"
+            echo "kubectl describe pod $(kubectl get pod -n $project_name|grep ibm-workflow-operator|awk '{print $1}') -n $project_name"
             printf "\n"
             echo -e "\x1B[1mPlease check the status of ReplicaSet by issue cmd:\x1B[0m"
-            echo "oc describe rs $(oc get rs -n $project_name|grep ibm-workflow-operator|awk '{print $1}') -n $project_name"
+            echo "kubectl describe rs $(kubectl get rs -n $project_name|grep ibm-workflow-operator|awk '{print $1}') -n $project_name"
             printf "\n"
             exit 1
             else
