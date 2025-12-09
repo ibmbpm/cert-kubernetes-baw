@@ -267,7 +267,9 @@ function patch_failed_operator_pods() {
   local head_to_fetch=${2:-"head -n 1"}
 
   pods=$(kubectl get pods -n "$ns" --no-headers | awk 'index($3,"ImagePullBackOff") || index($3,"Pending") {print $1}')
-  info "List of Pod need to be patched: ${pods}"
+  if [[ $head_to_fetch == "head -n 1" ]]; then
+    info "List of Pod need to be patched: ${pods}"
+  fi
 
   for pod in $pods; do
       base=$(echo "$pod" | sed -E 's/-[a-z0-9]{9,10}-[a-z0-9]{4,5}$//')

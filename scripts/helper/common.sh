@@ -1465,7 +1465,7 @@ function patch_strimzi_podset(){
         echo "Found StrimziPodSet 'iaf-system-kafka'"
 
         # Get the current kafka version from the annotation
-        kafka_annotation_value=$(${CLI_CMD} get strimzipodset iaf-system-kafka -n $services_namespace -o yaml | ${YQ_CMD} '.metadata.annotations."strimzi.io/kafka-version"')
+        kafka_annotation_value=$(${CLI_CMD} get strimzipodset iaf-system-kafka -n $services_namespace -o yaml | ${YQ_CMD} r - 'metadata.annotations[strimzi.io/kafka-version]')
 
         if [[ -z "$kafka_annotation_value" || "$kafka_annotation_value" == "null" ]]; then
             strimzi_patched=true

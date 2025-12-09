@@ -11058,6 +11058,10 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                         fi
                         exit 1
                     else
+                        if [[ "$SCRIPT_MODE" == "dev" ]];then
+                            source $BAW_CNCF_FOLDER/baw-utils.sh
+                            patch_failed_operator_pods $TEMP_CATALOG_PROJECT_NAME "sed -n '2p'"
+                        fi
                         sleep 30
                         echo -n "..."
                         continue

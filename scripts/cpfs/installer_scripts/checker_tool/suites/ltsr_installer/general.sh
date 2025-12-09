@@ -37,18 +37,18 @@ function check_subscriptions() {
 # check if cert-manager, IAM, ODLM, CS-Operator subscriptions in ibm-common-services namespace are in correct version
 function check_sub_version(){
     title "Checking subscriptions version in namespace: ${OPERATOR_NS}"
-    cs_operator_channel=$(oc get subscription.operators.coreos.com ibm-common-service-operator -n ${OPERATOR_NS} --ignore-not-found -o yaml | yq ".spec.channel")
-    iam_operator_channel=$(oc get subscription.operators.coreos.com ibm-iam-operator -n ${OPERATOR_NS} --ignore-not-found -o yaml | yq ".spec.channel")
-    odlm_channel=$(oc get subscription.operators.coreos.com operand-deployment-lifecycle-manager-app -n ${OPERATOR_NS} --ignore-not-found -o yaml | yq ".spec.channel")
-    cert_manager_channel=$(oc get subscription.operators.coreos.com ibm-cert-manager-operator -n ${OPERATOR_NS} --ignore-not-found -o yaml | yq ".spec.channel")
+    cs_operator_channel=$(oc get subscription.operators.coreos.com ibm-common-service-operator -n ${OPERATOR_NS} --ignore-not-found -o yaml | yq r - "spec.channel")
+    iam_operator_channel=$(oc get subscription.operators.coreos.com ibm-iam-operator -n ${OPERATOR_NS} --ignore-not-found -o yaml | yq r - "spec.channel")
+    odlm_channel=$(oc get subscription.operators.coreos.com operand-deployment-lifecycle-manager-app -n ${OPERATOR_NS} --ignore-not-found -o yaml | yq r - "spec.channel")
+    cert_manager_channel=$(oc get subscription.operators.coreos.com ibm-cert-manager-operator -n ${OPERATOR_NS} --ignore-not-found -o yaml | yq r - "spec.channel")
     
     # if not found cs-operator sub in operator namespace, check openshift-operators
     if [[ "$cs_operator_channel" == "" ]]; then
-        cs_operator_channel=$(oc get subscription.operators.coreos.com ibm-common-service-operator -n openshift-operators --ignore-not-found -o yaml | yq ".spec.channel")
+        cs_operator_channel=$(oc get subscription.operators.coreos.com ibm-common-service-operator -n openshift-operators --ignore-not-found -o yaml | yq r - "spec.channel")
     fi
     # if not found cert-manager sub in operator namespace, check cs-control namespace
     if [[ "$cert_manager_channel" == "" ]]; then
-        cert_manager_channel=$(oc get subscription.operators.coreos.com ibm-cert-manager-operator -n cs-control --ignore-not-found -o yaml | yq ".spec.channel")
+        cert_manager_channel=$(oc get subscription.operators.coreos.com ibm-cert-manager-operator -n cs-control --ignore-not-found -o yaml | yq r - "spec.channel")
     fi
 
     if [[ "$iam_operator_channel" == "v3" ]] && [[ "$odlm_channel" == "v3" ]] && [[ "$cs_operator_channel" == "v3" ]] && [[ "$cert_manager_channel" == "v3" ]]; then

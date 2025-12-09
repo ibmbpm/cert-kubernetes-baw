@@ -90,9 +90,9 @@ function collect_data() {
     # catalog_source=$(${OC} get subscription.operators.coreos.com ibm-common-service-operator -n ${master_ns} -o yaml | yq ".spec.source")
     # info "catalog_source:${catalog_source}" 
     #this command gets all of the ns listed in requested from namesapce fields
-    requested_ns=$("${OC}" get configmap -n kube-public -o yaml ${cm_name} | yq '.data[]' | yq '.namespaceMapping[].requested-from-namespace' | awk '{print $2}' | tr '\n' ' ')
+    requested_ns=$("${OC}" get configmap -n kube-public -o yaml ${cm_name} | yq r - 'data[*]' | yq r - 'namespaceMapping[*].requested-from-namespace' | awk '{print $2}' | tr '\n' ' ')
     #this command gets all of the ns listed in map-to-common-service-namespace
-    map_to_cs_ns=$("${OC}" get configmap -n kube-public -o yaml ${cm_name} | yq '.data[]' | yq '.namespaceMapping[].map-to-common-service-namespace' | awk '{print}' | tr '\n' ' ')
+    map_to_cs_ns=$("${OC}" get configmap -n kube-public -o yaml ${cm_name} | yq r - 'data[*]' | yq r - 'namespaceMapping[*].map-to-common-service-namespace' | awk '{print}' | tr '\n' ' ')
     if [[ $MASTER_NS != ${map_to_cs_ns%%[[:space:]]} ]]; then
         error "The original common service namespace value entered does not match the value in the common-service-maps configmap. Make sure there is only one \"map-to-common-service-namesapce\" value specified in the configmap"
     fi
@@ -102,7 +102,7 @@ function rollback() {
     info "Reverting multi-instance environment to shared instance environment."
 
     #checking if control namespace removed from common-service-maps
-    return_value=$("${OC}" get configmap -n kube-public -o yaml ${cm_name} | yq '.data' | grep controlNamespace: > /dev/null || echo passed)
+    return_value=$("${OC}" get configmap -n kube-public -o yaml ${cm_name} | yq r - 'data' | grep controlNamespace: > /dev/null || echo passed)
     if [[ $return_value != "passed" ]]; then
         error "Configmap: ${cm_name} still has controlNamespace field. This must be removed before proceeding with rollback."
     fi
@@ -361,7 +361,7 @@ function refresh_zen(){
             if [[ $return_value != "" ]]; then
                 return_value=""
                 zenServiceCR=$(${OC} get zenservice -n ${namespace} | awk '{if (NR!=1) {print $1}}')
-                conversionField=$("${OC}" get zenservice ${zenServiceCR} -n ${namespace} -o yaml | yq '.spec | has("conversion")')
+                conversionField=$("${OC}" get zenservice ${zenServiceCR} -n ${namespace} -o yaml | yq r - 'spec.conversion')
                 if [[ $conversionField == "false" ]]; then
                     ${OC} patch zenservice ${zenServiceCR} -n ${namespace} --type='merge' -p '{"spec":{"conversion":"true"}}' || error "Zenservice ${zenServiceCR} in ${namespace} cannot be updated."
                 else
@@ -434,7 +434,7 @@ function un_isolate_odlm() {
     fi
     #merge patch overwrites the entire array if you update any values so we need to get any other value specified and make sure it is unchanged
     #loop through all of the values specified in spec.config.env
-    env_range=$(${OC} get subscription.operators.coreos.com ${sub_name} -n ${ns} -o yaml | yq '.spec.config.env[].name')
+    env_range=$(${OC} get subscription.operators.coreos.com ${sub_name} -n ${ns} -o yaml | yq r - 'spec.config.env[*].name')
     patch_string=""
     count=0
     for name in $env_range
@@ -443,7 +443,7 @@ function un_isolate_odlm() {
         if [[ $name == "ISOLATED_MODE" ]]; then
             env_value="false"
         else
-            env_value=$(${OC} get subscription.operators.coreos.com ${sub_name} -n ${ns} -o yaml | yq '.spec.config.env['"${count}"'].value')
+            env_value=$(${OC} get subscription.operators.coreos.com ${sub_name} -n ${ns} -o yaml | yq r - "spec.config.env[${count}].value")
         fi
         #Add name value pair in json format to the patch string
         if [[ $patch_string == "" ]]; then
@@ -542,7 +542,7 @@ function update_opreqs(){
     #update opreq in list of namespaces from common-service-maps configmap
 
     #this command gets all of the ns listed in requested from namesapce fields
-    requested_ns=$("${OC}" get configmap -n kube-public -o yaml common-service-maps | yq '.data[]' | yq '.namespaceMapping[].requested-from-namespace' | awk '{print $2}' | tr '\n' ' ')
+    requested_ns=$("${OC}" get configmap -n kube-public -o yaml common-service-maps | yq r - 'data[*]' | yq r - 'namespaceMapping[*].requested-from-namespace' | awk '{print $2}' | tr '\n' ' ')
     
     for ns in $requested_ns
     do

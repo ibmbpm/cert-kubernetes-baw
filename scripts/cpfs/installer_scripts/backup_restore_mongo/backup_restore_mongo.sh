@@ -210,7 +210,7 @@ function backup() {
     export CS_NAMESPACE=$ORIGINAL_NAMESPACE
     export ibm_mongodb_image=$(${OC} get pod icp-mongodb-0 -n $ORIGINAL_NAMESPACE -o=jsonpath='{range .spec.containers[0]}{.image}{end}')
     local pvx=$(${OC} get pv | grep mongodbdir | awk 'FNR==1 {print $1}')
-    local storageClassName=$("${OC}" get pv -o yaml ${pvx} | yq '.spec.storageClassName' | awk '{print}')
+    local storageClassName=$("${OC}" get pv -o yaml ${pvx} | yq r - 'spec.storageClassName' | awk '{print}')
     if [[ $s390x_ENV == "true" ]]; then
         info "Z cluster detected"
         info "Scaling down MongoDB operator"
@@ -274,7 +274,7 @@ EOF
         VOL=$(${OC} get pvc cs-mongodump -n $ORIGINAL_NAMESPACE  -o=jsonpath='{.spec.volumeName}')
         ${OC} patch pv $VOL -p '{"spec": { "persistentVolumeReclaimPolicy" : "Retain" }}'
         
-        return_value=$(${OC} get pvc cs-mongodump -n $ORIGINAL_NAMESPACE -o yaml | yq '.spec.storageClassName' | awk '{print}')
+        return_value=$(${OC} get pvc cs-mongodump -n $ORIGINAL_NAMESPACE -o yaml | yq r - 'spec.storageClassName' | awk '{print}')
         if [[ "$return_value" != "$storageClassName" ]]; then
             error "Backup PVC cs-mongodump not bound to persistent volume provisioned by correct storage class. Provisioned by \"${return_value}\" instead of \"$storageClassName\""
             #TODO probably need to handle this situation as the script may not be able to handle it as is
@@ -348,7 +348,7 @@ function prep_restore() {
     #Not sure if these checks are something to incorporate into the script or include in a troubleshooting section of the doc
     #On a fresh run where you don't have to worry about any existing pv or pvc, it works perfectly
     #New cleanup function running before and after completion should solve this problem
-    local pvStatus=$("${OC}" get pv -o yaml ${pvx}| yq '.status.phase' | awk '{print}')
+    local pvStatus=$("${OC}" get pv -o yaml ${pvx}| yq r - 'status.phase' | awk '{print}')
     local retries=6
     echo "PVX: ${pvx} PV status: ${pvStatus}"
     while [ $retries != 0 ]
@@ -357,7 +357,7 @@ function prep_restore() {
             retries=$(( $retries - 1 ))
             info "Persistent Volume ${pvx} not available yet. Retries left: ${retries}. Waiting 30 seconds..."
             sleep 30s
-            pvStatus=$("${OC}" get pv -o yaml ${pvx}| yq '.status.phase' | awk '{print}')
+            pvStatus=$("${OC}" get pv -o yaml ${pvx}| yq r - 'status.phase' | awk '{print}')
             echo "PVX: ${pvx} PV status: ${pvStatus}"
         else
             info "Persistent Volume ${pvx} available. Moving on..."
@@ -369,7 +369,7 @@ function prep_restore() {
     local return_value=$("${OC}" get pvc -n $TARGET_NAMESPACE | grep cs-mongodump)
     if [[ ! -z $return_value ]]; then
         #delete retore items in target namespace
-        local boundPV=$(${OC} get pvc cs-mongodump -n $TARGET_NAMESPACE -o yaml | yq '.spec.volumeName' | awk '{print}')
+        local boundPV=$(${OC} get pvc cs-mongodump -n $TARGET_NAMESPACE -o yaml | yq r - 'spec.volumeName' | awk '{print}')
         ${OC} delete pvc cs-mongodump -n $TARGET_NAMESPACE --ignore-not-found --timeout=10s
         if [ $? -ne 0 ]; then
             info "Failed to delete pvc cs-mongodump, patching its finalizer to null..."
@@ -387,7 +387,7 @@ function prep_restore() {
     
     #Check PV status to make sure it binds to the right PVC
     #If more than one pv provisioned by the sc created in this script exists, this part will break as it lists all of the pvs provisioned by backup-sc as $PVX
-    pvStatus=$("${OC}" get pv -o yaml ${pvx}| yq '.status.phase' | awk '{print}')
+    pvStatus=$("${OC}" get pv -o yaml ${pvx}| yq r - 'status.phase' | awk '{print}')
     retries=6
     while [ $retries != 0 ]
     do
@@ -395,10 +395,10 @@ function prep_restore() {
             retries=$(( $retries - 1 ))
             info "Persitent Volume ${pvx} not bound yet. Retries left: ${retries}. Waiting 30 seconds..."
             sleep 30s
-            pvStatus=$("${OC}" get pv -o yaml ${pvx}| yq '.status.phase' | awk '{print}')
+            pvStatus=$("${OC}" get pv -o yaml ${pvx}| yq r - 'status.phase' | awk '{print}')
         else
             info "Persitent Volume ${pvx} bound. Checking PVC..."
-            boundPV=$("${OC}" get pvc cs-mongodump -n ${TARGET_NAMESPACE} -o yaml | yq '.spec.volumeName' | awk '{print}')
+            boundPV=$("${OC}" get pvc cs-mongodump -n ${TARGET_NAMESPACE} -o yaml | yq r - 'spec.volumeName' | awk '{print}')
             if [[ "${boundPV}" != "${pvx}" ]]; then
                 error "Error binding cs-mongodump PVC to backup PV ${pvx}. Bound to ${boundPV} instead."
             else
@@ -524,7 +524,7 @@ function cleanup(){
         local return_value=$("${OC}" get pvc -n $TARGET_NAMESPACE | grep cs-mongodump || echo failed)
         if [[ $return_value != "failed" ]]; then
         #delete retore items in target namespace
-            local boundPV=$(${OC} get pvc cs-mongodump -n $TARGET_NAMESPACE -o yaml | yq '.spec.volumeName' | awk '{print}')
+            local boundPV=$(${OC} get pvc cs-mongodump -n $TARGET_NAMESPACE -o yaml | yq r - 'spec.volumeName' | awk '{print}')
             ${OC} delete job mongodb-restore -n ${TARGET_NAMESPACE} || info "Restore job already deleted. Moving on..."
             ${OC} delete pvc cs-mongodump -n $TARGET_NAMESPACE --ignore-not-found --timeout=10s
             if [ $? -ne 0 ]; then
@@ -553,8 +553,8 @@ function refresh_auth_idp(){
 function check_ldap_secret() {
     exists=$(${OC} get secret -n $TARGET_NAMESPACE | (grep platform-auth-ldaps-ca-cert || echo fail))
     if [[ $exists != "fail" ]]; then
-        certificate=$(${OC} get secret -n $TARGET_NAMESPACE platform-auth-ldaps-ca-cert -o yaml | yq '.data.certificate' )
-        og_certificate=$(${OC} get secret -n $ORIGINAL_NAMESPACE platform-auth-ldaps-ca-cert -o yaml | yq '.data.certificate' )
+        certificate=$(${OC} get secret -n $TARGET_NAMESPACE platform-auth-ldaps-ca-cert -o yaml | yq r - 'data.certificate' )
+        og_certificate=$(${OC} get secret -n $ORIGINAL_NAMESPACE platform-auth-ldaps-ca-cert -o yaml | yq r - 'data.certificate' )
         if [[ $certificate == "" ]] || [[ $certificate != $og_certificate ]]; then
             ${OC} patch secret -n $TARGET_NAMESPACE platform-auth-ldaps-ca-cert --type=merge -p '{"data": {"certificate": "'$og_certificate'"}}'
             info "Secret platform-auth-ldaps-ca-cert in $TARGET_NAMESPACE patched to match secret in $ORIGINAL_NAMESPACE"
