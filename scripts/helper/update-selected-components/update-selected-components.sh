@@ -794,7 +794,7 @@ function retrieve_existing_property_files() {
     # If not using default, prompt user for a directory
     if [[ -z "$folder_path" ]]; then
         echo
-        echo "\033[1mEnter the directory path that contains all required property files:\033[0m"
+        echo -e "\033[1mEnter the directory path that contains all required property files:\033[0m"
         read -r folder_path
 
         # Validate directory
