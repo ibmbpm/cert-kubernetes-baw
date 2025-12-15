@@ -272,7 +272,7 @@ function patch_failed_operator_pods() {
   fi
 
   for pod in $pods; do
-      base=$(echo "$pod" | sed -E 's/-[a-z0-9]{9,10}-[a-z0-9]{4,5}$//')
+      base=$(echo "$pod" | sed 's/\(-operator\).*/\1/')
       if [[ $base == *operator ]]; then
         patch_csv "$base" "$ns" "$head_to_fetch"
       fi
@@ -343,8 +343,11 @@ function patch_csv() {
         \"path\": \"/spec/install/spec/deployments/0/spec/template/spec/imagePullSecrets\",	
         \"value\": [	
         {	
-            \"name\": \"ibm-entitlement-key\"	
-        }	
+            \"name\": \"ibm-entitlement-key\"
+        },
+        {
+            \"name\": \"ibm-staging-entitlement-key\"
+        }
         ]	
     }	
     ]"

@@ -647,7 +647,7 @@ function patch_failed_operator_pods() {
 
         operator_problematic=0
         for pod in $pods; do
-            base=$(echo "$pod" | sed -E 's/-[a-z0-9]{9,10}-[a-z0-9]{4,5}$//')
+            base=$(echo "$pod" | sed 's/\(-operator\).*/\1/')
             if [[ $base == *operator ]]; then
               patch_csv "$base" "$ns"
               operator_problematic=1
