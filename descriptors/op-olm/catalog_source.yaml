@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:5e85d9b4c5c566781c3285c39c237dd458f86ed704c9f629e718eb268c7ea36d
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:d1f6436797b02fc407350d1bae73a72b7c4ecc4000a42880707cafd96cd01cc3
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -215,7 +215,7 @@ spec:
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-fncm-catalog@sha256:86a3e1aa7de5ad5e45ab56c69c25692661447b58360ab9add0ff6182f4545d3e
+  image: icr.io/cpopen/ibm-fncm-catalog@sha256:28f3f8902f599eeb478dfb3079c17d86b9d64ed1b65c5d7191e5f79fa548e4eb
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
