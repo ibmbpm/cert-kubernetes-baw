@@ -59,32 +59,32 @@ spec:
     securityContextConfig: restricted
   priority: 100
 ---
-# IBM Certificate Manager 4.2.18
+# IBM Certificate Manager 4.2.19
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: ibm-cert-manager-catalog
   namespace: openshift-marketplace
 spec:
-  displayName: ibm-cert-manager-4.2.18
+  displayName: ibm-cert-manager-4.2.19
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:78e1242e197ed1a2db82ea29887ff85b77ce39d15868fd26505fcfe7db0c3bba
+  image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:d67b90ea57739794853674a4999beba00cd67a806174a00d397f55eebb1a76f4
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM License Manager 4.2.18
+# IBM License Manager 4.2.19
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: ibm-licensing-catalog
   namespace: openshift-marketplace
 spec:
-  displayName: ibm-licensing-4.2.18
+  displayName: ibm-licensing-4.2.19
   publisher: IBM
-  image: icr.io/cpopen/ibm-licensing-catalog@sha256:42e8f5a12742742c1967568d497ff1c93aa7a78a3a7ad414da011d0c1eedb19a
+  image: icr.io/cpopen/ibm-licensing-catalog@sha256:7a6822eddbbdaa62555b61e529f3f620fa42c0e5472d48eeefeeaeea00f9e939
   sourceType: grpc
   secrets:
   - "ibm-entitlement-key"
@@ -147,7 +147,7 @@ spec:
     securityContextConfig: restricted
   priority: 100
 ---
-# IBM Zen Operator Catalog 6.3.0+20251128.181612.335
+# IBM Zen Operator Catalog 6.3.0+20251203.153430.336
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
@@ -160,7 +160,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:e6d5f076f9600e093cd2a66e2b5147d39dffdeb81564a2672d315b3ccb913593
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:78ec2c576051a5ef98da6f9da5f18a490a148e9e988877fbac386147c69f080f
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
