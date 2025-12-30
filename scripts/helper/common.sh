@@ -37,12 +37,12 @@ OLM_VERSION=v0.32.0
 #Licensing service related variables that required during the creation of subscription and the checks.
 # NEED TO BE UPDATED WHEN WE UPDATE THE VERSIONS
 LICENSING_SERVICE_CHANNEL=v4.2
-LICENSING_SERVICE_TARGET_VERSION="4.2.12"
+LICENSING_SERVICE_TARGET_VERSION="4.2.19"
 
 #Cert Manager related variables that required during the creation of subscription and the checks.
 # NEED TO BE UPDATED WHEN WE UPDATE THE VERSIONS
 CERT_MANAGER_CHANNEL=v4.2
-CERT_MANAGER_TARGET_VERSION="4.2.12"
+CERT_MANAGER_TARGET_VERSION="4.2.19"
 
 # CATALOG SOURCE file name
 CATALOG_SOURCE_FILENAME=${PARENT_DIR}/descriptors/op-olm/catalog_source.yaml
