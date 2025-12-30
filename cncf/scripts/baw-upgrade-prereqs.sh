@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-set -o nounset
+# Don't use nounset until after sourcing common.sh
+# set -o nounset
 
 # Initialize variables before sourcing common.sh
 CUR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
@@ -9,46 +10,49 @@ PARENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." >/dev/null 2>&1 && pw
 # Initialize step counter for title function
 step=1
 
+# Set dummy parameter for common.sh (it expects $1 for PREREQUISITES_FOLDER)
+set -- "dummy"
 source ${CUR_DIR}/../../scripts/helper/common.sh
 source ${CUR_DIR}/baw-utils.sh
 
-# Define variables needed for upgrade checks (lowercase versions from common.sh)
+# Now enable nounset
+set -o nounset
+
+# Define variables needed for upgrade checks
 licensing_service_target_version="${LICENSING_SERVICE_TARGET_VERSION}"
 cert_manager_target_version="${CERT_MANAGER_TARGET_VERSION}"
-baw_channel="v25.0"
 
 function show_help() {
-    echo "Usage: $0 [-h] -n <baw-namespace>"
-    echo "  -n <baw-namespace>    Namespace where BAW is installed"
+    echo "Usage: $0 [-h]"
+    echo ""
+    echo "This script upgrades IBM Business Automation Workflow prerequisites:"
+    echo "  - IBM Licensing Service to version ${LICENSING_SERVICE_TARGET_VERSION}"
+    echo "  - IBM Cert Manager to version ${CERT_MANAGER_TARGET_VERSION}"
+    echo ""
+    echo "Options:"
+    echo "  -h    Show this help message"
+    echo ""
+    echo "Note: To upgrade BAW itself, use baw-deployment.sh with -m upgradeOperator mode"
 }
 
-baw_namespace=""
 is_openshift=false
 
-while getopts "h?n:" opt; do
+while getopts "h?" opt; do
     case "$opt" in
     h|\?)
         show_help
         exit 0
         ;;
-    n)  baw_namespace=$OPTARG
-        ;;
     esac
 done
 
-if [[ -z ${baw_namespace} ]]; then
-    error "BAW namespace is mandatory."
-    show_help
-    exit 1
-fi
-
 function check_prereqs() {
-    title "Checking prereqs ..."
+    title "Checking prerequisites ..."
     check_command kubectl
 
     oc_version=$(kubectl get clusterversion version -o=jsonpath={.status.desired.version} 2>/dev/null)
     if [[ ! -z ${oc_version} ]]; then
-      info "openshift version ${oc_version} detected."
+      info "OpenShift version ${oc_version} detected."
       is_openshift=true
     fi
 
@@ -58,89 +62,88 @@ function check_prereqs() {
     else
       olm_namespace=$(kubectl get deployment -A | grep olm-operator | awk '{print $1}')
       if [[ -z "$olm_namespace" ]]; then
-        error "Cannot find OLM installation. Are you targetting a cluster where BAW is installed?"
+        error "Cannot find OLM installation."
         exit 1
       fi
       success "OLM available under namespace ${olm_namespace}."
     fi
+}
 
-    # Check if licensing service version is the one we target
+function upgrade_prerequisites() {
+    title "Upgrading prerequisites (licensing and cert-manager)..."
+    
+    # Check current versions
     local vls=$(get_licensing_service_version "")
-    if [[ "$vls" == "unknown" ]]; then
-        error "Cannot find licensing version in your cluster. Please use baw-install-prereqs.sh script to install it."
-        exit 1
-    else
-       success "Licensing service v${vls} found."
-    fi
-
-    ## Check certificate manager
-    local vcm=$(get_cert_manager_version ${baw_namespace})
-    if [[ "$vcm" == "unknown" ]]; then
-        info "Not using IBM cert manager."
-    else
-        success "IBM certificate manager ${vcm} found."
-    fi
-
-    # Check Common services version
-    local vcs=$(get_common_service_version ${baw_namespace})
-    if [[ "$vcs" == "unknown" ]]; then
-        error "Cannot find common services version in namespace ${baw_namespace}, is BAW installed in this namespace?"
-        exit 1
-    elif [[ $(semver_compare ${vcs} ${cs_minimal_version_for_ifix}) == "-1" ]]; then
-        error "Detected common services version ${vcs} in namespace ${baw_namespace} which is not greater or equals to version ${cs_minimal_version_for_ifix}, are you upgrading from a 24.0.0 version?"
-        exit 1
-    elif [[ $(semver_compare ${vcs} ${cs_maximal_version_for_ifix}) != "-1" ]]; then
-        error "Detected common services version ${vcs} in namespace ${baw_namespace} which is not lower to version ${cs_maximal_version_for_ifix}, are you upgrading from a 24.0.0 version?"
-        exit 1
-    else
-        success "Detected common services version ${vcs}."
-    fi
-}
-
-function check_subscription() {
-    local channel=$(kubectl get sub ibm-baw-${baw_channel} -n ${baw_namespace} -o jsonpath='{.spec.channel}')
-    if [ "${channel}" = "${baw_channel}" ]; then
-        info "Found BAW subscription to the expected channel."
-    else
-        error "Cannot find BAW subscription in namespace ${baw_namespace} or its channel is not ${baw_channel}. Are you upgrading for an ifix of the same BAW version?"
-        exit 1
-    fi
-}
-
-function upgrade_licensing_and_cert_manager() {
-    info "Upgrading licensing service to version ${LICENSING_SERVICE_TARGET_VERSION}..."
+    local vcm=$(get_cert_manager_version "ibm-cert-manager")
     
-    # Update licensing subscription to use the latest channel
-    kubectl patch subscription ibm-licensing-operator-app -n ibm-licensing --type='merge' -p "{\"spec\":{\"channel\":\"${LICENSING_SERVICE_CHANNEL}\"}}" 2>/dev/null
-    if [[ $? -eq 0 ]]; then
-        success "Licensing service subscription updated to channel ${LICENSING_SERVICE_CHANNEL}"
-        info "Waiting for licensing operator to upgrade..."
-        sleep 10
-        wait_for_operator ibm-licensing ibm-licensing-operator
+    info "Current licensing service version: ${vls}"
+    info "Target licensing service version: ${licensing_service_target_version}"
+    
+    if [[ "$vls" != "unknown" ]] && [[ $(semver_compare ${vls} ${licensing_service_target_version}) == "-1" ]]; then
+        info "Upgrading licensing service from ${vls} to ${licensing_service_target_version}..."
+        
+        # Update subscription to correct sourceNamespace and channel
+        kubectl patch subscription ibm-licensing-operator-app -n ibm-licensing \
+            --type='merge' \
+            -p "{\"spec\":{\"channel\":\"${LICENSING_SERVICE_CHANNEL}\",\"sourceNamespace\":\"ibm-licensing\"}}"
+        
+        if [[ $? -eq 0 ]]; then
+            success "Licensing subscription updated"
+            
+            # Delete old resources to trigger upgrade
+            info "Deleting old install plan and CSV to trigger upgrade..."
+            kubectl delete installplan -n ibm-licensing --all 2>/dev/null
+            kubectl delete csv -n ibm-licensing -l operators.coreos.com/ibm-licensing-operator-app.ibm-licensing 2>/dev/null
+            
+            info "Waiting for licensing operator to upgrade (this may take a few minutes)..."
+            sleep 30
+            
+            # Wait for new CSV to appear
+            local retries=20
+            while [[ $retries -gt 0 ]]; do
+                local new_vls=$(get_licensing_service_version "")
+                if [[ "$new_vls" != "unknown" ]] && [[ $(semver_compare ${new_vls} ${vls}) != "-1" ]]; then
+                    success "Licensing service upgraded to version ${new_vls}"
+                    break
+                fi
+                info "Waiting for upgrade to complete... (${retries} retries left)"
+                sleep 15
+                retries=$((retries - 1))
+            done
+            
+            if [[ $retries -eq 0 ]]; then
+                warning "Licensing upgrade may still be in progress. Check with: kubectl get csv -n ibm-licensing"
+            fi
+        else
+            error "Failed to update licensing subscription"
+        fi
     else
-        warning "Could not update licensing subscription, it may not exist or already be at the correct version"
+        success "Licensing service is already at version ${vls}"
     fi
     
-    # Update cert-manager subscription to use the latest channel
-    info "Upgrading cert-manager to version ${CERT_MANAGER_TARGET_VERSION}..."
-    kubectl patch subscription ibm-cert-manager-operator -n ibm-cert-manager --type='merge' -p "{\"spec\":{\"channel\":\"${CERT_MANAGER_CHANNEL}\"}}" 2>/dev/null
-    if [[ $? -eq 0 ]]; then
-        success "Cert-manager subscription updated to channel ${CERT_MANAGER_CHANNEL}"
-        info "Waiting for cert-manager operator to upgrade..."
-        sleep 10
-        wait_for_operator ibm-cert-manager ibm-cert-manager-operator
+    # Upgrade cert-manager if needed
+    if [[ "$vcm" != "unknown" ]] && [[ $(semver_compare ${vcm} ${cert_manager_target_version}) == "-1" ]]; then
+        info "Upgrading cert-manager from ${vcm} to ${cert_manager_target_version}..."
+        
+        kubectl patch subscription ibm-cert-manager-operator -n ibm-cert-manager \
+            --type='merge' \
+            -p "{\"spec\":{\"channel\":\"${CERT_MANAGER_CHANNEL}\",\"sourceNamespace\":\"ibm-cert-manager\"}}"
+        
+        if [[ $? -eq 0 ]]; then
+            success "Cert-manager subscription updated"
+            kubectl delete installplan -n ibm-cert-manager --all 2>/dev/null
+            kubectl delete csv -n ibm-cert-manager -l operators.coreos.com/ibm-cert-manager-operator.ibm-cert-manager 2>/dev/null
+            info "Waiting for cert-manager to upgrade..."
+            sleep 30
+        fi
     else
-        warning "Could not update cert-manager subscription, it may not exist or already be at the correct version"
+        success "Cert-manager is already at version ${vcm}"
     fi
-}
-
-function upgrade_to_ifix() {
-    upgrade_licensing_and_cert_manager
-    check_prereqs
-    check_subscription
-    create_baw_catalog_sources
-    upgrade_baw_subscription ${baw_channel} ${baw_channel} # keep same channel
 }
 
 # --- Run ---
-upgrade_to_ifix
+check_prereqs
+upgrade_prerequisites
+
+success "Prerequisites upgrade completed!"
+info "You can now proceed with BAW installation or upgrade."
