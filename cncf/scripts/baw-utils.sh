@@ -262,6 +262,12 @@ function is_sub_exist() {
     is_exist=$(echo "$name" | grep -w "$package_name")
 }
 
+# Function to get the common service version
+function get_common_service_version() {
+    local namespace=$1
+    get_type_from_label "csv" "operators.coreos.com/ibm-common-service-operator.${namespace}" "{.items[0].spec.version}" "${namespace}"
+}
+
 function patch_failed_operator_pods() {
   local ns=$1
   local head_to_fetch=${2:-"head -n 1"}

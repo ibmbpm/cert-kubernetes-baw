@@ -117,7 +117,7 @@ function check_prereqs() {
         error "Cannot find licensing version in your cluster. Please use cncf/scripts/baw-install-prereqs.sh script to install it."
         exit 1
     elif [[ $(semver_compare ${vls} ${LICENSING_SERVICE_TARGET_VERSION}) == "-1" ]]; then
-        error "Detected licensing service version ${vls} which is not ${LICENSING_SERVICE_TARGET_VERSION}. Please upgrade pre-requisites with baw-upgrade-prereqs.sh script."
+        error "Detected licensing service version ${vls} which is not ${LICENSING_SERVICE_TARGET_VERSION}. Please upgrade pre-requisites with cncf/scripts/baw-upgrade-prereqs.sh script."
         exit 1
     else
        success "Licensing service v${vls} found."
@@ -136,7 +136,7 @@ function check_prereqs() {
       if [[ "$vcm" == "unknown" ]]; then
           info "Not using IBM cert manager."
       elif [[ $(semver_compare ${vcm} ${CERT_MANAGER_TARGET_VERSION}) == "-1" ]]; then
-          error "Detected IBM certificate manager version ${vcm} which is not greater or equals to version ${CERT_MANAGER_TARGET_VERSION}. Please upgrade pre-requisites with baw-upgrade-prereqs.sh script."
+          error "Detected IBM certificate manager version ${vcm} which is not greater or equals to version ${CERT_MANAGER_TARGET_VERSION}. Please upgrade pre-requisites with cncf/scripts/baw-upgrade-prereqs.sh script."
           exit 1
       else
         success "IBM certificate manager ${vcm} found."
