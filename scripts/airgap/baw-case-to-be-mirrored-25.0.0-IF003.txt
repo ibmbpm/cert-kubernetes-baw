@@ -60,7 +60,7 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-cp-fncm-case
-  version: 5.7.1
+  version: 5.7.2
   catalogGeneration:
     ocMirror:
       disableMerge: true
