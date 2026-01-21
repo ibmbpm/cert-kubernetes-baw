@@ -18,13 +18,13 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:40ef0056c2f27d375ffc975f29f25e18bd1ad2dc793f88ca305cb1079413453e
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:3352b0e09c2aab1b9e9710b4e76a6cf4fe0b5e1c8b111d5897fa8cc292d733e9
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM CS Flink Operator Catalog 1.18.1 (2.0.5+20250528.100000)
+# IBM CS Flink Operator Catalog 1.20.2 (2.0.16)
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -103,7 +103,7 @@ spec:
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:f24bad596f32cc6531420c8533419d6b7bc5c65da5578ab9ca6e55180cd72ac5
+  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:a34b2eee4f168afe35e90c5b7e0d847b9d817806a056117249220b748b4b271c
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -128,7 +128,7 @@ spec:
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM CS IM Operator Catalog 4.15.0
+# IBM CS IM Operator Catalog 4.16.0
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -140,14 +140,14 @@ spec:
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:620c8985b5e6056082a5e0aa35a91e1de7aeb15145690a4683bd80a32b3e4fa6
+  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:de930ca55bb48e39f908219f8d5ead3272f79cf665b2aa29364d5145196f8ea0
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   priority: 100
 ---
-# IBM Zen Operator Catalog 6.3.0+20251203.153430.336
+# IBM Zen Operator Catalog 6.4.0+20260109.181428.46
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
@@ -160,7 +160,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:78ec2c576051a5ef98da6f9da5f18a490a148e9e988877fbac386147c69f080f
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:80379ee935a99877354ba7e03e788729d761321e4a6875920a1e1d56f775aeaf
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -198,7 +198,7 @@ spec:
   displayName: Cloud Native Postgresql Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cpd-cloud-native-postgresql-operator-catalog@sha256:64319d2ce95721f25bbafb952af06e65f635097b04b1b5ecc4631b2757f6201d
+  image: icr.io/cpopen/ibm-cpd-cloud-native-postgresql-operator-catalog@sha256:796117e1fcc38863f24ace073441c5a6954230ae19df24af8937e2feacf4f5d6
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -215,7 +215,7 @@ spec:
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-fncm-catalog@sha256:b134065145159fb279600a0774ccfc31a30511772a45d51339e52fd52a867ce7
+  image: icr.io/cpopen/ibm-fncm-catalog@sha256:d3fc391d5ba830cf17da507f4a2de63f320ac24e3129ca5158d3dd2ec84d302a
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
