@@ -1,10 +1,10 @@
 name: ibm-cp-automation
-version: 25.0.3
-description: Generated from CASE ibm-cp-automation version 25.0.3 on 2025-24-11 06:24:59
+version: 25.0.4
+description: Generated from CASE ibm-cp-automation version 25.0.4 on 2025-24-11 06:24:59
   PDT
 cases:
 - name: ibm-cp-automation
-  version: 25.0.3
+  version: 25.0.4
   launch: true
   catalogGeneration:
     ocMirror:

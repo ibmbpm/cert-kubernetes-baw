@@ -211,7 +211,7 @@ BAW_PATCH_VERSION="IF003"
 CP4BA_RELEASE_BASE_MAJOR_VERSION="25.0"
 CP4BA_PATCH_VERSION="IF003"
 # CP4BA_CSV_VERSION is for checking CP4BA operator upgrade status, need to update for each IFIX
-CP4BA_CSV_VERSION="v25.0.3"
+CP4BA_CSV_VERSION="v25.0.4"
 # CP4BA_CHANNEL_VERSION is for switch CP4BA operator upgrade status, need to update for major release
 CP4BA_CHANNEL_VERSION="v25.0"
 # CS_OPERATOR_VERSION is for checking CPFS operator upgrade status, need to update for each IFIX
