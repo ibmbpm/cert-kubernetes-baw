@@ -25,7 +25,7 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-cs-iam
-  version: 4.15.0
+  version: 4.16.0
   catalogGeneration:
     ocMirror:
       disableMerge: true
@@ -50,7 +50,7 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-zen
-  version: 6.3.0+20251203.153430.336
+  version: 6.4.0+20260109.181428.46
   catalogGeneration:
     ocMirror:
       disableMerge: true
