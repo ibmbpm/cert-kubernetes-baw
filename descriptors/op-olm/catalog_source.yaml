@@ -35,7 +35,7 @@ spec:
   publisher: IBM
   sourceType: grpc
   image: >-
-    icr.io/cpopen/ibm-opencontent-flink-operator-catalog@sha256:452a16bfe1f015ac3a5510874a4b20bb0488caa5d74b270b608c2571b17b97ac
+    icr.io/cpopen/ibm-opencontent-flink-operator-catalog@sha256:423877c500ea7cf999653be164da1d7d9264130fbd66736d9bc91db3128c3189
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -91,11 +91,11 @@ spec:
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM Cloud Foundational Services 4.16.0
+# IBM Cloud Foundational Services 4.17.0
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-cs-install-catalog-v4-16-0
+  name: ibm-cs-install-catalog-v4-17-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -132,7 +132,7 @@ spec:
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-iam-operator-catalog-4-15-0
+  name: ibm-iam-operator-catalog-4-16-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -152,7 +152,7 @@ spec:
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-zen-operator-catalog-6-3-0
+  name: ibm-zen-operator-catalog-6-4-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -186,7 +186,7 @@ spec:
     securityContextConfig: restricted
   priority: 100
 ---
-# Cloud Native PostgresSQL Version 1.25.4 (CASE 5.30.0+20251030.101847.2667)(Postgresql Image Version 14.19)
+# Cloud Native PostgresSQL Version 1.25.4 (CASE 5.30.0+20251203.182305.2683)(Postgresql Image Version 14.19)
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
