@@ -37,12 +37,12 @@ OLM_VERSION=v0.32.0
 #Licensing service related variables that required during the creation of subscription and the checks.
 # NEED TO BE UPDATED WHEN WE UPDATE THE VERSIONS
 LICENSING_SERVICE_CHANNEL=v4.2
-LICENSING_SERVICE_TARGET_VERSION="4.2.19"
+LICENSING_SERVICE_TARGET_VERSION="4.2.20"
 
 #Cert Manager related variables that required during the creation of subscription and the checks.
 # NEED TO BE UPDATED WHEN WE UPDATE THE VERSIONS
 CERT_MANAGER_CHANNEL=v4.2
-CERT_MANAGER_TARGET_VERSION="4.2.19"
+CERT_MANAGER_TARGET_VERSION="4.2.20"
 
 # CATALOG SOURCE file name
 CATALOG_SOURCE_FILENAME=${PARENT_DIR}/descriptors/op-olm/catalog_source.yaml
@@ -221,7 +221,7 @@ CS_CHANNEL_VERSION="v4.16"
 # CS CHANNEL VERSION that is used in the KC
 CS_CHANNEL_KC="4.x_cd"
 # CERT_LICENSE_OPERATOR_VERSION is for checking IBM cert-manager/licensing operator upgrade status, need to update for each IFIX
-CERT_LICENSE_OPERATOR_VERSION="v4.2.19"
+CERT_LICENSE_OPERATOR_VERSION="v4.2.20"
 # CERT_LICENSE_CHANNEL_VERSION is for for IBM cert-manager/licensing script -c option, need to update for each IFIX
 CERT_LICENSE_CHANNEL_VERSION="v4.2"
 # CS_CATALOG_VERSION is for CPFS script -s option, need to update for each IFIX
@@ -235,7 +235,7 @@ BTS_CATALOG_VERSION="ibm-bts-operator-catalog-v3-35"
 # REQUIREDVER_BTS is for checking bts operator upgrade status before run removal_iaf.sh, need to update for each IFIX
 REQUIREDVER_BTS="3.35.7"
 # REQUIREDVER_POSTGRESQL is for checking postgresql operator upgrade status before run removal_iaf.sh, need to update for each IFIX
-REQUIREDVER_POSTGRESQL="1.25.4"
+REQUIREDVER_POSTGRESQL="1.25.5"
 # EVENTS_OPERATOR_VERSION is for checking IBM Events operator upgrade status, need to update for each IFIX
 EVENTS_OPERATOR_VERSION="v5.2.1"
 #This is the list where we further restricted the versions that are supported for upgrade to $CP4BA_CSV_VERSION.  

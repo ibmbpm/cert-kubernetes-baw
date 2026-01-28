@@ -15,7 +15,7 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-cloud-native-postgresql
-  version: 5.30.0+20251030.101847.2667
+  version: 5.31.0+20260122.140124.2705
   catalogGeneration:
     ocMirror:
       disableMerge: true
@@ -45,7 +45,7 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-cert-manager
-  version: 4.2.19
+  version: 4.2.20
   catalogGeneration:
     ocMirror:
       disableMerge: true
@@ -55,7 +55,7 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-licensing
-  version: 4.2.19
+  version: 4.2.20
   catalogGeneration:
     ocMirror:
       disableMerge: true
