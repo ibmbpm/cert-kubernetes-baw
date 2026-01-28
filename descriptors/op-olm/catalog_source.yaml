@@ -59,14 +59,14 @@ spec:
     securityContextConfig: restricted
   priority: 100
 ---
-# IBM Certificate Manager 4.2.19
+# IBM Certificate Manager 4.2.20
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: ibm-cert-manager-catalog
   namespace: openshift-marketplace
 spec:
-  displayName: ibm-cert-manager-4.2.19
+  displayName: ibm-cert-manager-4.2.20
   publisher: IBM
   sourceType: grpc
   image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:3a76da69d669c7ec308193fe4475b0ffaa58876867d54e3f88c4fd9c171906df
@@ -75,14 +75,14 @@ spec:
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM License Manager 4.2.19
+# IBM License Manager 4.2.20
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: ibm-licensing-catalog
   namespace: openshift-marketplace
 spec:
-  displayName: ibm-licensing-4.2.19
+  displayName: ibm-licensing-4.2.20
   publisher: IBM
   image: icr.io/cpopen/ibm-licensing-catalog@sha256:6be420d57378e7b8a2706f3aa6d3f7323b3c3be17bec8839d75aac1998ab6bd3
   sourceType: grpc
@@ -186,7 +186,7 @@ spec:
     securityContextConfig: restricted
   priority: 100
 ---
-# Cloud Native PostgresSQL Version 1.25.4 (CASE 5.30.0+20251203.182305.2683)(Postgresql Image Version 14.19)
+# Cloud Native PostgresSQL Version 1.25.5 (CASE 5.31.0+20260122.140124.2705)(Postgresql Image Version 14.20)
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
