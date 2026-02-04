@@ -122,7 +122,7 @@ spec:
   displayName: BTS Operator-3.35.7
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:9a2e253c3a4931c579882ba791544f5afd0283a465c2c398e5b22f7416154d6d
+  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:216d32bc4ce5494297226a7a1336bd2fd1a972fecff9cb807b31b29ece189674
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -147,7 +147,7 @@ spec:
     securityContextConfig: restricted
   priority: 100
 ---
-# IBM Zen Operator Catalog 6.4.0+20260121.181526.66
+# IBM Zen Operator Catalog 6.4.0+20260127.182018.74
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
@@ -160,7 +160,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:97c90413944b0e0c25a8d8e0d4959473292c080bd6f1a75877a96615318e5a5f
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:3caffa2c8d5e8d60291f98715aefaff4de0b8bd23dbe54a402ac353875483396
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
