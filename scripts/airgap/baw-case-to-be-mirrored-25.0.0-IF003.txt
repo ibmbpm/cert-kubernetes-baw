@@ -20,7 +20,7 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-cs-install
-  version: 4.16.0
+  version: 4.17.0
   catalogGeneration:
     ocMirror:
       disableMerge: true
