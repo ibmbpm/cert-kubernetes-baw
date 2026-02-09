@@ -69,7 +69,7 @@ spec:
   displayName: ibm-cert-manager-4.2.20
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:3a76da69d669c7ec308193fe4475b0ffaa58876867d54e3f88c4fd9c171906df
+  image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:1ef55012dbeef7114cc865d90f030c6d89b756a9125b2d5cbfd5a7704f3364ac
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -84,7 +84,7 @@ metadata:
 spec:
   displayName: ibm-licensing-4.2.20
   publisher: IBM
-  image: icr.io/cpopen/ibm-licensing-catalog@sha256:6be420d57378e7b8a2706f3aa6d3f7323b3c3be17bec8839d75aac1998ab6bd3
+  image: icr.io/cpopen/ibm-licensing-catalog@sha256:cacf75fa33470df17cb933d89f230d4b286c1177788d696238c6f735ebe0dee8
   sourceType: grpc
   secrets:
   - "ibm-entitlement-key"
@@ -95,7 +95,7 @@ spec:
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-cs-install-catalog-v4-17-0
+  name: ibm-cs-install-catalog
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -103,14 +103,14 @@ spec:
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:4317e67d0e3374628a7b3474cdaccd10d90fc1b6158e42d66d9cb99aae6dcb8f
+  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:f24bad596f32cc6531420c8533419d6b7bc5c65da5578ab9ca6e55180cd72ac5
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   priority: 100 
 ---
-# IBM Business Teams Service version 3.35.7
+# IBM Business Teams Service version 3.35.8
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -119,10 +119,10 @@ metadata:
   annotations:
     bedrock_catalogsource_priority: '1'
 spec:
-  displayName: BTS Operator-3.35.7
+  displayName: BTS Operator-3.35.8
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:216d32bc4ce5494297226a7a1336bd2fd1a972fecff9cb807b31b29ece189674
+  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:04cab67e1ba6d51f94b43da9a63b2adecc9e4bc07440d52bee4f753a4feb8623
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -132,7 +132,7 @@ spec:
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-iam-operator-catalog-4-16-0
+  name: ibm-iam-operator-catalog
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -140,19 +140,19 @@ spec:
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:ea3c96ebc7dfad3eff7d29cba9082abcb7d5605642d039e557eddbfe93633e5c
+  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:382760123a6e925a4f33c24b291d9a0c877be88d69bff9f99892d2d2e2671a05
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   priority: 100
 ---
-# IBM Zen Operator Catalog 6.4.0+20260127.182018.74
+# IBM Zen Operator Catalog 6.4.0+20260204.043012.87
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-zen-operator-catalog-6-4-0
+  name: ibm-zen-operator-catalog
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -160,7 +160,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:3caffa2c8d5e8d60291f98715aefaff4de0b8bd23dbe54a402ac353875483396
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:8b65a8136d53fcdf74c70334c91fd9179974c07acd0709a62253c3613f59a730
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -171,7 +171,7 @@ spec:
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-events-operator-catalog-v5-2-1
+  name: ibm-events-operator-catalog
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
