@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:29124faf916273e3d7fba696562a840341daac7fd8762a64d04872eeb97e795b
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:27c1017839ccfe80ea7bf92975e9780b641d4f72d26611abbbcced672e49032c
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -184,7 +184,6 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
-  priority: 100
 ---
 # Cloud Native PostgresSQL Version 1.25.5 (CASE 5.31.0+20260122.140124.2705)(Postgresql Image Version 14.20)
 apiVersion: operators.coreos.com/v1alpha1
