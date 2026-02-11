@@ -184,6 +184,7 @@ spec:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
+  priority: 100
 ---
 # Cloud Native PostgresSQL Version 1.25.5 (CASE 5.31.0+20260122.140124.2705)(Postgresql Image Version 14.20)
 apiVersion: operators.coreos.com/v1alpha1
