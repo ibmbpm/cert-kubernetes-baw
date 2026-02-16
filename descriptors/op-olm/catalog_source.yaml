@@ -147,7 +147,7 @@ spec:
     securityContextConfig: restricted
   priority: 100
 ---
-# IBM Zen Operator Catalog 6.4.0+20260206.203245.91
+# IBM Zen Operator Catalog 6.4.0+20260206.203245.92 TODO: fix this once official refresh comes from CP4ba
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
@@ -160,7 +160,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:8359df316f92af2bd4377d535e1c5de2b4b1d555d02077a7e2680c8e9abd98af
+  image: icr.io/cpopen/ibm-zen-operator-catalog:6.4.0-92
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
