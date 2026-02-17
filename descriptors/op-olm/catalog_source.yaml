@@ -70,6 +70,8 @@ spec:
   publisher: IBM
   sourceType: grpc
   image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:97610d00d5b46b4de8d3c98233591cc554b7211d96f3d30ed935a84f076e3b65
+  secrets:
+  - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -83,6 +85,8 @@ spec:
   displayName: ibm-licensing-4.2.20
   publisher: IBM
   image: icr.io/cpopen/ibm-licensing-catalog@sha256:734017cedb6605a4aba3a2de54c0ccb8e314e7b533ec0e30a362fa315ef8e1dd
+  secrets:
+  - "ibm-entitlement-key"
   sourceType: grpc
   grpcPodConfig:
     securityContextConfig: restricted
@@ -119,6 +123,8 @@ spec:
   publisher: IBM
   sourceType: grpc
   image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:04cab67e1ba6d51f94b43da9a63b2adecc9e4bc07440d52bee4f753a4feb8623
+  secrets:
+  - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
 ---
