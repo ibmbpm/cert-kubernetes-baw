@@ -18,7 +18,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:27c1017839ccfe80ea7bf92975e9780b641d4f72d26611abbbcced672e49032c
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:41c03cb363404256d26a7c718537c54bd0a396ea6eab26e98562af1920d9608b
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -186,7 +186,7 @@ spec:
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# Cloud Native PostgresSQL Version 1.25.5 (CASE 5.31.0+20260122.140124.2705)(Postgresql Image Version 14.20)
+# Cloud Native PostgresSQL Version 1.25.5 (CASE 5.31.0+20260129.161021.2713)(Postgresql Image Version 14.20)
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -198,7 +198,7 @@ spec:
   displayName: Cloud Native Postgresql Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cpd-cloud-native-postgresql-operator-catalog@sha256:905d2a9847227bf1245bb0f620b1f936e334a0250e91c4a704db8fb4000b6408
+  image: icr.io/cpopen/ibm-cpd-cloud-native-postgresql-operator-catalog@sha256:af4ac35100a8b93b36a9cb31c9cdf40fb190a0d78d29e4d5408b0d867a100a42
   priority: 100
   secrets:
   - "ibm-entitlement-key"
@@ -215,7 +215,7 @@ spec:
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-fncm-catalog@sha256:59247b7b4561054f44158125aaa0414bff2148aea5a43b38fdda09df4de3b9c4
+  image: icr.io/cpopen/ibm-fncm-catalog@sha256:7fcd1fad7a7945333c0c31e5f545b50eb44b5322c46f8d3c9efabe9a4dad297c
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
