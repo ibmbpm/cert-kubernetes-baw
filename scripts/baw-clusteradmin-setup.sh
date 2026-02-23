@@ -1309,7 +1309,7 @@ function prepare_olm_install() {
             if [[ $retry -eq ${maxRetry} ]]; then
                 echo "Timeout Waiting for $BAW_FULL_NAME Operator Catalog pod to start"
                 echo -e "\x1B[1mCheck the status of Pod by issue cmd: \x1B[0m"
-                echo "oc describe pod $(oc get pod -n $CATALOG_NAMESPACE|grep "$online_source"|awk '{print $1}') -n $CATALOG_NAMESPACE"
+                echo "${CLI_CMD} describe pod $(oc get pod -n $CATALOG_NAMESPACE|grep "$online_source"|awk '{print $1}') -n $CATALOG_NAMESPACE"
                 exit 1
             else
                 sleep 30
@@ -1357,56 +1357,21 @@ function prepare_olm_install() {
    printf "\n"
    info "Waiting for $BAW_FULL_NAME operator pod initialization"
    for ((retry=0;retry<=${maxRetry};retry++)); do
-        #checking if ibm-dpe-operator is present and if so checking if the pod is running
-        # DPE only support x86 so check the target cluster arch type
-        #arch_type=$(kubectl get cm cluster-config-v1 -n kube-system -o yaml | grep -i architecture|tail -1| awk '{print $2}')
-        #if [[ "$arch_type" == "amd64" ]]; then
-        #    ibmDpePodPresent=$(${CLI_CMD} get pod -n "$temp_project_name" --no-headers --ignore-not-found | grep ibm-dpe-operator | wc -l)
-        #    if [[ $ibmDpePodPresent -eq 1 ]]; then
-        #        ibmDpePodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep ibm-dpe-operator | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}' | wc -l)
-        #    else
-        #        ibmDpePodCount=0
-        #    fi
-        #else
-        #    ibmDpePodCount=1
-        #fi
-
-        #checking if ibm-insights-engine-operator is present and if so checking if the pod is running
-        #ibmInsightsEnginePodPresent=$(${CLI_CMD} get pod -n "$temp_project_name" --no-headers --ignore-not-found | grep ibm-insights-engine-operator | wc -l)
-        #if [[ $ibmInsightsEnginePodPresent -eq 1 ]]; then
-        #    ibmInsightsEnginePodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep ibm-insights-engine-operator | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}' | wc -l)
-        #else
-        #    ibmInsightsEnginePodCount=0
-        #fi
-
-        #checking if ibm-ads-operator is present and if so checking if the pod is running
-        #ibmADSOperatorPodPresent=$(${CLI_CMD} get pod -n "$temp_project_name" --no-headers --ignore-not-found | grep ibm-ads-operator | wc -l)
-        #if [[ $ibmADSOperatorPodPresent -eq 1 ]]; then
-        #    ibmADSOperatorPodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep ibm-ads-operator | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}' | wc -l)
-        #else
-        #    ibmADSOperatorPodCount=0
-        #fi
+        
 
         #checking if ibm-common-service-operator is present and if so checking if the pod is running
         ibmCommonServicesPodPresent=$(${CLI_CMD} get pod -n "$temp_project_name" --no-headers --ignore-not-found | grep ibm-common-service-operator | wc -l)
         if [[ $ibmCommonServicesPodPresent -eq 1 ]]; then
-            ibmCommonServicesPodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep ibm-common-service-operator | head -1 | awk '{print $1}' | wc -l)
+            ibmCommonServicesPodCount=$(${CLI_CMD} get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep ibm-common-service-operator | head -1 | awk '{print $1}' | wc -l)
         else
             ibmCommonServicesPodCount=0
         fi
 
-        #checking if ibm-odm-operator is present and if so checking if the pod is running
-        #ibmODMPodPresent=$(${CLI_CMD} get pod -n "$temp_project_name" --no-headers --ignore-not-found | grep ibm-odm-operator | wc -l)
-        #if [[ $ibmODMPodPresent -eq 1 ]]; then
-        #    ibmODMPodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep ibm-odm-operator | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}' | wc -l)
-        #else    
-        #    ibmODMPodCount=0
-        #fi
         
         #checking if ibm-pfs-operator is present and if so checking if the pod is running
         ibmPFSPodPresent=$(${CLI_CMD} get pod -n "$temp_project_name" --no-headers --ignore-not-found | grep ibm-pfs-operator | wc -l)
         if [[ $ibmPFSPodPresent -eq 1 ]]; then
-            ibmPFSPodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep ibm-pfs-operator |  head -1 | awk '{print $1}' | wc -l)
+            ibmPFSPodCount=$(${CLI_CMD} get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep ibm-pfs-operator |  head -1 | awk '{print $1}' | wc -l)
         else    
             ibmPFSPodCount=0
         fi
@@ -1414,7 +1379,7 @@ function prepare_olm_install() {
         #checking if icp4a-foundation-operator is present and if so checking if the pod is running
         foundationPodPresent=$(${CLI_CMD} get pod -n "$temp_project_name" --no-headers --ignore-not-found | grep icp4a-foundation-operator | wc -l)
         if [[ $foundationPodPresent -eq 1 ]]; then
-            foundationPodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep icp4a-foundation-operator | head -1 | awk '{print $1}' | wc -l)
+            foundationPodCount=$(${CLI_CMD} get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep icp4a-foundation-operator | head -1 | awk '{print $1}' | wc -l)
         else   
             foundationPodCount=0
         fi
@@ -1422,7 +1387,7 @@ function prepare_olm_install() {
         #checking if operand-deployment-lifecycle-manager is present and if so checking if the pod is running
         operandLifeCyclePodPresent=$(${CLI_CMD} get pod -n "$temp_project_name" --no-headers --ignore-not-found | grep operand-deployment-lifecycle-manager | wc -l)
         if [[ $operandLifeCyclePodPresent -eq 1 ]]; then
-            operandLifeCyclePodCount=$(oc get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep operand-deployment-lifecycle-manager | head -1 | awk '{print $1}' | wc -l)
+            operandLifeCyclePodCount=$(${CLI_CMD} get pod -n "$temp_project_name" -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers --ignore-not-found | grep operand-deployment-lifecycle-manager | head -1 | awk '{print $1}' | wc -l)
         else    
             operandLifeCyclePodCount=0
         fi    
@@ -1432,18 +1397,13 @@ function prepare_olm_install() {
       #if any of the podCounts are zero then that means all pods are not ready and we need to wait for them to get ready
       if echo "${podList[@]}" | grep -qw 0; then
         if [[ $retry -eq ${maxRetry} ]]; then
-          echo "Timeout waiting for $BAW_FULL_NAME operator to start"
-          echo -e "\x1B[1mCheck the status of Pod by issue cmd:\x1B[0m"
-        echo "oc describe pod $(oc get pod -n $temp_project_name|grep ibm-cp4a-operator|awk '{print $1}') -n $temp_project_name"
-        printf "\n"
-        echo -e "\x1B[1mCheck the status of ReplicaSet by issue cmd:\x1B[0m"
-        echo "oc describe rs $(oc get rs -n $temp_project_name|grep ibm-cp4a-operator|awk '{print $1}') -n $temp_project_name"
-          
-        #   printf "\n"
-        #   echo -e "\x1B[1mPlease check the status of PVC by issue cmd:\x1B[0m"
-        #   echo "oc describe pvc $(oc get pvc -n $temp_project_name|grep operator-shared-pvc|awk '{print $1}') -n $temp_project_name"
-        #   echo "oc describe pvc $(oc get pvc -n $temp_project_name|grep cp4a-shared-log-pvc|awk '{print $1}') -n $temp_project_name"
-          exit 1
+            echo "Timeout waiting for $BAW_FULL_NAME operator to start"
+            echo -e "\x1B[1mCheck the status of Pod by issue cmd:\x1B[0m"
+            echo "${CLI_CMD} describe pod $(${CLI_CMD} get pod -n $temp_project_name|grep ibm-cp4a-operator|awk '{print $1}') -n $temp_project_name"
+            printf "\n"
+            echo -e "\x1B[1mCheck the status of ReplicaSet by issue cmd:\x1B[0m"
+            echo "${CLI_CMD} describe rs $(${CLI_CMD} get rs -n $temp_project_name|grep ibm-cp4a-operator|awk '{print $1}') -n $temp_project_name"
+            exit 1
         else
           sleep 30
           echo -n "..."
