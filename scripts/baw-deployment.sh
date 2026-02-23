@@ -9392,6 +9392,66 @@ function patch_elasticsearch_cr(){
 
     fi
 }
+# Check and update zen-ingress URL pattern from namespace-cpd to cpd-namespace
+function check_and_update_zen_ingress_url(){
+    local namespace=$1
+    if [[ -z "$namespace" ]]; then
+        namespace=$TMP_SERVICES_NAMESPACE
+    fi
+    
+    info "Checking zen-ingress URL pattern in namespace \"$namespace\"..."
+    
+    # Check if zen-ingress exists
+    if ! ${CLI_CMD} get ingress zen-ingress -n ${namespace} >/dev/null 2>&1; then
+        warning "zen-ingress not found in namespace \"$namespace\". Skipping URL pattern check."
+        return 0
+    fi
+    
+    # Get the current host from zen-ingress
+    local current_host=$(${CLI_CMD} get ingress zen-ingress -n ${namespace} -o jsonpath='{.spec.rules[0].host}' 2>/dev/null)
+    
+    if [[ -z "$current_host" ]]; then
+        warning "Could not retrieve host from zen-ingress. Skipping URL pattern check."
+        return 0
+    fi
+    
+    # Check if the host follows the old pattern: namespace-cpd.domain
+    # Pattern: starts with namespace, followed by -cpd.
+    if [[ "$current_host" =~ ^${namespace}-cpd\. ]]; then
+        info "Detected old URL pattern: ${current_host}"
+        
+        # Extract domain from current host (everything after namespace-cpd.)
+        local domain="${current_host#${namespace}-cpd.}"
+        local new_host="cpd-${namespace}.${domain}"
+        
+        info "Updating zen-ingress URL pattern from \"${current_host}\" to \"${new_host}\"..."
+        
+        # Update the host in spec.rules[0].host
+        ${CLI_CMD} patch ingress zen-ingress -n ${namespace} --type=json \
+            -p="[{\"op\": \"replace\", \"path\": \"/spec/rules/0/host\", \"value\": \"${new_host}\"}]" 2>/dev/null
+        
+        if [[ $? -eq 0 ]]; then
+            success "Successfully updated zen-ingress URL pattern."
+            printf "\n"
+            echo -e "\x1B[1;31m[IMPORTANT NOTICE]\x1B[0m"
+            echo -e "The zen-ingress URL has been updated to align with the new hostname pattern:"
+            echo -e "  ${RED_TEXT}Previous URL:${RESET_TEXT} ${current_host}"
+            echo -e "  ${GREEN_TEXT}Updated URL:${RESET_TEXT}  ${new_host}"
+            printf "\n"
+            echo -e "\x1B[33;5m[ATTENTION]: \x1B[0m\x1B[1mIf you are using optional components that require the Cloud Pak for Data (CPD) URL,\x1B[0m"
+            echo -e "\x1B[1mplease update your Custom Resource with the new URL.\x1B[0m"
+            printf "\n"
+            echo -e "\x1B[1mTo retrieve the current zen-ingress URL, run:\x1B[0m"
+            echo -e "  ${CLI_CMD} get ingress zen-ingress -n ${namespace} -o jsonpath='{.spec.rules[0].host}'"
+            printf "\n"
+        else
+            warning "Failed to update zen-ingress URL pattern. Please update it manually if needed."
+        fi
+    else
+        success "zen-ingress URL pattern is already correct: ${current_host}"
+    fi
+}
+
 #DBACLD-166863: This function determines the UPGRADE_MODE
 function determine_upgrade_mode () {
 ############
@@ -12085,6 +12145,10 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
             fi
         done
         success "Completed to check the channel of subscription for CP4BA operators"
+        # Check and update zen-ingress URL pattern for non-OCP platforms
+        if [[ "$PLATFORM_SELECTED" == "other" ]]; then
+            check_and_update_zen_ingress_url
+        fi
 
         # DBACLD-166239 -> Update EDB configmap ibm-zen-metastore-edb-cm to add new parameters with CPFS 4.10 or later by calling patch_edb_configmap()
         patch_edb_configmap $TMP_SERVICES_NAMESPACE
