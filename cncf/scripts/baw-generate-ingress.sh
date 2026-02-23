@@ -72,14 +72,14 @@ function replace() {
 
     if [[ "${tls_termination}" = true ]]; then
         tmp_zen_ingress_work=$(mktemp)
-        # Update spec.rules[0].host to use namespace-cpd pattern and add tls section
+        # Update spec.rules[0].host to use cpd-namespace pattern and add tls section
         # ${CLI_CMD} patch -f ${tmp_zen_ingress} -p='[{"op": "add", "path": "/spec", "value": {"tls": { "hosts": ["CPD_HOST"], "secretName": "cpd-ingress-tls-secret" }}}]' --type=json --dry-run='client' -o yaml | \
-        ${CLI_CMD} patch -f ${tmp_zen_ingress} -p '{"spec": {"rules": [{"host": "CPD_HOST"}], "tls": [{"hosts": ["CPD_HOST"], "secretName": "cpd-ingress-tls-secret" }]}}' --type=merge --dry-run='client' -o yaml | \
+        ${CLI_CMD} patch -f ${tmp_zen_ingress} -p '{"spec": {"tls": [{"hosts": ["CPD_HOST"], "secretName": "cpd-ingress-tls-secret" }]}}' --type=merge --dry-run='client' -o yaml | \
         # add annotation
         ${CLI_CMD} patch -f - -p '{"metadata":{"annotations":{"cert-manager.io/issuer":"zen-tls-issuer","cert-manager.io/common-name":"CPD_HOST"}}}' --type=merge --dry-run='client' -o yaml  \
         > ${tmp_zen_ingress_work}
         cat ${tmp_zen_ingress_work} > ${tmp_zen_ingress} && rm ${tmp_zen_ingress_work}
-        ${SED_COMMAND} "s/CPD_HOST/${baw_namespace}-cpd.${domain_name}/g" ${tmp_zen_ingress}
+        ${SED_COMMAND} "s/CPD_HOST/cpd-${baw_namespace}.${domain_name}/g" ${tmp_zen_ingress}
     fi
 
     cat ${tmp_zen_ingress} >> ${output_file}
