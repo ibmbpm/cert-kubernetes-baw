@@ -15,12 +15,12 @@ metadata:
   name: ibm-cp4a-operator-catalog
   namespace: openshift-marketplace
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:3f5b20f6477fac029e2c549b4667940e4937e2d1d28e58010ec23c59f995237c
-  secrets:
-  - "ibm-entitlement-key"
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:3eb2c8bf064f5cf716599aa9c2e5040f6fe539a88a83cfe38a6ccdc63e7d2706
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -31,14 +31,14 @@ metadata:
   name: ibm-opencontent-flink
   namespace: openshift-marketplace
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: IBM CS Opencontent Flink Catalog
   publisher: IBM
   sourceType: grpc
   image: >-
     icr.io/cpopen/ibm-opencontent-flink-operator-catalog@sha256:423877c500ea7cf999653be164da1d7d9264130fbd66736d9bc91db3128c3189
   priority: 100
-  secrets:
-  - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -49,13 +49,13 @@ metadata:
   name: ibm-opensearch-operator-catalog
   namespace: openshift-marketplace
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: IBM CS Opencontent Opensearch Catalog
   publisher: IBM
   sourceType: grpc
   image: icr.io/cpopen/opencontent-ibm-opensearch-operator-catalog@sha256:7ff897a206d020b973949df4176be388f5d19a27595937e3a43ec34a9f78711e
   priority: 100
-  secrets:
-  - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -66,12 +66,12 @@ metadata:
   name: ibm-cert-manager-catalog
   namespace: openshift-marketplace
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: ibm-cert-manager-4.2.20
   publisher: IBM
   sourceType: grpc
   image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:97610d00d5b46b4de8d3c98233591cc554b7211d96f3d30ed935a84f076e3b65
-  secrets:
-  - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -82,11 +82,11 @@ metadata:
   name: ibm-licensing-catalog
   namespace: openshift-marketplace
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: ibm-licensing-4.2.20
   publisher: IBM
   image: icr.io/cpopen/ibm-licensing-catalog@sha256:734017cedb6605a4aba3a2de54c0ccb8e314e7b533ec0e30a362fa315ef8e1dd
-  secrets:
-  - "ibm-entitlement-key"
   sourceType: grpc
   grpcPodConfig:
     securityContextConfig: restricted
@@ -95,18 +95,18 @@ spec:
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-cs-install-catalog
+  name: ibm-cs-install-catalog-v4-17-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
   image: icr.io/cpopen/ibm-cs-install-catalog@sha256:993ed6ac8869fd996472867fefb1469c54b75b62f31415d4ac90e7aec96ede26
   priority: 100
-  secrets:
-  - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -119,12 +119,12 @@ metadata:
   annotations:
     bedrock_catalogsource_priority: '1'
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: BTS Operator-3.35.8
   publisher: IBM
   sourceType: grpc
   image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:04cab67e1ba6d51f94b43da9a63b2adecc9e4bc07440d52bee4f753a4feb8623
-  secrets:
-  - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -132,18 +132,18 @@ spec:
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-iam-operator-catalog
+  name: ibm-iam-operator-catalog-4-16-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
   image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:3c6a75939ccdef91c27442564c388294e02704a7c4acf14e3146090734b026f4
   priority: 100
-  secrets:
-  - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -152,18 +152,18 @@ spec:
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-zen-operator-catalog
+  name: ibm-zen-operator-catalog-6-4-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
   image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:9a02519e5ab679f0807fc5b7cfc5fc96242961bee0e1d3144012d33e925e6a99
   priority: 100
-  secrets:
-    - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -176,13 +176,13 @@ metadata:
   annotations:
     bedrock_catalogsource_priority: '1'
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: IBM Events Operator Catalog-v5.2.1
   publisher: IBM
   sourceType: grpc
   image: icr.io/cpopen/ibm-events-operator-catalog@sha256:228ea92d69daa2350e151d1fe6b14e6fb56eadd0d3b5b5872178180747297687
   priority: 100
-  secrets:
-  - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -195,13 +195,13 @@ metadata:
   annotations:
     bedrock_catalogsource_priority: '1'
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: Cloud Native Postgresql Catalog
   publisher: IBM
   sourceType: grpc
   image: icr.io/cpopen/ibm-cpd-cloud-native-postgresql-operator-catalog@sha256:af4ac35100a8b93b36a9cb31c9cdf40fb190a0d78d29e4d5408b0d867a100a42
   priority: 100
-  secrets:
-  - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -212,11 +212,11 @@ metadata:
   name: ibm-fncm-operator-catalog
   namespace: openshift-marketplace
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-fncm-catalog@sha256:8bcfe8e7bd6024e2f53afe7b91b8cf4b77e0ee6b5b63ecfda84feacea934b3ba
-  secrets:
-  - "ibm-entitlement-key"
+  image: icr.io/cpopen/ibm-fncm-catalog@sha256:8fd946c8414f6e387e2b9b86664224ff3cfabd1813b51fbc781256acf17028e9
   grpcPodConfig:
     securityContextConfig: restricted
