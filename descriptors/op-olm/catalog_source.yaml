@@ -8,7 +8,7 @@
 # disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
 #
 ###############################################################################
-# CP4BA 25.0.1 catalog
+# CP4BA 25.0.1-IF001 catalog
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -18,13 +18,13 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:aed41d14b4a8754b67424e28c015f50bfbdb3262b0f4ef0c614cad122b160eae
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:97e83c4e874e3205b138ae238f9312a249b0df730710b6267f74dfa34beed275
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM CS Flink Operator Catalog 1.18.1 (2.0.5+20250528.100000)
+# IBM CS Flink Operator Catalog 1.20.2 (2.0.16)
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -35,7 +35,7 @@ spec:
   publisher: IBM
   sourceType: grpc
   image: >-
-    icr.io/cpopen/ibm-opencontent-flink-operator-catalog@sha256:452a16bfe1f015ac3a5510874a4b20bb0488caa5d74b270b608c2571b17b97ac
+    icr.io/cpopen/ibm-opencontent-flink-operator-catalog@sha256:423877c500ea7cf999653be164da1d7d9264130fbd66736d9bc91db3128c3189
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -59,43 +59,43 @@ spec:
     securityContextConfig: restricted
   priority: 100
 ---
-# IBM Certificate Manager 4.2.18
+# IBM Certificate Manager 4.2.20
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: ibm-cert-manager-catalog
   namespace: openshift-marketplace
 spec:
-  displayName: ibm-cert-manager-4.2.18
+  displayName: ibm-cert-manager-4.2.20
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:78e1242e197ed1a2db82ea29887ff85b77ce39d15868fd26505fcfe7db0c3bba
+  image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:97610d00d5b46b4de8d3c98233591cc554b7211d96f3d30ed935a84f076e3b65
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM License Manager 4.2.18
+# IBM License Manager 4.2.20
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: ibm-licensing-catalog
   namespace: openshift-marketplace
 spec:
-  displayName: ibm-licensing-4.2.18
+  displayName: ibm-licensing-4.2.20
   publisher: IBM
-  image: icr.io/cpopen/ibm-licensing-catalog@sha256:42e8f5a12742742c1967568d497ff1c93aa7a78a3a7ad414da011d0c1eedb19a
+  image: icr.io/cpopen/ibm-licensing-catalog@sha256:734017cedb6605a4aba3a2de54c0ccb8e314e7b533ec0e30a362fa315ef8e1dd
   sourceType: grpc
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM Cloud Foundational Services 4.15.0
+# IBM Cloud Foundational Services 4.17.0
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-cs-install-catalog-v4-15-0
+  name: ibm-cs-install-catalog-v4-17-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -103,14 +103,14 @@ spec:
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:5cc26a852fcb17f407e922175437494538934c7615001b49bec69a723a164c52
+  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:993ed6ac8869fd996472867fefb1469c54b75b62f31415d4ac90e7aec96ede26
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   priority: 100    
 ---
-# IBM Business Teams Service version 3.35.6
+# IBM Business Teams Service version 3.35.8
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -119,20 +119,20 @@ metadata:
   annotations:
     bedrock_catalogsource_priority: '1'
 spec:
-  displayName: BTS Operator-3.35.6
+  displayName: BTS Operator-3.35.8
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:f84b1af0e04cd8f8a86502622b40a8600c40f59758ace280108aefaaba6ee7d9
+  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:04cab67e1ba6d51f94b43da9a63b2adecc9e4bc07440d52bee4f753a4feb8623
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM CS IM Operator Catalog 4.14.0
+# IBM CS IM Operator Catalog 4.16.0
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-iam-operator-catalog-4-14-0
+  name: ibm-iam-operator-catalog-4-16-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -140,19 +140,19 @@ spec:
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:f4a0ab61ec7266ada01c52956988872ac32b54984ce39625b2c02f9d246cb596
+  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:3c6a75939ccdef91c27442564c388294e02704a7c4acf14e3146090734b026f4
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
     securityContextConfig: restricted
   priority: 100
 ---
-# IBM Zen Operator Catalog 6.2.2+20251007.000309.45
+# IBM Zen Operator Catalog 6.4.0+20260210.170932.92
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-zen-operator-catalog-6-2-0
+  name: ibm-zen-operator-catalog-6-4-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -160,7 +160,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:3649e630c48377b19606e28dbfe7955d87e652a4a3927bf258746b16cfea1297
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:9a02519e5ab679f0807fc5b7cfc5fc96242961bee0e1d3144012d33e925e6a99
   secrets:
   - "ibm-entitlement-key"
   grpcPodConfig:
@@ -171,7 +171,7 @@ spec:
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-events-operator-catalog-v5-2-1
+  name: ibm-events-operator-catalog
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
