@@ -15,12 +15,12 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-cs-install
-  version: 4.17.0
+  version: 4.18.0
   catalogGeneration:
     ocMirror:
       disableMerge: true
 - name: ibm-cs-iam
-  version: 4.16.0
+  version: 4.17.0
   catalogGeneration:
     ocMirror:
       disableMerge: true
@@ -35,12 +35,12 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-cs-flink
-  version: 2.0.16
+  version: 2.0.17
   catalogGeneration:
     ocMirror:
       disableMerge: true
 - name: ibm-cert-manager
-  version: 4.2.20
+  version: 4.2.21
   catalogGeneration:
     ocMirror:
       disableMerge: true
@@ -50,7 +50,7 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-licensing
-  version: 4.2.20
+  version: 4.2.21
   catalogGeneration:
     ocMirror:
       disableMerge: true
