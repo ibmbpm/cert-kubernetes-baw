@@ -24,7 +24,7 @@ spec:
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM CS Flink Operator Catalog 1.20.2 (2.0.16)
+# IBM CS Flink Operator Catalog 1.20.2 (2.0.17)
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -37,7 +37,7 @@ spec:
   publisher: IBM
   sourceType: grpc
   image: >-
-    icr.io/cpopen/ibm-opencontent-flink-operator-catalog@sha256:423877c500ea7cf999653be164da1d7d9264130fbd66736d9bc91db3128c3189
+    icr.io/cpopen/ibm-opencontent-flink-operator-catalog@sha256:8b48de88d803a81e6c0889ff412b6e0b991c0eb75c2901364493cee827839b9a
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
@@ -59,7 +59,7 @@ spec:
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM Certificate Manager 4.2.20
+# IBM Certificate Manager 4.2.21
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -68,14 +68,14 @@ metadata:
 spec:
   secrets:
   - "ibm-entitlement-key"
-  displayName: ibm-cert-manager-4.2.20
+  displayName: ibm-cert-manager-4.2.21
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:97610d00d5b46b4de8d3c98233591cc554b7211d96f3d30ed935a84f076e3b65
+  image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:822f7790e9dca7360b20066a17c18f527ecd59a604daf729af92ddb03aa46a53
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM License Manager 4.2.20
+# IBM License Manager 4.2.21
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -84,18 +84,18 @@ metadata:
 spec:
   secrets:
   - "ibm-entitlement-key"
-  displayName: ibm-licensing-4.2.20
+  displayName: ibm-licensing-4.2.21
   publisher: IBM
-  image: icr.io/cpopen/ibm-licensing-catalog@sha256:734017cedb6605a4aba3a2de54c0ccb8e314e7b533ec0e30a362fa315ef8e1dd
+  image: icr.io/cpopen/ibm-licensing-catalog@sha256:47c015f55501f873edf590c8f40bf44a6fee0d34e4d50350658f8b6532d0ced2
   sourceType: grpc
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM Cloud Foundational Services 4.17.0
+# IBM Cloud Foundational Services 4.18.0
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-cs-install-catalog-v4-17-0
+  name: ibm-cs-install-catalog-v4-18-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -105,7 +105,7 @@ spec:
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:993ed6ac8869fd996472867fefb1469c54b75b62f31415d4ac90e7aec96ede26
+  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:b0966346abb80ea7dc79671794c9ddaa413f0e36d73d31ff6c541c3bc1308d44
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
@@ -128,11 +128,11 @@ spec:
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM CS IM Operator Catalog 4.16.0
+# IBM CS IM Operator Catalog 4.17.0
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-iam-operator-catalog-4-16-0
+  name: ibm-iam-operator-catalog-4-17-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -142,7 +142,7 @@ spec:
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:3c6a75939ccdef91c27442564c388294e02704a7c4acf14e3146090734b026f4
+  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:2b25bd8e46f3caf49ab5861da3a9d95bc7cb5d17f41726e3aa14db4ace7a3cec
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
