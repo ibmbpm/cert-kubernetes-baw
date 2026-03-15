@@ -86,7 +86,7 @@ spec:
   - "ibm-entitlement-key"
   displayName: ibm-licensing-4.2.21
   publisher: IBM
-  image: icr.io/cpopen/ibm-licensing-catalog@sha256:47c015f55501f873edf590c8f40bf44a6fee0d34e4d50350658f8b6532d0ced2
+  image: icr.io/cpopen/ibm-licensing-catalog@sha256:169716d2ffbfec8cf1fe9c35ed7509105f83945c54850078022ee3969ef4073b
   sourceType: grpc
   grpcPodConfig:
     securityContextConfig: restricted
@@ -105,7 +105,7 @@ spec:
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:b0966346abb80ea7dc79671794c9ddaa413f0e36d73d31ff6c541c3bc1308d44
+  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:0f196178f5b8e3285c3e0b8adc86ffa5ab31e179de0a4af07c92546d9af7d6cc
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
@@ -142,17 +142,17 @@ spec:
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:2b25bd8e46f3caf49ab5861da3a9d95bc7cb5d17f41726e3aa14db4ace7a3cec
+  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:e2420aa9971d091c4eb304685a8d70969d42e3aa65cf060f68473901de1eb510
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM Zen Operator Catalog 6.4.0+20260210.170932.92
+# IBM Zen Operator Catalog 6.4.1+20260309.193045.11
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-zen-operator-catalog-6-4-0
+  name: ibm-zen-operator-catalog-6-4-1
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -162,7 +162,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:9a02519e5ab679f0807fc5b7cfc5fc96242961bee0e1d3144012d33e925e6a99
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:3fe4b9c75674fc4a99e220924c7749bf17a9e6b221ed862a6416f806c6bfc4b7
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
