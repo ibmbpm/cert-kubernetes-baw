@@ -45,7 +45,7 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-zen
-  version: 6.4.0+20260210.170932.92
+  version: 6.4.1+20260309.193045.11
   catalogGeneration:
     ocMirror:
       disableMerge: true
