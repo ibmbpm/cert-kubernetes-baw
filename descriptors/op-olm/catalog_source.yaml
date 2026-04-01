@@ -20,7 +20,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:97e83c4e874e3205b138ae238f9312a249b0df730710b6267f74dfa34beed275
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:b0703247b0e55938e3c0ee0edd1fe7a0812a22cbe27917371dcfed602b593036
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -71,7 +71,7 @@ spec:
   displayName: ibm-cert-manager-4.2.21
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:822f7790e9dca7360b20066a17c18f527ecd59a604daf729af92ddb03aa46a53
+  image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:2a2374ca7e89fc8ccc0050ab59ce49ba2887812f397d4fbd58cf0a6b5feef0c1
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -86,7 +86,7 @@ spec:
   - "ibm-entitlement-key"
   displayName: ibm-licensing-4.2.21
   publisher: IBM
-  image: icr.io/cpopen/ibm-licensing-catalog@sha256:169716d2ffbfec8cf1fe9c35ed7509105f83945c54850078022ee3969ef4073b
+  image: icr.io/cpopen/ibm-licensing-catalog@sha256:d9c7283df41c953c4c1d2a93624518bcff320adf899a8f896006b96a340c86f0
   sourceType: grpc
   grpcPodConfig:
     securityContextConfig: restricted
@@ -105,7 +105,7 @@ spec:
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:0f196178f5b8e3285c3e0b8adc86ffa5ab31e179de0a4af07c92546d9af7d6cc
+  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:d1d631c1395a3a74217fccd98a6ff4352a66e1cd5bbd88bd91f12e7e4c304cc7
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
@@ -142,17 +142,17 @@ spec:
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:e2420aa9971d091c4eb304685a8d70969d42e3aa65cf060f68473901de1eb510
+  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:3315cb676cddec2f901b8513501a0820fee6bf0d05566bad272b460d13e6a59a
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM Zen Operator Catalog 6.4.1+20260309.193045.11
+# IBM Zen Operator Catalog 6.4.2+20260322.214626.9
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-zen-operator-catalog-6-4-1
+  name: ibm-zen-operator-catalog-6-4-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -162,7 +162,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:3fe4b9c75674fc4a99e220924c7749bf17a9e6b221ed862a6416f806c6bfc4b7
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:cf2a4c2f1b8bc2e03ba1d78e7650c7bbf5af9560f2c56352bdcf6b7cfc7b9bf9
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
