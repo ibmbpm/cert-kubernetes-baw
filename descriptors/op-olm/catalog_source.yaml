@@ -86,7 +86,7 @@ spec:
   - "ibm-entitlement-key"
   displayName: ibm-licensing-4.2.21
   publisher: IBM
-  image: icr.io/cpopen/ibm-licensing-catalog@sha256:d9c7283df41c953c4c1d2a93624518bcff320adf899a8f896006b96a340c86f0
+  image: icr.io/cpopen/ibm-licensing-catalog@sha256:169716d2ffbfec8cf1fe9c35ed7509105f83945c54850078022ee3969ef4073b
   sourceType: grpc
   grpcPodConfig:
     securityContextConfig: restricted
