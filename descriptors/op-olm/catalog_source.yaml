@@ -15,6 +15,8 @@ metadata:
   name: ibm-cp4a-operator-catalog
   namespace: openshift-marketplace
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
@@ -29,6 +31,8 @@ metadata:
   name: ibm-opencontent-flink
   namespace: openshift-marketplace
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: IBM CS Opencontent Flink Catalog
   publisher: IBM
   sourceType: grpc
@@ -45,6 +49,8 @@ metadata:
   name: ibm-opensearch-operator-catalog
   namespace: openshift-marketplace
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: IBM CS Opencontent Opensearch Catalog
   publisher: IBM
   sourceType: grpc
@@ -60,6 +66,8 @@ metadata:
   name: ibm-cert-manager-catalog
   namespace: openshift-marketplace
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: ibm-cert-manager-4.2.21
   publisher: IBM
   sourceType: grpc
@@ -74,6 +82,8 @@ metadata:
   name: ibm-licensing-catalog
   namespace: openshift-marketplace
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: ibm-licensing-4.2.21
   publisher: IBM
   image: icr.io/cpopen/ibm-licensing-catalog@sha256:fbef092ea62c545c311f48c0cc6d313f37f5a660253930e92ed00bacde684f96
@@ -90,6 +100,8 @@ metadata:
   annotations:
     bedrock_catalogsource_priority: '1'
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
@@ -107,6 +119,8 @@ metadata:
   annotations:
     bedrock_catalogsource_priority: '1'
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: BTS Operator-3.35.8
   publisher: IBM
   sourceType: grpc
@@ -123,6 +137,8 @@ metadata:
   annotations:
     bedrock_catalogsource_priority: '1'
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
@@ -141,6 +157,8 @@ metadata:
   annotations:
     bedrock_catalogsource_priority: '1'
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
@@ -158,6 +176,8 @@ metadata:
   annotations:
     bedrock_catalogsource_priority: '1'
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: IBM Events Operator Catalog-v5.2.1
   publisher: IBM
   sourceType: grpc
@@ -173,6 +193,8 @@ metadata:
   name: ibm-fncm-operator-catalog
   namespace: openshift-marketplace
 spec:
+  secrets:
+  - "ibm-entitlement-key"
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
