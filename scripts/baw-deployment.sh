@@ -8763,13 +8763,8 @@ function apply_pattern_cr(){
                 
                 # Add custom BAI configuration for dev mode
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.image_pull_policy "Always"
-                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.ads.install "false"
-                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.ads.parallelism "2"
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.application_setup.image.repository "cp.stg.icr.io/cp/cp4a/bai/insights-engine-application-setup"
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.application_setup.image.tag "$CURRENT_SPRINT_TAG"
-                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.baml.install "true"
-                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.bawadv.install "false"
-                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.bawadv.parallelism "2"
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.bpmn.force_elasticsearch_timeseries "true"
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.bpmn.image.repository "cp.stg.icr.io/cp/cp4a/bai/bai-bpmn"
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.bpmn.image.tag "$CURRENT_SPRINT_TAG"
@@ -8798,8 +8793,6 @@ function apply_pattern_cr(){
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.navigator.image.repository "cp.stg.icr.io/cp/cp4a/bai/bai-flink"
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.navigator.image.tag "$CURRENT_SPRINT_TAG"
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.navigator.install "true"
-                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.odm.install "false"
-                ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.odm.parallelism "2"
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.setup.image.repository "cp.stg.icr.io/cp/cp4a/bai/bai-setup"
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.setup.image.tag "$CURRENT_SPRINT_TAG"
                 ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.license.accept "true"
