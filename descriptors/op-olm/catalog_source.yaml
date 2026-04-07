@@ -20,7 +20,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:b0703247b0e55938e3c0ee0edd1fe7a0812a22cbe27917371dcfed602b593036
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:4bf261b13ba3224e238a7c84fc0fcee3a7fc21c9066e55920cef14a4d19833db
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -71,7 +71,7 @@ spec:
   displayName: ibm-cert-manager-4.2.21
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:2a2374ca7e89fc8ccc0050ab59ce49ba2887812f397d4fbd58cf0a6b5feef0c1
+  image: icr.io/cpopen/ibm-cert-manager-operator-catalog@sha256:f3280ce1a45a6f7139b79bba402d137f1ac661699baf21e566f03d17d7807b59
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -86,7 +86,7 @@ spec:
   - "ibm-entitlement-key"
   displayName: ibm-licensing-4.2.21
   publisher: IBM
-  image: icr.io/cpopen/ibm-licensing-catalog@sha256:169716d2ffbfec8cf1fe9c35ed7509105f83945c54850078022ee3969ef4073b
+  image: icr.io/cpopen/ibm-licensing-catalog@sha256:fbef092ea62c545c311f48c0cc6d313f37f5a660253930e92ed00bacde684f96
   sourceType: grpc
   grpcPodConfig:
     securityContextConfig: restricted
@@ -105,7 +105,7 @@ spec:
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:d1d631c1395a3a74217fccd98a6ff4352a66e1cd5bbd88bd91f12e7e4c304cc7
+  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:99e9d2c387395e31d40fec96c47b1cc7d4610eb3682369ab99d0f211fbd34eca
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
@@ -142,7 +142,7 @@ spec:
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:3315cb676cddec2f901b8513501a0820fee6bf0d05566bad272b460d13e6a59a
+  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:beac2f4e7369a320e4a2eebd938830af0fe8e9c68bde5b0d5427a989441e63ae
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
