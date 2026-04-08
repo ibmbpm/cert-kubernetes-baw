@@ -240,7 +240,7 @@ REQUIREDVER_POSTGRESQL="1.25.3"
 EVENTS_OPERATOR_VERSION="v5.2.1"
 # List of BAW versions that are supported for upgrade to $CP4BA_CSV_VERSION
 # When setting to an empty array, only fresh installation is supported.
-MINIMUM_SUPPORTED_UPGRADE_VERSIONS=()
+MINIMUM_SUPPORTED_UPGRADE_VERSIONS=("25.1.0")
 
 
 
