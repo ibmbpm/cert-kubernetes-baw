@@ -33,6 +33,13 @@ function show_help() {
     echo "  --enable-private-catalog Optional: Set this flag to let the script to switch CatalogSource from global to namespace scoped. Default is in openshift-marketplace namespace"
     echo "  ${YELLOW_TEXT}* Running the script to create a custom resource file for new BAW deployment:${RESET_TEXT}"
     echo "      - STEP 1: Run the script with \"-n <BAW_NAMESPACE>\"."
+    echo "  ${YELLOW_TEXT}* Upgrade restrictions for BAW $CP4BA_RELEASE_BASE releases:${RESET_TEXT}"
+    echo "      BAW $CP4BA_RELEASE_BASE is a Limited Support Release (LSR)."
+    echo "      Upgrade is supported only for environments that are already running"
+    echo "      BAW $CP4BA_RELEASE_BASE GA (CSV version 25.1.0) or a later iFix level."
+    echo "      Direct upgrades from earlier release streams, including 24.x and 25.0.0, are not supported."
+    echo "      If the existing deployment is on a version earlier than $CP4BA_RELEASE_BASE GA, a fresh installation is required."
+
     #echo "  ${YELLOW_TEXT}* Running the script to upgrade a BAW deployment from 24.0.0 GA or 24.0.0-IFIX<xx> to $CP4BA_RELEASE_BASE GA/$CP4BA_RELEASE_BASE.X. You must run the modes in the following order:${RESET_TEXT}"
     #echo "      - STEP 1 (Required): Run the script in [upgradeOperator] mode to upgrade BAW operators/migrate (Cluster-scoped -> Cluster-scoped [AllNamespaces] / Namespace-scoped -> Namespace-scoped) the IBM Cloud Pak foundational services and then shutdown all BAW operators before upgrade BAW deployment."
     #echo "      - STEP 2 (Optional): Run the script in [upgradecho "${options_cr_val}"eOperatorStatus] mode to check that the upgrade of the BAW operator and its dependencies is successful."
