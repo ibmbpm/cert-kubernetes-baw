@@ -20,7 +20,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:4bf261b13ba3224e238a7c84fc0fcee3a7fc21c9066e55920cef14a4d19833db
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:85b7e07f2f1161c9c9fe37431ccc02ef1f6484741a51e64246483853714b926d
   grpcPodConfig:
     securityContextConfig: restricted
 ---
