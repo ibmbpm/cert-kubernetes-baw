@@ -616,6 +616,7 @@ function pre_req() {
 
     # Checking oc command logged in
     user=$(${OC} whoami 2> /dev/null)
+    user=$(kubectl config view --minify -o jsonpath='{.users[0].name}' 2> /dev/null)
     if [ $? -ne 0 ]; then
         error "You must be logged into the OpenShift Cluster from the oc command line"
     else
@@ -651,7 +652,7 @@ function pre_req() {
     is_supports_delegation "$version"
 
     if [ -z "$OPERATOR_NS" ]; then
-        OPERATOR_NS=$("$OC" project --short)
+        OPERATOR_NS=$(kubectl config view --minify -o jsonpath='{..namespace}')
     fi
 
     if [ $ENABLE_LICENSE_SERVICE_REPORTER -eq 1 ] && [ $ENABLE_LICENSING -eq 0 ]; then

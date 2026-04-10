@@ -12,7 +12,17 @@ set -o nounset
 
 # ---------- Command arguments ----------
 
-OC=oc
+# set CLI_CMD var
+if which oc >/dev/null 2>&1; then
+    CLI_CMD=oc
+elif which kubectl >/dev/null 2>&1; then
+    CLI_CMD=kubectl
+else
+    echo -e  "\x1B[1;31mUnable to locate Kubernetes CLI or OpenShift CLI. You must install it to run this script.\x1B[0m" && \
+    exit 1
+fi
+
+OC="${CLI_CMD}"
 YQ=yq
 OPERATOR_NS=""
 SERVICES_NS=""
@@ -301,6 +311,7 @@ function pre_req() {
 
     # Checking oc command logged in
     user=$(${OC} whoami 2> /dev/null)
+    user=$(kubectl config view --minify -o jsonpath='{.users[0].name}' 2> /dev/null)
     if [ $? -ne 0 ]; then
         error "You must be logged into the OpenShift Cluster from the oc command line"
     else

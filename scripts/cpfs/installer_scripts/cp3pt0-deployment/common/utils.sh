@@ -48,6 +48,17 @@ function debug() {
 function check_command() {
     local command=$1
 
+    if [[ $command == 'oc' ]]; then
+        if which oc >/dev/null 2>&1; then
+            command=oc
+        elif which kubectl >/dev/null 2>&1; then
+            command=kubectl
+        else
+            echo -e  "\x1B[1;31mUnable to locate Kubernetes CLI or OpenShift CLI. You must install it to run this script.\x1B[0m" && \
+            exit 1
+        fi
+    fi
+
     if [[ -z "$(command -v ${command} 2> /dev/null)" ]]; then
         error "${command} command not available"
     else
@@ -118,13 +129,18 @@ function check_for_condition() {
     local success_message=$5
     local error_message=$6
     local debug_condition=${7:-}
+    local kill_on_failure=${8:-}
 
     info "${wait_message}"
     while true; do
         result=$(eval "${condition}")
 
         if [[ ( ${retries} -eq 0 ) && ( -z "${result}" ) ]]; then
-            return 1
+           if [[ -z "${kill_on_failure}" ]]; then
+                error "${error_message}"
+            else
+                return 1
+            fi
         fi
 
         sleep ${sleep_time}
@@ -546,6 +562,112 @@ function wait_for_licensing_instance_deployment() {
 
 }
 
+# THIS FUNCTION IS ONLY USED FOR DEV MODE
+function patch_csv() {
+    local csv_prefix=$1
+    local namespace=$2
+    local max_retries=5
+    local retry_delay=20
+    # Function to find a CSV that starts with the given prefix
+    function get_csv_by_prefix() {
+        ${OC} get csv -n "$namespace" --no-headers -o custom-columns=":metadata.name" | grep -E "^$csv_prefix" | sed -n '2p'
+    }
+    # Check if the CSV exists, retry up to max_retries times
+
+    for ((i=1; i<=max_retries; i++)); do
+        csv_name=$(get_csv_by_prefix)
+        if [[ -n "$csv_name" ]]; then
+            info "Found matching CSV: $csv_name"
+            break
+        fi
+
+        if [[ "$i" -eq "$max_retries" ]]; then
+            msg "CSV $csv_name not found after $max_retries attempts. Exiting..."
+            return 0
+        fi
+
+        echo "CSV $csv_name not found. Retrying in $retry_delay seconds... ($i/$max_retries)"
+        sleep "$retry_delay"
+    done
+
+    # Get the current image
+    image=$(${OC} get csv "$csv_name" -n "$namespace" -o json | ${YQ} eval '.spec.install.spec.deployments[0].spec.template.spec.containers[0].image' -)
+
+    if [[ -z "$image" ]]; then
+        msg "No image found in CSV $csv_name"
+        msg "The $csv_name CSV not patched!"
+    else
+        # Transform the image path
+        updated_image=$(echo "$image" | sed -E 's|^icr.io/cpopen/|cp.stg.icr.io/cp/|')
+        #if [[ "$csv_name" == "ibm-ba-insights-engine-operator"* ]]; then
+        #    ${OC} scale deployment $(${OC} get deployments -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep '^ibm-bai-insights-engine-operator') --replicas=0
+        #fi
+        #if [[ "$csv_name" == "ibm-bai-foundation-operator"* ]]; then
+        #    ${OC} scale deployment $(${OC} get deployments -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep '^ibm-bai-foundation-operator') --replicas=0
+        #fi
+
+        sleep 5
+        # Patch the CSV with the new image
+        ${OC} patch csv "$csv_name" -n "$namespace" --type='json' -p="[{'op': 'replace', 'path': '/spec/install/spec/deployments/0/spec/template/spec/containers/0/image', 'value': '$updated_image'}]"
+
+        initContainersImage=$(${OC} get csv "$csv_name" -n "$namespace" -o jsonpath='{.spec.install.spec.deployments[0].spec.template.spec.initContainers[0].image}')
+        if [ -n "$initContainersImage" ]; then
+          ${OC} patch csv "$csv_name" -n "$namespace" --type='json' -p="[{'op': 'replace', 'path': '/spec/install/spec/deployments/0/spec/template/spec/initContainers/0/image', 'value': '$updated_image'}]"
+        fi
+
+        #Patch the CSV with the image pull secret which has the staging credentials
+        ${OC} patch csv "$csv_name" -n "$namespace" --type='json' -p="[
+        {
+            \"op\": \"add\",
+            \"path\": \"/spec/install/spec/deployments/0/spec/template/spec/imagePullSecrets\",
+            \"value\": [
+            {
+                \"name\": \"ibm-entitlement-key\"
+            },
+            {
+                \"name\": \"ibm-staging-entitlement-key\"
+            }
+            ]
+        }
+        ]"
+
+        ${OC} delete deployment $csv_prefix
+        success "The $csv_name CSV has been patched successfully!"
+    fi
+}
+
+function patch_failed_operator_pods() {
+    local ns=$1
+
+    local start_time=$(date +%s)
+    local timeout=180  # 3 minutes in seconds
+
+    while true; do
+        pods=$(kubectl get pods -n "$ns" --no-headers | awk 'index($3,"ImagePullBackOff") || index($3,"Pending") {print $1}')
+
+        operator_problematic=0
+        for pod in $pods; do
+            base=$(echo "$pod" | sed -E 's/-[a-z0-9]{9,10}-[a-z0-9]{4,5}$//')
+            if [[ $base == *operator ]]; then
+              patch_csv "$base" "$ns"
+              operator_problematic=1
+            fi
+        done
+
+        current_time=$(date +%s)
+        elapsed=$(( current_time - start_time ))
+        if [[ $elapsed -ge $timeout ]]; then
+            echo "Timeout of 3 minutes reached. Exiting loop."
+            break
+        fi
+
+        if [[ $operator_problematic -eq 0 ]]; then
+            break
+        fi
+        sleep 10
+    done
+}
+
 function wait_for_operator_upgrade() {
     local namespace=$1
     local package_name=$2
@@ -577,7 +699,21 @@ function wait_for_operator_upgrade() {
         error_message="Timeout after ${total_time_mins} minutes waiting for operator ${package_name} to be upgraded \nInstallPlan is not manually approved yet"
     fi
 
-    wait_for_condition "${condition}" ${retries} ${sleep_time} "${wait_message}" "${success_message}" "${error_message}" "${debug_condition}"
+    info "going for sleep of ${sleep_time}Sec before patching the csv...."
+    sleep ${sleep_time}
+
+    for i in {1..4}; do
+      msg "Operator Upgrade iteration $i"
+      patch_failed_operator_pods $namespace
+
+      wait_for_condition "${condition}" ${retries}/4 ${sleep_time} "${wait_message}" "${success_message}" "${error_message}" "${debug_condition}" "No"
+
+      if [[ $? -eq 0 ]]; then
+        return 0
+      fi
+    done
+
+    error "$error_message"
 }
 
 function wait_for_cs_webhook() {
