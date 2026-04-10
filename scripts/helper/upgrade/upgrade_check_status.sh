@@ -79,14 +79,16 @@ function check_cp4ba_operator_version(){
             success "Found IBM Cloud Pak for Business Automation Operator deployed in the project \"$project_name\"."
             ALL_NAMESPACE_FLAG="No"
             TEMP_OPERATOR_PROJECT_NAME=$project_name
+            cp4a_operator_csv_name=$cp4a_operator_csv_name_target_ns
         elif [[ (! -z $cp4a_operator_csv_name_allnamespace_ns) && (! -z $cp4a_operator_csv_name_target_ns) ]]; then
             success "Found IBM Cloud Pak for Business Automation Operator deployed as AllNamespace mode in the project \"$ALL_NAMESPACE_NAME\"."
             ALL_NAMESPACE_FLAG="Yes"
             project_name="openshift-operators"
             TEMP_OPERATOR_PROJECT_NAME="openshift-operators"
+            cp4a_operator_csv_name=$cp4a_operator_csv_name_allnamespace_ns
         fi
 
-        cp4a_operator_csv_version=$(kubectl get csv $cp4a_operator_csv_name_target_ns -n $project_name --no-headers --ignore-not-found -o 'jsonpath={.spec.version}')
+        cp4a_operator_csv_version=$(kubectl get csv $cp4a_operator_csv_name -n $project_name --no-headers --ignore-not-found -o 'jsonpath={.spec.version}')
 
         if [[ ! -z $CP4BA_ORIGINAL_CSV_VERSION ]]; then
             CP4BA_ORIGINAL_CSV_VERSION=$(sed -e 's/^"//' -e 's/"$//' <<<"$CP4BA_ORIGINAL_CSV_VERSION")
