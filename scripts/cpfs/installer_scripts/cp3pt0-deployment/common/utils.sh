@@ -830,41 +830,23 @@ function catalogsource_correction() {
 
     # if the given channel is not default, then check if the given catalogsource is available for selected packagemanifest and channel
     if [[ $channel != "null" ]]; then
-        # Always check for available catalog sources to find the best match for the channel
-        result=$(get_catalogsource $pm $operator_ns $channel)
-        IFS=" " read -r count catalog catalog_ns <<< "$result"
-        
-        # if there's exactly one available catalogsource found
-        if [[ $count -eq 1 ]]; then
-            # Check if the found catalog source is different from the given one
-            if [[ "$catalog" != "$source" || "$catalog_ns" != "$source_ns" ]]; then
-                info "Found better matching catalogsource $catalog from $catalog_ns for channel $channel"
+        result=$(check_catalogsource $source $source_ns $pm $operator_ns $channel)
+        # if the given catalogsource is not available for selected packagemanifest and channel (result is 1), then find the available catalogsource
+        if [[ $result == "1" ]]; then
+            # get the available catalogsource
+            result=$(get_catalogsource $pm $operator_ns $channel)
+            IFS=" " read -r count catalog catalog_ns <<< "$result"
+            # if the available catalogsource is more than one, then return error
+            # if the available catalogsource is zero, then return error
+            # if the available catalogsource is one, then use the available catalogsource
+            if [[ $count -gt 1 ]]; then
+                return_value=1
+            elif [[ $count -eq 0 ]]; then
+                return_value=2
+            else
                 catalog_source="$catalog"
                 catalog_namespace="$catalog_ns"
                 return_value=3
-            else
-                # The given catalog source is already the correct one
-                result=$(check_catalogsource $source $source_ns $pm $operator_ns $channel)
-                if [[ $result == "1" ]]; then
-                    # Given catalog source is not valid, but we already have the correct one from get_catalogsource
-                    return_value=2
-                else
-                    # Given catalog source is valid and matches
-                    return_value=0
-                fi
-            fi
-        elif [[ $count -gt 1 ]]; then
-            # Multiple catalog sources found, return error
-            return_value=1
-        elif [[ $count -eq 0 ]]; then
-            # No catalog source found, check if the given one is valid
-            result=$(check_catalogsource $source $source_ns $pm $operator_ns $channel)
-            if [[ $result == "1" ]]; then
-                # Given catalog source is also not valid
-                return_value=2
-            else
-                # Given catalog source is valid, use it
-                return_value=0
             fi
         fi
     fi
@@ -1546,9 +1528,6 @@ function update_operator() {
             info "$package_name is ready for updating the subscription."
         elif [[ $return_channel_value -eq 0 && $return_catsrc_value -eq 0 ]]; then
             info "$package_name has already updated channel $existing_channel and catalogsource $existing_catalogsource in the subscription."
-            # Even if channel and catalogsource match, we still need to apply the subscription
-            # to ensure sourceNamespace and installPlanApproval are updated
-            info "Applying subscription to ensure all fields are up to date."
         fi
 
         # Update the subscription with the desired changes

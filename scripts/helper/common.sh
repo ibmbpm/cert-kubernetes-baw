@@ -219,7 +219,7 @@ CP4BA_CHANNEL_VERSION="v25.1"
 CS_OPERATOR_VERSION="v4.18.0"
 CS_CHANNEL_KC="4.18.0"
 # CS_CHANNEL_VERSION is for for CPFS script -c option, need to update for each IFIX
-CS_CHANNEL_VERSION="v4.15"
+CS_CHANNEL_VERSION="v4.18"
 # CERT_LICENSE_OPERATOR_VERSION is for checking IBM cert-manager/licensing operator upgrade status, need to update for each IFIX
 CERT_LICENSE_OPERATOR_VERSION="v4.2.21"
 # CERT_LICENSE_CHANNEL_VERSION is for for IBM cert-manager/licensing script -c option, need to update for each IFIX
