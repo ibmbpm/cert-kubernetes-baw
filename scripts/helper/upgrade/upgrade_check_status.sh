@@ -14,11 +14,11 @@ CUR_DIR=$(dirname "$0")
 # Import common utilities and environment variables
 # source "${CUR_DIR}/../common.sh"
 
-#list of versions for which direct upgrade to 24.0.1 is not supported
-upgrade_blocked_versions=("21.3." "23.1." "22.1." "22.2." "23.2.")
+#list of versions for which direct upgrade to 25.0.1 is not supported
+upgrade_blocked_versions=("21.3." "23.1." "22.1." "22.2." "23.2." "24.0" "24.1" "25.0")
 
-#list of versions for which direct upgrade to 24.0.1 is supported
-upgrade_valid_versions=("24.0." "24.1." "25.0.")
+#list of versions for which direct upgrade to 25.0.1 is supported
+upgrade_valid_versions=("25.1.")
 
 #Determine if it's an Ifix to ifix upgrade or a n-1 upgrade using CSV
 # Format of CSV x.y.z where x is major version, y is minor version and z is ifix version
