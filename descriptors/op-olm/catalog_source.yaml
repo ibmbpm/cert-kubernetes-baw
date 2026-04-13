@@ -91,11 +91,11 @@ spec:
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM Cloud Foundational Services 4.16.0
+# IBM Cloud Foundational Services 4.17.0
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-cs-install-catalog-v4-16-0
+  name: ibm-cs-install-catalog-v4-17-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -105,7 +105,7 @@ spec:
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:f24bad596f32cc6531420c8533419d6b7bc5c65da5578ab9ca6e55180cd72ac5
+  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:993ed6ac8869fd996472867fefb1469c54b75b62f31415d4ac90e7aec96ede26
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
@@ -128,11 +128,11 @@ spec:
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM CS IM Operator Catalog 4.15.0
+# IBM CS IM Operator Catalog 4.16.0
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-iam-operator-catalog-4-15-0
+  name: ibm-iam-operator-catalog-4-16-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -142,17 +142,17 @@ spec:
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:620c8985b5e6056082a5e0aa35a91e1de7aeb15145690a4683bd80a32b3e4fa6
+  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:3c6a75939ccdef91c27442564c388294e02704a7c4acf14e3146090734b026f4
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM Zen Operator Catalog 6.3.0+20251203.153430.336
+# IBM Zen Operator Catalog 6.4.0+20260210.170932.92
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: ibm-zen-operator-catalog-6-3-0
+  name: ibm-zen-operator-catalog-6-4-0
   namespace: openshift-marketplace
   annotations:
     bedrock_catalogsource_priority: '1'
@@ -162,7 +162,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:78ec2c576051a5ef98da6f9da5f18a490a148e9e988877fbac386147c69f080f
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:9a02519e5ab679f0807fc5b7cfc5fc96242961bee0e1d3144012d33e925e6a99
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
