@@ -20,7 +20,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:69ac2568a19c8acdda13832913ce494102243ddd29c49f9a0e1c72a575cb3221
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:46dae47d911ca33f5f7f9e655fe59bfa4d45a045577c78bd4843a8fcce1ec116
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -110,7 +110,7 @@ spec:
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM Business Teams Service version 3.35.8
+# IBM Business Teams Service version 3.35.9
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -121,10 +121,10 @@ metadata:
 spec:
   secrets:
   - "ibm-entitlement-key"
-  displayName: BTS Operator-3.35.8
+  displayName: BTS Operator-3.35.9
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:04cab67e1ba6d51f94b43da9a63b2adecc9e4bc07440d52bee4f753a4feb8623
+  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:4b50b922c347ea363a1c0da6f28ce70cf51d7ff9af03412b6779997a1cadc9cd
   grpcPodConfig:
     securityContextConfig: restricted
 ---
