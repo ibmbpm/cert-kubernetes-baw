@@ -20,7 +20,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:91c6f16b80d36396584728b21d14dad7bd8bcc62ffae970ee36dbf0498686046
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:df42549f48cc257c5bd3cfe189b569178f02a32f04ad8703703dc99874f053d5
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -186,7 +186,7 @@ spec:
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM FileNet Content Manager Standalone catalog for 5.7.0-IF001
+# IBM FileNet Content Manager Standalone catalog for 5.7.0-IF003
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -198,6 +198,6 @@ spec:
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-fncm-catalog@sha256:5bf6706f7382140532dfc4db55689f9c0b7f84fdb91a7bd2d646c1709797ec9f
+  image: icr.io/cpopen/ibm-fncm-catalog@sha256:8fd946c8414f6e387e2b9b86664224ff3cfabd1813b51fbc781256acf17028e9
   grpcPodConfig:
     securityContextConfig: restricted
