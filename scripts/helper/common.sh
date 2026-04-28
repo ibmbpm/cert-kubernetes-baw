@@ -208,9 +208,9 @@ LDAP_SECRET_FILE=${SECRET_FILE_FOLDER}/ldap-bind-secret.yaml
 CP4BA_RELEASE_BASE="25.0.1"
 BAW_PATCH_VERSION="GA"
 # For 25.0.1_GA we will remove the Starter option and EDB option.
-VERSION_TO_SKIP_EDB="25.0.1_GA"
+VERSION_TO_SKIP_EDB="25.0.1_IF001"
 # CP4BA_RELEASE_BASE_MAJOR_VERSION is used in certain checks where we used to hardcode to see if a upgrade is not ifix to ifix,change this only for major release
-CP4BA_RELEASE_BASE_MAJOR_VERSION="25.0"
+CP4BA_RELEASE_BASE_MAJOR_VERSION="25.1"
 # CP4BA_CSV_VERSION is for checking CP4BA operator upgrade status, need to update for each IFIX
 CP4BA_CSV_VERSION="v25.1.1"
 # CP4BA_CHANNEL_VERSION is for switch CP4BA operator upgrade status, need to update for major release
