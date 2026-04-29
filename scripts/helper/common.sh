@@ -206,8 +206,8 @@ LDAP_SECRET_FILE=${SECRET_FILE_FOLDER}/ldap-bind-secret.yaml
 # Release/Patch version for CP4BA
 # CP4BA_RELEASE_BASE is for fetch content/foundation operator pod, only need to change for major release.
 CP4BA_RELEASE_BASE="25.0.1"
-BAW_PATCH_VERSION="GA"
-# For 25.0.1_GA we will remove the Starter option and EDB option.
+BAW_PATCH_VERSION="IF001"
+# For 25.0.1_IF001" we will remove the Starter option and EDB option.
 VERSION_TO_SKIP_EDB="25.0.1_IF001"
 # CP4BA_RELEASE_BASE_MAJOR_VERSION is used in certain checks where we used to hardcode to see if a upgrade is not ifix to ifix,change this only for major release
 CP4BA_RELEASE_BASE_MAJOR_VERSION="25.1"
