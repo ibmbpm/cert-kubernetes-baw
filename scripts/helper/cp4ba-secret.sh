@@ -922,6 +922,7 @@ function create_zen_external_db_configmap_template(){
   mkdir -p $ZEN_SECRET_FOLDER >/dev/null 2>&1
 cat << EOF > ${ZEN_CONFIGMAP_FILE}
 # YAML template for ibm-zen-metastore-edb-cm configMap
+# Updated for issue https://jsw.ibm.com/browse/DBACLD-228422 with these 2 DATABASE_ENABLE_SSL,DATABASE_SSL_MODE parameters
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -940,6 +941,8 @@ data:
   DATABASE_RW_ENDPOINT: "<DatabaseHostName>"
   DATABASE_SCHEMA: <DatabaseSchema>
   DATABASE_USER: <DatabaseUser>
+  DATABASE_ENABLE_SSL: "true"
+  DATABASE_SSL_MODE: require 
 EOF
   success "Created ibm-zen-metastore-edb-cm configMap YAML template for Zen metastore external Postgres DB\n"
 }
@@ -976,7 +979,6 @@ function create_im_external_db_configmap_template(){
   mkdir -p $IM_SECRET_FOLDER >/dev/null 2>&1
 cat << EOF > ${IM_CONFIGMAP_FILE}
 # YAML template for im-datastore-edb-cm configMap
-# Updated for issue https://jsw.ibm.com/browse/DBACLD-228422 with these 2 DATABASE_ENABLE_SSL,DATABASE_SSL_MODE parameters
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -993,8 +995,6 @@ data:
   DATABASE_CA_CERT: ca.crt
   DATABASE_CLIENT_CERT: tls.crt
   DATABASE_CLIENT_KEY: tls.key
-  DATABASE_ENABLE_SSL: "true"
-  DATABASE_SSL_MODE: require 
 EOF
   success "Created im-datastore-edb-cm configMap YAML template for IM metastore external Postgres DB\n"
 }
