@@ -205,7 +205,7 @@ spec:
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM FileNet Content Manager Standalone catalog for 5.7.0-IF003
+# IBM FileNet Content Manager Standalone catalog for 5.7.0-IF004
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
