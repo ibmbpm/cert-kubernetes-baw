@@ -1,16 +1,16 @@
 name: ibm-cp-automation
-version: 25.0.4
-description: Generated from CASE ibm-cp-automation version 25.0.4 on 2025-24-11 06:24:59
+version: 25.0.5
+description: Generated from CASE ibm-cp-automation version 25.0.5 on 2026-15-04 06:24:59
   PDT
 cases:
 - name: ibm-cp-automation
-  version: 25.0.4
+  version: 25.0.5
   launch: true
   catalogGeneration:
     ocMirror:
       disableMerge: true
 - name: ibm-bts-bundle
-  version: 1.0.33
+  version: 1.0.35
   catalogGeneration:
     ocMirror:
       disableMerge: true
@@ -40,7 +40,7 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-cs-flink
-  version: 2.0.5+20250528.100000
+  version: 2.0.17
   catalogGeneration:
     ocMirror:
       disableMerge: true
@@ -60,7 +60,7 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-cp-fncm-case
-  version: 5.7.2
+  version: 5.7.3
   catalogGeneration:
     ocMirror:
       disableMerge: true
