@@ -110,7 +110,7 @@ spec:
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM Business Teams Service version 3.35.9
+# IBM Business Teams Service version 3.35.10
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -121,10 +121,10 @@ metadata:
 spec:
   secrets:
   - "ibm-entitlement-key"
-  displayName: BTS Operator-3.35.9
+  displayName: BTS Operator-3.35.10
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:4b50b922c347ea363a1c0da6f28ce70cf51d7ff9af03412b6779997a1cadc9cd
+  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:aa7a33be9d37ae09354e3ea29711849406d07b8b1435830c0af79bf82e2d72aa
   grpcPodConfig:
     securityContextConfig: restricted
 ---
