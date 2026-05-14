@@ -20,12 +20,12 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-cs-install
-  version: 4.18.0
+  version: 4.18.1
   catalogGeneration:
     ocMirror:
       disableMerge: true
 - name: ibm-cs-iam
-  version: 4.17.0
+  version: 4.17.1
   catalogGeneration:
     ocMirror:
       disableMerge: true
@@ -50,7 +50,7 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-zen
-  version: 6.4.2+20260322.214626.9
+  version: 6.4.5+20260501.202141.4
   catalogGeneration:
     ocMirror:
       disableMerge: true
