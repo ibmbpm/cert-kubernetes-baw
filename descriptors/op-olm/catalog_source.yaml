@@ -20,7 +20,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:4e29b0fdb2e64a2c79eba3edab09f2716b67baba76cd4062bddb3c287ddf8e5f
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:20fab3cb5769c75df52158488cb217afc6ead66a8798853c0a3dc4f6b7141a14
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -91,7 +91,7 @@ spec:
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM Cloud Foundational Services 4.18.0
+# IBM Cloud Foundational Services 4.18.1
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -105,12 +105,12 @@ spec:
   displayName: IBM CS Install Operators
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:99e9d2c387395e31d40fec96c47b1cc7d4610eb3682369ab99d0f211fbd34eca
+  image: icr.io/cpopen/ibm-cs-install-catalog@sha256:f76c75ccb46689bdfd7ad30169593c96895aba5458962681aaa3cef74fb7a324
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM Business Teams Service version 3.35.9
+# IBM Business Teams Service version 3.35.10
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -121,14 +121,14 @@ metadata:
 spec:
   secrets:
   - "ibm-entitlement-key"
-  displayName: BTS Operator-3.35.9
+  displayName: BTS Operator-3.35.10
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:4b50b922c347ea363a1c0da6f28ce70cf51d7ff9af03412b6779997a1cadc9cd
+  image: icr.io/cpopen/ibm-bts-operator-catalog@sha256:aa7a33be9d37ae09354e3ea29711849406d07b8b1435830c0af79bf82e2d72aa
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM CS IM Operator Catalog 4.17.0
+# IBM CS IM Operator Catalog 4.17.1
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -142,12 +142,12 @@ spec:
   displayName: IBM IAM Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:beac2f4e7369a320e4a2eebd938830af0fe8e9c68bde5b0d5427a989441e63ae
+  image: icr.io/cpopen/ibm-iam-operator-catalog@sha256:845eb294d21e6af580f70424f7c57886194cd5644bb1d57e31d8be6818b4fc2c
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM Zen Operator Catalog 6.4.2+20260322.214626.9
+# IBM Zen Operator Catalog 6.4.5+20260501.202141.4
 # we only update the catalog name when the channel is changed.
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
@@ -162,7 +162,7 @@ spec:
   displayName: IBM Zen Operator Catalog
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:cf2a4c2f1b8bc2e03ba1d78e7650c7bbf5af9560f2c56352bdcf6b7cfc7b9bf9
+  image: icr.io/cpopen/ibm-zen-operator-catalog@sha256:0c1fde3f2b76479bb76ce853a28a071ac4e9b51bceee1af39b581c51f8ca746c
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
@@ -205,7 +205,7 @@ spec:
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM FileNet Content Manager Standalone catalog for 5.7.0-IF003
+# IBM FileNet Content Manager Standalone catalog for 5.7.0-IF004
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -217,6 +217,6 @@ spec:
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-fncm-catalog@sha256:acb22dc84fd2cc55c3c1076a4d7f1d1b73a9a4b26783ce796031cbed9966f72c
+  image: icr.io/cpopen/ibm-fncm-catalog@sha256:cb920db472fdc53d1f72ca8aa0e155c31bcb2132c740f69cd9e4ff143db19ce3
   grpcPodConfig:
     securityContextConfig: restricted
