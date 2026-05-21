@@ -20,11 +20,11 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:20fab3cb5769c75df52158488cb217afc6ead66a8798853c0a3dc4f6b7141a14
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:7f1915988e1d89e4829b3656da6391d76c623dad5faa52b3cbc7f6403e66bbe4
   grpcPodConfig:
     securityContextConfig: restricted
 ---
-# IBM CS Flink Operator Catalog 1.20.2 (2.0.17)
+# IBM CS Flink Operator Catalog 1.20.2 (2.0.19)
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
@@ -37,7 +37,7 @@ spec:
   publisher: IBM
   sourceType: grpc
   image: >-
-    icr.io/cpopen/ibm-opencontent-flink-operator-catalog@sha256:8b48de88d803a81e6c0889ff412b6e0b991c0eb75c2901364493cee827839b9a
+    icr.io/cpopen/ibm-opencontent-flink-operator-catalog@sha256:9f673bd4ab11a5734cdf79bf18c7c5bcb52ded1c7faf9e24e3355f3f6e4edb97
   priority: 100
   grpcPodConfig:
     securityContextConfig: restricted
@@ -217,6 +217,6 @@ spec:
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-fncm-catalog@sha256:cb920db472fdc53d1f72ca8aa0e155c31bcb2132c740f69cd9e4ff143db19ce3
+  image: icr.io/cpopen/ibm-fncm-catalog@sha256:655551c0b7aa2a713f0b519aaf607cc067bd9114f6d83f7b22daa714a1873853
   grpcPodConfig:
     securityContextConfig: restricted
