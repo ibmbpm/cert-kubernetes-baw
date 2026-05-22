@@ -20,7 +20,7 @@ spec:
   displayName: ibm-cp4a-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:7f1915988e1d89e4829b3656da6391d76c623dad5faa52b3cbc7f6403e66bbe4
+  image: icr.io/cpopen/ibm-cp-automation-catalog@sha256:d0f2a5f654a16d7bc6a1b82ce153fa44ff9b9cd5fed11b88eee3b89ca32bdd0c
   grpcPodConfig:
     securityContextConfig: restricted
 ---
@@ -217,6 +217,6 @@ spec:
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-fncm-catalog@sha256:655551c0b7aa2a713f0b519aaf607cc067bd9114f6d83f7b22daa714a1873853
+  image: icr.io/cpopen/ibm-fncm-catalog@sha256:561f0dc12463212ef59f201ae2933edd568bbf42ffc2d3414cc5dbbd57575f8e
   grpcPodConfig:
     securityContextConfig: restricted
