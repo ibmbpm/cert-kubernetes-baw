@@ -217,6 +217,6 @@ spec:
   displayName: ibm-fncm-operator
   publisher: IBM
   sourceType: grpc
-  image: icr.io/cpopen/ibm-fncm-catalog@sha256:561f0dc12463212ef59f201ae2933edd568bbf42ffc2d3414cc5dbbd57575f8e
+  image: icr.io/cpopen/ibm-fncm-catalog@sha256:8e3c3f51fae28af74e254e7d2dce9f0414c42d68f34c7e410c14c72b4202005a
   grpcPodConfig:
     securityContextConfig: restricted
