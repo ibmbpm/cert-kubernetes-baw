@@ -76,7 +76,7 @@ spec:
                       - ppc64le
       initContainers:
         - name: folder-prepare-container
-          image: icr.io/cpopen/icp4a-operator@sha256:908c0b5f7dbf17840ef3450bb34efa3a9af05dca17dedddb7fe1b0d4a8fad030
+          image: icr.io/cpopen/icp4a-operator@sha256:aa1010e89a438d06b4db93bf7bdfee978c437bcff997668bbe22852fc6edc2c2
           securityContext:
             readOnlyRootFilesystem: true
           volumeMounts:
@@ -119,7 +119,7 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 6
           # Replace this with the built image name
-          image: icr.io/cpopen/icp4a-operator@sha256:908c0b5f7dbf17840ef3450bb34efa3a9af05dca17dedddb7fe1b0d4a8fad030
+          image: icr.io/cpopen/icp4a-operator@sha256:aa1010e89a438d06b4db93bf7bdfee978c437bcff997668bbe22852fc6edc2c2
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
