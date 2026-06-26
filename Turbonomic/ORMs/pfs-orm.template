@@ -1,0 +1,46 @@
+apiVersion: devops.turbonomic.io/v1alpha1
+kind: OperatorResourceMapping
+
+metadata:
+  name: pfs-orm
+  namespace: {{ namespace }}
+
+spec:
+  mappings:
+
+    ##################################################
+    # PATTERNS: Map Deployment → CR resources
+    ##################################################
+    patterns:
+      - owned:
+          apiVersion: apps/v1
+          kind: StatefulSet
+
+          matchLabels:
+            app.kubernetes.io/name: pfsdeploy-pfs 
+
+          selector: {{ selector.name }}
+
+          path: .spec.template.spec.containers[?(@.name=="pfs")].resources
+
+        ownerPath: .spec.pfs_configuration.resources
+
+
+    ##################################################
+    # SELECTORS: Identify workloads
+    ##################################################
+    selectors:
+
+      {{ selector.name }}:
+        matchLabels:
+          app.kubernetes.io/instance: {{ meta.name }}
+          app.kubernetes.io/name: pfsdeploy-pfs 
+
+
+  ##################################################
+  # OWNER: PFS CR
+  ##################################################
+  owner:
+    apiVersion: icp4a.ibm.com/v1
+    kind: ProcessFederationServer
+    name: {{ meta.name }}

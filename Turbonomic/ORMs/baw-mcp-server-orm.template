@@ -1,0 +1,33 @@
+apiVersion: devops.turbonomic.io/v1alpha1
+kind: OperatorResourceMapping
+
+metadata:
+  name: baw-mcp-server-orm
+  namespace: {{ namespace }}
+
+spec:
+  mappings:
+
+    patterns:
+      - owned:
+          apiVersion: apps/v1
+          kind: Deployment
+
+          matchLabels:
+            app: workflow-runtime-mcp-server-ins1
+
+          selector: mcp-server-selector
+
+          path: .spec.template.spec.containers[?(@.name=="workflow-runtime-mcp-server-cont")].resources
+
+        ownerPath: .spec.workflow_runtime_mcp_server_configuration.resources
+
+    selectors:
+      mcp-server-selector:
+        matchLabels:
+          app: workflow-runtime-mcp-server-ins1
+
+  owner:
+    apiVersion: icp4a.ibm.com/v1
+    kind: ICP4ACluster
+    name: {{ meta.name }}

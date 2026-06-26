@@ -1,0 +1,518 @@
+# Gateway API Template for AKS (Base - without OpenSearch/Kafka)
+# This template will be populated by the baw-generate-gateway-api-aks.sh script
+# Placeholders: NAMESPACE, HOST, DOMAIN, CLIENT_ID, LICENSING_NS
+
+---
+# Certificate for auth hostname
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: baw-auth-gateway-tls
+  namespace: NAMESPACE
+spec:
+  secretName: cp-console-gateway-tls-secret
+  issuerRef:
+    name: zen-tls-issuer
+    kind: Issuer
+  dnsNames:
+    - NAMESPACE-cpd.DOMAIN
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+
+---
+# Certificate for licensing hostname
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: licensing-gateway-tls
+  namespace: NAMESPACE
+spec:
+  secretName: licensing-gateway-tls-secret
+  issuerRef:
+    name: zen-tls-issuer
+    kind: Issuer
+  dnsNames:
+    - licensing.DOMAIN
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+
+---
+# Certificate for cpd-ingress-tls-secret (consumed by CPD pods)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cpd-ingress-tls
+  namespace: NAMESPACE
+spec:
+  secretName: cpd-ingress-tls-secret
+  issuerRef:
+    name: zen-tls-issuer
+    kind: Issuer
+  dnsNames:
+    - NAMESPACE-cpd.DOMAIN
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+
+---
+# BackendTLSPolicy for platform-auth-service
+apiVersion: alb.networking.azure.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: platform-auth-tls
+  namespace: NAMESPACE
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: platform-auth-service
+  default:
+    sni: platform-auth-service.NAMESPACE.svc
+    ports:
+      - port: 9443
+
+---
+# BackendTLSPolicy for platform-identity-provider
+apiVersion: alb.networking.azure.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: platform-idprovider-tls
+  namespace: NAMESPACE
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: platform-identity-provider
+  default:
+    sni: platform-identity-provider.NAMESPACE.svc
+    ports:
+      - port: 4300
+
+---
+# BackendTLSPolicy for platform-identity-management
+apiVersion: alb.networking.azure.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: platform-idmgmt-tls
+  namespace: NAMESPACE
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: platform-identity-management
+  default:
+    sni: platform-identity-management.NAMESPACE.svc
+    ports:
+      - port: 4500
+
+---
+# BackendTLSPolicy for ibm-nginx-svc
+apiVersion: alb.networking.azure.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: ibm-nginx-tls
+  namespace: NAMESPACE
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: ibm-nginx-svc
+  default:
+    sni: ibm-nginx-svc.NAMESPACE.svc
+    ports:
+      - port: 443
+
+---
+# BackendTLSPolicy for licensing service
+apiVersion: alb.networking.azure.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: licensing-tls
+  namespace: LICENSING_NS
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: ibm-licensing-service-instance
+  default:
+    sni: ibm-licensing-service-instance.LICENSING_NS.svc
+    ports:
+      - port: 8080
+
+---
+# Gateway with HTTP and HTTPS listeners
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: baw-auth-gateway
+  namespace: NAMESPACE
+  labels:
+    app: baw-auth-gateway
+spec:
+  gatewayClassName: GATEWAY_CLASS
+  listeners:
+    # HTTP listener (for redirect)
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+        kinds:
+          - kind: HTTPRoute
+
+    # HTTPS listener for CPD / Auth traffic
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: NAMESPACE-cpd.DOMAIN
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: cp-console-gateway-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: Same
+        kinds:
+          - kind: HTTPRoute
+
+    # HTTPS listener for Licensing (cross-namespace)
+    - name: https-licensing
+      protocol: HTTPS
+      port: 443
+      hostname: licensing.DOMAIN
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: licensing-gateway-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: LICENSING_NS
+        kinds:
+          - kind: HTTPRoute
+
+---
+# ReferenceGrant for cross-namespace licensing route
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-licensing-to-gateway
+  namespace: NAMESPACE
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: LICENSING_NS
+  to:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: baw-auth-gateway
+
+---
+# HTTPRoute: /idauth → platform-auth-service
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-platform-id-auth
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-auth-gateway
+      sectionName: https
+  hostnames:
+    - "NAMESPACE-cpd.DOMAIN"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /idauth
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: platform-auth-service
+          port: 9443
+
+---
+# HTTPRoute: /idprovider → platform-identity-provider
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-platform-id-provider
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-auth-gateway
+      sectionName: https
+  hostnames:
+    - "NAMESPACE-cpd.DOMAIN"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /idprovider
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: platform-identity-provider
+          port: 4300
+
+---
+# HTTPRoute: /login → platform-identity-provider
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-platform-login
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-auth-gateway
+      sectionName: https
+  hostnames:
+    - "NAMESPACE-cpd.DOMAIN"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /login
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: platform-identity-provider
+          port: 4300
+
+---
+# HTTPRoute: /v1/auth → platform-identity-provider
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-platform-auth
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-auth-gateway
+      sectionName: https
+  hostnames:
+    - "NAMESPACE-cpd.DOMAIN"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v1/auth
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: X-Forwarded-Proto
+                value: https
+      backendRefs:
+        - name: platform-identity-provider
+          port: 4300
+
+---
+# HTTPRoute: /idmgmt → platform-identity-management
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-id-mgmt
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-auth-gateway
+      sectionName: https
+  hostnames:
+    - "NAMESPACE-cpd.DOMAIN"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /idmgmt
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: platform-identity-management
+          port: 4500
+
+---
+# HTTPRoute: /oidc → platform-auth-service (no rewrite)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-platform-oidc
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-auth-gateway
+      sectionName: https
+  hostnames:
+    - "NAMESPACE-cpd.DOMAIN"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /oidc
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: X-Forwarded-Proto
+                value: https
+      backendRefs:
+        - name: platform-auth-service
+          port: 9443
+
+---
+# HTTPRoute: SAML callback (no rewrite)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-saml-ui-callback
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-auth-gateway
+      sectionName: https
+  hostnames:
+    - "NAMESPACE-cpd.DOMAIN"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /ibm/saml20/defaultSP/acs
+      backendRefs:
+        - name: platform-auth-service
+          port: 9443
+
+---
+# HTTPRoute: Social login callback (no rewrite)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-social-login-callback
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-auth-gateway
+      sectionName: https
+  hostnames:
+    - "NAMESPACE-cpd.DOMAIN"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /ibm/api/social-login
+      backendRefs:
+        - name: platform-auth-service
+          port: 9443
+
+---
+# HTTPRoute: Catch-all / → ibm-nginx-svc (Zen UI)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: zen-ingress
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-auth-gateway
+      sectionName: https
+  hostnames:
+    - "NAMESPACE-cpd.DOMAIN"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: ibm-nginx-svc
+          port: 443
+
+---
+# HTTPRoute: Licensing service (cross-namespace)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-ibm-licensing-service-instance
+  namespace: LICENSING_NS
+spec:
+  parentRefs:
+    - name: baw-auth-gateway
+      namespace: NAMESPACE
+      sectionName: https-licensing
+  hostnames:
+    - "licensing.DOMAIN"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: ibm-licensing-service-instance
+          port: 8080
+
+---
+# HTTPRoute: HTTP → HTTPS redirect for auth
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: http-to-https-redirect-auth
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-auth-gateway
+      sectionName: http
+  hostnames:
+    - "NAMESPACE-cpd.DOMAIN"
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+
+---
+# HTTPRoute: HTTP → HTTPS redirect for licensing
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: http-to-https-redirect-licensing
+  namespace: LICENSING_NS
+spec:
+  parentRefs:
+    - name: baw-auth-gateway
+      namespace: NAMESPACE
+      sectionName: http
+  hostnames:
+    - "licensing.DOMAIN"
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+

@@ -1,0 +1,385 @@
+---
+# AWS ALB Ingress Template for IBM Business Automation Workflow (BAW) Standalone on EKS
+# WITH OPTIONAL COMPONENTS (OpenSearch and Kafka)
+#
+# This template includes:
+# - All base BAW services (10 Ingress resources)
+# - OpenSearch dashboard and API endpoints
+# - Kafka broker access (if using ALB approach)
+#
+# Prerequisites:
+# - AWS Load Balancer Controller v2.14+ installed
+# - IAM certificate uploaded to AWS IAM
+# - IngressClass 'alb' available in cluster
+# - For OpenSearch: ICP4ACluster CR must have sc_ingress_type: gatewayapi or loadbalancer
+# - For Kafka: ICP4ACluster CR must have sc_ingress_type: loadbalancer
+
+---
+# 1. ZEN ROOT (CATCH-ALL) - Main BAW Console Entry Point
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: zen-ingress
+  namespace: BAW_NAMESPACE
+  annotations:
+    alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=180
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-port: "443"
+    alb.ingress.kubernetes.io/group.order: "9"
+    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=172800
+spec:
+  ingressClassName: alb
+  rules:
+  - host: DOMAIN_NAME
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ibm-nginx-svc
+            port:
+              number: 443
+
+---
+# 2. SOCIAL LOGIN - OAuth/OIDC Social Login Callback
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cncf-social-login-callback
+  namespace: BAW_NAMESPACE
+  annotations:
+    alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-port: "9443"
+    alb.ingress.kubernetes.io/group.order: "1"
+spec:
+  ingressClassName: alb
+  rules:
+  - host: DOMAIN_NAME
+    http:
+      paths:
+      - path: /ibm/api/social-login
+        pathType: Prefix
+        backend:
+          service:
+            name: platform-auth-service
+            port:
+              number: 9443
+
+---
+# 3. SAML UI - SAML Authentication Callback
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cncf-saml-ui-callback
+  namespace: BAW_NAMESPACE
+  annotations:
+    alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-port: "9443"
+    alb.ingress.kubernetes.io/group.order: "2"
+spec:
+  ingressClassName: alb
+  rules:
+  - host: DOMAIN_NAME
+    http:
+      paths:
+      - path: /ibm/saml20/defaultSP/acs
+        pathType: Prefix
+        backend:
+          service:
+            name: platform-auth-service
+            port:
+              number: 9443
+
+---
+# 4. PLATFORM OIDC - OpenID Connect Endpoints
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cncf-platform-oidc
+  namespace: BAW_NAMESPACE
+  annotations:
+    alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-port: "9443"
+    alb.ingress.kubernetes.io/group.order: "3"
+    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=172800
+spec:
+  ingressClassName: alb
+  rules:
+  - host: DOMAIN_NAME
+    http:
+      paths:
+      - path: /oidc
+        pathType: Prefix
+        backend:
+          service:
+            name: platform-auth-service
+            port:
+              number: 9443
+
+---
+# 5. PLATFORM LOGIN - User Login Interface
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cncf-platform-login
+  namespace: BAW_NAMESPACE
+  annotations:
+    alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-port: "4300"
+    alb.ingress.kubernetes.io/group.order: "4"
+spec:
+  ingressClassName: alb
+  rules:
+  - host: DOMAIN_NAME
+    http:
+      paths:
+      - path: /login
+        pathType: Prefix
+        backend:
+          service:
+            name: platform-identity-provider
+            port:
+              number: 4300
+
+---
+# 6. ID PROVIDER (WITH TRANSFORM) - Identity Provider with URL Rewriting
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cncf-platform-id-provider
+  namespace: BAW_NAMESPACE
+  annotations:
+    alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-port: "4300"
+    alb.ingress.kubernetes.io/group.order: "5"
+    alb.ingress.kubernetes.io/transforms.platform-identity-provider: >
+      [{"type": "url-rewrite", "urlRewriteConfig": {"rewrites": [{"regex": "^/idprovider/?(.*)$", "replace": "/$1"}]}}]
+spec:
+  ingressClassName: alb
+  rules:
+  - host: DOMAIN_NAME
+    http:
+      paths:
+      - path: /idprovider
+        pathType: Prefix
+        backend:
+          service:
+            name: platform-identity-provider
+            port:
+              number: 4300
+
+---
+# 7. ID AUTH (WITH TRANSFORM) - Identity Authentication with URL Rewriting
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cncf-platform-id-auth
+  namespace: BAW_NAMESPACE
+  annotations:
+    alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-port: "9443"
+    alb.ingress.kubernetes.io/group.order: "6"
+    alb.ingress.kubernetes.io/transforms.platform-auth-service: >
+      [{"type": "url-rewrite", "urlRewriteConfig": {"rewrites": [{"regex": "^/idauth/?(.*)$", "replace": "/$1"}]}}]
+spec:
+  ingressClassName: alb
+  rules:
+  - host: DOMAIN_NAME
+    http:
+      paths:
+      - path: /idauth
+        pathType: Prefix
+        backend:
+          service:
+            name: platform-auth-service
+            port:
+              number: 9443
+
+---
+# 8. PLATFORM AUTH - Platform Authentication API
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cncf-platform-auth
+  namespace: BAW_NAMESPACE
+  annotations:
+    alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-port: "4300"
+    alb.ingress.kubernetes.io/group.order: "7"
+spec:
+  ingressClassName: alb
+  rules:
+  - host: DOMAIN_NAME
+    http:
+      paths:
+      - path: /v1/auth
+        pathType: Prefix
+        backend:
+          service:
+            name: platform-identity-provider
+            port:
+              number: 4300
+
+---
+# 9. ID MGMT (WITH TRANSFORM) - Identity Management with URL Rewriting
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cncf-id-mgmt
+  namespace: BAW_NAMESPACE
+  annotations:
+    alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-port: "4500"
+    alb.ingress.kubernetes.io/group.order: "8"
+    alb.ingress.kubernetes.io/transforms.platform-identity-management: >
+      [{"type": "url-rewrite", "urlRewriteConfig": {"rewrites": [{"regex": "^/idmgmt/?(.*)$", "replace": "/$1"}]}}]
+spec:
+  ingressClassName: alb
+  rules:
+  - host: DOMAIN_NAME
+    http:
+      paths:
+      - path: /idmgmt
+        pathType: Prefix
+        backend:
+          service:
+            name: platform-identity-management
+            port:
+              number: 4500
+
+---
+# 10. LICENSING SERVICE - IBM Licensing Service
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cncf-ibm-licensing-service-instance
+  namespace: LICENSING_NAMESPACE
+  annotations:
+    alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTPS
+    alb.ingress.kubernetes.io/group.order: "10"
+spec:
+  ingressClassName: alb
+  rules:
+    - host: LICENSING_DOMAIN
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ibm-licensing-service-instance
+                port:
+                  number: 8080
+
+---
+# 11. OPENSEARCH DASHBOARD - OpenSearch Dashboards UI
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: opensearch-dashboards
+  namespace: BAW_NAMESPACE
+  annotations:
+    alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-port: "5601"
+    alb.ingress.kubernetes.io/group.order: "11"
+spec:
+  ingressClassName: alb
+  rules:
+  - host: DOMAIN_NAME
+    http:
+      paths:
+      - path: /opensearch-dashboards
+        pathType: Prefix
+        backend:
+          service:
+            name: OPENSEARCH_CLUSTER_NAME-dashboards
+            port:
+              number: 5601
+
+---
+# 12. OPENSEARCH API - OpenSearch REST API
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: opensearch-api
+  namespace: BAW_NAMESPACE
+  annotations:
+    alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
+    alb.ingress.kubernetes.io/healthcheck-port: "9200"
+    alb.ingress.kubernetes.io/group.order: "12"
+spec:
+  ingressClassName: alb
+  rules:
+  - host: DOMAIN_NAME
+    http:
+      paths:
+      - path: /opensearch
+        pathType: Prefix
+        backend:
+          service:
+            name: OPENSEARCH_CLUSTER_NAME
+            port:
+              number: 9200
+

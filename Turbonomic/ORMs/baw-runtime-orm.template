@@ -1,0 +1,38 @@
+apiVersion: devops.turbonomic.io/v1alpha1
+kind: OperatorResourceMapping
+
+metadata:
+  name: baw-runtime-orm
+  namespace: {{ namespace }}
+
+spec:
+  mappings:
+    patterns:
+      - owned:
+          apiVersion: apps/v1
+          kind: StatefulSet
+
+          # Used by script to filter workloads
+          matchLabels:
+            app.kubernetes.io/name: workflow-server
+
+          # Dynamic selector name
+          selector: {{ selector.name }}
+
+          # FULLY dynamic path
+          path: .spec.template.spec.containers[?(@.name=="{{ container.name }}")].resources
+
+
+        # Fully dynamic ownerPath
+        ownerPath: .spec.baw_configuration[{{ index }}].resources
+
+    selectors:
+      {{ selector.name }}:
+        matchLabels:
+          app.kubernetes.io/instance: {{ instance.name }}
+          app.kubernetes.io/name: workflow-server
+
+  owner:
+    apiVersion: icp4a.ibm.com/v1
+    kind: ICP4ACluster
+    name: {{ meta.name }}

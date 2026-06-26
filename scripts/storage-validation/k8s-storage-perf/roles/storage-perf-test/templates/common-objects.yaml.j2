@@ -1,0 +1,42 @@
+###############################################################################
+#
+# Licensed Materials - Property of IBM
+#
+# (C) Copyright IBM Corp. 2021. All Rights Reserved.
+#
+# US Government Users Restricted Rights - Use, duplication or
+# disclosure restricted by GSA ADP Schedule Contract with IBM Corp.
+#
+###############################################################################
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ storage_perf_namespace }}
+spec: {}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-sysbench-rwx
+  namespace: "{{ storage_perf_namespace }}"
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ rwx_storagesize }}
+  storageClassName: {{ storageClass_ReadWriteMany }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-sysbench-rwo
+  namespace: "{{ storage_perf_namespace }}"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ rwo_storagesize }}
+  storageClassName: {{ storageClass_ReadWriteOnce }}

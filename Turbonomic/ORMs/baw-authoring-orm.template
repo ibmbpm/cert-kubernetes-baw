@@ -1,0 +1,55 @@
+apiVersion: devops.turbonomic.io/v1alpha1
+kind: OperatorResourceMapping
+
+metadata:
+  name: baw-authoring-orm
+  namespace: {{ namespace }}
+
+spec:
+  mappings:
+
+    ##################################################
+    # PATTERNS: Map workload → CR resource definition
+    ##################################################
+    patterns:
+      - owned:
+          apiVersion: apps/v1
+          kind: StatefulSet
+
+          # Workload filter (used by script)
+          matchLabels:
+            app.kubernetes.io/name: bastudio
+
+          # Must match selector key below
+          selector: {{ selector.name }}
+
+          # Container resource path
+          path: .spec.template.spec.containers[?(@.name=="bastudio-container")].resources
+
+        # CR resource mapping (indexed for multi-instance)
+        ownerPath: .spec.bastudio_configuration.resources.bastudio
+
+
+    ##################################################
+    # SELECTORS: Identify workloads in cluster
+    ##################################################
+    selectors:
+
+      #  Selector key MUST match patterns[].owned.selector
+      {{ selector.name }}:
+
+        matchLabels:
+          # Example: icp4adeploy-bawins1
+          app.kubernetes.io/instance: {{ instance.name }}
+
+          # Workload type
+          app.kubernetes.io/name: bastudio
+
+
+  ##################################################
+  # OWNER: CR owning the workloads
+  ##################################################
+  owner:
+    apiVersion: icp4a.ibm.com/v1
+    kind: ICP4ACluster
+    name: {{ meta.name }}

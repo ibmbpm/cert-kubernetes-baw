@@ -1,0 +1,847 @@
+# ================================================================================
+# GKE Gateway API Template for IBM Business Automation Workflow (BAW) Standalone
+# WITH OPTIONAL COMPONENTS (OpenSearch and Kafka)
+# ================================================================================
+#
+# This template creates Gateway API resources for GKE using the specified
+# GatewayClass (provided during generation). It includes:
+#   - 4 TLS Certificates (auth, licensing, opensearch, cpd-ingress)
+#   - 5 HealthCheckPolicies (auth services + opensearch)
+#   - 1 HealthCheckPolicy (licensing)
+#   - 6 GCPBackendPolicies (auth services + opensearch + licensing)
+#   - 1 Gateway with 4 listeners (HTTP, HTTPS-auth, HTTPS-licensing, HTTPS-opensearch)
+#   - 1 ReferenceGrant (cross-namespace licensing)
+#   - 9 HTTPRoutes (auth services)
+#   - 1 HTTPRoute (opensearch)
+#   - 1 HTTPRoute (licensing)
+#   - 3 HTTPRoutes (HTTP→HTTPS redirects)
+#   - Kafka setup instructions (separate file)
+#
+# Prerequisites:
+#   - GKE cluster with Gateway API enabled
+#   - cert-manager installed
+#   - zen-tls-issuer Issuer in NAMESPACE
+#   - Static IP reserved in GCP
+#   - Backend services running
+#   - OpenSearch operator with spec.patches support (or sidecar service)
+#
+# Placeholders to be replaced:
+#   NAMESPACE       - Target namespace for BAW deployment
+#   HOST            - Hostname for auth services (e.g., bawauthgateway-cpd)
+#   DOMAIN          - Domain name (e.g., bawgatewayapi.ibm.com)
+#   CLIENT_ID       - OIDC client ID
+#   LICENSING_NS    - Licensing namespace (typically ibm-licensing)
+#   GATEWAY_IP_NAME - Name of the reserved static IP in GCP
+#   GATEWAY_CLASS   - GatewayClass name (user-provided during generation)
+#
+# ================================================================================
+
+---
+# ================================================================================
+# SECTION 1: TLS CERTIFICATES (cert-manager)
+# ================================================================================
+
+# Certificate for auth hostname (consumed by Gateway listener)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: baw-auth-gateway-tls
+  namespace: NAMESPACE
+spec:
+  secretName: cp-console-gateway-tls-secret
+  issuerRef:
+    name: zen-tls-issuer
+    kind: Issuer
+  dnsNames:
+    - HOST
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+
+---
+# Certificate for licensing hostname
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: licensing-gateway-tls
+  namespace: NAMESPACE
+spec:
+  secretName: licensing-gateway-tls-secret
+  issuerRef:
+    name: zen-tls-issuer
+    kind: Issuer
+  dnsNames:
+    - licensing.DOMAIN
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+
+---
+# Certificate for OpenSearch hostname
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: opensearch-gateway-tls
+  namespace: NAMESPACE
+spec:
+  secretName: opensearch-gateway-tls-secret
+  issuerRef:
+    name: zen-tls-issuer
+    kind: Issuer
+  dnsNames:
+    - opensearch-NAMESPACE.DOMAIN
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+
+---
+# Certificate for cpd-ingress-tls-secret (consumed by CPD pods)
+# Previously auto-created by NGINX ingress-shim, now explicit
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cpd-ingress-tls
+  namespace: NAMESPACE
+spec:
+  secretName: cpd-ingress-tls-secret
+  issuerRef:
+    name: zen-tls-issuer
+    kind: Issuer
+  dnsNames:
+    - HOST
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+
+---
+# ================================================================================
+# SECTION 2: HEALTHCHECK POLICIES (GKE-specific)
+# ================================================================================
+
+# HealthCheckPolicy for platform-auth-service
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: platform-auth-hc
+  namespace: NAMESPACE
+spec:
+  default:
+    checkIntervalSec: 15
+    timeoutSec: 10
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+    logConfig:
+      enabled: true
+    config:
+      type: HTTPS
+      httpsHealthCheck:
+        port: 9443
+        requestPath: /
+  targetRef:
+    group: ""
+    kind: Service
+    name: platform-auth-service
+
+---
+# HealthCheckPolicy for platform-identity-provider
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: platform-idprovider-hc
+  namespace: NAMESPACE
+spec:
+  default:
+    checkIntervalSec: 15
+    timeoutSec: 10
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+    logConfig:
+      enabled: true
+    config:
+      type: HTTPS
+      httpsHealthCheck:
+        port: 4300
+        requestPath: /
+  targetRef:
+    group: ""
+    kind: Service
+    name: platform-identity-provider
+
+---
+# HealthCheckPolicy for platform-identity-management
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: platform-idmgmt-hc
+  namespace: NAMESPACE
+spec:
+  default:
+    checkIntervalSec: 15
+    timeoutSec: 10
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+    logConfig:
+      enabled: true
+    config:
+      type: HTTPS
+      httpsHealthCheck:
+        port: 4500
+        requestPath: /
+  targetRef:
+    group: ""
+    kind: Service
+    name: platform-identity-management
+
+---
+# HealthCheckPolicy for ibm-nginx-svc
+# NOTE: Probe port is 8443 (pod's actual listening port), NOT 443 (Service port)
+# GKE probes go direct to pod via NEG
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: ibm-nginx-hc
+  namespace: NAMESPACE
+spec:
+  default:
+    checkIntervalSec: 15
+    timeoutSec: 10
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+    logConfig:
+      enabled: true
+    config:
+      type: HTTPS
+      httpsHealthCheck:
+        port: 8443
+        requestPath: /diag
+  targetRef:
+    group: ""
+    kind: Service
+    name: ibm-nginx-svc
+
+---
+# HealthCheckPolicy for OpenSearch
+# CRITICAL: Use TCP, not HTTPS
+# OpenSearch security plugin returns 401 to unauthenticated requests
+# GCP only accepts 200-299 as healthy, so 401 would mark backends unhealthy
+# TCP health check verifies the port is open, which is sufficient
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: opensearch-hc
+  namespace: NAMESPACE
+spec:
+  default:
+    checkIntervalSec: 15
+    timeoutSec: 10
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+    logConfig:
+      enabled: true
+    config:
+      type: TCP
+      tcpHealthCheck:
+        port: 9200
+  targetRef:
+    group: ""
+    kind: Service
+    name: opensearch
+
+---
+# HealthCheckPolicy for ibm-licensing-service-instance
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: ibm-licensing-hc
+  namespace: LICENSING_NS
+spec:
+  default:
+    checkIntervalSec: 10
+    timeoutSec: 10
+    healthyThreshold: 2
+    unhealthyThreshold: 3
+    logConfig:
+      enabled: true
+    config:
+      type: HTTPS
+      httpsHealthCheck:
+        port: 8080
+        requestPath: /
+  targetRef:
+    group: ""
+    kind: Service
+    name: ibm-licensing-service-instance
+
+---
+# ================================================================================
+# SECTION 3: GCP BACKEND POLICIES (Timeouts + Session Affinity)
+# ================================================================================
+
+# GCPBackendPolicy for platform-auth-service (includes cookie-based session affinity for /oidc)
+apiVersion: networking.gke.io/v1
+kind: GCPBackendPolicy
+metadata:
+  name: platform-auth-backend-policy
+  namespace: NAMESPACE
+spec:
+  default:
+    timeoutSec: 180
+    connectionDraining:
+      drainingTimeoutSec: 60
+    sessionAffinity:
+      type: GENERATED_COOKIE
+      cookieTtlSec: 172800
+  targetRef:
+    group: ""
+    kind: Service
+    name: platform-auth-service
+
+---
+# GCPBackendPolicy for platform-identity-provider
+apiVersion: networking.gke.io/v1
+kind: GCPBackendPolicy
+metadata:
+  name: platform-idprovider-backend-policy
+  namespace: NAMESPACE
+spec:
+  default:
+    timeoutSec: 180
+    connectionDraining:
+      drainingTimeoutSec: 60
+  targetRef:
+    group: ""
+    kind: Service
+    name: platform-identity-provider
+
+---
+# GCPBackendPolicy for platform-identity-management
+apiVersion: networking.gke.io/v1
+kind: GCPBackendPolicy
+metadata:
+  name: platform-idmgmt-backend-policy
+  namespace: NAMESPACE
+spec:
+  default:
+    timeoutSec: 180
+    connectionDraining:
+      drainingTimeoutSec: 60
+  targetRef:
+    group: ""
+    kind: Service
+    name: platform-identity-management
+
+---
+# GCPBackendPolicy for ibm-nginx-svc
+apiVersion: networking.gke.io/v1
+kind: GCPBackendPolicy
+metadata:
+  name: ibm-nginx-backend-policy
+  namespace: NAMESPACE
+spec:
+  default:
+    timeoutSec: 180
+    connectionDraining:
+      drainingTimeoutSec: 60
+  targetRef:
+    group: ""
+    kind: Service
+    name: ibm-nginx-svc
+
+---
+# GCPBackendPolicy for OpenSearch
+apiVersion: networking.gke.io/v1
+kind: GCPBackendPolicy
+metadata:
+  name: opensearch-backend-policy
+  namespace: NAMESPACE
+spec:
+  default:
+    timeoutSec: 180
+    connectionDraining:
+      drainingTimeoutSec: 60
+  targetRef:
+    group: ""
+    kind: Service
+    name: opensearch
+
+---
+# GCPBackendPolicy for ibm-licensing-service-instance (includes CLIENT_IP session affinity)
+apiVersion: networking.gke.io/v1
+kind: GCPBackendPolicy
+metadata:
+  name: ibm-licensing-backend-policy
+  namespace: LICENSING_NS
+spec:
+  default:
+    timeoutSec: 180
+    connectionDraining:
+      drainingTimeoutSec: 60
+    sessionAffinity:
+      type: CLIENT_IP
+  targetRef:
+    group: ""
+    kind: Service
+    name: ibm-licensing-service-instance
+
+---
+# ================================================================================
+# SECTION 4: GATEWAY
+# ================================================================================
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: baw-gateway
+  namespace: NAMESPACE
+  labels:
+    app: baw-gateway
+spec:
+  gatewayClassName: GATEWAY_CLASS
+  addresses:
+    - type: NamedAddress
+      value: GATEWAY_IP_NAME
+  listeners:
+    # HTTP listener for redirects
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+        kinds:
+          - kind: HTTPRoute
+
+    # HTTPS listener for auth services
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: HOST
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: cp-console-gateway-tls-secret
+            kind: Secret
+      allowedRoutes:
+        namespaces:
+          from: Same
+        kinds:
+          - kind: HTTPRoute
+
+    # HTTPS listener for licensing (cross-namespace)
+    - name: https-licensing
+      protocol: HTTPS
+      port: 443
+      hostname: licensing.DOMAIN
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: licensing-gateway-tls-secret
+            kind: Secret
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: LICENSING_NS
+        kinds:
+          - kind: HTTPRoute
+
+    # HTTPS listener for OpenSearch
+    - name: https-opensearch
+      protocol: HTTPS
+      port: 443
+      hostname: opensearch-NAMESPACE.DOMAIN
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: opensearch-gateway-tls-secret
+            kind: Secret
+      allowedRoutes:
+        namespaces:
+          from: Same
+        kinds:
+          - kind: HTTPRoute
+
+---
+# ================================================================================
+# SECTION 5: REFERENCE GRANT (Cross-namespace routing)
+# ================================================================================
+
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-licensing-to-gateway
+  namespace: NAMESPACE
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: LICENSING_NS
+  to:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: baw-gateway
+
+---
+# ================================================================================
+# SECTION 6: HTTP ROUTES (Auth Services - 9 routes)
+# ================================================================================
+
+# Route 1: /idauth → platform-auth-service:9443 (strip prefix)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-platform-id-auth
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-gateway
+      sectionName: https
+  hostnames:
+    - "HOST"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /idauth
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: platform-auth-service
+          port: 9443
+
+---
+# Route 2: /idprovider → platform-identity-provider:4300 (strip prefix)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-platform-id-provider
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-gateway
+      sectionName: https
+  hostnames:
+    - "HOST"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /idprovider
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: platform-identity-provider
+          port: 4300
+
+---
+# Route 3: /login → platform-identity-provider:4300 (strip prefix)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-platform-login
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-gateway
+      sectionName: https
+  hostnames:
+    - "HOST"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /login
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: platform-identity-provider
+          port: 4300
+
+---
+# Route 4: /v1/auth → platform-identity-provider:4300
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-platform-auth
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-gateway
+      sectionName: https
+  hostnames:
+    - "HOST"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v1/auth
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: X-Forwarded-Proto
+                value: https
+      backendRefs:
+        - name: platform-identity-provider
+          port: 4300
+
+---
+# Route 5: /idmgmt → platform-identity-management:4500 (strip prefix)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-id-mgmt
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-gateway
+      sectionName: https
+  hostnames:
+    - "HOST"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /idmgmt
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: platform-identity-management
+          port: 4500
+
+---
+# Route 6: /oidc → platform-auth-service:9443 (NO rewrite)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-platform-oidc
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-gateway
+      sectionName: https
+  hostnames:
+    - "HOST"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /oidc
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: X-Forwarded-Proto
+                value: https
+      backendRefs:
+        - name: platform-auth-service
+          port: 9443
+
+---
+# Route 7: SAML callback (NO rewrite)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-saml-ui-callback
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-gateway
+      sectionName: https
+  hostnames:
+    - "HOST"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /ibm/saml20/defaultSP/acs
+      backendRefs:
+        - name: platform-auth-service
+          port: 9443
+
+---
+# Route 8: Social login callback (NO rewrite)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-social-login-callback
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-gateway
+      sectionName: https
+  hostnames:
+    - "HOST"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /ibm/api/social-login
+      backendRefs:
+        - name: platform-auth-service
+          port: 9443
+
+---
+# Route 9: Catch-all / → ibm-nginx-svc:443 (Zen UI)
+# More-specific paths above still win
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: zen-ingress
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-gateway
+      sectionName: https
+  hostnames:
+    - "HOST"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: ibm-nginx-svc
+          port: 443
+
+---
+# ================================================================================
+# SECTION 7: HTTP ROUTE (OpenSearch)
+# ================================================================================
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-opensearch
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-gateway
+      sectionName: https-opensearch
+  hostnames:
+    - "opensearch-NAMESPACE.DOMAIN"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: opensearch
+          port: 9200
+
+---
+# ================================================================================
+# SECTION 8: HTTP ROUTE (Licensing - Cross-namespace)
+# ================================================================================
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cncf-ibm-licensing-service-instance
+  namespace: LICENSING_NS
+spec:
+  parentRefs:
+    - name: baw-gateway
+      namespace: NAMESPACE
+      sectionName: https-licensing
+  hostnames:
+    - "licensing.DOMAIN"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: ibm-licensing-service-instance
+          port: 8080
+
+---
+# ================================================================================
+# SECTION 9: HTTP→HTTPS REDIRECT ROUTES
+# ================================================================================
+
+# HTTP→HTTPS redirect for auth hostname
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: http-to-https-redirect-auth
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-gateway
+      sectionName: http
+  hostnames:
+    - "HOST"
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+
+---
+# HTTP→HTTPS redirect for OpenSearch hostname
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: http-to-https-redirect-opensearch
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+    - name: baw-gateway
+      sectionName: http
+  hostnames:
+    - "opensearch-NAMESPACE.DOMAIN"
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+
+---
+# HTTP→HTTPS redirect for licensing hostname
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: http-to-https-redirect-licensing
+  namespace: LICENSING_NS
+spec:
+  parentRefs:
+    - name: baw-gateway
+      namespace: NAMESPACE
+      sectionName: http
+  hostnames:
+    - "licensing.DOMAIN"
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+
+# ================================================================================
+# END OF TEMPLATE
+# ================================================================================
+

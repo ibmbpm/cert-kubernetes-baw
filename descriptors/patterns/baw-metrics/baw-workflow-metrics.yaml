@@ -1,0 +1,23 @@
+apiVersion: operator.ibm.com/v1
+kind: IBMServiceMeterDefinition
+metadata:
+  name: baw-workflow-metrics
+  namespace: REPLACE_NAMESPACE
+spec:
+  mappingId: workflowdeployment0000000001
+  processing: LAST
+  repeat: true
+  breakdownDefs:
+    - breakdownBy:
+        name: INSTANCE_COUNT
+      groupBy:
+        - version
+        - environment
+        - architecture
+        - platform
+      source: metricQuantity
+      processing: LAST
+  data:
+    productId: 51e92d54794c4cecb154637523c88dcc
+    productName: IBM Business Automation Workflow Enterprise
+    metricType: ADOPTION

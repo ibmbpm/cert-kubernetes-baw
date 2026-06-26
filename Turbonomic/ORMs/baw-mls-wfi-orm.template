@@ -1,0 +1,57 @@
+apiVersion: devops.turbonomic.io/v1alpha1
+kind: OperatorResourceMapping
+
+metadata:
+  name: mls-wfi-orm
+  namespace: {{ namespace }}
+
+spec:
+  mappings:
+
+    ##################################################
+    # PATTERNS: Map workload → CR resource definition
+    ##################################################
+    patterns:
+      - owned:
+          apiVersion: apps/v1
+          kind: Deployment
+
+          # Workload filter (used by script)
+          matchLabels:
+            app.kubernetes.io/name: machine-learning-server
+            app.kubernetes.io/mls-capability: wfi
+
+          # Must match selector key below
+          selector: {{ selector.name }}
+
+          # Container resource path
+          path: .spec.template.spec.containers[?(@.name=="workforce-insights")].resources
+
+        # CR resource mapping (indexed for multi-instance)
+        ownerPath: .spec.baml_configuration.workforce_insights.resources
+
+
+    ##################################################
+    # SELECTORS: Identify workloads in cluster
+    ##################################################
+    selectors:
+
+      #  Selector key MUST match patterns[].owned.selector
+      {{ selector.name }}:
+
+        matchLabels:
+          # Example: icp4adeploy-bawins1
+          app.kubernetes.io/instance: {{ instance.name }}
+
+          # Workload type
+          app.kubernetes.io/name: machine-learning-server
+          app.kubernetes.io/mls-capability: wfi
+
+
+  ##################################################
+  # OWNER: CR owning the workloads
+  ##################################################
+  owner:
+    apiVersion: icp4a.ibm.com/v1
+    kind: ICP4ACluster
+    name: {{ meta.name }}
