@@ -56,6 +56,7 @@ metadata:
   namespace: BAW_NAMESPACE
   annotations:
     alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/target-type: ip
@@ -86,6 +87,7 @@ metadata:
   namespace: BAW_NAMESPACE
   annotations:
     alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/target-type: ip
@@ -116,6 +118,7 @@ metadata:
   namespace: BAW_NAMESPACE
   annotations:
     alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/target-type: ip
@@ -147,6 +150,7 @@ metadata:
   namespace: BAW_NAMESPACE
   annotations:
     alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/target-type: ip
@@ -170,7 +174,6 @@ spec:
 
 ---
 # 6. ID PROVIDER (WITH TRANSFORM) - Identity Provider with URL Rewriting
-# Uses AWS ALB native transforms to strip /idprovider prefix
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -178,15 +181,15 @@ metadata:
   namespace: BAW_NAMESPACE
   annotations:
     alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/backend-protocol: HTTPS
-    alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
-    alb.ingress.kubernetes.io/healthcheck-port: "4300"
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-port: "80"
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
     alb.ingress.kubernetes.io/group.order: "5"
-    alb.ingress.kubernetes.io/transforms.platform-identity-provider: >
-      [{"type": "url-rewrite", "urlRewriteConfig": {"rewrites": [{"regex": "^/idprovider/?(.*)$", "replace": "/$1"}]}}]
 spec:
   ingressClassName: alb
   rules:
@@ -197,13 +200,12 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: platform-identity-provider
+            name: baw-alb-rewrite-proxy
             port:
-              number: 4300
+              number: 80
 
 ---
 # 7. ID AUTH (WITH TRANSFORM) - Identity Authentication with URL Rewriting
-# Uses AWS ALB native transforms to strip /idauth prefix
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -211,15 +213,15 @@ metadata:
   namespace: BAW_NAMESPACE
   annotations:
     alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/backend-protocol: HTTPS
-    alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
-    alb.ingress.kubernetes.io/healthcheck-port: "9443"
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-port: "80"
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
     alb.ingress.kubernetes.io/group.order: "6"
-    alb.ingress.kubernetes.io/transforms.platform-auth-service: >
-      [{"type": "url-rewrite", "urlRewriteConfig": {"rewrites": [{"regex": "^/idauth/?(.*)$", "replace": "/$1"}]}}]
 spec:
   ingressClassName: alb
   rules:
@@ -230,9 +232,9 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: platform-auth-service
+            name: baw-alb-rewrite-proxy
             port:
-              number: 9443
+              number: 80
 
 ---
 # 8. PLATFORM AUTH - Platform Authentication API
@@ -243,6 +245,7 @@ metadata:
   namespace: BAW_NAMESPACE
   annotations:
     alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/target-type: ip
@@ -266,7 +269,6 @@ spec:
 
 ---
 # 9. ID MGMT (WITH TRANSFORM) - Identity Management with URL Rewriting
-# Uses AWS ALB native transforms to strip /idmgmt prefix
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -274,15 +276,15 @@ metadata:
   namespace: BAW_NAMESPACE
   annotations:
     alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/backend-protocol: HTTPS
-    alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
-    alb.ingress.kubernetes.io/healthcheck-port: "4500"
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-port: "80"
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
     alb.ingress.kubernetes.io/group.order: "8"
-    alb.ingress.kubernetes.io/transforms.platform-identity-management: >
-      [{"type": "url-rewrite", "urlRewriteConfig": {"rewrites": [{"regex": "^/idmgmt/?(.*)$", "replace": "/$1"}]}}]
 spec:
   ingressClassName: alb
   rules:
@@ -293,9 +295,9 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: platform-identity-management
+            name: baw-alb-rewrite-proxy
             port:
-              number: 4500
+              number: 80
 
 ---
 # 10. LICENSING SERVICE - IBM Licensing Service
@@ -306,6 +308,7 @@ metadata:
   namespace: LICENSING_NAMESPACE
   annotations:
     alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/target-type: ip

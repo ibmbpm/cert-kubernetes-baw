@@ -594,6 +594,7 @@ function install_openssl(){
 RED_TEXT=`tput setaf 1`
 GREEN_TEXT=`tput setaf 2`
 YELLOW_TEXT=`tput setaf 3`
+CYAN_TEXT=`tput setaf 6`
 BLUE_TEXT=`tput setaf 6`
 WHITE_TEXT=`tput setaf 7`
 RESET_TEXT=`tput sgr0`

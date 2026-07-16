@@ -94,12 +94,12 @@ function prompt_iam_certificate() {
     echo ""
     echo "Options:"
     echo "  1. AWS Certificate Manager (ACM) - for production domains with DNS validation"
-    echo "  2. AWS IAM Server Certificate - for testing domains (e.g., DuckDNS)"
+    echo "  2. AWS IAM Server Certificate - for testing domains "
     echo ""
     echo "For testing domains that cannot pass ACM DNS validation, use IAM certificates:"
     echo ""
     echo "${CYAN_TEXT}# Generate and upload IAM certificate:${RESET_TEXT}"
-    echo "export DOMAIN_NAME=\"${domain_name}\""
+    echo "export DOMAIN_NAME=\"${baw_namespace}-cpd.${domain_name}\""
     echo "openssl req -x509 -nodes -days 365 -newkey rsa:2048 \\"
     echo "  -keyout tls.key -out tls.crt \\"
     echo "  -subj \"/CN=\${DOMAIN_NAME}/O=BAW Testing\""
@@ -148,13 +148,18 @@ function prompt_optional_components() {
         # Get OpenSearch cluster name
         echo ""
         info "Detecting OpenSearch cluster name..."
-        opensearch_cluster_name=$(${CLI_CMD} get opensearchcluster -n ${baw_namespace} -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+        opensearch_cluster_name=$(${CLI_CMD} get cluster -n ${baw_namespace} -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
         if [[ -z "$opensearch_cluster_name" ]]; then
             warning "Could not auto-detect OpenSearch cluster name"
-            read -rp "Enter OpenSearch cluster name: " opensearch_cluster_name
+            echo ""
+            echo "To find your OpenSearch cluster name, run:"
+            echo "  ${GREEN_TEXT}${CLI_CMD} get cluster -n ${baw_namespace}${RESET_TEXT}"
+            echo ""
+            echo "Press Enter without a value to skip OpenSearch."
+            read -rp "Enter OpenSearch cluster name (or press Enter to skip): " opensearch_cluster_name
             if [[ -z "$opensearch_cluster_name" ]]; then
-                error "OpenSearch cluster name is required"
-                exit 1
+                warning "No OpenSearch cluster name provided — skipping OpenSearch ingress"
+                INCLUDE_OPENSEARCH="false"
             fi
         else
             success "Detected OpenSearch cluster: ${opensearch_cluster_name}"
@@ -197,7 +202,7 @@ function generate_alb_manifest() {
     
     # Replace placeholders
     sed -i.bak "s|BAW_NAMESPACE|${baw_namespace}|g" "${output_file}"
-    sed -i.bak "s|DOMAIN_NAME|${domain_name}|g" "${output_file}"
+    sed -i.bak "s|DOMAIN_NAME|${baw_namespace}-cpd.${domain_name}|g" "${output_file}"
     sed -i.bak "s|IAM_CERT_ARN|${cert_arn}|g" "${output_file}"
     sed -i.bak "s|LICENSING_NAMESPACE|${licensing_namespace}|g" "${output_file}"
     
@@ -237,12 +242,29 @@ spec:
   issuerRef:
     name: zen-tls-issuer
     kind: Issuer
-  commonName: ${domain_name}
+  commonName: ${baw_namespace}-cpd.${domain_name}
   dnsNames:
-    - ${domain_name}
+    - ${baw_namespace}-cpd.${domain_name}
 EOF
     
     success "cert-manager Certificate generated: ${cert_file}"
+}
+
+function generate_alb_rewrite_proxy() {
+    local output_dir=$1
+    local proxy_file="${output_dir}/alb-rewrite-proxy.yaml"
+    local proxy_template="${current_dir}/alb_rewrite_proxy_template.yaml"
+    
+    info "Generating ALB Rewrite Proxy manifest..."
+    
+    # Copy template to output file
+    cp "${proxy_template}" "${proxy_file}"
+    
+    # Replace namespaces
+    sed -i.bak "s|BAW_NAMESPACE|${baw_namespace}|g" "${proxy_file}"
+    rm -f "${proxy_file}.bak"
+    
+    success "ALB Rewrite Proxy manifest generated: ${proxy_file}"
 }
 
 function baw_eks_generate_alb() {
@@ -276,15 +298,18 @@ function baw_eks_generate_alb() {
     # Generate cert-manager Certificate
     generate_cert_manager_certificate "${output_dir}"
     
+    # Generate ALB rewrite proxy
+    generate_alb_rewrite_proxy "${output_dir}"
+    
     # Display summary
     echo ""
     echo "${GREEN_TEXT}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET_TEXT}"
     echo "${GREEN_TEXT}ALB Ingress Generation Complete${RESET_TEXT}"
     echo "${GREEN_TEXT}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET_TEXT}"
     echo ""
-    echo "Generated files:"
     echo "  • ${GREEN_TEXT}${output_file}${RESET_TEXT}"
     echo "  • ${GREEN_TEXT}${output_dir}/cert-manager-certificate.yaml${RESET_TEXT}"
+    echo "  • ${GREEN_TEXT}${output_dir}/alb-rewrite-proxy.yaml${RESET_TEXT}"
     echo ""
     
     # Show configuration notes if optional components are included
@@ -328,20 +353,23 @@ function baw_eks_generate_alb() {
     echo "2. Review the ALB Ingress manifest:"
     echo "   ${GREEN_TEXT}cat ${output_file}${RESET_TEXT}"
     echo ""
-    echo "3. Apply the ALB Ingress resources:"
+    echo "3. Apply the ALB Rewrite Proxy resources:"
+    echo "   ${GREEN_TEXT}kubectl apply -f ${output_dir}/alb-rewrite-proxy.yaml${RESET_TEXT}"
+    echo ""
+    echo "4. Apply the ALB Ingress resources:"
     echo "   ${GREEN_TEXT}kubectl apply -f ${output_file}${RESET_TEXT}"
     echo ""
-    echo "4. Wait for ALB provisioning (2-5 minutes):"
+    echo "5. Wait for ALB provisioning (2-5 minutes):"
     echo "   ${GREEN_TEXT}kubectl get ingress zen-ingress -n ${baw_namespace} -w${RESET_TEXT}"
     echo ""
-    echo "5. Get the ALB DNS name:"
+    echo "6. Get the ALB DNS name:"
     echo "   ${GREEN_TEXT}kubectl get ingress zen-ingress -n ${baw_namespace} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'${RESET_TEXT}"
     echo ""
-    echo "6. Configure DNS:"
+    echo "7. Configure DNS:"
     echo "   • For production: Create CNAME record pointing to ALB DNS"
-    echo "   • For testing (DuckDNS): Use nslookup to get ALB IP and update DuckDNS A record"
+    echo "   • For testing: Use nslookup to get ALB IP and update A record"
     echo ""
-    echo "7. Verify ALB routing:"
+    echo "8. Verify ALB routing:"
     echo "   ${CYAN_TEXT}ALB_DNS=\$(kubectl get ingress zen-ingress -n ${baw_namespace} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')${RESET_TEXT}"
     echo "   ${CYAN_TEXT}curl -k -s -o /dev/null -w '%{http_code}' https://\$ALB_DNS/ -H \"Host: ${domain_name}\"${RESET_TEXT}"
     echo ""

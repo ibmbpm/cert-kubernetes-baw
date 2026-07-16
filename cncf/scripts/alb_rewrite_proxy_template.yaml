@@ -1,0 +1,96 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: baw-alb-rewrite-proxy-config
+  namespace: BAW_NAMESPACE
+data:
+  nginx.conf: |
+    worker_processes 1;
+    events {
+        worker_connections 1024;
+    }
+    http {
+        server {
+            listen 80;
+            
+            # /idprovider
+            location /idprovider {
+                rewrite ^/idprovider/?(.*)$ /$1 break;
+                proxy_pass https://platform-identity-provider:4300;
+                proxy_ssl_verify off;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+            }
+
+            # /idauth
+            location /idauth {
+                rewrite ^/idauth/?(.*)$ /$1 break;
+                proxy_pass https://platform-auth-service:9443;
+                proxy_ssl_verify off;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+            }
+
+            # /idmgmt
+            location /idmgmt {
+                rewrite ^/idmgmt/?(.*)$ /$1 break;
+                proxy_pass https://platform-identity-management:4500;
+                proxy_ssl_verify off;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+            }
+
+            # Health check
+            location = /healthz {
+                return 200 'OK';
+                add_header Content-Type text/plain;
+            }
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: baw-alb-rewrite-proxy
+  namespace: BAW_NAMESPACE
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: baw-alb-rewrite-proxy
+  template:
+    metadata:
+      labels:
+        app: baw-alb-rewrite-proxy
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+      volumes:
+      - name: config
+        configMap:
+          name: baw-alb-rewrite-proxy-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: baw-alb-rewrite-proxy
+  namespace: BAW_NAMESPACE
+spec:
+  selector:
+    app: baw-alb-rewrite-proxy
+  ports:
+  - port: 80
+    targetPort: 80
