@@ -39,6 +39,7 @@ STORAGE_CLASS_BLOCK=""
 STORAGE_CLASS_FILE=""
 STORAGE_VENDOR=""
 LITE_INSTALL="false"
+DEPLOY_INTERNAL_POSTGRES="false"
 REDIS_OPERATOR_CHANNEL="v1.3"
 REDIS_OPERATOR_INSTALL_PLAN="Automatic"
 REDIS_OPERATOR_PACKAGE="ibm-redis-cp"
@@ -92,6 +93,9 @@ function show_help() {
     printf "\n"
     printf "  --lite-install                Use SQLite instead of PostgreSQL (dev/test only)\n"
     printf "\n"
+    printf "  --internal-postgres           Use the internal IBM CNPG PostgreSQL operator\n"
+    printf "                                Mutually exclusive with --lite-install\n"
+    printf "\n"
     printf "  --redis-channel               Redis operator channel (default: v1.3)\n"
     printf "\n"
     printf "  --verify-only                 Only verify prerequisites without deploying\n"
@@ -109,8 +113,11 @@ function show_help() {
     printf "\n"
     printf "Prerequisites:\n"
     printf "\n"
-    tips "External PostgreSQL:"
-    printf "    This release requires an external PostgreSQL database.\n"
+    tips "PostgreSQL:"
+    printf "    By default this script deploys with an external PostgreSQL database.\n"
+    printf "    Use --internal-postgres to deploy the internal IBM CNPG PostgreSQL operator instead.\n"
+    printf "\n"
+    tips "External PostgreSQL (default):"
     printf "    Create secret 'model-gateway-postgres-external-secret' in the instance namespace with:\n"
     printf "      - host: PostgreSQL hostname\n"
     printf "      - port: PostgreSQL port\n"
@@ -123,6 +130,9 @@ function show_help() {
     printf "\n"
     tips "# Deploy with external PostgreSQL (requires secret created first)"
     printf "  ./baw-model-gateway-deployment.sh --accept-license -b ocs-storagecluster-ceph-rbd -f ocs-storagecluster-cephfs\n"
+    printf "\n"
+    tips "# Deploy with internal IBM CNPG PostgreSQL"
+    printf "  ./baw-model-gateway-deployment.sh --accept-license --internal-postgres -b ocs-storagecluster-ceph-rbd -f ocs-storagecluster-cephfs\n"
     printf "\n"
     tips "# Deploy with custom namespaces and large scale"
     printf "  ./baw-model-gateway-deployment.sh --accept-license -o my-operators -n my-instance -s large -b portworx-db -f portworx-shared\n"
@@ -406,26 +416,42 @@ function interactive_mode() {
     fi
     printf "\n"
     
-    # Step 7: PostgreSQL Configuration (Required for non-lite install)
+    # Step 7: PostgreSQL Configuration
     if [ "$LITE_INSTALL" != "true" ]; then
         printf "\n"
-        info "PostgreSQL Configuration (Required)"
+        info "PostgreSQL Configuration"
         printf "\n"
-        info "Model Gateway requires an external PostgreSQL database for production deployments."
+        info "Model Gateway supports two PostgreSQL options:"
+        info "  1. External PostgreSQL - connect to an existing PostgreSQL instance you manage"
+        info "  2. Internal IBM CNPG   - deploy the IBM Cloud Native PostgreSQL operator"
+        printf "\n"
         
-        local property_file="${PARENT_DIR}/scripts/baw-prerequisites/project/${INSTANCE_NAMESPACE}/propertyfile/baw_model_gateway.property"
+        local pg_choice=""
+        while [[ ! "$pg_choice" =~ ^[12]$ ]]; do
+            read -p "$(echo -e "${COLOR_CYAN}Select PostgreSQL option (1 or 2): ${COLOR_RESET}")" pg_choice
+        done
         
-        if [ -f "$property_file" ]; then
-            info "Existing PostgreSQL configuration found."
-            info "You can review and update the configuration or press Enter to keep existing values."
+        if [ "$pg_choice" = "2" ]; then
+            DEPLOY_INTERNAL_POSTGRES="true"
+            success "Using internal IBM CNPG PostgreSQL operator"
         else
-            info "Please provide PostgreSQL connection details."
-        fi
-        printf "\n"
-        
-        if ! prompt_postgres_configuration; then
-            error "Failed to configure PostgreSQL"
-            exit 1
+            DEPLOY_INTERNAL_POSTGRES="false"
+            success "Using external PostgreSQL"
+            
+            local property_file="${PARENT_DIR}/scripts/baw-prerequisites/project/${INSTANCE_NAMESPACE}/propertyfile/baw_model_gateway.property"
+            
+            if [ -f "$property_file" ]; then
+                info "Existing PostgreSQL configuration found."
+                info "You can review and update the configuration or press Enter to keep existing values."
+            else
+                info "Please provide PostgreSQL connection details."
+            fi
+            printf "\n"
+            
+            if ! prompt_postgres_configuration; then
+                error "Failed to configure PostgreSQL"
+                exit 1
+            fi
         fi
         printf "\n"
     fi
@@ -438,6 +464,13 @@ function interactive_mode() {
     printf "  Block Storage Class: %s\n" "$STORAGE_CLASS_BLOCK"
     printf "  File Storage Class: %s\n" "$STORAGE_CLASS_FILE"
     printf "  Scale Configuration: %s\n" "$SCALE_CONFIG"
+    if [ "$LITE_INSTALL" = "true" ]; then
+        printf "  PostgreSQL: SQLite (lite install)\n"
+    elif [ "$DEPLOY_INTERNAL_POSTGRES" = "true" ]; then
+        printf "  PostgreSQL: Internal IBM CNPG\n"
+    else
+        printf "  PostgreSQL: External\n"
+    fi
     printf "\n"
     
     if ! prompt_yes_no "Proceed with deployment?" "y"; then
@@ -591,19 +624,20 @@ EOF
 function check_zenservice() {
     info "Checking ZenService status..."
     
-    # Check if ZenService exists and get its YAML
-    local zenservice_yaml=$(${CLI_CMD} get zenservice iaf-zen-cpdservice -n "$INSTANCE_NAMESPACE" -o yaml 2>/dev/null)
-    
-    if [ -z "$zenservice_yaml" ]; then
+    # Check if ZenService exists
+    if ! ${CLI_CMD} get zenservice iaf-zen-cpdservice -n "$INSTANCE_NAMESPACE" &> /dev/null; then
         error "ZenService 'iaf-zen-cpdservice' not found in namespace: $INSTANCE_NAMESPACE"
         error "Model Gateway requires ZenService to be installed and ready"
         return 1
     fi
     
-    # Extract status fields using YQ_CMD
-    local progress=$(echo "$zenservice_yaml" | ${YQ_CMD} read - 'status.progress')
-    local zen_status=$(echo "$zenservice_yaml" | ${YQ_CMD} read - 'status.zenStatus')
-    local current_version=$(echo "$zenservice_yaml" | ${YQ_CMD} read - 'status.currentVersion')
+    # Extract status fields directly via kubectl jsonpath
+    local progress=$(${CLI_CMD} get zenservice iaf-zen-cpdservice -n "$INSTANCE_NAMESPACE" \
+        -o jsonpath='{.status.progress}' 2>/dev/null)
+    local zen_status=$(${CLI_CMD} get zenservice iaf-zen-cpdservice -n "$INSTANCE_NAMESPACE" \
+        -o jsonpath='{.status.zenStatus}' 2>/dev/null)
+    local current_version=$(${CLI_CMD} get zenservice iaf-zen-cpdservice -n "$INSTANCE_NAMESPACE" \
+        -o jsonpath='{.status.currentVersion}' 2>/dev/null)
     
     # Check progress
     if [ "$progress" != "100%" ]; then
@@ -706,22 +740,6 @@ function prompt_postgres_configuration() {
     done
     pg_username="$input_username"
     
-    # PostgreSQL Password
-    local input_password=""
-    while [ -z "$input_password" ]; do
-        if [ -n "$pg_password" ]; then
-            read -s -p "$(echo -e "${COLOR_CYAN}Enter PostgreSQL password [****]: ${COLOR_RESET}")" input_password
-            input_password=${input_password:-$pg_password}
-        else
-            read -s -p "$(echo -e "${COLOR_CYAN}Enter PostgreSQL password: ${COLOR_RESET}")" input_password
-        fi
-        echo
-        if [ -z "$input_password" ]; then
-            warning "PostgreSQL password is required"
-        fi
-    done
-    pg_password="$input_password"
-    
     # PostgreSQL Database Name
     read -p "$(echo -e "${COLOR_CYAN}Enter PostgreSQL database name [$pg_dbname]: ${COLOR_RESET}")" input_dbname
     pg_dbname=${input_dbname:-$pg_dbname}
@@ -757,7 +775,7 @@ function prompt_postgres_configuration() {
     if [[ "$pg_ssl_mode" == "verify-ca" || "$pg_ssl_mode" == "verify-full" ]]; then
         echo
         info "SSL mode '$pg_ssl_mode' requires a CA certificate."
-        read -p "$(echo -e "${COLOR_CYAN}Enter path to CA certificate (or press Enter to use default location): ${COLOR_RESET}")" pg_ca_cert_path
+        read -p "$(echo -e "${COLOR_CYAN}Enter path to CA certificate [${cert_dir}/ca.crt]: ${COLOR_RESET}")" pg_ca_cert_path
         
         if [ -z "$pg_ca_cert_path" ]; then
             pg_ca_cert_path="${cert_dir}/ca.crt"
@@ -775,13 +793,13 @@ function prompt_postgres_configuration() {
     if [[ "$use_client_cert" =~ ^[Yy]$ ]]; then
         pg_use_client_cert="true"
         
-        read -p "$(echo -e "${COLOR_CYAN}Enter path to client certificate (or press Enter for default): ${COLOR_RESET}")" pg_client_cert_path
+        read -p "$(echo -e "${COLOR_CYAN}Enter path to client certificate [${cert_dir}/client.crt]: ${COLOR_RESET}")" pg_client_cert_path
         if [ -z "$pg_client_cert_path" ]; then
             pg_client_cert_path="${cert_dir}/client.crt"
             info "Using default client certificate location: $pg_client_cert_path"
         fi
         
-        read -p "$(echo -e "${COLOR_CYAN}Enter path to client private key (or press Enter for default): ${COLOR_RESET}")" pg_client_key_path
+        read -p "$(echo -e "${COLOR_CYAN}Enter path to client private key [${cert_dir}/client.key]: ${COLOR_RESET}")" pg_client_key_path
         if [ -z "$pg_client_key_path" ]; then
             pg_client_key_path="${cert_dir}/client.key"
             info "Using default client key location: $pg_client_key_path"
@@ -790,6 +808,38 @@ function prompt_postgres_configuration() {
         if [ ! -f "$pg_client_cert_path" ] || [ ! -f "$pg_client_key_path" ]; then
             warning "Client certificate or key not found. Please ensure they exist before deployment."
         fi
+    fi
+    
+    # PostgreSQL Password
+    # Password is required for plain and password-over-TLS auth.
+    # When client certificate authentication is used, the server may authenticate via the
+    # certificate alone (pg_hba.conf: cert), so the password becomes optional.
+    echo
+    local input_password=""
+    if [ "$pg_use_client_cert" = "true" ]; then
+        info "Client certificate authentication is enabled."
+        info "Password is optional when the server authenticates via client certificate (pg_hba.conf: cert)."
+        if [ -n "$pg_password" ]; then
+            read -s -p "$(echo -e "${COLOR_CYAN}Enter PostgreSQL password (press Enter to skip) [****]: ${COLOR_RESET}")" input_password
+        else
+            read -s -p "$(echo -e "${COLOR_CYAN}Enter PostgreSQL password (press Enter to skip): ${COLOR_RESET}")" input_password
+        fi
+        echo
+        pg_password=${input_password:-$pg_password}
+    else
+        while [ -z "$input_password" ]; do
+            if [ -n "$pg_password" ]; then
+                read -s -p "$(echo -e "${COLOR_CYAN}Enter PostgreSQL password [****]: ${COLOR_RESET}")" input_password
+                input_password=${input_password:-$pg_password}
+            else
+                read -s -p "$(echo -e "${COLOR_CYAN}Enter PostgreSQL password: ${COLOR_RESET}")" input_password
+            fi
+            echo
+            if [ -z "$input_password" ]; then
+                warning "PostgreSQL password is required"
+            fi
+        done
+        pg_password="$input_password"
     fi
     
     # Create directories
@@ -1094,11 +1144,22 @@ function check_external_postgres_secret() {
     info "Checking external PostgreSQL secret..."
     
     if ! ${CLI_CMD} get secret model-gateway-postgres-external-secret -n "$namespace" &> /dev/null; then
-        warning "External PostgreSQL secret 'model-gateway-postgres-external-secret' not found in namespace: $namespace"
+        info "External PostgreSQL secret 'model-gateway-postgres-external-secret' not found in namespace '$namespace', it will be created."
         
         # Try to create property file template
         if ! create_postgres_property_file; then
-            error "Please edit the property file and re-run the deployment"
+            local property_file="${PARENT_DIR}/scripts/baw-prerequisites/project/${INSTANCE_NAMESPACE}/propertyfile/baw_model_gateway.property"
+            error "Failed to create PostgreSQL property file."
+            error "Please verify the property file exists and contains all required fields:"
+            error "  File: $property_file"
+            error "  Required fields:"
+            error "    MODEL_GATEWAY_POSTGRES_HOST      - PostgreSQL hostname or IP address"
+            error "    MODEL_GATEWAY_POSTGRES_PORT      - PostgreSQL port (e.g. 5432)"
+            error "    MODEL_GATEWAY_POSTGRES_USERNAME  - Database username"
+            error "    MODEL_GATEWAY_POSTGRES_PASSWORD  - Database password"
+            error "    MODEL_GATEWAY_POSTGRES_DBNAME    - Database name"
+            error "    MODEL_GATEWAY_POSTGRES_SSL_MODE  - SSL mode (disable|require|verify-ca|verify-full)"
+            error "Once the file is populated correctly, re-run the deployment."
             return 1
         fi
         
@@ -1107,7 +1168,18 @@ function check_external_postgres_secret() {
             success "External PostgreSQL secret created from property file"
             return 0
         else
-            error "Failed to create external PostgreSQL secret from property file"
+            local property_file="${PARENT_DIR}/scripts/baw-prerequisites/project/${INSTANCE_NAMESPACE}/propertyfile/baw_model_gateway.property"
+            error "Failed to create external PostgreSQL secret from property file."
+            error "Please verify the property file exists and contains all required fields:"
+            error "  File: $property_file"
+            error "  Required fields:"
+            error "    MODEL_GATEWAY_POSTGRES_HOST      - PostgreSQL hostname or IP address"
+            error "    MODEL_GATEWAY_POSTGRES_PORT      - PostgreSQL port (e.g. 5432)"
+            error "    MODEL_GATEWAY_POSTGRES_USERNAME  - Database username"
+            error "    MODEL_GATEWAY_POSTGRES_PASSWORD  - Database password"
+            error "    MODEL_GATEWAY_POSTGRES_DBNAME    - Database name"
+            error "    MODEL_GATEWAY_POSTGRES_SSL_MODE  - SSL mode (disable|require|verify-ca|verify-full)"
+            error "Once the file is populated correctly, re-run the deployment."
             return 1
         fi
     fi
@@ -1150,41 +1222,112 @@ function prompt_tls_configuration() {
             info "Using default root CA secret: $TLS_CA_SECRET_NAME"
         fi
         
-        # Validate CA secret exists
-        if ! ${CLI_CMD} get secret "$TLS_CA_SECRET_NAME" -n "$INSTANCE_NAMESPACE" &> /dev/null; then
-            error "CA secret '$TLS_CA_SECRET_NAME' not found in namespace: $INSTANCE_NAMESPACE"
-            return 1
+        # Check if Vault is enabled
+        local property_file="${PARENT_DIR}/scripts/baw-prerequisites/project/${INSTANCE_NAMESPACE}/propertyfile/baw_user_profile.property"
+        local vault_enabled="false"
+        local vault_root_ca_path="${PARENT_DIR}/scripts/baw-prerequisites/project/${INSTANCE_NAMESPACE}/propertyfile/cert/root_ca"
+        
+        if [ -f "$property_file" ]; then
+            local vault_setting=$(read_property_file "$property_file" "CP4BA.ENABLE_EXTERNAL_VAULT_INTEGRATION")
+            if [ "$vault_setting" = "true" ]; then
+                vault_enabled="true"
+                info "External Vault integration is enabled"
+            fi
         fi
         
-        # Check for required keys (tls.crt and tls.key)
-        local has_cert=$(${CLI_CMD} get secret "$TLS_CA_SECRET_NAME" -n "$INSTANCE_NAMESPACE" -o jsonpath='{.data.tls\.crt}' 2>/dev/null)
-        local has_key=$(${CLI_CMD} get secret "$TLS_CA_SECRET_NAME" -n "$INSTANCE_NAMESPACE" -o jsonpath='{.data.tls\.key}' 2>/dev/null)
-        
-        if [ -z "$has_cert" ] || [ -z "$has_key" ]; then
-            error "CA secret '$TLS_CA_SECRET_NAME' does not contain required keys: tls.crt and tls.key"
-            return 1
-        fi
-        
-        # Extract CA certificate and key to temporary files
         local cert_dir="${PARENT_DIR}/scripts/baw-prerequisites/project/${INSTANCE_NAMESPACE}/propertyfile/cert/model-gateway"
         mkdir -p "$cert_dir"
         
         local ca_cert="$cert_dir/ca.crt"
         local ca_key="$cert_dir/ca.key"
         
-        # Extract and decode certificate
-        ${CLI_CMD} get secret "$TLS_CA_SECRET_NAME" -n "$INSTANCE_NAMESPACE" -o jsonpath='{.data.tls\.crt}' | base64 -d > "$ca_cert"
-        if [ $? -ne 0 ]; then
-            error "Failed to extract CA certificate from secret"
-            return 1
-        fi
-        
-        # Extract and decode private key
-        ${CLI_CMD} get secret "$TLS_CA_SECRET_NAME" -n "$INSTANCE_NAMESPACE" -o jsonpath='{.data.tls\.key}' | base64 -d > "$ca_key"
-        if [ $? -ne 0 ]; then
-            error "Failed to extract CA private key from secret"
-            rm -f "$ca_cert"
-            return 1
+        # If Vault is enabled, try to find certificate in file system first
+        if [ "$vault_enabled" = "true" ]; then
+            info "Checking for root CA certificate in certificate directory..."
+            
+            # Look for certificate files in the root_ca directory
+            local found_cert=""
+            if [ -d "$vault_root_ca_path" ]; then
+                # Look for common certificate file patterns
+                for cert_file in "$vault_root_ca_path"/*.crt "$vault_root_ca_path"/*.pem "$vault_root_ca_path"/tls.crt; do
+                    if [ -f "$cert_file" ]; then
+                        found_cert="$cert_file"
+                        break
+                    fi
+                done
+            fi
+            
+            if [ -n "$found_cert" ]; then
+                success "Found root CA certificate in directory: $found_cert"
+                
+                # Copy certificate to working directory
+                cp "$found_cert" "$ca_cert"
+                if [ $? -ne 0 ]; then
+                    error "Failed to copy CA certificate from directory"
+                    return 1
+                fi
+                
+                # Look for corresponding key file
+                local cert_basename=$(basename "$found_cert")
+                local cert_name="${cert_basename%.*}"
+                local found_key=""
+                
+                for key_file in "$vault_root_ca_path"/${cert_name}.key "$vault_root_ca_path"/tls.key "$vault_root_ca_path"/*.key; do
+                    if [ -f "$key_file" ]; then
+                        found_key="$key_file"
+                        break
+                    fi
+                done
+                
+                if [ -z "$found_key" ]; then
+                    error "Root CA private key not found in directory: $vault_root_ca_path"
+                    error "Please ensure the private key file exists in the certificate directory"
+                    return 1
+                fi
+                
+                success "Found root CA private key in directory: $found_key"
+                cp "$found_key" "$ca_key"
+                if [ $? -ne 0 ]; then
+                    error "Failed to copy CA private key from directory"
+                    return 1
+                fi
+            else
+                error "Root CA certificate not found in directory: $vault_root_ca_path"
+                error "When using --use-custom-tls with Vault enabled, the root CA certificate must exist in the directory"
+                return 1
+            fi
+        else
+            # Vault not enabled - use Kubernetes secret
+            # Validate CA secret exists
+            if ! ${CLI_CMD} get secret "$TLS_CA_SECRET_NAME" -n "$INSTANCE_NAMESPACE" &> /dev/null; then
+                error "CA secret '$TLS_CA_SECRET_NAME' not found in namespace: $INSTANCE_NAMESPACE"
+                return 1
+            fi
+            
+            # Check for required keys (tls.crt and tls.key)
+            local has_cert=$(${CLI_CMD} get secret "$TLS_CA_SECRET_NAME" -n "$INSTANCE_NAMESPACE" -o jsonpath='{.data.tls\.crt}' 2>/dev/null)
+            local has_key=$(${CLI_CMD} get secret "$TLS_CA_SECRET_NAME" -n "$INSTANCE_NAMESPACE" -o jsonpath='{.data.tls\.key}' 2>/dev/null)
+            
+            if [ -z "$has_cert" ] || [ -z "$has_key" ]; then
+                error "CA secret '$TLS_CA_SECRET_NAME' does not contain required keys: tls.crt and tls.key"
+                return 1
+            fi
+            
+            # Extract CA certificate and key to temporary files
+            # Extract and decode certificate
+            ${CLI_CMD} get secret "$TLS_CA_SECRET_NAME" -n "$INSTANCE_NAMESPACE" -o jsonpath='{.data.tls\.crt}' | base64 -d > "$ca_cert"
+            if [ $? -ne 0 ]; then
+                error "Failed to extract CA certificate from secret"
+                return 1
+            fi
+            
+            # Extract and decode private key
+            ${CLI_CMD} get secret "$TLS_CA_SECRET_NAME" -n "$INSTANCE_NAMESPACE" -o jsonpath='{.data.tls\.key}' | base64 -d > "$ca_key"
+            if [ $? -ne 0 ]; then
+                error "Failed to extract CA private key from secret"
+                rm -f "$ca_cert"
+                return 1
+            fi
         fi
         
         TLS_CA_CERT_PATH="$ca_cert"
@@ -1281,51 +1424,165 @@ function prompt_generate_from_ca() {
     info "Default secret name: icp4a-root-ca"
     echo
     
+    # Check if Vault is enabled
+    local property_file="${PARENT_DIR}/scripts/baw-prerequisites/project/${INSTANCE_NAMESPACE}/propertyfile/baw_user_profile.property"
+    local vault_enabled="false"
+    local vault_root_ca_path="${PARENT_DIR}/scripts/baw-prerequisites/project/${INSTANCE_NAMESPACE}/propertyfile/cert/root_ca"
+    
+    if [ -f "$property_file" ]; then
+        local vault_setting=$(read_property_file "$property_file" "CP4BA.ENABLE_EXTERNAL_VAULT_INTEGRATION")
+        if [ "$vault_setting" = "true" ]; then
+            vault_enabled="true"
+            info "External Vault integration is enabled"
+        fi
+    fi
+    
     # Get CA secret name
     local ca_secret_name=""
     read -p "$(echo -e "${COLOR_CYAN}Enter CP4BA root CA secret name [icp4a-root-ca]: ${COLOR_RESET}")" ca_secret_name
     ca_secret_name=${ca_secret_name:-"icp4a-root-ca"}
     
-    # Validate secret exists
-    if ! ${CLI_CMD} get secret "$ca_secret_name" -n "$INSTANCE_NAMESPACE" &> /dev/null; then
-        error "Secret '$ca_secret_name' not found in namespace: $INSTANCE_NAMESPACE"
-        return 1
-    fi
-    
-    # Check for required keys (tls.crt and tls.key)
-    local has_cert=$(${CLI_CMD} get secret "$ca_secret_name" -n "$INSTANCE_NAMESPACE" -o jsonpath='{.data.tls\.crt}' 2>/dev/null)
-    local has_key=$(${CLI_CMD} get secret "$ca_secret_name" -n "$INSTANCE_NAMESPACE" -o jsonpath='{.data.tls\.key}' 2>/dev/null)
-    
-    if [ -z "$has_cert" ] || [ -z "$has_key" ]; then
-        error "Secret '$ca_secret_name' does not contain required keys: tls.crt and tls.key"
-        return 1
-    fi
-    
-    success "CA secret '$ca_secret_name' validated successfully"
-    
-    # Extract CA certificate and key to temporary files
     local cert_dir="${PARENT_DIR}/scripts/baw-prerequisites/project/${INSTANCE_NAMESPACE}/propertyfile/cert/model-gateway"
     mkdir -p "$cert_dir"
     
     local ca_cert="$cert_dir/ca.crt"
     local ca_key="$cert_dir/ca.key"
     
-    # Extract and decode certificate
-    ${CLI_CMD} get secret "$ca_secret_name" -n "$INSTANCE_NAMESPACE" -o jsonpath='{.data.tls\.crt}' | base64 -d > "$ca_cert"
-    if [ $? -ne 0 ]; then
-        error "Failed to extract CA certificate from secret"
-        return 1
+    # If Vault is enabled, try to find certificate in file system first
+    if [ "$vault_enabled" = "true" ]; then
+        info "Checking for root CA certificate in certificate directory..."
+        
+        # Look for certificate files in the root_ca directory
+        local found_cert=""
+        if [ -d "$vault_root_ca_path" ]; then
+            # Look for common certificate file patterns
+            for cert_file in "$vault_root_ca_path"/*.crt "$vault_root_ca_path"/*.pem "$vault_root_ca_path"/tls.crt; do
+                if [ -f "$cert_file" ]; then
+                    found_cert="$cert_file"
+                    break
+                fi
+            done
+        fi
+        
+        if [ -n "$found_cert" ]; then
+            success "Found root CA certificate in directory: $found_cert"
+            
+            # Copy certificate to working directory
+            cp "$found_cert" "$ca_cert"
+            if [ $? -ne 0 ]; then
+                error "Failed to copy CA certificate from directory"
+                return 1
+            fi
+            
+            # Look for corresponding key file
+            local cert_basename=$(basename "$found_cert")
+            local cert_name="${cert_basename%.*}"
+            local found_key=""
+            
+            for key_file in "$vault_root_ca_path"/${cert_name}.key "$vault_root_ca_path"/tls.key "$vault_root_ca_path"/*.key; do
+                if [ -f "$key_file" ]; then
+                    found_key="$key_file"
+                    break
+                fi
+            done
+            
+            if [ -n "$found_key" ]; then
+                success "Found root CA private key in directory: $found_key"
+                cp "$found_key" "$ca_key"
+                if [ $? -ne 0 ]; then
+                    error "Failed to copy CA private key from directory"
+                    return 1
+                fi
+                info "CA certificate and key extracted from directory"
+            else
+                warning "Private key not found in directory"
+                # Prompt for key location
+                local key_path=""
+                read -p "$(echo -e "${COLOR_CYAN}Enter path to root CA private key file: ${COLOR_RESET}")" key_path
+                
+                if [ ! -f "$key_path" ]; then
+                    error "Private key file not found: $key_path"
+                    return 1
+                fi
+                
+                cp "$key_path" "$ca_key"
+                if [ $? -ne 0 ]; then
+                    error "Failed to copy CA private key"
+                    return 1
+                fi
+                success "CA private key copied from: $key_path"
+            fi
+        else
+            warning "Root CA certificate not found in directory: $vault_root_ca_path"
+            
+            # Prompt for certificate location
+            local cert_path=""
+            read -p "$(echo -e "${COLOR_CYAN}Enter path to root CA certificate file: ${COLOR_RESET}")" cert_path
+            
+            if [ ! -f "$cert_path" ]; then
+                error "Certificate file not found: $cert_path"
+                return 1
+            fi
+            
+            cp "$cert_path" "$ca_cert"
+            if [ $? -ne 0 ]; then
+                error "Failed to copy CA certificate"
+                return 1
+            fi
+            success "CA certificate copied from: $cert_path"
+            
+            # Prompt for key location
+            local key_path=""
+            read -p "$(echo -e "${COLOR_CYAN}Enter path to root CA private key file: ${COLOR_RESET}")" key_path
+            
+            if [ ! -f "$key_path" ]; then
+                error "Private key file not found: $key_path"
+                return 1
+            fi
+            
+            cp "$key_path" "$ca_key"
+            if [ $? -ne 0 ]; then
+                error "Failed to copy CA private key"
+                return 1
+            fi
+            success "CA private key copied from: $key_path"
+        fi
+    else
+        # Vault not enabled - use Kubernetes secret
+        # Validate secret exists
+        if ! ${CLI_CMD} get secret "$ca_secret_name" -n "$INSTANCE_NAMESPACE" &> /dev/null; then
+            error "Secret '$ca_secret_name' not found in namespace: $INSTANCE_NAMESPACE"
+            return 1
+        fi
+        
+        # Check for required keys (tls.crt and tls.key)
+        local has_cert=$(${CLI_CMD} get secret "$ca_secret_name" -n "$INSTANCE_NAMESPACE" -o jsonpath='{.data.tls\.crt}' 2>/dev/null)
+        local has_key=$(${CLI_CMD} get secret "$ca_secret_name" -n "$INSTANCE_NAMESPACE" -o jsonpath='{.data.tls\.key}' 2>/dev/null)
+        
+        if [ -z "$has_cert" ] || [ -z "$has_key" ]; then
+            error "Secret '$ca_secret_name' does not contain required keys: tls.crt and tls.key"
+            return 1
+        fi
+        
+        success "CA secret '$ca_secret_name' validated successfully"
+        
+        # Extract and decode certificate
+        ${CLI_CMD} get secret "$ca_secret_name" -n "$INSTANCE_NAMESPACE" -o jsonpath='{.data.tls\.crt}' | base64 -d > "$ca_cert"
+        if [ $? -ne 0 ]; then
+            error "Failed to extract CA certificate from secret"
+            return 1
+        fi
+        
+        # Extract and decode private key
+        ${CLI_CMD} get secret "$ca_secret_name" -n "$INSTANCE_NAMESPACE" -o jsonpath='{.data.tls\.key}' | base64 -d > "$ca_key"
+        if [ $? -ne 0 ]; then
+            error "Failed to extract CA private key from secret"
+            rm -f "$ca_cert"
+            return 1
+        fi
+        
+        info "CA certificate and key extracted from secret"
     fi
-    
-    # Extract and decode private key
-    ${CLI_CMD} get secret "$ca_secret_name" -n "$INSTANCE_NAMESPACE" -o jsonpath='{.data.tls\.key}' | base64 -d > "$ca_key"
-    if [ $? -ne 0 ]; then
-        error "Failed to extract CA private key from secret"
-        rm -f "$ca_cert"
-        return 1
-    fi
-    
-    info "CA certificate and key extracted from secret"
     
     # Get server certificate details
     local server_cn=""
@@ -1900,7 +2157,7 @@ function configure_provider_credentials() {
     local existing_secret_data=""
     if ${CLI_CMD} get secret model-gateway-provider-secret -n "$INSTANCE_NAMESPACE" &> /dev/null; then
         info "Found existing provider secret, merging with new credentials..."
-        existing_secret_data=$(${CLI_CMD} get secret model-gateway-provider-secret -n "$INSTANCE_NAMESPACE" -o json | ${YQ_CMD} read - 'data')
+        existing_secret_data=$(${CLI_CMD} get secret model-gateway-provider-secret -n "$INSTANCE_NAMESPACE" -o json | jq -c '.data // {}')
     fi
     
     # Start building the secret
@@ -1918,12 +2175,12 @@ data:
 EOF
     
     # If there's existing data, add it first (will be overwritten by new keys with same name)
-    if [ -n "$existing_secret_data" ] && [ "$existing_secret_data" != "null" ] && [ "$existing_secret_data" != "{}" ]; then
+    if [ -n "$existing_secret_data" ] && [ "$existing_secret_data" != "{}" ]; then
         # Extract existing keys and add them
-        local existing_keys=$(echo "$existing_secret_data" | ${YQ_CMD} read - --printMode p '*' | sed 's/\..*//' | sort -u)
+        local existing_keys=$(echo "$existing_secret_data" | jq -r 'keys[]')
         while IFS= read -r key; do
             if [ -n "$key" ]; then
-                local value=$(echo "$existing_secret_data" | ${YQ_CMD} read - "$key")
+                local value=$(echo "$existing_secret_data" | jq -r --arg k "$key" '.[$k]')
                 echo "  $key: $value" >> "$provider_secret_file"
             fi
         done <<< "$existing_keys"
@@ -2046,20 +2303,17 @@ EOF
             local existing_cr=$(${CLI_CMD} get modelgateway modelgateway-cr -n "$INSTANCE_NAMESPACE" -o json)
             
             # Check if providerK8sSecret is already enabled
-            local existing_provider_k8s=$(echo "$existing_cr" | ${YQ_CMD} read - 'spec.providerK8sSecret')
-            [ "$existing_provider_k8s" = "null" ] && existing_provider_k8s="false"
+            local existing_provider_k8s=$(echo "$existing_cr" | jq -r '.spec.providerK8sSecret // false')
             
-            # Get existing tenants as JSON
-            local existing_tenants=$(echo "$existing_cr" | ${YQ_CMD} read - 'spec.tenants' -j)
-            [ "$existing_tenants" = "null" ] && existing_tenants="[]"
+            # Get existing tenants
+            local existing_tenants=$(echo "$existing_cr" | jq -c '.spec.tenants // []')
             
             info "Current configuration:"
             info "  providerK8sSecret: $existing_provider_k8s"
-            local tenant_count=$(echo "$existing_tenants" | grep -o '"name"' | wc -l | tr -d ' ')
-            info "  Existing tenants: $tenant_count"
+            info "  Existing tenants: $(echo "$existing_tenants" | jq -r 'length')"
             echo
             
-            # Build merged tenant configuration using jq for JSON manipulation
+            # Build merged tenant configuration
             local temp_file=$(mktemp)
             echo "$existing_tenants" > "$temp_file"
             
@@ -2067,66 +2321,79 @@ EOF
             for tenant_data in "${tenants[@]}"; do
                 IFS=':' read -r t_name t_account cred_name provider secret_key models_str <<< "$tenant_data"
                 
-                # Check if tenant exists using grep
-                local tenant_exists=$(grep -c "\"name\".*:.*\"$t_name\"" "$temp_file" 2>/dev/null || echo "0")
+                # Check if tenant exists
+                local tenant_idx=$(jq -r --arg n "$t_name" '.[] | select(.name == $n) | .name' "$temp_file" 2>/dev/null | wc -l | tr -d ' ')
                 
-                if [ "$tenant_exists" -eq 0 ]; then
+                if [ "$tenant_idx" -eq 0 ]; then
                     # Tenant doesn't exist, add it
                     info "Adding new tenant: $t_name"
-                    # Use jq to add tenant if available, otherwise manual JSON construction
-                    if command -v jq &> /dev/null; then
-                        local new_tenant='{"name":"'$t_name'","accountId":"'$t_account'","credentials":[{"name":"'$cred_name'","provider":"'$provider'","secretKey":"'$secret_key'"}],"models":[]}'
-                        jq ". += [$new_tenant]" "$temp_file" > "${temp_file}.tmp" && mv "${temp_file}.tmp" "$temp_file"
-                    else
-                        # Fallback: manual JSON construction
-                        local current_content=$(cat "$temp_file")
-                        if [ "$current_content" = "[]" ] || [ "$current_content" = "null" ]; then
-                            echo '[{"name":"'$t_name'","accountId":"'$t_account'","credentials":[{"name":"'$cred_name'","provider":"'$provider'","secretKey":"'$secret_key'"}],"models":[]}]' > "$temp_file"
-                        else
-                            # Remove trailing ] and add new tenant
-                            sed -i '$ s/]$/,{"name":"'$t_name'","accountId":"'$t_account'","credentials":[{"name":"'$cred_name'","provider":"'$provider'","secretKey":"'$secret_key'"}],"models":[]}]/' "$temp_file"
-                        fi
-                    fi
+                    local new_tenant=$(cat <<EOF
+{
+  "name": "$t_name",
+  "accountId": "$t_account",
+  "credentials": [
+    {
+      "name": "$cred_name",
+      "provider": "$provider",
+      "secretKey": "$secret_key"
+    }
+  ],
+  "models": []
+}
+EOF
+)
+                    echo "$new_tenant" | jq -c '.' > "${temp_file}.new"
+                    jq -c ". += [$(cat "${temp_file}.new")]" "$temp_file" > "${temp_file}.tmp" && mv "${temp_file}.tmp" "$temp_file"
+                    rm -f "${temp_file}.new"
                 else
-                    info "Tenant '$t_name' already exists, merging credentials..."
-                    # For existing tenants, we'll use jq if available
-                    if command -v jq &> /dev/null; then
-                        # Check if credential exists
-                        local cred_exists=$(jq ".[] | select(.name==\"$t_name\") | .credentials[] | select(.name==\"$cred_name\") | .name" "$temp_file" 2>/dev/null | wc -l | tr -d ' ')
-                        
-                        if [ "$cred_exists" -eq 0 ]; then
-                            info "Adding credential '$cred_name' to tenant: $t_name"
-                            jq "(.[] | select(.name==\"$t_name\") | .credentials) += [{\"name\":\"$cred_name\",\"provider\":\"$provider\",\"secretKey\":\"$secret_key\"}]" "$temp_file" > "${temp_file}.tmp" && mv "${temp_file}.tmp" "$temp_file"
-                        else
-                            info "Updating credential '$cred_name' in tenant: $t_name"
-                            jq "(.[] | select(.name==\"$t_name\") | .credentials[] | select(.name==\"$cred_name\")) |= {\"name\":\"$cred_name\",\"provider\":\"$provider\",\"secretKey\":\"$secret_key\"}" "$temp_file" > "${temp_file}.tmp" && mv "${temp_file}.tmp" "$temp_file"
-                        fi
+                    # Tenant exists, check if credential exists
+                    local cred_exists=$(jq -r --arg n "$t_name" --arg c "$cred_name" '.[] | select(.name == $n) | .credentials[]? | select(.name == $c) | .name' "$temp_file" 2>/dev/null | wc -l | tr -d ' ')
+                    
+                    if [ "$cred_exists" -eq 0 ]; then
+                        # Add credential to existing tenant
+                        info "Adding credential '$cred_name' to existing tenant: $t_name"
+                        jq -c --arg n "$t_name" --arg cn "$cred_name" --arg p "$provider" --arg sk "$secret_key" \
+                            '(.[] | select(.name == $n) | .credentials) += [{"name": $cn, "provider": $p, "secretKey": $sk}]' \
+                            "$temp_file" > "${temp_file}.tmp" && mv "${temp_file}.tmp" "$temp_file"
                     else
-                        warning "jq not available, credential merging may be limited"
+                        # Update existing credential
+                        info "Updating existing credential '$cred_name' in tenant: $t_name"
+                        jq -c --arg n "$t_name" --arg cn "$cred_name" --arg p "$provider" --arg sk "$secret_key" \
+                            '(.[] | select(.name == $n) | .credentials[] | select(.name == $cn)) |= {"name": $cn, "provider": $p, "secretKey": $sk}' \
+                            "$temp_file" > "${temp_file}.tmp" && mv "${temp_file}.tmp" "$temp_file"
                     fi
                 fi
                 
                 # Add or update models if configured
-                if [ -n "$models_str" ] && command -v jq &> /dev/null; then
+                if [ -n "$models_str" ]; then
                     IFS=' ' read -ra model_array <<< "$models_str"
                     for model_entry in "${model_array[@]}"; do
                         IFS=':' read -r model_id model_alias model_cred <<< "$model_entry"
                         if [ "$model_cred" = "$cred_name" ]; then
-                            local model_exists=$(jq ".[] | select(.name==\"$t_name\") | .models[]? | select(.id==\"$model_id\") | .id" "$temp_file" 2>/dev/null | wc -l | tr -d ' ')
+                            # Check if model exists
+                            local model_exists=$(jq -r --arg n "$t_name" --arg mid "$model_id" '.[] | select(.name == $n) | .models[]? | select(.id == $mid) | .id' "$temp_file" 2>/dev/null | wc -l | tr -d ' ')
                             
                             if [ "$model_exists" -eq 0 ]; then
                                 info "Adding model '$model_id' to tenant: $t_name"
                                 if [ -n "$model_alias" ]; then
-                                    jq "(.[] | select(.name==\"$t_name\") | .models) += [{\"id\":\"$model_id\",\"alias\":\"$model_alias\",\"credentialName\":\"$cred_name\"}]" "$temp_file" > "${temp_file}.tmp" && mv "${temp_file}.tmp" "$temp_file"
+                                    jq -c --arg n "$t_name" --arg mid "$model_id" --arg ma "$model_alias" --arg cn "$cred_name" \
+                                        '(.[] | select(.name == $n) | .models) += [{"id": $mid, "alias": $ma, "credentialName": $cn}]' \
+                                        "$temp_file" > "${temp_file}.tmp" && mv "${temp_file}.tmp" "$temp_file"
                                 else
-                                    jq "(.[] | select(.name==\"$t_name\") | .models) += [{\"id\":\"$model_id\",\"credentialName\":\"$cred_name\"}]" "$temp_file" > "${temp_file}.tmp" && mv "${temp_file}.tmp" "$temp_file"
+                                    jq -c --arg n "$t_name" --arg mid "$model_id" --arg cn "$cred_name" \
+                                        '(.[] | select(.name == $n) | .models) += [{"id": $mid, "credentialName": $cn}]' \
+                                        "$temp_file" > "${temp_file}.tmp" && mv "${temp_file}.tmp" "$temp_file"
                                 fi
                             else
                                 info "Updating model '$model_id' in tenant: $t_name"
                                 if [ -n "$model_alias" ]; then
-                                    jq "(.[] | select(.name==\"$t_name\") | .models[] | select(.id==\"$model_id\")) |= {\"id\":\"$model_id\",\"alias\":\"$model_alias\",\"credentialName\":\"$cred_name\"}" "$temp_file" > "${temp_file}.tmp" && mv "${temp_file}.tmp" "$temp_file"
+                                    jq -c --arg n "$t_name" --arg mid "$model_id" --arg ma "$model_alias" --arg cn "$cred_name" \
+                                        '(.[] | select(.name == $n) | .models[] | select(.id == $mid)) |= {"id": $mid, "alias": $ma, "credentialName": $cn}' \
+                                        "$temp_file" > "${temp_file}.tmp" && mv "${temp_file}.tmp" "$temp_file"
                                 else
-                                    jq "(.[] | select(.name==\"$t_name\") | .models[] | select(.id==\"$model_id\")) |= {\"id\":\"$model_id\",\"credentialName\":\"$cred_name\"}" "$temp_file" > "${temp_file}.tmp" && mv "${temp_file}.tmp" "$temp_file"
+                                    jq -c --arg n "$t_name" --arg mid "$model_id" --arg cn "$cred_name" \
+                                        '(.[] | select(.name == $n) | .models[] | select(.id == $mid)) |= {"id": $mid, "credentialName": $cn}' \
+                                        "$temp_file" > "${temp_file}.tmp" && mv "${temp_file}.tmp" "$temp_file"
                                 fi
                             fi
                         fi
@@ -2141,8 +2408,7 @@ EOF
             rm -f "$temp_file" "${temp_file}.tmp" "${temp_file}.new"
             
             echo
-            local final_tenant_count=$(echo "$merged_tenants" | grep -o '"name"' | wc -l | tr -d ' ')
-            info "Merged configuration will have $final_tenant_count tenant(s)"
+            info "Merged configuration will have $(echo "$merged_tenants" | jq -r 'length') tenant(s)"
             echo
             
             # Apply the patch
@@ -2229,68 +2495,65 @@ EOF
     
     # Generate Helm values file for provider configuration
     local helm_values_file="${property_dir}/provider_helm_values.yaml"
-    cat > "$helm_values_file" <<EOF
-modelGateway:
-  providerK8sSecret: true
-  tenants:
-EOF
-    
-    # Build tenants array
-    local tenant_index=0
-    local -A processed_tenants=()
-    
+
+    # Build tenants data in a single pass: collect per-tenant credentials and models,
+    # then emit the complete YAML without needing yq eval.
+    declare -A _hv_tenant_account=()
+    declare -A _hv_tenant_creds=()   # tenant -> newline-separated "name|provider|secretKey" entries
+    declare -A _hv_tenant_models=()  # tenant -> newline-separated "id|alias|credName" entries
+    local -a _hv_tenant_order=()
+
     for tenant_data in "${tenants[@]}"; do
         IFS=':' read -r t_name t_account cred_name provider secret_key models_str <<< "$tenant_data"
-        
-        # Add tenant if not already processed
-        if [ -z "${processed_tenants[$t_name]}" ]; then
-            cat >> "$helm_values_file" <<EOF
-  - name: "$t_name"
-    accountId: "$t_account"
-    credentials: []
-    models: []
-EOF
-            processed_tenants[$t_name]=$tenant_index
-            tenant_index=$((tenant_index + 1))
+
+        if [ -z "${_hv_tenant_account[$t_name]+x}" ]; then
+            _hv_tenant_order+=("$t_name")
+            _hv_tenant_account[$t_name]="$t_account"
+            _hv_tenant_creds[$t_name]=""
+            _hv_tenant_models[$t_name]=""
         fi
-    done
-    
-    # Now add credentials and models using yq
-    tenant_index=0
-    declare -A processed_tenants_idx=()
-    
-    for tenant_data in "${tenants[@]}"; do
-        IFS=':' read -r t_name t_account cred_name provider secret_key models_str <<< "$tenant_data"
-        
-        if [ -z "${processed_tenants_idx[$t_name]}" ]; then
-            processed_tenants_idx[$t_name]=$tenant_index
-            tenant_index=$((tenant_index + 1))
-        fi
-        
-        local t_idx=${processed_tenants_idx[$t_name]}
-        local cred_idx=$(${YQ_CMD} read "$helm_values_file" "modelGateway.tenants[$t_idx].credentials" -l)
-        
-        # Add credential
-        ${YQ_CMD} write -i "$helm_values_file" "modelGateway.tenants[$t_idx].credentials[$cred_idx].name" "$cred_name"
-        ${YQ_CMD} write -i "$helm_values_file" "modelGateway.tenants[$t_idx].credentials[$cred_idx].provider" "$provider"
-        ${YQ_CMD} write -i "$helm_values_file" "modelGateway.tenants[$t_idx].credentials[$cred_idx].secretKey" "$secret_key"
-        
-        # Add models if configured
+
+        # Append credential entry (pipe-delimited to avoid conflicts with colon used in IFS split above)
+        _hv_tenant_creds[$t_name]+="${cred_name}|${provider}|${secret_key}"$'\n'
+
+        # Append model entries
         if [ -n "$models_str" ]; then
             IFS=' ' read -ra model_array <<< "$models_str"
             for model_entry in "${model_array[@]}"; do
                 IFS=':' read -r model_id model_alias model_cred <<< "$model_entry"
                 if [ "$model_cred" = "$cred_name" ]; then
-                    local model_idx=$(${YQ_CMD} read "$helm_values_file" "modelGateway.tenants[$t_idx].models" -l)
-                    ${YQ_CMD} write -i "$helm_values_file" "modelGateway.tenants[$t_idx].models[$model_idx].id" "$model_id"
-                    if [ -n "$model_alias" ]; then
-                        ${YQ_CMD} write -i "$helm_values_file" "modelGateway.tenants[$t_idx].models[$model_idx].alias" "$model_alias"
-                    fi
-                    ${YQ_CMD} write -i "$helm_values_file" "modelGateway.tenants[$t_idx].models[$model_idx].credentialName" "$cred_name"
+                    _hv_tenant_models[$t_name]+="${model_id}|${model_alias}|${cred_name}"$'\n'
                 fi
             done
         fi
     done
+
+    # Emit the complete YAML in one go
+    {
+        printf 'modelGateway:\n'
+        printf '  providerK8sSecret: true\n'
+        printf '  tenants:\n'
+        for t_name in "${_hv_tenant_order[@]}"; do
+            printf '  - name: "%s"\n'        "$t_name"
+            printf '    accountId: "%s"\n'   "${_hv_tenant_account[$t_name]}"
+            printf '    credentials:\n'
+            while IFS= read -r cred_line; do
+                [ -z "$cred_line" ] && continue
+                IFS='|' read -r cn cp csk <<< "$cred_line"
+                printf '    - name: "%s"\n'      "$cn"
+                printf '      provider: "%s"\n'  "$cp"
+                printf '      secretKey: "%s"\n' "$csk"
+            done <<< "${_hv_tenant_creds[$t_name]}"
+            printf '    models:\n'
+            while IFS= read -r model_line; do
+                [ -z "$model_line" ] && continue
+                IFS='|' read -r mid malias mcred <<< "$model_line"
+                printf '    - id: "%s"\n'             "$mid"
+                [ -n "$malias" ] && printf '      alias: "%s"\n' "$malias"
+                printf '      credentialName: "%s"\n' "$mcred"
+            done <<< "${_hv_tenant_models[$t_name]}"
+        done
+    } > "$helm_values_file"
     
     success "Provider configuration saved to Helm values file: $helm_values_file"
     info "This will be applied during Helm installation"
@@ -2430,8 +2693,8 @@ function verify_prerequisites() {
         echo
     fi
     
-    # Check external PostgreSQL secret
-    if [ "$LITE_INSTALL" != "true" ]; then
+    # Check external PostgreSQL secret (skip for lite install and internal postgres)
+    if [ "$LITE_INSTALL" != "true" ] && [ "$DEPLOY_INTERNAL_POSTGRES" != "true" ]; then
         if check_namespace "$INSTANCE_NAMESPACE"; then
             check_external_postgres_secret "$INSTANCE_NAMESPACE" || errors=$((errors + 1))
         else
@@ -2535,11 +2798,7 @@ function install_operator() {
     local release_status=""
     
     if [ -n "$existing_release" ]; then
-        if command -v jq &> /dev/null; then
-            release_status=$(helm list $HELM_LIST_ALL_FLAG -n "$OPERATOR_NAMESPACE" -o json | jq -r ".[] | select(.name == \"model-gateway-operator\") | .status")
-        else
-            release_status=$(helm list $HELM_LIST_ALL_FLAG -n "$OPERATOR_NAMESPACE" | grep "^model-gateway-operator" | awk '{print $8}')
-        fi
+        release_status=$(helm list $HELM_LIST_ALL_FLAG -n "$OPERATOR_NAMESPACE" -o json | jq -r '.[] | select(.name == "model-gateway-operator") | .status')
         
         if [ "$release_status" = "failed" ] || [ "$release_status" = "pending-install" ] || [ "$release_status" = "pending-upgrade" ]; then
             warning "Found existing release in '$release_status' state"
@@ -2569,9 +2828,9 @@ function install_operator() {
         info "Copying image pull secret to instance namespace..."
         local secret_file=$(mktemp)
         ${CLI_CMD} get secret "$IMAGE_PULL_SECRET" -n "$OPERATOR_NAMESPACE" -o yaml > "$secret_file"
-        ${YQ_CMD} write -i "$secret_file" "metadata.namespace" "$INSTANCE_NAMESPACE"
-        ${YQ_CMD} delete -i "$secret_file" "metadata.resourceVersion"
-        ${YQ_CMD} delete -i "$secret_file" "metadata.uid"
+        sed -i.bak "s|^\(  namespace:\).*|\1 ${INSTANCE_NAMESPACE}|" "$secret_file" && rm -f "${secret_file}.bak"
+        grep -v '^\s*resourceVersion:' "$secret_file" > "${secret_file}.tmp" && mv "${secret_file}.tmp" "$secret_file"
+        grep -v '^\s*uid:' "$secret_file" > "${secret_file}.tmp" && mv "${secret_file}.tmp" "$secret_file"
         ${CLI_CMD} apply -f "$secret_file" || warning "Failed to copy image pull secret"
         rm -f "$secret_file"
     fi
@@ -2606,8 +2865,18 @@ function install_operator() {
     
     if [ "$LITE_INSTALL" == "true" ]; then
         helm_args+=("--set" "modelGateway.lite_install=true")
+    elif [ "$DEPLOY_INTERNAL_POSTGRES" == "true" ]; then
+        # Deploy the internal IBM CNPG PostgreSQL operator
+        helm_args+=("--set" "modelGateway.deploy_postgres=true")
+        info "Using internal IBM CNPG PostgreSQL operator"
+        
+        # Disable Redis deployment for small scale config
+        if [ "$SCALE_CONFIG" == "small" ]; then
+            helm_args+=("--set" "modelGateway.deploy_redis=false")
+            info "Redis deployment disabled for small scale configuration"
+        fi
     else
-        # Disable internal PostgreSQL deployment - use external PostgreSQL only
+        # External PostgreSQL — disable internal deployment
         helm_args+=("--set" "modelGateway.deploy_postgres=false")
         
         # Disable Redis deployment for small scale config
@@ -2809,11 +3078,13 @@ function uninstall() {
     info "Deleting Model Gateway secrets..."
     local secrets_deleted=0
     
-    # Delete postgres external secret
-    if ${CLI_CMD} get secret model-gateway-postgres-external-secret -n "$INSTANCE_NAMESPACE" &> /dev/null; then
-        if ${CLI_CMD} delete secret model-gateway-postgres-external-secret -n "$INSTANCE_NAMESPACE" --ignore-not-found; then
-            success "Deleted secret: model-gateway-postgres-external-secret"
-            secrets_deleted=$((secrets_deleted + 1))
+    # Delete postgres external secret (only relevant for external postgres deployments)
+    if [ "$DEPLOY_INTERNAL_POSTGRES" != "true" ]; then
+        if ${CLI_CMD} get secret model-gateway-postgres-external-secret -n "$INSTANCE_NAMESPACE" &> /dev/null; then
+            if ${CLI_CMD} delete secret model-gateway-postgres-external-secret -n "$INSTANCE_NAMESPACE" --ignore-not-found; then
+                success "Deleted secret: model-gateway-postgres-external-secret"
+                secrets_deleted=$((secrets_deleted + 1))
+            fi
         fi
     fi
     
@@ -3009,6 +3280,9 @@ function parse_arguments() {
             --lite-install)
                 LITE_INSTALL="true"
                 ;;
+            --internal-postgres)
+                DEPLOY_INTERNAL_POSTGRES="true"
+                ;;
             --redis-channel)
                 shift
                 REDIS_OPERATOR_CHANNEL="$1"
@@ -3052,6 +3326,13 @@ function parse_arguments() {
         error "  ./baw-model-gateway-deployment.sh --accept-license -n production"
         error "  ./baw-model-gateway-deployment.sh --uninstall -n production"
         error "  ./baw-model-gateway-deployment.sh --configure-providers -n production"
+        exit 1
+    fi
+    
+    # Validate that --internal-postgres and --lite-install are mutually exclusive
+    if [ "$DEPLOY_INTERNAL_POSTGRES" = "true" ] && [ "$LITE_INSTALL" = "true" ]; then
+        error "--internal-postgres and --lite-install are mutually exclusive"
+        error "Please use only one PostgreSQL option"
         exit 1
     fi
     

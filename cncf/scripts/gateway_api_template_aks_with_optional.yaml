@@ -7,7 +7,7 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: baw-auth-gateway-tls
+  name: NAMESPACE-baw-auth-gateway-tls
   namespace: NAMESPACE
 spec:
   secretName: cp-console-gateway-tls-secret
@@ -26,7 +26,7 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: licensing-gateway-tls
+  name: NAMESPACE-licensing-gateway-tls
   namespace: NAMESPACE
 spec:
   secretName: licensing-gateway-tls-secret
@@ -45,7 +45,7 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: opensearch-gateway-tls
+  name: NAMESPACE-opensearch-gateway-tls
   namespace: NAMESPACE
 spec:
   secretName: opensearch-gateway-tls-secret
@@ -64,7 +64,7 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: cpd-ingress-tls
+  name: NAMESPACE-cpd-ingress-tls
   namespace: NAMESPACE
 spec:
   secretName: cpd-ingress-tls-secret
@@ -79,17 +79,40 @@ spec:
     - server auth
 
 ---
+# Non-headless Service wrapper for OpenSearch
+# The OpenSearch operator creates headless Services (ClusterIP: None) which AGC cannot use
+# as backends — it requires a ClusterIP service to resolve endpoints. This wrapper selects
+# the same pods and gives AGC a routable ClusterIP.
+apiVersion: v1
+kind: Service
+metadata:
+  name: NAMESPACE-opensearch-svc
+  namespace: NAMESPACE
+spec:
+  type: ClusterIP
+  ports:
+    - name: https
+      port: 9200
+      protocol: TCP
+      targetPort: 9200
+      appProtocol: HTTPS
+  selector:
+    cluster.opensearch.cloudpackopen.ibm.com: opensearch
+
+---
 # BackendTLSPolicy for OpenSearch
+# No verify block: AGC does not support private CA cert verification for backend TLS.
+# Targets the non-headless wrapper service, not the headless opensearch service.
 apiVersion: alb.networking.azure.io/v1
 kind: BackendTLSPolicy
 metadata:
-  name: opensearch-tls
+  name: NAMESPACE-opensearch-tls
   namespace: NAMESPACE
 spec:
   targetRef:
     group: ""
     kind: Service
-    name: opensearch
+    name: NAMESPACE-opensearch-svc
   default:
     sni: opensearch.NAMESPACE.svc
     ports:
@@ -97,36 +120,39 @@ spec:
 
 ---
 # HealthCheckPolicy for OpenSearch (accepts 401 responses)
+# OpenSearch returns 401 on all unauthenticated probes — include it as a healthy status.
+# Targets the non-headless wrapper service.
 apiVersion: alb.networking.azure.io/v1
 kind: HealthCheckPolicy
 metadata:
-  name: opensearch-hc
+  name: NAMESPACE-opensearch-hc
   namespace: NAMESPACE
 spec:
   targetRef:
     group: ""
     kind: Service
-    name: opensearch
+    name: NAMESPACE-opensearch-svc
   default:
     interval: 15s
     timeout: 10s
     healthyThreshold: 1
     unhealthyThreshold: 3
     port: 9200
+    useTLS: true
     http:
       path: /
       match:
         statusCodes:
           - start: 200
             end: 401
-    useTLS: true
 
 ---
 # BackendTLSPolicy for platform-auth-service
+# verify works here: cs-ca-certificate-secret is the IBM IAM CA and exists in the namespace.
 apiVersion: alb.networking.azure.io/v1
 kind: BackendTLSPolicy
 metadata:
-  name: platform-auth-tls
+  name: NAMESPACE-platform-auth-tls
   namespace: NAMESPACE
 spec:
   targetRef:
@@ -134,16 +160,22 @@ spec:
     kind: Service
     name: platform-auth-service
   default:
-    sni: platform-auth-service.NAMESPACE.svc
+    sni: platform-auth-service
+    verify:
+      caCertificateRef:
+        name: cs-ca-certificate-secret
+        group: ""
+        kind: Secret
     ports:
       - port: 9443
 
 ---
 # BackendTLSPolicy for platform-identity-provider
+# verify works here: cs-ca-certificate-secret is the IBM IAM CA and exists in the namespace.
 apiVersion: alb.networking.azure.io/v1
 kind: BackendTLSPolicy
 metadata:
-  name: platform-idprovider-tls
+  name: NAMESPACE-platform-idprovider-tls
   namespace: NAMESPACE
 spec:
   targetRef:
@@ -151,16 +183,22 @@ spec:
     kind: Service
     name: platform-identity-provider
   default:
-    sni: platform-identity-provider.NAMESPACE.svc
+    sni: platform-identity-provider
+    verify:
+      caCertificateRef:
+        name: cs-ca-certificate-secret
+        group: ""
+        kind: Secret
     ports:
       - port: 4300
 
 ---
 # BackendTLSPolicy for platform-identity-management
+# verify works here: cs-ca-certificate-secret is the IBM IAM CA and exists in the namespace.
 apiVersion: alb.networking.azure.io/v1
 kind: BackendTLSPolicy
 metadata:
-  name: platform-idmgmt-tls
+  name: NAMESPACE-platform-idmgmt-tls
   namespace: NAMESPACE
 spec:
   targetRef:
@@ -168,16 +206,24 @@ spec:
     kind: Service
     name: platform-identity-management
   default:
-    sni: platform-identity-management.NAMESPACE.svc
+    sni: platform-identity-management
+    verify:
+      caCertificateRef:
+        name: cs-ca-certificate-secret
+        group: ""
+        kind: Secret
     ports:
       - port: 4500
 
 ---
 # BackendTLSPolicy for ibm-nginx-svc
+# NOTE: port must be the pod's TLS port (8443), not the service virtual port (443).
+# AGC bypasses kube-proxy and connects directly to pod endpoints.
+# No verify block: AGC does not support private CA cert verification for backend TLS.
 apiVersion: alb.networking.azure.io/v1
 kind: BackendTLSPolicy
 metadata:
-  name: ibm-nginx-tls
+  name: NAMESPACE-ibm-nginx-tls
   namespace: NAMESPACE
 spec:
   targetRef:
@@ -185,22 +231,52 @@ spec:
     kind: Service
     name: ibm-nginx-svc
   default:
-    sni: ibm-nginx-svc.NAMESPACE.svc
+    sni: cpd
     ports:
-      - port: 443
+      - port: 8443
+
+---
+# HealthCheckPolicy for ibm-nginx-svc
+# ibm-nginx returns 303 on / — AGC marks backend unhealthy unless probed at /zen/ (returns 200).
+apiVersion: alb.networking.azure.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: NAMESPACE-ibm-nginx-hc
+  namespace: NAMESPACE
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: ibm-nginx-svc
+    namespace: NAMESPACE
+  default:
+    healthyThreshold: 2
+    unhealthyThreshold: 3
+    interval: 5s
+    timeout: 3s
+    port: 8443
+    useTLS: true
+    http:
+      path: /zen/
+      match:
+        statusCodes:
+          - start: 200
+            end: 399
 
 ---
 # BackendTLSPolicy for licensing service
+# No verify block: AGC does not support private CA cert verification for backend TLS.
 apiVersion: alb.networking.azure.io/v1
 kind: BackendTLSPolicy
 metadata:
-  name: licensing-tls
+  name: LICENSING_NS-licensing-tls
   namespace: LICENSING_NS
 spec:
   targetRef:
     group: ""
     kind: Service
     name: ibm-licensing-service-instance
+    namespace: LICENSING_NS
   default:
     sni: ibm-licensing-service-instance.LICENSING_NS.svc
     ports:
@@ -211,8 +287,11 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: baw-auth-gateway
+  name: NAMESPACE-baw-auth-gateway
   namespace: NAMESPACE
+  annotations:
+    alb.networking.azure.io/alb-name: ALB_NAME
+    alb.networking.azure.io/alb-namespace: NAMESPACE
   labels:
     app: baw-auth-gateway
 spec:
@@ -284,7 +363,7 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: ReferenceGrant
 metadata:
-  name: allow-licensing-to-gateway
+  name: NAMESPACE-allow-licensing-to-gateway
   namespace: NAMESPACE
 spec:
   from:
@@ -294,18 +373,18 @@ spec:
   to:
     - group: gateway.networking.k8s.io
       kind: Gateway
-      name: baw-auth-gateway
+      name: NAMESPACE-baw-auth-gateway
 
 ---
 # HTTPRoute: /idauth → platform-auth-service
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: cncf-platform-id-auth
+  name: NAMESPACE-cncf-platform-id-auth
   namespace: NAMESPACE
 spec:
   parentRefs:
-    - name: baw-auth-gateway
+    - name: NAMESPACE-baw-auth-gateway
       sectionName: https
   hostnames:
     - "NAMESPACE-cpd.DOMAIN"
@@ -329,11 +408,11 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: cncf-platform-id-provider
+  name: NAMESPACE-cncf-platform-id-provider
   namespace: NAMESPACE
 spec:
   parentRefs:
-    - name: baw-auth-gateway
+    - name: NAMESPACE-baw-auth-gateway
       sectionName: https
   hostnames:
     - "NAMESPACE-cpd.DOMAIN"
@@ -357,11 +436,11 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: cncf-platform-login
+  name: NAMESPACE-cncf-platform-login
   namespace: NAMESPACE
 spec:
   parentRefs:
-    - name: baw-auth-gateway
+    - name: NAMESPACE-baw-auth-gateway
       sectionName: https
   hostnames:
     - "NAMESPACE-cpd.DOMAIN"
@@ -385,11 +464,11 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: cncf-platform-auth
+  name: NAMESPACE-cncf-platform-auth
   namespace: NAMESPACE
 spec:
   parentRefs:
-    - name: baw-auth-gateway
+    - name: NAMESPACE-baw-auth-gateway
       sectionName: https
   hostnames:
     - "NAMESPACE-cpd.DOMAIN"
@@ -413,11 +492,11 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: cncf-id-mgmt
+  name: NAMESPACE-cncf-id-mgmt
   namespace: NAMESPACE
 spec:
   parentRefs:
-    - name: baw-auth-gateway
+    - name: NAMESPACE-baw-auth-gateway
       sectionName: https
   hostnames:
     - "NAMESPACE-cpd.DOMAIN"
@@ -441,11 +520,11 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: cncf-platform-oidc
+  name: NAMESPACE-cncf-platform-oidc
   namespace: NAMESPACE
 spec:
   parentRefs:
-    - name: baw-auth-gateway
+    - name: NAMESPACE-baw-auth-gateway
       sectionName: https
   hostnames:
     - "NAMESPACE-cpd.DOMAIN"
@@ -469,11 +548,11 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: cncf-saml-ui-callback
+  name: NAMESPACE-cncf-saml-ui-callback
   namespace: NAMESPACE
 spec:
   parentRefs:
-    - name: baw-auth-gateway
+    - name: NAMESPACE-baw-auth-gateway
       sectionName: https
   hostnames:
     - "NAMESPACE-cpd.DOMAIN"
@@ -491,11 +570,11 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: cncf-social-login-callback
+  name: NAMESPACE-cncf-social-login-callback
   namespace: NAMESPACE
 spec:
   parentRefs:
-    - name: baw-auth-gateway
+    - name: NAMESPACE-baw-auth-gateway
       sectionName: https
   hostnames:
     - "NAMESPACE-cpd.DOMAIN"
@@ -510,14 +589,15 @@ spec:
 
 ---
 # HTTPRoute: Catch-all / → ibm-nginx-svc (Zen UI)
+# port 8443: AGC connects directly to pod port; service must expose 8443 (see patch_services_for_https).
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: zen-ingress
+  name: NAMESPACE-zen-ingress
   namespace: NAMESPACE
 spec:
   parentRefs:
-    - name: baw-auth-gateway
+    - name: NAMESPACE-baw-auth-gateway
       sectionName: https
   hostnames:
     - "NAMESPACE-cpd.DOMAIN"
@@ -528,18 +608,19 @@ spec:
             value: /
       backendRefs:
         - name: ibm-nginx-svc
-          port: 443
+          port: 8443
 
 ---
 # HTTPRoute: OpenSearch
+# Routes to the non-headless wrapper service, not the headless opensearch service.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: cncf-opensearch
+  name: NAMESPACE-cncf-opensearch
   namespace: NAMESPACE
 spec:
   parentRefs:
-    - name: baw-auth-gateway
+    - name: NAMESPACE-baw-auth-gateway
       sectionName: https-opensearch
   hostnames:
     - "opensearch-NAMESPACE.DOMAIN"
@@ -549,7 +630,7 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: opensearch
+        - name: NAMESPACE-opensearch-svc
           port: 9200
 
 ---
@@ -557,11 +638,11 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: cncf-ibm-licensing-service-instance
+  name: LICENSING_NS-cncf-ibm-licensing-service-instance
   namespace: LICENSING_NS
 spec:
   parentRefs:
-    - name: baw-auth-gateway
+    - name: NAMESPACE-baw-auth-gateway
       namespace: NAMESPACE
       sectionName: https-licensing
   hostnames:
@@ -580,11 +661,11 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: http-to-https-redirect-auth
+  name: NAMESPACE-http-to-https-redirect-auth
   namespace: NAMESPACE
 spec:
   parentRefs:
-    - name: baw-auth-gateway
+    - name: NAMESPACE-baw-auth-gateway
       sectionName: http
   hostnames:
     - "NAMESPACE-cpd.DOMAIN"
@@ -600,11 +681,11 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: http-to-https-redirect-opensearch
+  name: NAMESPACE-http-to-https-redirect-opensearch
   namespace: NAMESPACE
 spec:
   parentRefs:
-    - name: baw-auth-gateway
+    - name: NAMESPACE-baw-auth-gateway
       sectionName: http
   hostnames:
     - "opensearch-NAMESPACE.DOMAIN"
@@ -620,11 +701,11 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: http-to-https-redirect-licensing
+  name: LICENSING_NS-http-to-https-redirect-licensing
   namespace: LICENSING_NS
 spec:
   parentRefs:
-    - name: baw-auth-gateway
+    - name: NAMESPACE-baw-auth-gateway
       namespace: NAMESPACE
       sectionName: http
   hostnames:

@@ -1544,7 +1544,7 @@ function catalog_source_staging() {
         # For latest mode, it works on top of dev mode: use dev catalog sources, then patch operator images to :latest
         if [[ "$RUNTIME_MODE" == "dev" || "$RUNTIME_MODE" == "latest" ]]; then
             # temporarily adding ibm-zen-operator-catalog because as of March 13th 2025 zen has not GAed
-            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-content-cortex-operator-catalog"  || "$name" == "ibm-zen-operator-catalog-6-4-0" || "$name" == "cloud-native-postgresql-catalog" || "$name" == "ibm-cp-automation-catalog" || "$name" == "ibm-redis-cp-operator-catalog" ]]; then
+            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-content-cortex-operator-catalog"  || "$name" == "ibm-zen-operator-catalog-6-10-0" || "$name" == "cloud-native-postgresql-catalog" || "$name" == "ibm-cp-automation-catalog" || "$name" == "ibm-redis-cp-operator-catalog" ]]; then
                 # Extract the current image value
                 current_image=$(${YQ_CMD} r -d "$((doc_index - 1))" "$OLM_CATALOG_TMP" 'spec.image')
 
@@ -3532,6 +3532,8 @@ if [[ $SCRIPT_MODE == "OLM" ]];then
             metadata:
                 name: ibm-cpp-config
                 namespace: $DEDICATED_COMMON_PROJECT
+                labels:
+                    operator.ibm.com/managedByCsOperator: "true"
             data:
                 kubernetes_cluster_type: cncf
                 # modify it according for your worker node ip address

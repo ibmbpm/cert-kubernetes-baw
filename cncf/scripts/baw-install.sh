@@ -9,6 +9,30 @@ baw_namespace=""
 domain_name=""
 is_openshift=false
 
+# Function that patches the label on an existing ibm-cpp-config configmap (used during upgrade)
+function patch_cs_config_map() {
+    local ns=$1
+    printf "\n"
+    info "Patching ibm-cpp-config configmap with required label in namespace ${ns} ..."
+
+    oc_version=$(kubectl get clusterversion version -o=jsonpath={.status.desired.version} 2>/dev/null)
+    if [[ ! -z ${oc_version} ]]; then
+        # OpenShift: no label needed
+        info "OpenShift cluster detected, skipping label patch for ibm-cpp-config."
+        return 0
+    fi
+
+    kubectl patch configmap ibm-cpp-config -n "${ns}" \
+        --type=merge \
+        -p '{"metadata":{"labels":{"operator.ibm.com/managedByCsOperator":"true"}}}'
+
+    if [[ $? -ne 0 ]]; then
+        error "Error patching ibm-cpp-config configmap label in ${ns} namespace."
+    else
+        success "ibm-cpp-config configmap label patched successfully."
+    fi
+}
+
 # Function that creates the common services cpp configmap
 function create_cs_config_map() {
     printf "\n"
@@ -39,6 +63,8 @@ kind: ConfigMap
 metadata:
   name: ibm-cpp-config
   namespace: ${baw_namespace}
+  labels:
+    operator.ibm.com/managedByCsOperator: "true"
 data:
   kubernetes_cluster_type: cncf
   commonwebui.standalone: "true"

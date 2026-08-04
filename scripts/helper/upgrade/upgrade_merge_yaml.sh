@@ -94,6 +94,7 @@ function update_license() {
         success "The sc_${license_type}_license value has been successfully updated.."
         printf "\n"
     fi
+}
 
 # Function to migrate watsonx_deployment_id to environment-specific deployment IDs
 # For DBACLD-235269: Migrate old watsonx_deployment_id to new authoring_agent_watsonx_deployment_id and runtime_agent_watsonx_deployment_id
@@ -134,8 +135,6 @@ function migrate_watsonx_deployment_id() {
         ${YQ_CMD} d -i "$input_yaml" "spec.workflow_assistant_configuration.watsonx_deployment_id"
         success "Successfully migrated watsonx_deployment_id to new deployment-specific fields"
     fi
-}
-
 }
 
 
@@ -888,6 +887,13 @@ function upgrade_deployment(){
             ${YQ_CMD} d -i ${UPGRADE_DEPLOYMENT_WFPS_CR_TMP} metadata.resourceVersion
             ${YQ_CMD} d -i ${UPGRADE_DEPLOYMENT_WFPS_CR_TMP} metadata.uid
 
+            # replace release/appVersion BEFORE applying the CR so that the cluster
+            # receives the correct appVersion on the first (and only necessary) apply.
+            # Previously this sed ran after the apply, leaving appVersion stale in
+            # the first kubectl apply and relying on a second apply to correct it.
+            # ${SED_COMMAND} "s|release: .*|release: ${CP4BA_RELEASE_BASE}|g" ${UPGRADE_DEPLOYMENT_PFS_CR_TMP}
+            ${SED_COMMAND} "s|appVersion: .*|appVersion: ${CP4BA_RELEASE_BASE}|g" ${UPGRADE_DEPLOYMENT_WFPS_CR_TMP}
+
             # Scale up wfps operator deployment to enable webhook for CR validation
             kubectl scale --replicas=1 deployment ibm-cp4a-wfps-operator -n $operator_project_name >/dev/null 2>&1
             wait_for_pod $operator_project_name ibm-cp4a-wfps-operator
@@ -897,10 +903,6 @@ function upgrade_deployment(){
             kubectl apply -f ${UPGRADE_DEPLOYMENT_WFPS_CR_TMP} -n $deployment_project_name >/dev/null 2>&1
             # Scale down wfps operator deployment again
             kubectl scale --replicas=0 deployment ibm-cp4a-wfps-operator -n $operator_project_name >/dev/null 2>&1
-
-            # replace release/appVersion
-            # ${SED_COMMAND} "s|release: .*|release: ${CP4BA_RELEASE_BASE}|g" ${UPGRADE_DEPLOYMENT_PFS_CR_TMP}
-            ${SED_COMMAND} "s|appVersion: .*|appVersion: ${CP4BA_RELEASE_BASE}|g" ${UPGRADE_DEPLOYMENT_WFPS_CR_TMP}
 
             # For https://jsw.ibm.com/browse/DBACLD-154068
             # Update BAW license if required
@@ -987,6 +989,25 @@ function upgrade_deployment(){
                 printf "\n"
                 # echo "${YELLOW_TEXT}[NEXT ACTION]${RESET_TEXT}:"
                 # msgB "Run \"baw-deployment.sh -m upgradeDeploymentStatus -n $deployment_project_name\" to get overview upgrade status for IBM CP4BA Workflow Process Service"
+            fi
+        done
+    fi
+
+    # Update appVersion in ProcessFederationServer CR if present.
+    # ProcessFederationServer has its own spec.appVersion field (separate CR kind)
+    # and is not handled by the WfPSRuntime loop or common_cr_updates() above.
+    exist_pfs_cr_array=($(${CLI_CMD} get ProcessFederationServer -n $deployment_project_name --no-headers --ignore-not-found | awk '{print $1}'))
+    if [[ ! -z $exist_pfs_cr_array ]]; then
+        for item in "${exist_pfs_cr_array[@]}"
+        do
+            info "Updating appVersion in ProcessFederationServer CR: \"${item}\""
+            ${CLI_CMD} patch ProcessFederationServer ${item} -n $deployment_project_name \
+                --type merge \
+                -p "{\"spec\":{\"appVersion\":\"${CP4BA_RELEASE_BASE}\"}}" >/dev/null 2>&1
+            if [[ $? -eq 0 ]]; then
+                success "ProcessFederationServer \"${item}\" appVersion updated to ${CP4BA_RELEASE_BASE}"
+            else
+                warning "Failed to patch ProcessFederationServer \"${item}\" appVersion — operator may not be running"
             fi
         done
     fi
@@ -1799,6 +1820,9 @@ function upgrade_deployment(){
         migrate_watsonx_deployment_id "${UPGRADE_DEPLOYMENT_ICP4ACLUSTER_CR_TMP}"
         add_quotes_to_values "${UPGRADE_DEPLOYMENT_ICP4ACLUSTER_CR_TMP}"
 
+        # For DBACLD-235269: Migrate watsonx_deployment_id to environment-specific deployment IDs
+        migrate_watsonx_deployment_id "${UPGRADE_DEPLOYMENT_ICP4ACLUSTER_CR_TMP}"
+
         # must use string type for nodelabel_value in ADP
         if [[ (" ${EXISTING_PATTERN_ARR[@]} " =~ "document_processing") ]]; then
             ${SED_COMMAND} 's/\(nodelabel_value: \)\([^"][^ ]*\)/\1"\2"/' ${UPGRADE_DEPLOYMENT_ICP4ACLUSTER_CR_TMP} >/dev/null 2>&1
@@ -1855,9 +1879,9 @@ function upgrade_deployment(){
             ${CLI_CMD} patch icp4acluster $icp4acluster_cr_name -n $deployment_project_name --type=json -p='[{"op": "remove", "path": "/spec/verify_configuration"}]' >/dev/null 2>&1
 
             info "Applying the custom resource ${UPGRADE_DEPLOYMENT_ICP4ACLUSTER_CR}"
-            kubectl annotate icp4acluster $icp4acluster_cr_name kubectl.kubernetes.io/last-applied-configuration- -n $deployment_project_name >/dev/null 2>&1
+            ${CLI_CMD} annotate icp4acluster $icp4acluster_cr_name kubectl.kubernetes.io/last-applied-configuration- -n $deployment_project_name >/dev/null 2>&1
             #Apply CR to new configuration from the CR file to the cluster, updating the ICP4ACluster resource as per the new specifications
-            kubectl apply -f ${UPGRADE_DEPLOYMENT_ICP4ACLUSTER_CR} -n $deployment_project_name >/dev/null 2>&1
+            ${CLI_CMD} apply -f ${UPGRADE_DEPLOYMENT_ICP4ACLUSTER_CR} -n $deployment_project_name >/dev/null 2>&1
 
             # Check if above kubectl apply command was successful
             if [ $? -ne 0 ]; then
@@ -1885,11 +1909,6 @@ function upgrade_deployment(){
                     echo "    - if upgrading from 21.0.3 or 22.0.2: [https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/24.0.0?topic=deployment-upgrading-automation-decision-services]"
                     echo "    - if upgrading from 23.0.2: [https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/24.0.0?topic=ucreciyd-upgrading-automation-decision-services]"
                     echo "  - Add the storage_configuration.sc_block_storage_classname property in the CR file if it is not already included."
-                    # echo "  - Optional: If the decision runtime secret was manually created, add the following properties:"
-                    # echo "    - deploymentSpaceManagerUsername"
-                    # echo "    - deploymentSpaceManagerPassword"
-                    # echo "    - asraManagerUsername"
-                    # echo "    - asraManagerPassword"
                     step_num=$((step_num + 1))
                     printf "\n"
                 fi

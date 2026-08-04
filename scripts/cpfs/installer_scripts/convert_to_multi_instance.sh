@@ -77,13 +77,13 @@ function prereq() {
     return_value="reset"
 
     # configmap should have control namespace specified
-    return_value=$("${OC}" get configmap -n kube-public -o yaml ${cm_name} | yq r - 'data' | grep controlNamespace: > /dev/null || echo failed)
+    return_value=$("${OC}" get configmap -n kube-public -o yaml ${cm_name} | yq '.data' | grep controlNamespace: > /dev/null || echo failed)
     if [[ $return_value == "failed" ]]; then
         error "Configmap: ${cm_name} did not specify 'controlNamespace' field. This must be configured before proceeding"
     fi
     return_value="reset"
 
-    control_ns=$("${OC}" get configmap -n kube-public -o yaml ${cm_name} | yq r - 'data' | grep controlNamespace: | awk '{print $2}')
+    control_ns=$("${OC}" get configmap -n kube-public -o yaml ${cm_name} | yq '.data' | grep controlNamespace: | awk '{print $2}')
     return_value=$("${OC}" get ns "${control_ns}" > /dev/null || echo failed)
     if [[ $return_value == "failed" ]]; then
         error "The namespace specified in controlNamespace does not exist. This namespace must be created before proceeding."
@@ -198,19 +198,19 @@ function collect_data() {
     msg "-----------------------------------------------------------------------"
     
     info "MasterNS:${master_ns}"
-    cs_operator_channel=$(${OC} get subscription.operators.coreos.com ibm-common-service-operator -n ${master_ns} -o yaml | yq r - "spec.channel")
+    cs_operator_channel=$(${OC} get subscription.operators.coreos.com ibm-common-service-operator -n ${master_ns} -o yaml | yq ".spec.channel") 
     info "channel:${cs_operator_channel}"
-    cs_operator_sourceNamespace=$(${OC} get subscription.operators.coreos.com ibm-common-service-operator -n ${master_ns} -o yaml | yq r - "spec.sourceNamespace")
+    cs_operator_sourceNamespace=$(${OC} get subscription.operators.coreos.com ibm-common-service-operator -n ${master_ns} -o yaml | yq ".spec.sourceNamespace") 
     info "sourceNamespace:${cs_operator_sourceNamespace}"
-    cs_operator_installPlanApproval=$(${OC} get subscription.operators.coreos.com ibm-common-service-operator -n ${master_ns} -o yaml | yq r - "spec.installPlanApproval")
+    cs_operator_installPlanApproval=$(${OC} get subscription.operators.coreos.com ibm-common-service-operator -n ${master_ns} -o yaml | yq ".spec.installPlanApproval") 
     info "installPlanApproval:${cs_operator_installPlanApproval}"
-    catalog_source=$(${OC} get subscription.operators.coreos.com ibm-common-service-operator -n ${master_ns} -o yaml | yq r - "spec.source")
+    catalog_source=$(${OC} get subscription.operators.coreos.com ibm-common-service-operator -n ${master_ns} -o yaml | yq ".spec.source")
     info "catalog_source:${catalog_source}"
 
     #this command gets all of the ns listed in requested from namesapce fields
-    requested_ns=$("${OC}" get configmap -n kube-public -o yaml ${cm_name} | yq r - 'data[*]' | yq r - 'namespaceMapping[*].requested-from-namespace' | awk '{print $2}' | tr '\n' ' ')
+    requested_ns=$("${OC}" get configmap -n kube-public -o yaml ${cm_name} | yq '.data[]' | yq '.namespaceMapping[].requested-from-namespace' | awk '{print $2}' | tr '\n' ' ')
     #this command gets all of the ns listed in map-to-common-service-namespace
-    map_to_cs_ns=$("${OC}" get configmap -n kube-public -o yaml ${cm_name} | yq r - 'data[*]' | yq r - 'namespaceMapping[*].map-to-common-service-namespace' | awk '{print}' | tr '\n' ' ')
+    map_to_cs_ns=$("${OC}" get configmap -n kube-public -o yaml ${cm_name} | yq '.data[]' | yq '.namespaceMapping[].map-to-common-service-namespace' | awk '{print}' | tr '\n' ' ')
     
 }
 
@@ -255,7 +255,7 @@ function check_IAM(){
     local namespaces=""
     for cs_namespace in $map_to_cs_ns
     do
-        local nsFromNSS=$(${OC} get nss -n $cs_namespace -o yaml common-service | yq r - 'status.validatedMembers[*]' | tr '\n' ' ')
+        local nsFromNSS=$(${OC} get nss -n $cs_namespace -o yaml common-service | yq '.status.validatedMembers[]' | tr '\n' ' ')
         for cp_namespace in $nsFromNSS
         do
             zenservice_exists=$(${OC} get zenservice -n $cp_namespace || echo fail)
@@ -320,7 +320,7 @@ function refresh_zen(){
             if [[ $return_value != "" ]]; then
                 return_value=""
                 zenServiceCR=$(${OC} get zenservice -n ${namespace} | awk '{if (NR!=1) {print $1}}')
-                conversionField=$("${OC}" get zenservice ${zenServiceCR} -n ${namespace} -o yaml | yq r - 'spec.conversion')
+                conversionField=$("${OC}" get zenservice ${zenServiceCR} -n ${namespace} -o yaml | yq '.spec | has("conversion")')
                 if [[ $conversionField == "false" ]]; then
                     ${OC} patch zenservice ${zenServiceCR} -n ${namespace} --type='merge' -p '{"spec":{"conversion":"true"}}' || error "Zenservice ${zenServiceCR} in ${namespace} cannot be updated."
                 else
@@ -616,19 +616,19 @@ function removeNSS(){
 function check_topology() {
     title " Checking expected vs actual topology based on common-service-maps "
     msg "-----------------------------------------------------------------------"
-    cm_maps=$(oc get -n kube-public cm common-service-maps -o yaml | yq r - 'data[common-service-maps.yaml]')
+    cm_maps=$(oc get -n kube-public cm common-service-maps -o yaml | yq '.data.["common-service-maps.yaml"]')
     activeMapTo=
     activeRequestedFrom=
     for csNamespace in $map_to_cs_ns
     do
         allPresent="false"
-        nsFromCM=$(echo "$cm_maps" | yq r - 'namespaceMapping[*].requested-from-namespace' | awk '{ print $2 }' | tr '\n' ' ')
+        nsFromCM=$(echo "$cm_maps" | yq eval '.namespaceMapping[] | select(.map-to-common-service-namespace == "'${csNamespace}'").requested-from-namespace' | awk '{ print $2 }' | tr '\n' ' ')
         nssExist=$(${OC} get nss -n $csNamespace common-service || echo fail)
         if [[ $nssExist == "fail" ]]; then
             allPresent="false"
             nsFromNSS=""
         else
-            nsFromNSS=$(${OC} get nss -n $csNamespace -o yaml common-service | yq r - 'status.validatedMembers[*]' | tr '\n' ' ')
+            nsFromNSS=$(${OC} get nss -n $csNamespace -o yaml common-service | yq '.status.validatedMembers[]' | tr '\n' ' ')
             allPresent="true"
         fi
         leftover=""
@@ -685,7 +685,7 @@ function isolate_odlm() {
     fi
     #merge patch overwrites the entire array if you update any values so we need to get any other value specified and make sure it is unchanged
     #loop through all of the values specified in spec.config.env
-    env_range=$(${OC} get subscription.operators.coreos.com ${sub_name} -n ${ns} -o yaml | yq r - 'spec.config.env[*].name')
+    env_range=$(${OC} get subscription.operators.coreos.com ${sub_name} -n ${ns} -o yaml | yq '.spec.config.env[].name')
     patch_string=""
     count=0
     for name in $env_range
@@ -694,7 +694,7 @@ function isolate_odlm() {
         if [[ $name == "ISOLATED_MODE" ]]; then
             env_value="true"
         else
-            env_value=$(${OC} get subscription.operators.coreos.com ${sub_name} -n ${ns} -o yaml | yq r - "spec.config.env[${count}].value")
+            env_value=$(${OC} get subscription.operators.coreos.com ${sub_name} -n ${ns} -o yaml | yq '.spec.config.env['"${count}"'].value')
         fi
         #Add name value pair in json format to the patch string
         if [[ $patch_string == "" ]]; then
@@ -766,11 +766,11 @@ function copy_over_commonservice_cr() {
     
     ${OC} get commonservice common-service -n ${master_ns} -o yaml > tmp.yaml
 
-    yq d -i tmp.yaml 'metadata.creationTimestamp'
-    yq d -i tmp.yaml 'metadata.resourceVersion'
-    yq d -i tmp.yaml 'metadata.uid'
-    yq d -i tmp.yaml 'metadata.generation'
-    yq w -i tmp.yaml 'metadata.namespace' "${namespace}"
+    yq -i 'del(.metadata.creationTimestamp)' tmp.yaml
+    yq -i 'del(.metadata.resourceVersion)' tmp.yaml
+    yq -i 'del(.metadata.uid)' tmp.yaml
+    yq -i 'del(.metadata.generation)' tmp.yaml
+    yq -i '.metadata.namespace = "'${namespace}'"' tmp.yaml
     ${OC} apply -f tmp.yaml  || error "Could not apply CommonService CR changes in namespace $namespace"
 
     rm -f tmp.yaml

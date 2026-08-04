@@ -213,8 +213,8 @@ function waitforpods() {
       else
         pods=$(oc get pods --no-headers -n $2 | grep $1 2>&1)
       fi
-      echo "$pods" | grep -E -q -v 'Completed|Succeeded|No resources found.' || break
-      [[ $(( $index % 10 )) -eq 0 ]] && echo "$pods" | grep -E -v 'Completed|Succeeded'
+      echo "$pods" | egrep -q -v 'Completed|Succeeded|No resources found.' || break
+      [[ $(( $index % 10 )) -eq 0 ]] && echo "$pods" | egrep -v 'Completed|Succeeded'
       sleep 10
       index=$(( index + 1 ))
   done

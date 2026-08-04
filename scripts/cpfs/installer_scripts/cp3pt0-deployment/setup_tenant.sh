@@ -64,6 +64,7 @@ PREVIEW_DIR="/tmp/setup-tenant-$(date +'%Y%m%d%H%M%S')-preview"
 # ---------- Main functions ----------
 
 . ${BASE_DIR}/common/utils.sh
+. ${BASE_DIR}/common/cli_compat.sh
 
 function main() {
     parse_arguments "$@"
@@ -173,7 +174,7 @@ function print_usage() {
     echo "See https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.0?topic=online-installing-foundational-services-by-using-script for more information."
     echo ""
     echo "Options:"
-    echo "   --oc string                    Optional. File path to oc CLI. Default uses oc in your PATH"
+    echo "   --oc string                    Optional. File path to oc/kubectl CLI. Default uses oc in your PATH"
     echo "   --yq string                    Optional. File path to yq CLI. Default uses yq in your PATH"
     echo "   --enable-licensing             Optional. Set this flag to install ibm-licensing-operator"
     echo "   --operator-namespace string    Required. Namespace to install Foundational services operator"

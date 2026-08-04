@@ -69,6 +69,7 @@ STEP=0
 # ---------- Main functions ----------
 
 . ${BASE_DIR}/common/utils.sh
+. ${BASE_DIR}/common/cli_compat.sh
 
 function main() {
     parse_arguments "$@"
@@ -198,7 +199,7 @@ function print_usage() {
     echo "See https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.0?topic=manager-installing-cert-licensing-by-script for more information."
     echo ""
     echo "Options:"
-    echo "   --oc string                                            Optional. File path to oc CLI. Default uses oc in your PATH"
+    echo "   --oc string                                            Optional. File path to oc/kubectl CLI. Default uses oc in your PATH"
     echo "   --yq string                                            Optional. File path to yq CLI. Default uses yq in your PATH"
     echo "   --operator-namespace string                            Optional. Namespace to migrate Cloud Pak 2 Foundational services"
     echo "   -ls, --enable-licensing                                Optional. Set this flag to install ibm-licensing-operator"
@@ -712,7 +713,7 @@ function verify_cert_manager(){
     local retries=20
     local sleep_time=15
     local total_time_mins=$(( sleep_time * retries / 60))
-    local condition="${OC} get pod -A --no-headers --ignore-not-found | grep -E '1/1' | grep ${name} || true"
+    local condition="${OC} get pod -A --no-headers --ignore-not-found | egrep '1/1' | grep ${name} || true"
     local wait_message="Waiting for pod ${name} to be running ..."
     local success_message="Pod ${name} is running."
     local error_message="Timeout after ${total_time_mins} minutes waiting for pod ${name} to be running."

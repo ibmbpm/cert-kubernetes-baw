@@ -166,7 +166,7 @@ function warning() {
 function wait_for_scasle_down() {
     local namespace=$1
     local name=$2
-    local condition="oc -n ${namespace} get deployment --no-headers --ignore-not-found | grep -E '0/0' | grep ^${name}"
+    local condition="oc -n ${namespace} get deployment --no-headers --ignore-not-found | egrep '0/0' | grep ^${name}"
     local retries=30
     local sleep_time=10
     local total_time_mins=$(( sleep_time * retries / 60))

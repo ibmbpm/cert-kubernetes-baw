@@ -38,12 +38,12 @@ OLM_VERSION=v0.32.0
 #Licensing service related variables that required during the creation of subscription and the checks.
 # NEED TO BE UPDATED WHEN WE UPDATE THE VERSIONS
 LICENSING_SERVICE_CHANNEL=v4.2
-LICENSING_SERVICE_TARGET_VERSION="4.2.23"
+LICENSING_SERVICE_TARGET_VERSION="4.2.24"
 
 #Cert Manager related variables that required during the creation of subscription and the checks.
 # NEED TO BE UPDATED WHEN WE UPDATE THE VERSIONS
 CERT_MANAGER_CHANNEL=v4.2
-CERT_MANAGER_TARGET_VERSION="4.2.22"
+CERT_MANAGER_TARGET_VERSION="4.2.23"
 
 # CATALOG SOURCE file name
 CATALOG_SOURCE_FILENAME=${PARENT_DIR}/descriptors/op-olm/catalog_source.yaml
@@ -213,28 +213,29 @@ LDAP_SECRET_FILE=${SECRET_FILE_FOLDER}/ldap-bind-secret.yaml
 # Release/Patch version for CP4BA
 # CP4BA_RELEASE_BASE is for fetch content/foundation operator pod, only need to change for major release.
 CP4BA_RELEASE_BASE="26.0.0"
-BAW_PATCH_VERSION="GA"
+BAW_PATCH_VERSION="IF001"
+BAW_PATCH_VERSION="IF001"
 #DBACLD-222678: This variable is used to specify the version that will skip EDB and Starter deployment option. It should be in the format of ${CP4BA_RELEASE_BASE}_${BAW_PATCH_VERSION}
 # For 26.0.0_GA we will remove the Starter option and EDB option.
+# From 26.0.0_IF001 onwards CNPG is supported, so skip_edb() returns 1 (false) and upgrade is allowed.
 VERSION_TO_SKIP_EDB="26.0.0_GA"
 # CP4BA_RELEASE_BASE_MAJOR_VERSION is used in certain checks where we used to hardcode to see if a upgrade is not ifix to ifix,change this only for major release
 CP4BA_RELEASE_BASE_MAJOR_VERSION="26.0"
-CP4BA_PATCH_VERSION="GA"
+CP4BA_PATCH_VERSION="IF001"
 # CP4BA_CSV_VERSION is for checking CP4BA operator upgrade status, need to update for each IFIX
-CP4BA_CSV_VERSION="v26.0.0"
+CP4BA_CSV_VERSION="v26.0.1"
 # CP4BA_CHANNEL_VERSION is for switch CP4BA operator upgrade status, need to update for major release
 CP4BA_CHANNEL_VERSION="v26.0"
 # CS_OPERATOR_VERSION is for checking CPFS operator upgrade status, need to update for each IFIX
-CS_OPERATOR_VERSION="v4.18.1"
-CS_CHANNEL_KC="4.18.0"
+CS_OPERATOR_VERSION="v4.19.2"
 # CS_CHANNEL_VERSION is for for CPFS script -c option, need to update for each IFIX
-CS_CHANNEL_VERSION="v4.18"
+CS_CHANNEL_VERSION="v4.19"
 # CS CHANNEL VERSION that is used in the KC
 # UMS (User Metering Service) Related Variables
 # UMS_CHANNEL_VERSION is for UMS, need to update for each IFIX
 UMS_CHANNEL_VERSION="v1.0"
 # UMS_CSV_VERSION is for UMS, need to update for each IFIX
-UMS_CSV_VERSION="v1.0.6"
+UMS_CSV_VERSION="v1.0.7"
 # UMS_CATALOG_VERSION is the current UMS catalog name.
 UMS_CATALOG_VERSION="ibm-usage-metering-catalog"
 # UMS connection point secret name
@@ -254,21 +255,21 @@ UMS_CONNECTION_POINT_STATIC_CR_LOCATION="${PARENT_DIR}/descriptors/patterns/baw-
 
 CS_CHANNEL_KC="4.x_cd"
 # CERT_LICENSE_OPERATOR_VERSION is for checking IBM cert-manager/licensing operator upgrade status, need to update for each IFIX
-CERT_LICENSE_OPERATOR_VERSION="v4.2.22"
+CERT_LICENSE_OPERATOR_VERSION="v4.2.23"
 # CERT_LICENSE_CHANNEL_VERSION is for for IBM cert-manager/licensing script -c option, need to update for each IFIX
 CERT_LICENSE_CHANNEL_VERSION="v4.2"
 # CS_CATALOG_VERSION is for CPFS script -s option, need to update for each IFIX
-CS_CATALOG_VERSION="ibm-cs-install-catalog-v4-18-0"
+CS_CATALOG_VERSION="ibm-cs-install-catalog-v4-19-0"
 # ZEN_OPERATOR_VERSION is for checking ZenService operator upgrade status, need to update for each IFIX
-ZEN_OPERATOR_VERSION="v6.4.7"
+ZEN_OPERATOR_VERSION="v6.10.3"
 # BTS_CHANNEL_VERSION is for for BTS, need to update for each IFIX
 BTS_CHANNEL_VERSION="v3.35"
-# BTS_CATALOG_VERSION is for BTS 3.35.12.
+# BTS_CATALOG_VERSION is for BTS 3.35.13.
 BTS_CATALOG_VERSION="ibm-bts-operator-catalog-v3-35"
 # REQUIREDVER_BTS is for checking bts operator upgrade status before run removal_iaf.sh, need to update for each IFIX
-REQUIREDVER_BTS="3.35.12"
+REQUIREDVER_BTS="3.35.13"
 # REQUIREDVER_POSTGRESQL is for checking postgresql operator upgrade status before run removal_iaf.sh, need to update for each IFIX
-REQUIREDVER_POSTGRESQL="1.25.6"
+REQUIREDVER_POSTGRESQL="1.28.4"
 # EVENTS_OPERATOR_VERSION is for checking IBM Events operator upgrade status, need to update for each IFIX
 EVENTS_OPERATOR_VERSION="v5.2.1"
 # List of BAW versions that are supported for upgrade to $CP4BA_CSV_VERSION
@@ -297,10 +298,22 @@ COMMON_SERVICES_CM_DEDICATE_FILE="${PARENT_DIR}/descriptors/${COMMON_SERVICES_CM
 COMMON_SERVICES_CM_DEDICATE_FILE_UPDATE="${PARENT_DIR}/descriptors/${COMMON_SERVICES_CM_DEDICATE_FILE_NAME_UPDATE}"
 
 #List of operators to be scale up or down
-CP4BA_OPERATOR_LIST="ibm-cp4a-operator ibm-content-operator icp4a-foundation-operator  ibm-ads-operator  ibm-cp4a-wfps-operator ibm-dpe-operator ibm-insights-engine-operator ibm-odm-operator ibm-pfs-operator ibm-workflow-operator"
+CP4BA_OPERATOR_LIST="ibm-cp4a-operator ibm-content-operator icp4a-foundation-operator  ibm-ads-operator  ibm-ccx-ai-services-operator ibm-cp4a-wfps-operator ibm-dpe-operator ibm-insights-engine-operator ibm-odm-operator ibm-pfs-operator ibm-workflow-operator"
 
 # CP4BA EDB default instance name
 EDB_INSTANCE_CP4BA_NAME="postgres-cp4ba"
+
+# EDB to CNPG Migration ConfigMap name
+EDB_CNPG_MIGRATION_CM_NAME="edb-cnpg-migration"
+EDB_TO_CNPG_MIGRATION_FOLDER="${CUR_DIR}/cp4ba-upgrade/project/$1"
+
+# EDB to CNPG Migration CNPG Cluster template path
+CNPG_CLUSTER_TEMPLATE="${PARENT_DIR}/descriptors/cnpg/cnpg-cluster-postgres-cp4ba-template.yaml"
+
+# CNPG operator subscription template and version
+CNPG_OPERATOR_SUBSCRIPTION_TEMPLATE="${PARENT_DIR}/descriptors/cnpg/cnpg-operator-subscription-template.yaml"
+CNPG_OPERATOR_CHANNEL="v28"
+CNPG_OPERATOR_CSV_VERSION="ibm-pg-operator.v28.4.0"
 
 # set CLI_CMD var
 # Prioritize kubectl for CNCF platforms (Tanzu/Rancher/GKE)
@@ -1469,8 +1482,18 @@ function skip_edb() {
 function is_edb_detected(){
     local ns=$1
     is_edb=$($CLI_CMD get cluster.postgresql.k8s.enterprisedb.io -n $ns --no-headers --ignore-not-found 2>/dev/null | awk {'print $1'} || echo "")
+    
+    # Initialize the detection variable to false
+    CP4BA_EDB_INSTANCE_DETECTED="false"
+    
     if [[ ! -z $is_edb ]]; then
         info "The following EDB instances are found: \n$is_edb"
+        
+        # Check if the specific postgres-cp4ba instance is in the returned list
+        if echo "$is_edb" | grep -q -w "${EDB_INSTANCE_CP4BA_NAME}"; then
+            CP4BA_EDB_INSTANCE_DETECTED="true"
+        fi
+        
         return 0
     else
         return 1
@@ -2156,6 +2179,119 @@ function install_ibm_usage_metering() {
 }
 
 
+# Complete the IBM Usage Metering installation after the subscription has already been created/patched.
+# This function covers the second phase of the UMS setup: waiting for the operator to become ready,
+# applying service meter definition CRs, and configuring the connection point secret and CR.
+# The subscription setup phase is handled separately by setup_ibm_usage_metering_subscription().
+#
+# Arguments:
+# $1 Operator namespace
+# $2 Services namespace
+# $3 scenario i.e fresh_install or upgrade
+# $4 entitlement_key (empty for upgrade, will be retrieved if needed)
+# $5 runtime mode that tells the script if it is being used in dev mode
+# $6 airgap mode which makes sure that the connection point CR is created without the softwareCentral section
+function complete_ibm_usage_metering_installation() {
+    local operator_namespace=$1
+    local services_namespace=$2
+    local scenario=$3
+    local entitlement_key=$4
+    local runtime_mode=$5
+    local airgap_mode=$6
+    local create_secret_and_resources="true"
+    local connection_point_secret_creation="false"
+
+    echo ""
+    echo "=========================================="
+    echo "IBM Usage Metering Installation (Phase 2)"
+    echo "=========================================="
+    echo ""
+
+    # Step 1: Wait for UMS operator CSV to be ready
+    echo "Waiting for the UMS operator to be ready and in running state"
+    local timeout=600
+    local elapsed=0
+    while [ $elapsed -lt $timeout ]; do
+        if ${CLI_CMD} get csv -n "$operator_namespace" 2>/dev/null | grep -q "ibm-usage-metering.*Succeeded"; then
+            echo "✓ Operator is ready"
+            break
+        fi
+        sleep 10
+        elapsed=$((elapsed + 10))
+        echo "  Waiting... (${elapsed}s/${timeout}s)"
+    done
+
+    if [ $elapsed -ge $timeout ]; then
+        echo "✗ ERROR: Operator did not become ready in time"
+        return 1
+    fi
+    echo ""
+
+    # Step 2: Wait for UMS operator pod to be running
+    timeout=300
+    elapsed=0
+    while [ $elapsed -lt $timeout ]; do
+        if ${CLI_CMD} get pods -n "$operator_namespace" -l app.kubernetes.io/name=ibm-usage-metering-operator --field-selector=status.phase=Running 2>/dev/null | grep -q Running; then
+            echo "✓ Operator pod is running"
+            break
+        fi
+        sleep 10
+        elapsed=$((elapsed + 10))
+    done
+
+    if [ $elapsed -ge $timeout ]; then
+        echo "✗ WARNING: Operator pod not running yet, but continuing..."
+    fi
+    echo ""
+
+    # Step 3: Apply the service metering definition static CRs from the descriptors folder
+    apply_service_meter_definitions "$services_namespace" "$UMS_STATIC_CR_LOCATION"
+
+    # Step 4: Create the connection point secret and apply connection point CR
+    if [[ "$airgap_mode" == "true" || "$airgap_mode" == "yes" || "$airgap_mode" == "Yes" ]]; then
+        info "Airgap mode detected. Skipping creation of secret '$UMS_CONNECTION_POINT_SECRET_NAME' and applying UsageMetering CR."
+        apply_usage_metering_definition "$services_namespace" "$UMS_CONNECTION_POINT_SECRET_NAME" "$UMS_CONNECTION_POINT_STATIC_CR_LOCATION" "$runtime_mode" "$airgap_mode"
+    else
+        if ${CLI_CMD} get secret "$UMS_CONNECTION_POINT_SECRET_NAME" -n "$services_namespace" >/dev/null 2>&1; then
+            success "UMS connection point secret '$UMS_CONNECTION_POINT_SECRET_NAME' already exists in namespace '$services_namespace', skipping the creation of the secret."
+            create_secret_and_resources="true"
+            connection_point_secret_creation="true"
+        else
+            info "UMS connection point secret '$UMS_CONNECTION_POINT_SECRET_NAME' not found in namespace '$services_namespace', the script will now proceed to creating it using the entitlement key."
+
+            # For upgrade non-airgap, if the entitlement key was not passed in, retrieve it from an existing secret.
+            if [[ -z "$entitlement_key" && "$scenario" == "upgrade" ]]; then
+                get_entitlement_key_from_secret "ibm-entitlement-key" "$services_namespace"
+                if [ $? -ne 0 ]; then
+                    warning "Failed to extract entitlement key from secret.Refer to https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE for more information on how to create the $UMS_CONNECTION_POINT_SECRET_NAME secret and the UsageMetering connection point custom resource file."
+                    create_secret_and_resources="false"
+                fi
+            fi
+
+            # If entitlement key is still empty, do not create the secret or CR.
+            if [[ -z "$entitlement_key" ]]; then
+                warning "[IMPORTANT]The IBM Entitlement key is not available, so the $UMS_CONNECTION_POINT_SECRET_NAME secret and the UsageMetering connection point Custom Resource file will not be created.Refer to https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE for more information on how to create the $UMS_CONNECTION_POINT_SECRET_NAME secret and the UsageMetering connection point Custom Resource file."
+                create_secret_and_resources="false"
+            fi
+        fi
+
+        if [[ "$create_secret_and_resources" == "true" ]]; then
+            create_connection_point_secret "$UMS_CONNECTION_POINT_SECRET_NAME" "$services_namespace" "$entitlement_key"
+            if [[ "$connection_point_secret_creation" == "true" ]]; then
+                apply_usage_metering_definition "$services_namespace" "$UMS_CONNECTION_POINT_SECRET_NAME" "$UMS_CONNECTION_POINT_STATIC_CR_LOCATION" "$runtime_mode" "$airgap_mode"
+            else
+                warning "[IMPORTANT]Since the $UMS_CONNECTION_POINT_SECRET_NAME could not be created, the UsageMetering connection point Custom Resource file will not be created.Refer to https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE for more information on how to create the $UMS_CONNECTION_POINT_SECRET_NAME secret and the UsageMetering connection point Custom Resource file."
+            fi
+        fi
+    fi
+
+    echo "================================================="
+    echo "Usage Metering Installation Complete!"
+    echo "================================================="
+    echo ""
+}
+
+
 # Patch an existing IBMLicensing resource to configure Software Central uploads.
 # Arguments:
 #   $1 - secret name to set in spec.sender.softwareCentral.entitlementKeySecret
@@ -2482,4 +2618,776 @@ function update_bts_datastore_resources() {
     success "BTS Datasource resources are compatible with the latest BTS version."
 
     return 0
+}
+
+###############################################################################
+# Functions added from cert-kubernetes to cert-kubernetes-baw for upgrade support
+###############################################################################
+function create_odm_keystore_secret_for_upgrade() {
+    local namespace=$1
+    local cr_file=$2
+    local secret_name="ibm-odm-keystore-secret"
+    
+    # Check if passwordSecretRef is already defined in the CR
+    local password_secret_ref=$(${YQ_CMD} r "$cr_file" spec.odm_configuration.dba.passwordSecretRef 2>/dev/null)
+    
+    if [[ -n "$password_secret_ref" && "$password_secret_ref" != "null" ]]; then
+        info "ODM keystore password secret reference already exists in CR: $password_secret_ref. Skipping secret creation."
+        return 0
+    fi
+    
+    # Check if the secret already exists in the namespace
+    local secret_exists=$(${CLI_CMD} get secret "$secret_name" -n "$namespace" --ignore-not-found 2>/dev/null)
+    
+    if [[ -n "$secret_exists" ]]; then
+        info "ODM keystore password secret '$secret_name' already exists in namespace '$namespace'. Skipping secret creation."
+        return 0
+    fi
+    
+    # Generate a random 16-character password
+    local password=$(openssl rand -hex 8)
+    
+    # Create the secret using kubectl create secret generic with --from-literal
+    ${CLI_CMD} create secret generic "${secret_name}" \
+        --from-literal=keystorePassword="${password}" \
+        -n "${namespace}" >/dev/null 2>&1
+    
+    if [[ $? -eq 0 ]]; then
+        # Add the label to the secret
+        ${CLI_CMD} label secret "${secret_name}" \
+            cp4ba.ibm.com/backup-type=mandatory \
+            -n "${namespace}" >/dev/null 2>&1
+        
+        success "Successfully created ODM keystore password secret '${secret_name}' in namespace '${namespace}'"
+    else
+        step_num=1
+        warning "Failed to automatically create ODM keystore password secret '${secret_name}'. Please create it manually."
+        echo
+        echo "  - STEP ${step_num} ${RED_TEXT}(Required)${RESET_TEXT} Starting with CP4BA release 26.0.0, deployments that include the Operational Decision Manager (ODM) pattern require a secret named \"ibm-odm-keystore-secret\" to be created before applying the upgraded Custom Resource file."
+        echo
+        echo "    This secret must contain a 'keystorePassword' field. If this secret already exists in your namespace, no action is required."
+        echo
+        echo "    To create the secret, follow these sub-steps:"
+        echo
+        echo "      ${step_num}.a Check if the secret already exists:"
+        echo "      ${GREEN_TEXT} # ${CLI_CMD} get secret ibm-odm-keystore-secret -n ${namespace}${RESET_TEXT}"
+        echo
+        echo "      ${step_num}.b Create the secret with the required label using the following command:"
+        echo "      ${GREEN_TEXT} # ${CLI_CMD} create secret generic ibm-odm-keystore-secret --from-literal=keystorePassword=\"\${KEYSTORE_PASSWORD}\" -n ${namespace} ${RESET_TEXT}"
+        echo
+        echo "      ${step_num}.c Add the required label to the secret:"
+        echo "      ${GREEN_TEXT} # ${CLI_CMD} label secret ibm-odm-keystore-secret \"cp4ba.ibm.com/backup-type=mandatory\" -n ${namespace} ${RESET_TEXT}"
+        echo
+        echo "      ${step_num}.d Verify the secret was created successfully with the correct label:"
+        echo "      ${GREEN_TEXT} # ${CLI_CMD} get secret ibm-odm-keystore-secret -n ${namespace} --show-labels ${RESET_TEXT}"
+        echo
+        echo "    ${YELLOW_TEXT}Note:${RESET_TEXT} For more information, refer to: https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/${CP4BA_RELEASE_BASE}?topic=automation-upgrading"
+        echo
+    fi
+}
+
+function get_existing_csvs() {
+    # Usage: get_existing_csvs <namespace> <output_dir> <sub_name>
+    # Reads the installedCSV from the given subscription and saves its YAML to <output_dir>/<csv_name>.yaml
+    local namespace="$1"
+    local output_dir="$2"
+    local sub_name="$3"
+
+    if [[ -z "$namespace" || -z "$output_dir" || -z "$sub_name" ]]; then
+        warning "Namespace, output directory, and subscription name must be provided."
+        return 1
+    fi
+
+    mkdir -p "$output_dir" >/dev/null 2>&1
+
+    # Extract the installedCSV name from the subscription status, e.g. ibm-ads-operator.v25.1.1
+    local csv_name
+    csv_name=$(${CLI_CMD} get subscription.operators.coreos.com "$sub_name" -n "$namespace" \
+        --no-headers --ignore-not-found -o 'jsonpath={.status.installedCSV}') >/dev/null 2>&1
+    if [[ -z "$csv_name" ]]; then
+        warning "No installedCSV found for subscription \"$sub_name\" in namespace \"$namespace\", skipping."
+        return 0
+    fi
+
+    local output_file="${output_dir}/${csv_name}.yaml"
+    # If the file already exists, rename it with a timestamp suffix before writing a new one
+    if [[ -e "$output_file" ]]; then
+        local ts
+        ts=$(date +'%Y%m%d%H%M%S')
+        mv "$output_file" "${output_file%.yaml}_${ts}.yaml_bak"
+        info "Existing backup renamed to \"${output_file%.yaml}_${ts}.yaml_bak\""
+    fi
+    ${CLI_CMD} get csv "$csv_name" -n "$namespace" --ignore-not-found -o yaml > "$output_file" 2>/dev/null
+    if [[ $? -eq 0 && -s "$output_file" ]]; then
+        info "Backed up CSV \"$csv_name\" to \"$output_file\""
+    else
+        warning "Failed to back up CSV \"$csv_name\" from namespace \"$namespace\"."
+    fi
+    return 0
+}
+
+function setup_ibm_usage_metering_subscription() {
+    local operator_namespace=$1
+    local scenario=$2
+    local catalog_namespace=$3
+    local services_namespace=$4
+    
+    echo ""
+    echo "=========================================="
+    echo "IBM Usage Metering Subscription Setup"
+    echo "=========================================="
+    echo ""
+
+    # Step 1: Check if CatalogSource exists
+    if ! ${CLI_CMD} get catalogsource "$UMS_CATALOG_VERSION" -n "$catalog_namespace" &>/dev/null; then
+        error "CatalogSource '$UMS_CATALOG_VERSION' not found in namespace '$catalog_namespace'"
+        echo ""
+        exit 1
+    fi
+
+    # Wait for CatalogSource to be ready
+    echo "Waiting for IBM Usage Metering Catalog Source to be ready..."
+    local timeout=300
+    local elapsed=0
+    while [ $elapsed -lt $timeout ]; do
+        local state=$(${CLI_CMD} get catalogsource "$UMS_CATALOG_VERSION" -n "$catalog_namespace" -o jsonpath='{.status.connectionState.lastObservedState}' 2>/dev/null)
+        if [ "$state" = "READY" ]; then
+            info "IBM Usage Metering Catalog Source is ready."
+            break
+        fi
+        sleep 10
+        elapsed=$((elapsed + 10))
+    done
+
+    if [ $elapsed -ge $timeout ]; then
+        TMP_MESSAGE="IBM Usage Metering Installation failed due to Catalog source not being ready"
+        if [[ "$scenario" == "upgrade" ]]; then
+            displayUpgradeOperatorMessage "$TMP_MESSAGE" $services_namespace $cp4a_operator_csv_version
+        else
+            displayClusterAdminMessage "$TMP_MESSAGE" "$CP4BA_RELEASE_BASE-$CP4BA_PATCH_VERSION"
+        fi
+        exit 1
+    fi
+    echo ""
+
+    # Step 2: Handle Subscription based on scenario
+    if [[ "$scenario" == "fresh_install" ]]; then
+        info "Creating the IBM Usage Metering Subscription..."
+        apply_subscription "$operator_namespace" "$UMS_CHANNEL_VERSION" "$UMS_CATALOG_VERSION" "$catalog_namespace"
+        echo ""
+    elif [[ "$scenario" == "upgrade" ]]; then
+        info "Checking for existing IBM Usage Metering Subscription..."
+        
+        local subscription_exists=$(${CLI_CMD} get subscription -n "$operator_namespace" --no-headers 2>/dev/null | grep "ibm-usage-metering" | wc -l)
+        
+        if [ "$subscription_exists" -gt 0 ]; then
+            patch_ums_subscription "$operator_namespace" "$UMS_CHANNEL_VERSION" "$catalog_namespace"
+            if [ $? -ne 0 ]; then
+                TMP_MESSAGE="IBM Usage Metering Installation failed as patching the IBM Usage Metering Installation Operator Subscription failed."
+                displayUpgradeOperatorMessage "$TMP_MESSAGE" $services_namespace $cp4a_operator_csv_version
+                exit 1
+            fi
+        else
+            info "No IBM Usage Metering subscription found. Creating new subscription..."
+            apply_subscription "$operator_namespace" "$UMS_CHANNEL_VERSION" "$UMS_CATALOG_VERSION" "$catalog_namespace"
+        fi
+        echo ""
+    fi
+    
+    success "IBM Usage Metering Subscription setup completed successfully"
+    return 0
+}
+
+function retrieve_custom_resource_details(){
+    local cr_namespace=$1
+    local icp4acluster_cr_details_location=$2
+    local content_cr_details_location=$3
+    top_level_cr_kind=""
+    top_level_cr_name=""
+    top_level_cr_details_location=""
+    top_level_cr_details_backup_location=""
+    content_cr_name=""
+    icp4acluster_cr_name=""
+    content_cr_present="false"
+    icp4acluster_cr_present="false"
+
+    #Logic that detects what the top level CR is in the deployment
+    # If the content CR does not have an owner reference , it is the top level CR otherwise the top level CR is the ICP4ACLuster CR
+    ${CLI_CMD} get crd |grep contents.icp4a.ibm.com >/dev/null 2>&1
+    if [[ $? -eq 0 ]]; then
+        content_cr_name=$(${CLI_CMD} get content -n $cr_namespace --no-headers --ignore-not-found | awk '{print $1}')
+        if [[ ! -z $content_cr_name ]]; then
+            owner_ref=$(${CLI_CMD} get content $content_cr_name -n $cr_namespace -o yaml | ${YQ_CMD} r - metadata.ownerReferences.[0].kind)
+            # Store the Content CR contents in a certain file location
+            ${CLI_CMD} get content $content_cr_name -n $cr_namespace -o yaml > ${content_cr_details_location}
+            if [[ ${owner_ref} != "ICP4ACluster" ]]; then
+                top_level_cr_kind="content"
+                top_level_cr_name="$content_cr_name"
+                top_level_cr_details_location="${content_cr_details_location}" 
+                top_level_cr_details_backup_location="${UPGRADE_DEPLOYMENT_CONTENT_CR_BAK}"              
+            fi
+        fi
+    fi
+
+    if [[ -z "$top_level_cr_kind" ]]; then
+        icp4acluster_cr_name=$(${CLI_CMD} get icp4acluster -n $cr_namespace --no-headers --ignore-not-found | awk '{print $1}')
+        if [[ ! -z $icp4acluster_cr_name ]]; then
+            # Store the Content CR contents in a certain file location
+            ${CLI_CMD} get icp4acluster $icp4acluster_cr_name -n $cr_namespace -o yaml > ${icp4acluster_cr_details_location}
+            top_level_cr_kind="icp4acluster"
+            top_level_cr_name="$icp4acluster_cr_name"
+            top_level_cr_details_location="${icp4acluster_cr_details_location}" 
+            top_level_cr_details_backup_location="${UPGRADE_DEPLOYMENT_ICP4ACLUSTER_CR_BAK}" 
+        fi
+    fi
+
+    if [[ -z "$top_level_cr_kind" || -z "$top_level_cr_name" ]]; then
+        error "Could not find a IC4ACluster Kind Custom Resource file or a Content Kind Custom Resource file in the $cr_namespace namespace. The script will now exit."
+        exit
+    fi
+
+    # Retrieve the CR info and store it in a certain file location defined
+
+    # Display Custom Resource Details
+    echo ""
+    echo "================================================================================"
+    echo "${YELLOW_TEXT}Custom Resource Details - Namespace: ${cr_namespace}${RESET_TEXT}"
+    echo "================================================================================"
+    
+    # Display ICP4ACluster CR
+    if [[ ! -z "$icp4acluster_cr_name" ]]; then
+        echo "ICP4ACluster CR : ${GREEN_TEXT}${icp4acluster_cr_name}${RESET_TEXT}"
+    else
+        echo "ICP4ACluster CR : Not found"
+    fi
+    
+    # Display Content CR
+    if [[ ! -z "$content_cr_name" ]]; then
+        echo "Content CR      : ${GREEN_TEXT}${content_cr_name}${RESET_TEXT}"
+    else
+        echo "Content CR      : Not found"
+    fi
+
+    echo ""
+    echo "========================================================================================================================"
+    echo "Top Level CR Kind   : ${YELLOW_TEXT}${top_level_cr_kind}${RESET_TEXT}"
+    echo "Top Level CR Name   : ${GREEN_TEXT}${top_level_cr_name}${RESET_TEXT}"
+    echo "Top Level CR Stored at : ${GREEN_TEXT}${top_level_cr_details_location}${RESET_TEXT}"
+    echo "========================================================================================================================"
+    echo ""
+}
+
+#create a YAML file for the ibm-cp4ba-shared-info ConfigMap
+#used to store shared information related to the CP4BA deployment, such as operator versions and last reconciliation details
+# Function is called in populate_shared_info_configmap based on the top level CR kind
+function create_ibm_cp4ba_shared_info_cm_yaml(){
+    mkdir -p ${UPGRADE_DEPLOYMENT_CR}
+cat << EOF > ${UPGRADE_ICP4A_SHARED_INFO_CM_FILE}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: ibm-cp4ba-shared-info
+  namespace: <cp4a_namespace>
+  labels:
+    app.kubernetes.io/managed-by: Operator
+    app.kubernetes.io/name: ibm-cp4ba-shared-info
+    app.kubernetes.io/version: <cr_version>
+    release: <cr_version>
+  ownerReferences:
+    - apiVersion: icp4a.ibm.com/v1
+      kind: ICP4ACluster
+      name: <cr_metaname>
+      uid: <cr_uid>
+data:
+  ads_operator_of_last_reconcile: <csv_version>
+  cp4ba_operator_of_last_reconcile: <csv_version>
+  odm_operator_of_last_reconcile: <csv_version>
+  baw_operator_of_last_reconcile: <csv_version>
+EOF
+}
+
+#create a YAML file for the ibm-cp4ba-shared-info ConfigMap
+#used to store shared information related to the CP4BA deployment, such as operator versions and last reconciliation details
+# Function is called in populate_shared_info_configmap based on the top level CR kind
+function create_ibm_cp4ba_content_shared_info_cm_yaml(){
+    mkdir -p ${UPGRADE_DEPLOYMENT_CR}
+cat << EOF > ${UPGRADE_ICP4A_CONTENT_SHARED_INFO_CM_FILE}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: ibm-cp4ba-content-shared-info
+  namespace: <content_namespace>
+  labels:
+    app.kubernetes.io/managed-by: Operator
+    app.kubernetes.io/name: ibm-cp4ba-shared-info
+    app.kubernetes.io/version: <cr_version>
+    release: <cr_version>
+  ownerReferences:
+    - apiVersion: icp4a.ibm.com/v1
+      kind: Content
+      name: <cr_metaname>
+      uid: <cr_uid>
+data:
+  content_operator_of_last_reconcile: <csv_version>
+EOF
+}
+
+# This is a common function that can create the shared info configmap or patch it with required values.
+# The function replaces code that was essentially repeating with the only differences being the name of the configmap based on the top level CR
+# The function takes in 4 parameters
+# 1. The name of the configmap
+# 2. The current details of that configmap
+# 3. The namespace to check for the configmap
+# 4. The temporary file location that is used to as a template yaml to create the configmap if it is not present
+# 5. The top level CR kind
+# Variables like $cr_metaname, $cr_uid , $cp4a_operator_csv_version , $cr_version are already set at this point in time
+function populate_shared_info_configmap(){
+    local configmap_name=$1
+    local current_shared_info_configmap_details=$2
+    local namespace=$3
+    local temp_configmap_details_location=$4
+    local cr_kind=$5
+    if [[ -z $current_shared_info_configmap_details ]]; then
+        info "$configmap_name configMap could not be found,the script will now create it."
+        if [[ "$cr_kind" == "icp4acluster" ]]; then
+            create_ibm_cp4ba_shared_info_cm_yaml
+        elif [[ "$cr_kind" == "content" ]]; then
+            create_ibm_cp4ba_content_shared_info_cm_yaml
+        else
+            fail "No top level CP4BA custom resource found on this cluster in the project \"$namespace\"."
+            exit 1
+        fi
+        ${SED_COMMAND} "s|<cp4a_namespace>|$namespace|g" ${temp_configmap_details_location}
+        ${SED_COMMAND} "s|<cr_metaname>|$cr_metaname|g" ${temp_configmap_details_location}
+        ${SED_COMMAND} "s|<cr_uid>|$cr_uid|g" ${temp_configmap_details_location}
+        ${SED_COMMAND} "s|<csv_version>|$cp4a_operator_csv_version|g" ${temp_configmap_details_location}
+        ${SED_COMMAND} "s|<cr_version>|$cr_version|g" ${temp_configmap_details_location}
+
+        ${CLI_CMD} apply -f $temp_configmap_details_location  >/dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            success "$configmap_name configMap has been created in the project \"$namespace\"!"
+            ${CLI_CMD} patch configmap $configmap_name -n $namespace --type=json -p="[{'op': 'add', 'path': '/data/cp4ba_original_csv_ver_for_upgrade_script', 'value': '$(echo "$cp4a_operator_csv_version")'}]" >/dev/null 2>&1
+            ${CLI_CMD} patch configmap $configmap_name -n $namespace --type=json -p="[{'op': 'add', 'path': '/data/cpfs_original_csv_ver_for_upgrade_script', 'value': '$(echo "$cpfs_operator_csv_version")'}]" >/dev/null 2>&1
+            cp4ba_original_csv_ver_for_upgrade_script=$cp4a_operator_csv_version
+        else
+            fail "Failed to create $configmap_name configMap in the project \"$namespace\"!"
+        fi
+    else
+        success "$configmap_name configMap was found in namespace \"$namespace\"!"
+        ${CLI_CMD} patch configmap $configmap_name -n $namespace --type=json -p="[{'op': 'add', 'path': '/data/cp4ba_original_csv_ver_for_upgrade_script', 'value': '$(echo "$cp4a_operator_csv_version")'}]" >/dev/null 2>&1
+        ${CLI_CMD} patch configmap $configmap_name -n $namespace --type=json -p="[{'op': 'add', 'path': '/data/cpfs_original_csv_ver_for_upgrade_script', 'value': '$(echo "$cpfs_operator_csv_version")'}]" >/dev/null 2>&1
+        cp4ba_original_csv_ver_for_upgrade_script=$cp4a_operator_csv_version
+    fi
+}
+
+function set_bai_recovery_path() {
+    local component_name="$1"
+    local search_pattern="bai-${component_name}"
+    local tmp_recovery_path=""
+    
+    # Extract recovery path based on platform
+    if [[ "$machine" == "Mac" ]]; then
+        tmp_recovery_path=$(cat ${UPGRADE_DEPLOYMENT_CR}/bai.json | jq '.[].location' | grep "$search_pattern")
+    else
+        tmp_recovery_path=$(grep -Po '"location":.*?[^\\]"' ${UPGRADE_DEPLOYMENT_CR}/bai.json | grep "$search_pattern" | cut -d':' -f2)
+    fi
+    
+    # Clean up quotes
+    tmp_recovery_path=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_recovery_path")
+    
+    # Set recovery path if found
+    if [ ! -z "$tmp_recovery_path" ]; then
+        ${YQ_CMD} w -i ${UPGRADE_DEPLOYMENT_BAI_TMP} spec.bai_configuration.${component_name}.recovery_path "${tmp_recovery_path}"
+        success "Merged Flink savepoint for ${component_name^^}: \"$tmp_recovery_path\""
+        info "When running \"cp4a-deployment -m upgradeDeployment\", this savepoint will be auto-filled into spec.bai_configuration.${component_name}.recovery_path."
+    fi
+}
+
+function get_bai_management_url_from_zenextension() {
+    local namespace="$1"
+    local zen_extension_name=""
+
+    # Find ZenExtension ending with insights-engine-zen-extension-cr
+    zen_extension_name=$(${CLI_CMD} get zenextension -n "${namespace}" --no-headers -o custom-columns=NAME:.metadata.name 2>/dev/null | grep 'insights-engine-zen-extension-cr$' | head -n 1)
+
+    if [[ -z "$zen_extension_name" ]]; then
+        error "No ZenExtension ending with 'insights-engine-zen-extension-cr' found in namespace ${namespace}"
+        return 1
+    fi
+
+    # Get the ZenExtension as YAML and extract proxy_pass URL from nginx.conf
+    local zen_yaml=$(${CLI_CMD} get zenextension "${zen_extension_name}" -n "${namespace}" -o yaml 2>/dev/null)
+
+    if [[ -z "$zen_yaml" ]]; then
+        error "Failed to retrieve ZenExtension ${zen_extension_name}"
+        return 1
+    fi
+
+    # Extract nginx.conf and find proxy_pass URL for /bai-management/
+    MANAGEMENT_URL=$(echo "$zen_yaml" | ${YQ_CMD} r - 'spec."nginx.conf"' | awk '/location \/bai-management\// {found=1} found && /proxy_pass/ {print; exit}' | sed -n 's/.*proxy_pass \(https:\/\/[^;]*\).*/\1/p')
+
+    if [[ -z "$MANAGEMENT_URL" ]]; then
+        error "Failed to extract proxy_pass URL from location /bai-management/ in ZenExtension ${zen_extension_name}"
+        return 1
+    fi
+
+    # Remove trailing slash if present
+    MANAGEMENT_URL="${MANAGEMENT_URL%/}"
+
+    return 0
+}
+
+function create_bai_savepoints(){
+    local namespace=$1
+    local cr_contents_location=$2
+    local cr_contents_backup_location=$3
+    
+    # Backup existing top level CR
+    mkdir -p ${cr_contents_backup_location} >/dev/null 2>&1
+    ${COPY_CMD} -rf ${cr_contents_location} ${cr_contents_backup_location}
+    
+    mkdir -p ${TEMP_FOLDER} >/dev/null 2>&1
+    # Check the jq install on MacOS
+    if [[ "$machine" == "Mac" ]]; then
+        which jq &>/dev/null
+        [[ $? -ne 0 ]] && \
+        printf '%b\n'  "\x1B[1;31mUnable to locate the jq CLI. You must install it to run this script on macOS.\x1B[0m" && \
+        exit 1
+    fi
+
+    info "Create the BAI savepoints for recovery path which will be referenced when the new custom resource file is generated as a part of the upgradeDeployment mode."
+    ${CLI_CMD} get crd |grep insightsengines.icp4a.ibm.com >/dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        INSIGHTS_ENGINE_CR=$(${CLI_CMD} get insightsengines.icp4a.ibm.com --no-headers --ignore-not-found -n ${namespace} -o name)
+    fi
+    if [[ -z $INSIGHTS_ENGINE_CR ]]; then
+        INSIGHTS_ENGINE_CR=$(${CLI_CMD} get insightsengines.insightsengine.automation.ibm.com --no-headers --ignore-not-found -n ${namespace} -o name)
+        if [[ -z $INSIGHTS_ENGINE_CR ]]; then
+            error "An InsightsEngine kind custom resource was not found in the project \"${namespace}\"."
+            return 1
+        fi
+    fi
+    if [[ ! -z $INSIGHTS_ENGINE_CR ]]; then
+        if [[ "$SKIP_FOR_API" == "true" ]]; then
+            info "Upgrade is being executed via API endpoints, retrieving Management URL from ZenExtension..."
+            get_bai_management_url_from_zenextension "${namespace}"
+            if [[ $? -ne 0 || -z "$MANAGEMENT_URL" ]]; then
+                error "Failed to retrieve Management URL from ZenExtension"
+                return 1
+            fi
+            info "Retrieved Management URL from ZenExtension: ${MANAGEMENT_URL}"
+        else
+            MANAGEMENT_URL=$(${CLI_CMD} get ${INSIGHTS_ENGINE_CR} --no-headers --ignore-not-found -n ${namespace} -o jsonpath='{.status.components.management.endpoints[?(@.scope=="External")].uri}')
+            info "Retrieved Management URL from InsightsEngine CR: ${MANAGEMENT_URL}"
+        fi
+        MANAGEMENT_AUTH_SECRET=$(${CLI_CMD} get ${INSIGHTS_ENGINE_CR} --no-headers --ignore-not-found -n ${namespace} -o jsonpath='{.status.components.management.endpoints[?(@.scope=="External")].authentication.secret.secretName}')
+        MANAGEMENT_USERNAME=$(${CLI_CMD} get secret ${MANAGEMENT_AUTH_SECRET} --no-headers --ignore-not-found -n ${namespace} -o jsonpath='{.data.username}' | base64 -d)
+        MANAGEMENT_PASSWORD=$(${CLI_CMD} get secret ${MANAGEMENT_AUTH_SECRET} --no-headers --ignore-not-found -n ${namespace} -o jsonpath='{.data.password}' | base64 -d)
+        if [[ -z "$MANAGEMENT_URL" || -z "$MANAGEMENT_AUTH_SECRET" || -z "$MANAGEMENT_USERNAME" || -z "$MANAGEMENT_PASSWORD" ]]; then
+            error "Can not create the BAI savepoints for recovery path."
+            return 1
+        else
+            # rm -rf ${UPGRADE_DEPLOYMENT_CR}/bai.json 
+            # Ensure output directory exists
+            mkdir -p ${UPGRADE_DEPLOYMENT_CR} >/dev/null 2>&1
+            touch ${UPGRADE_DEPLOYMENT_BAI_TMP} >/dev/null 2>&1
+            if [[ -e ${UPGRADE_DEPLOYMENT_CR}/bai.json ]]; then
+                [ "$(cat ${UPGRADE_DEPLOYMENT_CR}/bai.json)" != "[]" ] && mkdir -p ${UPGRADE_DEPLOYMENT_CR}/bai-json-backup && cp ${UPGRADE_DEPLOYMENT_CR}/bai.json ${UPGRADE_DEPLOYMENT_CR}/bai-json-backup/bai_$(date +'%Y%m%d%H%M%S').json
+            fi
+            curl -X POST -k -u ${MANAGEMENT_USERNAME}:${MANAGEMENT_PASSWORD} "${MANAGEMENT_URL}/api/v1/processing/jobs/savepoints" -o ${UPGRADE_DEPLOYMENT_CR}/bai.json >/dev/null 2>&1
+
+            json_file_content="[]"
+            if [ "$json_file_content" == "$(cat ${UPGRADE_DEPLOYMENT_CR}/bai.json)" ] ;then
+                fail "None return in \"${UPGRADE_DEPLOYMENT_CR}/bai.json\" when request BAI savepoint through REST API: curl -X POST -k -u ${MANAGEMENT_USERNAME}:${MANAGEMENT_PASSWORD} \"${MANAGEMENT_URL}/api/v1/processing/jobs/savepoints\" "
+                warning "Fetch Flink job savepoints for the recovery path using above REST API manually, then place the JSON file (bai.json) under the directory \"${TEMP_FOLDER}/\""
+                if [[ "$SKIP_FOR_API" != "true" ]]; then
+                    prompt_press_any_key_to_continue
+                fi
+            fi
+            ##########################################################################################################################
+            ## In 24.0.1 and later, we'll only support n-1 upgrade therefore we're back to the old way of saving content event-forwarder savepoint and bai-content savepoint UNLESS the ALLOW_DIRECT_UPGRADE == 1 .
+            ##########################################################################################################################
+            # Process savepoints for different components
+            # For n-1 upgrade (not direct upgrade), process event-forwarder and content
+            if [[ "$ALLOW_DIRECT_UPGRADE" != 1 ]]; then
+                set_bai_recovery_path "event-forwarder"
+                set_bai_recovery_path "content"
+            fi
+            
+            # Process other components (always)
+            set_bai_recovery_path "icm"
+            set_bai_recovery_path "odm"
+            set_bai_recovery_path "bawadv"
+            set_bai_recovery_path "bpmn"
+            set_bai_recovery_path "navigator"
+            set_bai_recovery_path "ads"
+        fi
+    fi
+}
+
+
+# Helper function to scale operators for upgradeDeploymentStatus
+function scale_operator() {
+    local operator_name=$1
+    local operator_label=$2
+    
+    info "Scaling up \"$operator_label\" operator"
+    ${CLI_CMD} scale --replicas=1 deployment $operator_name -n $CP4BA_OPERATOR_NS >/dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        sleep 1
+    else
+        fail "Failed to scale up \"$operator_label\" operator"
+    fi
+}
+
+function delete_cpfs_operand_requests(){
+    local project_name=$1
+    to_delete_operand_requests=("iaf-system" "operandrequest-kafkauser-iaf-system")
+    current_operand_requests=($(${CLI_CMD} get operandrequests -n $project_name -o custom-columns=NAME:.metadata.name --no-headers))
+    # Loop through each operand request
+    for req in "${current_operand_requests[@]}"; do
+        delete=false
+
+        for to_delete_operand_request in "${to_delete_operand_requests[@]}"; do
+            if [[ "$req" == "$to_delete_operand_request" ]]; then
+            delete=true
+            break
+            fi
+        done
+
+        if [[ $delete == "true" ]]; then
+            echo
+            info "The operand request $req is no longer required in the CP4BA $CP4BA_RELEASE_BASE stream.To prevent any disruption in the upgrade, the script will delete the $req operand request."
+            info "Deleting operand request $req .. "
+            ${CLI_CMD} delete operandrequest "$req" -n $project_name --ignore-not-found
+            echo
+        fi
+    done
+}
+
+function patch_strimzi_podset(){
+    local operator_namespace=$1
+    local services_namespace=$2
+
+    echo "Checking the ibm-events-operator subscription and channel..."
+    # Check if the events operator subscription exists and get its actual name. we found sometimes the subscription gets created with the channel appended to the name.
+    events_operator_subscription_name=$(${CLI_CMD} get subscription.operators.coreos.com -n $operator_namespace --no-headers -o custom-columns=":metadata.name" 2>/dev/null | grep "ibm-events-operator" | head -n 1 || echo "")
+
+    if [[ -z "$events_operator_subscription_name" ]]; then
+        echo "Subscription matching 'ibm-events-operator' not found, skipping"
+        strimzi_patched=true
+        return
+    fi
+
+    echo "Found subscription: $events_operator_subscription_name"
+
+    # Get the subscription channel using the actual subscription name
+    events_operator_channel=$(${CLI_CMD} get subscription.operators.coreos.com "$events_operator_subscription_name" -n $operator_namespace -o yaml 2>/dev/null | ${YQ_CMD} r - 'spec.channel')
+
+    if [[ -z "$events_operator_channel" || "$events_operator_channel" == "null" ]]; then
+        echo "Could not retrieve channel for subscription '$events_operator_subscription_name'"
+        return
+    fi
+
+    echo "Current channel: $events_operator_channel"
+
+    # Check if channel is v5.2
+    if [[ "$events_operator_channel" == "v5.2" ]]; then
+        echo "Events Operator Channel is v5.2, proceeding to check if the events operator is running..."
+
+        # Find the operator pod that starts with ibm-events-operator-v5.2
+        events_operator_pod=$(${CLI_CMD} get pods --no-headers -n $operator_namespace -o custom-columns=":metadata.name" | grep "^ibm-events-operator-v5.2" || echo "")
+
+        if [[ -z "$events_operator_pod" ]]; then
+            echo "'ibm-events-operator-v5.2' pod is not found"
+            return
+        fi
+
+        echo "Found operator pod: $events_operator_pod"
+
+        # Check if the pod is in Ready state
+        events_operator_pod_ready=$(${CLI_CMD} get pod "$events_operator_pod" -n $operator_namespace -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}')
+
+        if [[ "$events_operator_pod_ready" != "True" ]]; then
+            echo "Operator pod '$events_operator_pod' is not in Ready state"
+            return
+        fi
+
+        # Get the StrimziPodSet resource
+        kafka_podset_exists=$(${CLI_CMD} get strimzipodsets.core.ibmevents.ibm.com iaf-system-kafka -n $services_namespace -o name --no-headers 2>/dev/null || echo "")
+
+        if [[ -z "$kafka_podset_exists" ]]; then
+            echo "StrimziPodSet 'iaf-system-kafka' not found"
+            return
+        fi
+
+        echo "Found StrimziPodSet 'iaf-system-kafka'"
+
+        # Get the current kafka version from the annotation
+        kafka_annotation_value=$(${CLI_CMD} get strimzipodsets.core.ibmevents.ibm.com iaf-system-kafka -n $services_namespace -o yaml | ${YQ_CMD} r - 'metadata.annotations[strimzi.io/kafka-version]')
+
+        if [[ -z "$kafka_annotation_value" || "$kafka_annotation_value" == "null" ]]; then
+            strimzi_patched=true
+            return
+        fi
+
+        echo "Current kafka version: $kafka_annotation_value"
+
+        # Apply the patch directly
+        echo "Applying patch to update annotations..."
+        ${CLI_CMD} patch strimzipodsets.core.ibmevents.ibm.com iaf-system-kafka -n $services_namespace --type=merge -p "{\"metadata\":{\"annotations\":{\"strimzi.io/kafka-version\":null,\"ibmevents.ibm.com/kafka-version\":\"$kafka_annotation_value\"}}}"
+
+        echo "Successfully updated annotations:"
+        echo "- Removed: strimzi.io/kafka-version"
+        echo "- Added: ibmevents.ibm.com/kafka-version: $kafka_annotation_value"
+        strimzi_patched=true
+    else
+        echo "Events operator is not at channel v5.2"
+    fi
+}
+
+
+# Function to check if the deployment is SaaS
+# We detect if sc_deploy_zen_with_iaf is explicitly set to false in the CR
+# Returns: "true" if sc_deploy_zen_with_iaf is false, "false" otherwise
+# Parameters:
+#   $1 - CR kind (e.g., ICP4ACluster, Content, etc.)
+#   $2 - CR name
+#   $3 - namespace
+function check_saas_deployment() {
+    local cr_kind="$1"
+    local cr_name="$2"
+    local namespace="$3"
+
+    # Get the CR and extract sc_deploy_zen_with_iaf value (defaults to true if not set)
+    local zen_iaf_value
+    zen_iaf_value=$(${CLI_CMD} get "$cr_kind" "$cr_name" -n "$namespace" -o yaml 2>/dev/null | \
+        ${YQ_CMD} r - 'spec.shared_configuration.sc_deploy_zen_with_iaf')
+
+    # Check if kubectl/yq command failed
+    if [[ $? -ne 0 ]]; then
+        return 1
+    fi
+
+    # Return true only if value is false, otherwise return false
+    # If the value is false that means the deployment is SaaS
+    if [[ "$zen_iaf_value" == "false" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+function validate_zen_upgrade_status(){
+    zen_service_name=$(${CLI_CMD} get zenService --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS |awk '{print $1}')
+    if [[ ! -z "$zen_service_name" ]]; then
+        clear
+        maxRetry=360
+        for ((retry=0;retry<=${maxRetry};retry++)); do
+            # As workaround for https://github.ibm.com/IBMPrivateCloud/roadmap/issues/64207
+            # update secret postgresql-operator-controller-manager-config in <cp4ba> namespace and/or ibm-common-services namespace and add this annotation ibm-bts/skip-updates: "true"
+            if ${CLI_CMD} get secret -n $CP4BA_SERVICES_NS --no-headers --ignore-not-found | grep postgresql-operator-controller-manager-config >/dev/null 2>&1; then
+                ${CLI_CMD} patch secret postgresql-operator-controller-manager-config -n $CP4BA_SERVICES_NS -p '{"metadata": {"annotations": {"ibm-bts/skip-updates": "true"}}}' >/dev/null 2>&1
+            fi
+
+            zenservice_version=$(${CLI_CMD} get zenService $zen_service_name --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS -o jsonpath='{.status.currentVersion}')
+            isCompleted=$(${CLI_CMD} get zenService $zen_service_name --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS -o jsonpath='{.status.zenStatus}')
+            isProgressDone=$(${CLI_CMD} get zenService $zen_service_name --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS -o jsonpath='{.status.progress}')
+
+            if [[ "$isCompleted" != "Completed" || "$isProgressDone" != "100%" || "$zenservice_version" != "${ZEN_OPERATOR_VERSION//v/}" ]]; then
+                clear
+                CP4BA_DEPLOYMENT_STATUS="Waiting for the zenService to be ready (could take up to 120 minutes) before upgrade the CP4BA capabilities..."
+                printf '%s %s\n' "$(date)" "[refresh interval: 60s]"
+                printf '%b' "[Press Ctrl+C to exit] \t\t"
+                printf "\n"
+                echo "${YELLOW_TEXT}$CP4BA_DEPLOYMENT_STATUS${RESET_TEXT}"
+                printHeaderMessage "CP4BA Upgrade Status"
+                if [[ "$zenservice_version" == "${ZEN_OPERATOR_VERSION//v/}" ]]; then
+                    echo "zenService Version (Expected - ${ZEN_OPERATOR_VERSION//v/})       : ${GREEN_TEXT}$zenservice_version${RESET_TEXT}"
+                else
+                    echo "zenService Version (Expected - ${ZEN_OPERATOR_VERSION//v/})       : ${RED_TEXT}$zenservice_version${RESET_TEXT}"
+                fi
+                if [[ "$isCompleted" == "Completed" && "$zenservice_version" == "${ZEN_OPERATOR_VERSION//v/}" ]]; then
+                    echo "zenService Status (Expected - Completed)    : ${GREEN_TEXT}$isCompleted${RESET_TEXT}"
+                else
+                    echo "zenService Status (Expected - Completed)    : ${RED_TEXT}$isCompleted${RESET_TEXT}"
+                fi
+
+                if [[ "$isProgressDone" == "100%" && "$zenservice_version" == "${ZEN_OPERATOR_VERSION//v/}" ]]; then
+                    echo "zenService Progress (Expected - 100%)       : ${GREEN_TEXT}$isProgressDone${RESET_TEXT}"
+                else
+                    echo "zenService Progress (Expected - 100%)       : ${RED_TEXT}$isProgressDone${RESET_TEXT}"
+                fi
+                sleep 60
+            elif [[ "$isCompleted" == "Completed" && "$isProgressDone" == "100%" && "$zenservice_version" == "${ZEN_OPERATOR_VERSION//v/}" ]]; then
+                break
+            elif [[ $retry -eq ${maxRetry} ]]; then
+                printf "\n"
+                warning "Timeout waiting for the Zen Service to start"
+                printf '%b\n' "\x1B[1mCheck the status of the Zen Service\x1B[0m"
+                printf "\n"
+                exit 1
+            fi
+        done
+        clear
+        CP4BA_DEPLOYMENT_STATUS="The Zen Service (${ZEN_OPERATOR_VERSION//v/}) is ready for CP4BA"
+        printf '%s %s\n' "$(date)" "[refresh interval: 30s]"
+        printf '%b' "[Press Ctrl+C to exit] \t\t"
+        printf "\n"
+        echo "${YELLOW_TEXT}$CP4BA_DEPLOYMENT_STATUS${RESET_TEXT}"
+        info "Starting all CP4BA Operators to upgrade CP4BA capabilities"
+        printHeaderMessage "CP4BA Upgrade Status"
+        if [[ "$zenservice_version" == "${ZEN_OPERATOR_VERSION//v/}" ]]; then
+            echo "zenService Version        : ${GREEN_TEXT}$zenservice_version${RESET_TEXT}"
+        else
+            echo "zenService Version        : ${RED_TEXT}$zenservice_version${RESET_TEXT}"
+        fi
+        if [[ "$isCompleted" == "Completed" ]]; then
+            echo "zenService Status         : ${GREEN_TEXT}$isCompleted${RESET_TEXT}"
+        else
+            echo "zenService Status         : ${RED_TEXT}$isCompleted${RESET_TEXT}"
+        fi
+
+        if [[ "$isProgressDone" == "100%" && "$zenservice_version" == "${ZEN_OPERATOR_VERSION//v/}" ]]; then
+            echo "zenService Progress       : ${GREEN_TEXT}$isProgressDone${RESET_TEXT}"
+        else
+            echo "zenService Progress       : ${RED_TEXT}$isProgressDone${RESET_TEXT}"
+        fi
+    else
+        fail "ZenService not found in the project \"$CP4BA_SERVICES_NS\", exiting..."
+        echo "****************************************************************************"
+        exit 1
+    fi
+}
+
+function check_if_all_components_are_ready() {
+    # Check all component status values in the array
+    for status_value in "${CP4BA_COMPONENT_STATUS_VALUES[@]}"; do
+
+        # Skip if empty or whitespace only
+        if [[ -z "$status_value" ]] || [[ "$status_value" =~ ^[[:space:]]*$ ]]; then
+            continue
+        fi
+
+        # Skip if "Not Installed"
+        if [[ "$status_value" =~ "Not Installed" ]]; then
+            continue
+        fi
+
+        # Check for non-ready states
+        if [[ "$status_value" =~ "In Progress" ]] || \
+           [[ "$status_value" =~ "Not Ready" ]] || \
+           [[ "$status_value" =~ "Failed" ]] || \
+           [[ "$status_value" =~ "Pending" ]] || \
+           [[ "$status_value" =~ "Upgrading" ]]; then
+            return 1  # Not ready
+        fi
+
+        # Must contain "Done" or "Ready"
+        if [[ ! "$status_value" =~ "Done" ]] && [[ ! "$status_value" =~ "Ready" ]]; then
+            return 1  # Not ready
+        fi
+    done
+
+    return 0  # All components ready
 }

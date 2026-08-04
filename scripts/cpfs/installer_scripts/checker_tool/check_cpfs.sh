@@ -147,7 +147,7 @@ function run_checks() {
     if [[ $1 == 'ignore_groups' ]]; then
         data=$2
         temp_data=`echo ${data//,/|}`
-        test_suites=$(ls ${CHECKS_ROOT} | grep -E -v "$temp_data")
+        test_suites=$(ls ${CHECKS_ROOT} | egrep -v "$temp_data")
         not_run_groups=$temp_data
     fi
 

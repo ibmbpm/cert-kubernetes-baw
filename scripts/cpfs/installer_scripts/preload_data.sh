@@ -189,7 +189,7 @@ function prereq() {
     if [[ $architecture == "s390x" ]] || [[ $architecture == "ppc64le" ]]; then
       z_or_power_ENV="true"
       info "Z or Power cluster detected, be prepared for multiple restarts of mongo pods. This is expected behavior."
-      mongo_op_scaled=$(${OC} get deploy -n $FROM_NAMESPACE | grep ibm-mongodb-operator | grep -E '1/1' || echo false)
+      mongo_op_scaled=$(${OC} get deploy -n $FROM_NAMESPACE | grep ibm-mongodb-operator | egrep '1/1' || echo false)
       if [[ $mongo_op_scaled == "false" ]]; then
         info "Mongo operator still scaled down, scaling up."
         ${OC} scale deploy -n $FROM_NAMESPACE ibm-mongodb-operator --replicas=1
@@ -2431,7 +2431,7 @@ function delete_mongo_pods() {
   do
     debug1 "Deleting pod $pod"
     ${OC} delete pod $pod -n $FROM_NAMESPACE --ignore-not-found
-    local condition="${OC} get pod -n $namespace --no-headers --ignore-not-found | grep ${pod} | grep -E '2/2' || ${OC} get pod -n $namespace --no-headers --ignore-not-found | grep ${pod} | grep -E '1/1' || true"
+    local condition="${OC} get pod -n $namespace --no-headers --ignore-not-found | grep ${pod} | egrep '2/2' || ${OC} get pod -n $namespace --no-headers --ignore-not-found | grep ${pod} | egrep '1/1' || true"
     local retries=15
     local sleep_time=15
     local total_time_mins=$(( sleep_time * retries / 60))

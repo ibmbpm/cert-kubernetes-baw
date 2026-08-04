@@ -46,6 +46,19 @@ data:
                 proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
             }
 
+            # /auth — OIDC login callback route
+            # ibm-nginx issues a successRedirect to /auth/login/oidc/callback
+            # after the IAM token exchange. ALB must route /auth to
+            # platform-identity-provider so the callback is handled correctly.
+            location /auth {
+                proxy_pass https://platform-identity-provider:4300;
+                proxy_ssl_verify off;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+            }
+
             # Health check
             location = /healthz {
                 return 200 'OK';

@@ -267,7 +267,5 @@ function generate_ingress_templates(){
         generate_eks_ingress_templates
     elif [[ "$INGRESS_MODE" == "aks"  ]]; then
         generate_cncf_ingress_templates "$tls_enable"
-    elif [[ "$INGRESS_MODE" == "aks"  ]]; then
-        generate_cncf_ingress_templates "$tls_enable"
     fi
 }

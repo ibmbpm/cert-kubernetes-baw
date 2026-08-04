@@ -31,7 +31,7 @@ metadata:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/backend-protocol: HTTPS
     alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
-    alb.ingress.kubernetes.io/healthcheck-port: "443"
+    alb.ingress.kubernetes.io/healthcheck-port: "8443"
     alb.ingress.kubernetes.io/group.order: "9"
     alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=172800
 spec:
@@ -238,7 +238,7 @@ spec:
               number: 80
 
 ---
-# 8. PLATFORM AUTH - Platform Authentication API
+# 8. PLATFORM AUTH - Platform Authentication API (/v1/auth)
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -267,6 +267,74 @@ spec:
             name: platform-identity-provider
             port:
               number: 4300
+
+---
+# 8b. PLATFORM AUTH OIDC CALLBACK - /auth/login/* OIDC callback routes
+# Required: ibm-nginx redirects unauthenticated requests to
+# /idprovider/v1/auth/authorize which then issues a successRedirect
+# to /auth/login/oidc/callback. This routes through baw-alb-rewrite-proxy
+# which has the /auth nginx location block configured to proxy to
+# platform-identity-provider:4300 with proper headers and SSL settings.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cncf-platform-auth-login
+  namespace: BAW_NAMESPACE
+  annotations:
+    alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-port: "80"
+    alb.ingress.kubernetes.io/group.order: "75"
+    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=172800
+spec:
+  ingressClassName: alb
+  rules:
+  - host: DOMAIN_NAME
+    http:
+      paths:
+      - path: /auth
+        pathType: Prefix
+        backend:
+          service:
+            name: baw-alb-rewrite-proxy
+            port:
+              number: 80
+
+---
+# 8c. PFS OPERATOR PROBE REDIRECT - Redirect /rest/bpm/wle/v1/systems probe to /idprovider for OIDC IAM Discovery
+# Native AWS ALB 302 redirect for the PFS operator probe request.
+# Eliminates the need for extra ZenExtension CRs or operator code modifications.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cncf-pfs-operator-probe-redirect
+  namespace: BAW_NAMESPACE
+  annotations:
+    alb.ingress.kubernetes.io/group.name: cpd-alb-group
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/certificate-arn: IAM_CERT_ARN
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/group.order: "8"
+    alb.ingress.kubernetes.io/actions.redirect-to-idprovider: >
+      {"type":"redirect","redirectConfig":{"protocol":"HTTPS","port":"443","host":"#{host}","path":"/idprovider/v1/auth/authorize","query":"#{query}","statusCode":"HTTP_302"}}
+spec:
+  ingressClassName: alb
+  rules:
+  - host: DOMAIN_NAME
+    http:
+      paths:
+      - path: /*/rest/bpm/wle/v1/systems
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: redirect-to-idprovider
+            port:
+              name: use-annotation
 
 ---
 # 9. ID MGMT (WITH TRANSFORM) - Identity Management with URL Rewriting

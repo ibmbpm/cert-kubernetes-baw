@@ -42,7 +42,7 @@ function main(){
 
 function scale_up(){
     info "Z cluster detected, be prepared for multiple restarts of mongo pods. This is expected behavior."
-    mongo_op_scaled_original=$(oc get deploy -n $CS_NAMESPACE | grep ibm-mongodb-operator | grep -E '1/1' || echo false)
+    mongo_op_scaled_original=$(oc get deploy -n $CS_NAMESPACE | grep ibm-mongodb-operator | egrep '1/1' || echo false)
     if [[ $mongo_op_scaled_original == "false" ]]; then
         info "Mongo operator in $CS_NAMESPACE still scaled down, scaling up."
         oc scale deploy -n $CS_NAMESPACE ibm-mongodb-operator --replicas=1
@@ -106,7 +106,7 @@ function delete_mongo_pods() {
   do
     info "Deleting pod $pod"
     oc delete pod $pod -n $namespace --ignore-not-found
-    local condition="oc get pod -n $namespace --no-headers --ignore-not-found | grep ${pod} | grep -E '2/2' || oc get pod -n $namespace --no-headers --ignore-not-found | grep ${pod} | grep -E '1/1' || true"
+    local condition="oc get pod -n $namespace --no-headers --ignore-not-found | grep ${pod} | egrep '2/2' || oc get pod -n $namespace --no-headers --ignore-not-found | grep ${pod} | egrep '1/1' || true"
     local retries=15
     local sleep_time=15
     local total_time_mins=$(( sleep_time * retries / 60))

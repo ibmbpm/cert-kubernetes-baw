@@ -104,8 +104,8 @@ function waitforpodscompleted() {
         pods=$(oc get pods --no-headers -n $2 | grep $1 2>&1)
       fi
       #echo watching $pods
-      echo "$pods" | grep -E -q -v 'Completed|Succeeded|No resources found.' || break
-      [[ $(( $index % 10 )) -eq 0 ]] && echo "$pods" | grep -E -v 'Completed|Succeeded'
+      echo "$pods" | egrep -q -v 'Completed|Succeeded|No resources found.' || break
+      [[ $(( $index % 10 )) -eq 0 ]] && echo "$pods" | egrep -v 'Completed|Succeeded'
       index=$(( index + 1 ))
       # If one matching pod Completed and other matching pods in Error,  remove Error pods
       nothing=$(echo $pods | grep Completed)

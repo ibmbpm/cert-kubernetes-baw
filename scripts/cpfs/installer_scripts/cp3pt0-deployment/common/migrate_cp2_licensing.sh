@@ -29,6 +29,7 @@ STEP=0
 # ---------- Main functions ----------
 
 . ${BASE_DIR}/utils.sh
+. ${BASE_DIR}/cli_compat.sh
 
 function main() {
     parse_arguments "$@"

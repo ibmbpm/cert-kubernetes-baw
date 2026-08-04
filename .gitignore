@@ -10,6 +10,8 @@ scripts/generated-cr/*
 scripts/.bak
 scripts/baw-script-logs/*
 scripts/baw-script-logs/*
+scripts/cpfs/*
+scripts/cpfs/storage-validation/*
 scripts/baw-prerequisites-backup/*
 *.log
 network_cidr

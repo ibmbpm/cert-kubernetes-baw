@@ -843,7 +843,7 @@ function wait_for_certmanager() {
 
     #check cert manager operator pod
     local name="cert-manager-operator"
-    local condition="${OC} get deploy -A --no-headers --ignore-not-found | grep -E '1/1' | grep ${name} || true"
+    local condition="${OC} get deploy -A --no-headers --ignore-not-found | egrep '1/1' | grep ${name} || true"
     local retries=20
     local sleep_time=15
     local total_time_mins=$(( sleep_time * retries / 60))
@@ -854,7 +854,7 @@ function wait_for_certmanager() {
 
     #check webhook pod runnning
     name="cert-manager-webhook"
-    condition="${OC} get pod -A --no-headers --ignore-not-found | grep -E '1/1' | grep ${name} || true"
+    condition="${OC} get pod -A --no-headers --ignore-not-found | egrep '1/1' | grep ${name} || true"
     wait_message="Waiting for pod ${name} to be running ..."
     success_message="Pod ${name} is running."
     error_message="Timeout after ${total_time_mins} minutes waiting for pod ${name} to be running."
@@ -1085,7 +1085,7 @@ function wait_for_opconfig_exist() {
 #also checks for cert manager to be deployed before failing in the case that cert manager is uninstalled in a previous run but previous run failed before reinstalling
 function prev_fail_check() {
     info "Checking for common service operator and odlm pods"
-    local cs_operator_scaled=$(${OC} get deploy -n $MASTER_NS | grep -E '1/1'| grep ibm-common-service-operator || echo "false")
+    local cs_operator_scaled=$(${OC} get deploy -n $MASTER_NS | egrep '1/1'| grep ibm-common-service-operator || echo "false")
     debug1 "cs op scaled output: $cs_operator_scaled"
     local cs_op_scale_needed="false"
     if [[ "$cs_operator_scaled" == "false" ]]; then 
@@ -1095,7 +1095,7 @@ function prev_fail_check() {
     else
         info "Common Service Operator already scaled, skipping."
     fi
-    local odlm_scaled=$(${OC} get deploy -n $MASTER_NS | grep -E '1/1'| grep operand-deployment-lifecycle-manager || echo "false")
+    local odlm_scaled=$(${OC} get deploy -n $MASTER_NS | egrep '1/1'| grep operand-deployment-lifecycle-manager || echo "false")
     debug1 "odlm scaled output: $odlm_scaled"
     if [[ "$odlm_scaled" == "false" ]]; then 
         ${OC} scale deploy operand-deployment-lifecycle-manager -n $MASTER_NS --replicas=1

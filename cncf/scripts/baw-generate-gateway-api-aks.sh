@@ -94,6 +94,84 @@ function check_prereqs_aks_gateway() {
         success "GatewayClass '${GATEWAY_CLASS_NAME}' found and will be used."
     fi
     
+    # Prompt for ALB resource ID (required for BYO deployment strategy)
+    echo ""
+    info "Configuring Application Gateway for Containers (ALB) reference..."
+    echo ""
+    echo "${YELLOW_TEXT}Azure ALB controller requires an annotation on the Gateway to reference${RESET_TEXT}"
+    echo "${YELLOW_TEXT}the Application Gateway for Containers resource.${RESET_TEXT}"
+    echo ""
+    
+    export NEEDS_ALB_CREATION="false"
+    export ALB_NAME_TO_CREATE=""
+    export ALB_SUBNET_ID_TO_CREATE=""
+    
+    # Try to auto-detect ALB Name from ApplicationLoadBalancer CRs
+    detected_alb_name=""
+    alb_cr_name=$(${CLI_CMD} get applicationloadbalancer -n "$TARGET_PROJECT_NAME" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+    if [[ -z "$alb_cr_name" ]]; then
+        alb_cr_name=$(${CLI_CMD} get applicationloadbalancer -A -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+    fi
+    if [[ -n "$alb_cr_name" ]]; then
+        detected_alb_name="$alb_cr_name"
+        echo "Detected ApplicationLoadBalancer resource:"
+        echo "  ${GREEN_TEXT}${detected_alb_name}${RESET_TEXT}"
+        echo ""
+        read -rp "Use this ALB? (yes/no, default: yes): " use_detected
+        use_detected=$(echo "$use_detected" | tr '[:upper:]' '[:lower:]')
+        if [[ -z "$use_detected" || "$use_detected" == "yes" || "$use_detected" == "y" ]]; then
+            ALB_NAME="$detected_alb_name"
+        else
+            detected_alb_name=""
+        fi
+    fi
+    
+    if [[ -z "$detected_alb_name" ]]; then
+        echo "The Gateway resource requires a reference to an Application Gateway for Containers (ALB)."
+        echo ""
+        
+        # ALB Name
+        echo "No existing ApplicationLoadBalancer resources were found in the cluster."
+        echo "Enter a name to use for the new Application Gateway for Containers (Traffic Controller)."
+        echo "You can pick a new name (e.g., 'baw-alb') and the script will"
+        echo "give you the 'kubectl' command to create it at the end."
+        echo ""
+        read -rp "ALB Name: " alb_name
+        if [[ -z "$alb_name" ]]; then
+            error "ALB Name is required. Exiting."
+            exit 1
+        fi
+        
+        ALB_NAME="$alb_name"
+        
+        # Subnet ID (Required for ALB creation in Azure)
+        echo ""
+        echo "Enter the full Azure Resource ID of the Subnet you want to use for the Application Gateway."
+        echo "This subnet must be delegated to 'Microsoft.ServiceNetworking/trafficControllers'."
+        echo "Format: /subscriptions/<sub-id>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/<subnet>"
+        echo ""
+        echo "${YELLOW_TEXT}Tip: How to find your Subnet ID${RESET_TEXT}"
+        echo "  ${CYAN_TEXT}Option 1 (Azure Portal):${RESET_TEXT}"
+        echo "    Navigate to Virtual Networks > [Your VNet] > Subnets > click your ALB subnet > Properties > Resource ID"
+        echo "  ${CYAN_TEXT}Option 2 (Azure CLI):${RESET_TEXT}"
+        echo "    Run this command (no Resource Group or VNet name required!):"
+        echo "    az network vnet list --query \"[].subnets[?delegations[0].serviceName=='Microsoft.ServiceNetworking/trafficControllers'].id\" -o tsv"
+        echo ""
+        read -rp "Subnet Resource ID: " alb_subnet_id
+        
+        if [[ -z "$alb_subnet_id" ]]; then
+            error "Subnet Resource ID is required to provision the Application Gateway. Exiting."
+            exit 1
+        fi
+        
+        # We will need to remind the user to create the ALB
+        export NEEDS_ALB_CREATION="true"
+        export ALB_NAME_TO_CREATE="$alb_name"
+        export ALB_SUBNET_ID_TO_CREATE="$alb_subnet_id"
+    fi
+    
+    success "Application Gateway for Containers (ALB) reference configured."
+    
     # Check for cert-manager
     if ! ${CLI_CMD} get pods -n cert-manager >/dev/null 2>&1; then
         warning "cert-manager not found. Gateway API requires cert-manager for TLS certificates."
@@ -193,18 +271,22 @@ function patch_services_for_https() {
     ${CLI_CMD} patch svc platform-identity-management -n ${baw_namespace} --type='json' \
       -p='[{"op": "add", "path": "/spec/ports/0/appProtocol", "value": "HTTPS"}]' 2>/dev/null || true
     
+    # Patch ibm-nginx-svc:
+    # - Mark the existing port 443 entry with appProtocol: HTTPS
+    # - Add a second port entry at 8443 (also appProtocol: HTTPS)
+    # AGC connects directly to pod endpoints bypassing kube-proxy, so it must be able to
+    # reference port 8443 (the pod's actual TLS port). The HTTPRoute, BackendTLSPolicy,
+    # and HealthCheckPolicy all use port 8443 for this reason.
     ${CLI_CMD} patch svc ibm-nginx-svc -n ${baw_namespace} --type='json' \
-      -p='[{"op": "add", "path": "/spec/ports/0/appProtocol", "value": "HTTPS"}]' 2>/dev/null || true
+      -p='[{"op": "add", "path": "/spec/ports/0/appProtocol", "value": "HTTPS"},
+           {"op": "add", "path": "/spec/ports/-", "value": {"name": "ibm-nginx-8443-port", "port": 8443, "protocol": "TCP", "targetPort": 8443, "appProtocol": "HTTPS"}}]' 2>/dev/null || true
     
     # Patch licensing service
     ${CLI_CMD} patch svc ibm-licensing-service-instance -n ${licensing_namespace} --type='json' \
       -p='[{"op": "add", "path": "/spec/ports/0/appProtocol", "value": "HTTPS"}]' 2>/dev/null || true
     
-    # Patch OpenSearch if included
-    if [[ "$INCLUDE_OPENSEARCH" == "true" ]]; then
-        ${CLI_CMD} patch svc opensearch -n ${baw_namespace} --type='json' \
-          -p='[{"op": "add", "path": "/spec/ports/1/appProtocol", "value": "HTTPS"}]' 2>/dev/null || true
-    fi
+    # OpenSearch uses a non-headless wrapper service generated by the template (NAMESPACE-opensearch-svc).
+    # The headless opensearch service is left untouched — AGC cannot use headless services as backends.
     
     success "Services patched with appProtocol: HTTPS"
 }
@@ -225,13 +307,15 @@ function replace_aks_gateway() {
     
     cp "${current_dir}/${template_file}" ${output_file}
     
-    # Basic replacements using | as delimiter to avoid issues with / in values
-    ${SED_COMMAND} "s|NAMESPACE|${baw_namespace}|g" ${output_file}
-    ${SED_COMMAND} "s|HOST|${cp_console_hostname}|g" ${output_file}
-    ${SED_COMMAND} "s|DOMAIN|${domain_name}|g" ${output_file}
-    ${SED_COMMAND} "s|CLIENT_ID|${client_id}|g" ${output_file}
+    # Replace placeholders used in AKS templates
+    # Note: Only replace placeholders that actually exist in the AKS templates.
+    # Do NOT replace HOST or CLIENT_ID here - they are not used in AKS templates
+    # and HOST would corrupt HTTPS strings (HOST is a substring of HTTPS).
     ${SED_COMMAND} "s|LICENSING_NS|${licensing_namespace}|g" ${output_file}
+    ${SED_COMMAND} "s|NAMESPACE|${baw_namespace}|g" ${output_file}
+    ${SED_COMMAND} "s|DOMAIN|${domain_name}|g" ${output_file}
     ${SED_COMMAND} "s|GATEWAY_CLASS|${GATEWAY_CLASS_NAME}|g" ${output_file}
+    ${SED_COMMAND} "s|ALB_NAME|${ALB_NAME}|g" ${output_file}
     
     # Workaround for Mac sed creating extra files
     if [[ -f "$output_file\"\"" ]]; then
@@ -240,72 +324,7 @@ function replace_aks_gateway() {
 }
 
 
-function generate_service_patch_script() {
-    local patch_script="${output_dir}/patch-services-for-gateway-api.sh"
-    
-    cat > "${patch_script}" << 'EOF'
-#!/bin/bash
-# Script to patch services with appProtocol: HTTPS for AKS Gateway API
-# This is required for Azure Application Gateway for Containers
 
-set -e
-
-NAMESPACE="NAMESPACE"
-LICENSING_NS="LICENSING_NS"
-
-echo "Patching services in namespace: $NAMESPACE"
-echo ""
-
-# Patch auth services
-echo "Patching platform-auth-service..."
-kubectl patch svc platform-auth-service -n $NAMESPACE --type='json' \
-  -p='[{"op": "add", "path": "/spec/ports/0/appProtocol", "value": "HTTPS"}]'
-
-echo "Patching platform-identity-provider..."
-kubectl patch svc platform-identity-provider -n $NAMESPACE --type='json' \
-  -p='[{"op": "add", "path": "/spec/ports/0/appProtocol", "value": "HTTPS"}]'
-
-echo "Patching platform-identity-management..."
-kubectl patch svc platform-identity-management -n $NAMESPACE --type='json' \
-  -p='[{"op": "add", "path": "/spec/ports/0/appProtocol", "value": "HTTPS"}]'
-
-echo "Patching ibm-nginx-svc..."
-kubectl patch svc ibm-nginx-svc -n $NAMESPACE --type='json' \
-  -p='[{"op": "add", "path": "/spec/ports/0/appProtocol", "value": "HTTPS"}]'
-
-# Patch licensing service
-echo "Patching ibm-licensing-service-instance in namespace: $LICENSING_NS..."
-kubectl patch svc ibm-licensing-service-instance -n $LICENSING_NS --type='json' \
-  -p='[{"op": "add", "path": "/spec/ports/0/appProtocol", "value": "HTTPS"}]'
-
-INCLUDE_OPENSEARCH_PLACEHOLDER
-
-echo ""
-echo "All services patched successfully!"
-echo ""
-echo "Verify with:"
-echo "  kubectl get svc platform-auth-service -n $NAMESPACE -o jsonpath='{.spec.ports[0].appProtocol}'"
-EOF
-
-    ${SED_COMMAND} "s|NAMESPACE|${baw_namespace}|g" ${patch_script}
-    ${SED_COMMAND} "s|LICENSING_NS|${licensing_namespace}|g" ${patch_script}
-    
-    if [[ "$INCLUDE_OPENSEARCH" == "true" ]]; then
-        local opensearch_patch='
-# Patch OpenSearch service (port index 1 is the http/9200 port)
-echo "Patching opensearch..."
-kubectl patch svc opensearch -n $NAMESPACE --type='\''json'\'' \\
-  -p='\''[{"op": "add", "path": "/spec/ports/1/appProtocol", "value": "HTTPS"}]'\''
-'
-        ${SED_COMMAND} "s|INCLUDE_OPENSEARCH_PLACEHOLDER|${opensearch_patch}|g" ${patch_script}
-    else
-        ${SED_COMMAND} "s/INCLUDE_OPENSEARCH_PLACEHOLDER//g" ${patch_script}
-    fi
-    
-    chmod +x ${patch_script}
-    
-    success "Service patch script created at: ${GREEN_TEXT}${patch_script}${RESET_TEXT}"
-}
 
 function baw_aks_generate_gateway_api() {
     baw_namespace=$1
@@ -319,6 +338,7 @@ function baw_aks_generate_gateway_api() {
     INCLUDE_OPENSEARCH="false"
     INCLUDE_KAFKA="false"
     GATEWAY_CLASS_NAME=""
+    ALB_RESOURCE_ID=""
 
     check_prereqs_aks_gateway
     get_client_id_aks_gateway
@@ -328,11 +348,13 @@ function baw_aks_generate_gateway_api() {
     output_dir=$(dirname "${output_file}")
     mkdir -p "${output_dir}"
     
+    # Patch services with appProtocol: HTTPS (inline, like GKE)
+    echo ""
+    info "Patching services for HTTPS backend protocol..."
+    patch_services_for_https
+    
     # Generate the main Gateway API manifest
     replace_aks_gateway
-    
-    # Generate helper scripts
-    generate_service_patch_script
     
     echo ""
     success "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -341,7 +363,6 @@ function baw_aks_generate_gateway_api() {
     echo ""
     info "Generated files:"
     echo "  1. Gateway API manifest: ${GREEN_TEXT}${output_file}${RESET_TEXT}"
-    echo "  2. Service patch script: ${GREEN_TEXT}${output_dir}/patch-services-for-gateway-api.sh${RESET_TEXT}"
     echo ""
     success "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""

@@ -171,7 +171,8 @@ function wait_for_condition() {
         result=$(eval "${condition}")
 
         if [[ ( ${retries} -eq 0 ) && ( -z "${result}" ) ]]; then
-            error "${error_message}"
+            msg "\33[31m[✘] ${error_message}\33[0m"
+            return 1
         fi
 
         sleep ${sleep_time}
@@ -192,6 +193,7 @@ function wait_for_condition() {
     if [[ ! -z "${success_message}" ]]; then
         success "${success_message}\n"
     fi
+    return 0
 }
 
 function wait_for_not_condition() {
@@ -562,7 +564,7 @@ function patch_csv() {
     local retry_delay=20
     # Function to find a CSV that starts with the given prefix
     function get_csv_by_prefix() {
-        ${OC} get csv -n "$namespace" --no-headers -o custom-columns=":metadata.name" | grep -E "^$csv_prefix" | sed -n '2p'
+        ${OC} get csv -n "$namespace" --no-headers -o custom-columns=":metadata.name" | grep -E "^$csv_prefix" | tail -1
     }
     # Check if the CSV exists, retry up to max_retries times
 
@@ -672,7 +674,7 @@ function wait_for_operator_upgrade() {
     local condition="${OC} get subscription.operators.coreos.com -l operators.coreos.com/${length_limited_key}='' -n ${namespace} -o yaml -o jsonpath='{.items[*].status.installedCSV}' | grep -w $channel"
     local debug_condition="${OC} get subscription.operators.coreos.com -l operators.coreos.com/${length_limited_key}='' -n ${namespace} -o jsonpath='{.items[*].status.conditions}'"
 
-    local retries=120
+    local retries=200
     local sleep_time=20
     local total_time_mins=$(( sleep_time * retries / 60))
     local wait_message="Waiting for operator ${package_name} to be upgraded"
@@ -692,11 +694,12 @@ function wait_for_operator_upgrade() {
         error_message="Timeout after ${total_time_mins} minutes waiting for operator ${package_name} to be upgraded \nInstallPlan is not manually approved yet"
     fi
 
+    local retries_per_iter=$(( retries / 4 ))
     for i in {1..4}; do
       msg "Operator Upgrade iteration $i"
       patch_failed_operator_pods $namespace
 
-      wait_for_condition "${condition}" ${retries}/4 ${sleep_time} "${wait_message}" "${success_message}" "${error_message}" "${debug_condition}"
+      wait_for_condition "${condition}" ${retries_per_iter} ${sleep_time} "${wait_message}" "${success_message}" "${error_message}" "${debug_condition}"
 
       if [[ $? -eq 0 ]]; then
         return 0

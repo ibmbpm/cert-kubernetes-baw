@@ -1159,7 +1159,7 @@ function check_property_file(){
     ## -- https://jsw.ibm.com/browse/DBACLD-172803 - We are now asking user to use {xor} for special characters in password for some parameters, so we need to check if the "{xor}<Required>" is not filled out.
     check_required_values "{xor}<Required>" "${USER_PROFILE_PROPERTY_FILE}"
 
-    # Check <Required> values for cp4ba_db_server.property 
+    # Check <Required> values for baw_db_server.property 
     check_required_values "<Required>" "${DB_SERVER_INFO_PROPERTY_FILE}"
 
     value_empty=`grep '^<DB_ALIAS_NAME>.' "${DB_NAME_USER_PROPERTY_FILE}" | wc -l`  >/dev/null 2>&1
@@ -2254,30 +2254,7 @@ function create_prerequisites() {
     fi
 
     if [[ "${optional_component_cr_arr[@]}" =~ "workflow_assistant" || "${optional_component_cr_arr[@]}" =~ "workplace_assistant" ]]; then
-        watsonx_api_key="$(prop_user_profile_property_file WFA.WATSONX_API_KEY)"
-        watsonx_api_key=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_api_key")
-
-        watsonx_project_id="$(prop_user_profile_property_file WFA.WATSONX_PROJECT_ID)"
-        watsonx_project_id=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_project_id")
-
-        watsonx_token="$(prop_user_profile_property_file WFA.WATSONX_TOKEN)"
-        watsonx_token=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_token")
-
-        watsonx_url="$(prop_user_profile_property_file WFA.WATSONX_URL)"
-        watsonx_url=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_url")
-
-        if [[ "<Optional>" == $watsonx_token ]]; then
-          watsonx_token=""
-        fi
-
-        watsonx_password="$(prop_user_profile_property_file WFA.WATSONX_PASSWORD)"
-        watsonx_password=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_password")
-
-        if [[ "<Optional>" == $watsonx_password ]]; then
-          watsonx_password=""
-        fi
-
-        create_workflow_assistant_secret_template "$watsonx_api_key" "$watsonx_project_id" "$watsonx_token" "$watsonx_password" "$watsonx_url"
+        create_workflow_assistant_secret_template
     fi
 
     # create AP play back secret
@@ -2645,7 +2622,7 @@ function create_prerequisites() {
                     break
                     ;;
                 *)
-                    fail "$item.DATABASE_SSL_ENABLE is not valid value in the \"cp4ba_db_server.property\"! Exiting ..."
+                    fail "$item.DATABASE_SSL_ENABLE is not valid value in the \"baw_db_server.property\"! Exiting ..."
                     exit 1
                     ;;
                 esac
@@ -2813,14 +2790,9 @@ function create_prerequisites() {
     fi
 
     # Create Secret/configMap for BTS metastore external Postgres DB
-    tmp_flag=$(sed -e 's/^"//' -e 's/"$//' <<<"$(prop_tmp_property_file EXTERNAL_POSTGRESDB_FOR_BTS_FLAG)")
-    tmp_flag=$(echo $tmp_flag | tr '[:upper:]' '[:lower:]')
-    # if [[ $tmp_flag == "true" || $tmp_flag == "yes" || $tmp_flag == "y" ]]; then
-    if [[ $EXTERNAL_POSTGRESDB_FOR_BTS == "true" || " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ]]; then
-
-        # TODO: Add condition when edb is reenabled 
-        # if [[ " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ]]; then
-
+    # BTS external DB config is only relevant when BAI (which requires BTS) is an optional component.
+    if [[ " ${optional_component_cr_arr[@]} " =~ " bai " || " ${current_cr_optional_components_array[@]} " =~ " bai " ]]; then
+        if [[ $EXTERNAL_POSTGRESDB_FOR_BTS == "true" ]]; then
             # BTS create secret start
             create_bts_external_db_secret_template
             #  replace secret file folder
@@ -2831,29 +2803,28 @@ function create_prerequisites() {
             fi
             ${SED_COMMAND} "s|<cp4a-db-crt-file-in-local>|$bts_external_db_cert_folder|g" ${BTS_SSL_SECRET_FILE}
 
-        create_bts_external_db_configmap_template
-        #  replace <DatabaseHostName>
-        tmp_name="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_HOSTNAME)"
-        tmp_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_name")
-        ${SED_COMMAND} "s|<DatabaseHostName>|$tmp_name|g" ${BTS_CONFIGMAP_FILE}
+            create_bts_external_db_configmap_template
+            #  replace <DatabaseHostName>
+            tmp_name="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_HOSTNAME)"
+            tmp_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_name")
+            ${SED_COMMAND} "s|<DatabaseHostName>|$tmp_name|g" ${BTS_CONFIGMAP_FILE}
 
-        #  replace <DatabasePort>
-        tmp_name="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_PORT)"
-        tmp_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_name")
-        ${SED_COMMAND} "s|<DatabasePort>|$tmp_name|g" ${BTS_CONFIGMAP_FILE}
+            #  replace <DatabasePort>
+            tmp_name="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_PORT)"
+            tmp_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_name")
+            ${SED_COMMAND} "s|<DatabasePort>|$tmp_name|g" ${BTS_CONFIGMAP_FILE}
 
-        #  replace <DatabaseName>
-        tmp_name="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_NAME)"
-        tmp_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_name")
-        ${SED_COMMAND} "s|<DatabaseName>|$tmp_name|g" ${BTS_CONFIGMAP_FILE}
+            #  replace <DatabaseName>
+            tmp_name="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_NAME)"
+            tmp_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_name")
+            ${SED_COMMAND} "s|<DatabaseName>|$tmp_name|g" ${BTS_CONFIGMAP_FILE}
 
             #  replace <DatabaseUserName>
             tmp_name="$(prop_user_profile_property_file CP4BA.BTS_EXTERNAL_POSTGRES_DATABASE_USER_NAME)"
             tmp_name=$(sed -e 's/^"//' -e 's/"$//' <<<"$tmp_name")
             ${SED_COMMAND} "s|<DatabaseUserName>|$tmp_name|g" ${BTS_CONFIGMAP_FILE}
-
             # BTS create secret end
-        # fi
+        fi
     fi
 
     # Create Issuer to make Opensearch/Kafka use external certificate
@@ -2921,7 +2892,7 @@ function create_prerequisites() {
                 break
                 ;;
             *)
-                fail "$item.DATABASE_SSL_ENABLE is not valid value in the \"cp4ba_db_server.property\". Exiting ..."
+                fail "$item.DATABASE_SSL_ENABLE is not valid value in the \"baw_db_server.property\". Exiting ..."
                 exit 1
                 ;;
             esac
@@ -3171,6 +3142,12 @@ function create_temp_property_file(){
     # save profile size
     echo "PROFILE_SIZE_FLAG=$PROFILE_TYPE" >> ${TEMPORARY_PROPERTY_FILE}
 
+    # Save WFA-specific deployment type (set interactively by select_wfa_deployment_type())
+    # Used by create_workflow_assistant_secret_template() during generate mode.
+    if [[ -n $WFA_WATSONX_DEPLOYMENT_TYPE ]]; then
+        echo "WFA_WATSONX_DEPLOYMENT_TYPE=$WFA_WATSONX_DEPLOYMENT_TYPE" >> ${TEMPORARY_PROPERTY_FILE}
+    fi
+
     # Writing a flag to the temp property file so that we can detect if the script is being used for updating the deployment patterns.
     # This flag will help the baw-deployment.sh script perform the neccessary logic to generate the CR
     if [[ -z $UPDATE_COMPONENTS ]]; then
@@ -3282,7 +3259,7 @@ function create_property_file(){
         ${SED_COMMAND} "s|$item.DATABASE_SSL_ENABLE=\"\"|$item.DATABASE_SSL_ENABLE=\"True\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
         ${SED_COMMAND} "s|$item.DATABASE_SSL_SECRET_NAME=\"\"|$item.DATABASE_SSL_SECRET_NAME=\"ibm-cp4ba-db-ssl-secret-for-${item_tmp}\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
 
-        # set default value for EDB Postgres
+        # set default value for IBM Cloud Native Postgres
         if [[ $DB_TYPE == "postgresql-edb" ]]; then
             ${SED_COMMAND} "s|$item.DATABASE_SSL_SECRET_NAME=\"ibm-cp4ba-db-ssl-secret-for-${item_tmp}\"|$item.DATABASE_SSL_SECRET_NAME=\"\{{ meta.name }}-pg-client-cert-secret\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
             ${SED_COMMAND} "s|$item.DATABASE_SERVERNAME=\"\"|$item.DATABASE_SERVERNAME=\"postgres-cp4ba-rw.{{ meta.namespace }}.svc\"|g" ${DB_SERVER_INFO_PROPERTY_FILE}
@@ -3763,7 +3740,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 echo "$DB_SERVER_PREFIX.GCD_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 # fi
             else
-                echo "## The designated name of the database on the EDB Postgres for the GCD of P8Domain. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated name of the database on the IBM Cloud Native Postgres for the GCD of P8Domain. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.GCD_DB_NAME=\"gcddb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             fi
         fi
@@ -3773,7 +3750,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 echo "## Provide the user name of the database for the GCD of P8Domain. For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.GCD_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             else
-                echo "## The designated user name of the database on the EDB Postgres for the GCD of P8Domain. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated user name of the database on the IBM Cloud Native Postgres for the GCD of P8Domain. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.GCD_DB_USER_NAME=\"gcduser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             fi
         else
@@ -3944,7 +3921,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                             echo "## Provide the user name of the database for the Object Store of P8Domain. For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "$DB_SERVER_PREFIX.OS$((j+1))_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         else
-                            echo "## The designated name of the database on the EDB Postgres for the Object Store of P8Domain. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                            echo "## The designated name of the database on the IBM Cloud Native Postgres for the Object Store of P8Domain. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "$DB_SERVER_PREFIX.OS$((j+1))_DB_NAME=\"os$((j+1))db\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "## The designated user name of the database for the Object Store of P8Domain. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "$DB_SERVER_PREFIX.OS$((j+1))_DB_USER_NAME=\"osuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4019,7 +3996,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                             echo "$DB_SERVER_PREFIX.${BAW_AUTH_OS_ARR[i]}_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         else
                             tmp_db_name=$(echo ${BAW_AUTH_OS_ARR[i]} | tr '[:upper:]' '[:lower:]')
-                            echo "## The designated name of the database on the EDB Postgres for the object store required by BAW authoring or BAW Runtime. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                            echo "## The designated name of the database on the IBM Cloud Native Postgres for the object store required by BAW authoring or BAW Runtime. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "$DB_SERVER_PREFIX.${BAW_AUTH_OS_ARR[i]}_DB_NAME=\"$tmp_db_name\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "## The designated user name for the object store database required by BAW authoring or BAW Runtime. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "$DB_SERVER_PREFIX.${BAW_AUTH_OS_ARR[i]}_DB_USER_NAME=\"osuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4074,7 +4051,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                         echo "## Provide the user name for the object store database required by Case History when Case History Emitter is enabled. For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "# $DB_SERVER_PREFIX.CHOS_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                     else
-                        echo "## The designated name of the database on the EDB Postgres for Case History when Case History Emitter is enabled. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                        echo "## The designated name of the database on the IBM Cloud Native Postgres for Case History when Case History Emitter is enabled. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "# $DB_SERVER_PREFIX.CHOS_DB_NAME=\"chos\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "## The designated user name for the object store database required by Case History when Case History Emitter is enabled. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "# $DB_SERVER_PREFIX.CHOS_DB_USER_NAME=\"osuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4129,7 +4106,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                         echo "## Provide the user name for the object store database required by AWS. For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "$DB_SERVER_PREFIX.AWSDOCS_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                     else
-                        echo "## The designated name of the database on the EDB Postgres for the object store required by AWS. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                        echo "## The designated name of the database on the IBM Cloud Native Postgres for the object store required by AWS. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "$DB_SERVER_PREFIX.AWSDOCS_DB_NAME=\"awsdocs\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "## The designated user name for the object store database required by AWS. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "$DB_SERVER_PREFIX.AWSDOCS_DB_USER_NAME=\"osuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4198,7 +4175,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                         echo "## Provide the user name for the object store database required by ADP. For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "$DB_SERVER_PREFIX.DEVOS_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                     else
-                        echo "## The designated name of the database on the EDB Postgres for the object store required by ADP. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                        echo "## The designated name of the database on the IBM Cloud Native Postgres for the object store required by ADP. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "$DB_SERVER_PREFIX.DEVOS_DB_NAME=\"devos1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "## The designated user name for the object store database required by ADP. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                         echo "$DB_SERVER_PREFIX.DEVOS_DB_USER_NAME=\"osuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4266,7 +4243,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                             echo "## Provide the user name of the database for the object store required by AE Data Persistent. For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "$DB_SERVER_PREFIX.${AEOS[i]}_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                         else
-                            echo "## The designated name of the database on the EDB Postgres for the object store required by AE Data Persistent. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                            echo "## The designated name of the database on the IBM Cloud Native Postgres for the object store required by AE Data Persistent. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "$DB_SERVER_PREFIX.${AEOS[i]}_DB_NAME=\"aeos\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "## The designated user name of the database for the object store required by AE Data Persistent. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                             echo "$DB_SERVER_PREFIX.${AEOS[i]}_DB_USER_NAME=\"osuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4336,7 +4313,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                     echo "$DB_SERVER_PREFIX.ICN_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                     # fi
                 else
-                    echo "## The designated name of the database on the EDB Postgres for ICN (Navigator). (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                    echo "## The designated name of the database on the IBM Cloud Native Postgres for ICN (Navigator). (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                     echo "$DB_SERVER_PREFIX.ICN_DB_NAME=\"icndb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 fi
             fi
@@ -4429,7 +4406,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 #     echo "$DB_SERVER_PREFIX.ODM_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 # fi
             else
-                echo "## The designated name of the database on the PostgreSQL EDB for ODM. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated name of the database on the IBM Cloud Native Postgres for ODM. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.ODM_DB_NAME=\"odmdb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             fi
         fi
@@ -4517,7 +4494,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
             fi
             echo "$DB_SERVER_PREFIX.ADP_BASE_DB_USER_PASSWORD=\"{Base64}<yourpassword>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
         else
-            echo "## The designated database name on the EDB Postgres for Document Processing Engine Base database. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+            echo "## The designated database name on the IBM Cloud Native Postgres for Document Processing Engine Base database. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
             echo "$DB_SERVER_PREFIX.ADP_BASE_DB_NAME=\"adpbase\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             echo "## The designated user name for the Document Processing Engine Base database. Must be an existing user. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
             echo "$DB_SERVER_PREFIX.ADP_BASE_DB_USER_NAME=\"acauser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4531,7 +4508,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 echo "## Important: The keys below for Document Processing Engine Project databases support comma-separated lists. The number of values should match in each comma-separated list." >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "## Provide the database names for the Document Processing Engine Project databases. (For DB2, name must be 8 chars or less, no special chars.) You need two databases per document processing project. Example: \"proj1,proj2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "ADP_PROJECT_DB_NAME=\"proj1,proj2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
-                echo "## Provide the database server(s) for the Document Processing Engine Project databases.  Must match the value of \"DB_SERVER_LIST\" defined in cp4ba_db_server.property. Example: \"DBSERVER1,DBSERVER2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## Provide the database server(s) for the Document Processing Engine Project databases.  Must match the value of \"DB_SERVER_LIST\" defined in baw_db_server.property. Example: \"DBSERVER1,DBSERVER2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "ADP_PROJECT_DB_SERVER=\"$DB_SERVER_PREFIX,$DB_SERVER_PREFIX\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "## Provide the user names for the Document Processing Engine Project databases.  Must be existing users. Example: \"dbuser1,dbuser2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "ADP_PROJECT_DB_USER_NAME=\"<youruser1>,<youruser2>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4545,9 +4522,9 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 echo "ADP_PROJECT_ONTOLOGY=\"ont1,ont1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             else
                 echo "## Important: The keys below for Document Processing Engine Project databases support comma-separated lists. The number of values should match in each comma-separated list." >> ${DB_NAME_USER_PROPERTY_FILE}
-                echo "## The designated database names on the EDB Postgres for the Document Processing Engine Project databases. You need two databases per document processing project. Example: \"proj1,proj2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database names on the IBM Cloud Native Postgres for the Document Processing Engine Project databases. You need two databases per document processing project. Example: \"proj1,proj2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "ADP_PROJECT_DB_NAME=\"proj1,proj2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
-                echo "## The designated database server(s) for the Document Processing Engine Project databases.  Must match the value of \"DB_SERVER_LIST\" defined in cp4ba_db_server.property. Example: \"DBSERVER1,DBSERVER2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database server(s) for the Document Processing Engine Project databases.  Must match the value of \"DB_SERVER_LIST\" defined in baw_db_server.property. Example: \"DBSERVER1,DBSERVER2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "ADP_PROJECT_DB_SERVER=\"$DB_SERVER_PREFIX,$DB_SERVER_PREFIX\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "## The designated user names for the Document Processing Engine Project databases. Example: \"dbuser1,dbuser2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "ADP_PROJECT_DB_USER_NAME=\"acauser,acauser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4559,7 +4536,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 echo "## Important: The keys below for Document Processing Engine Project databases support comma-separated lists. The number of values should match in each comma-separated list." >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "## Provide the database name(s) for the Document Processing Engine Project database(s). You need one database per document processing project. This key supports comma-separated lists, example: \"proj1,proj2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "ADP_PROJECT_DB_NAME=\"proj1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
-                echo "## Provide the database server(s) for the Document Processing Engine Project databases.  Must match the value of \"DB_SERVER_LIST\" defined in cp4ba_db_server.property. Example: \"DBSERVER1,DBSERVER2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## Provide the database server(s) for the Document Processing Engine Project databases.  Must match the value of \"DB_SERVER_LIST\" defined in baw_db_server.property. Example: \"DBSERVER1,DBSERVER2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "ADP_PROJECT_DB_SERVER=\"$DB_SERVER_PREFIX\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "## Provide the user name(s) for the Document Processing Engine Project database(s). For example: \"dbuser1,dbuser2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "ADP_PROJECT_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4573,9 +4550,9 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 echo "ADP_PROJECT_ONTOLOGY=\"ont1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             else
                 echo "## Important: The keys below for Document Processing Engine Project databases support comma-separated lists. The number of values should match in each comma-separated list." >> ${DB_NAME_USER_PROPERTY_FILE}
-                echo "## The designated database name(s) on the EDB Postgres for the Document Processing Engine Project database(s). You need one database per document processing project. This key supports comma-separated lists, example: \"proj1,proj2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database name(s) on the IBM Cloud Native Postgres for the Document Processing Engine Project database(s). You need one database per document processing project. This key supports comma-separated lists, example: \"proj1,proj2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "ADP_PROJECT_DB_NAME=\"proj1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
-                echo "## The designated database server(s) for the Document Processing Engine Project databases.  Must match the value of \"DB_SERVER_LIST\" defined in cp4ba_db_server.property. Example: \"DBSERVER1,DBSERVER2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database server(s) for the Document Processing Engine Project databases.  Must match the value of \"DB_SERVER_LIST\" defined in baw_db_server.property. Example: \"DBSERVER1,DBSERVER2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "ADP_PROJECT_DB_SERVER=\"$DB_SERVER_PREFIX\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "## The designated user name(s) for the Document Processing Engine Project database(s). For example: \"dbuser1,dbuser2\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "ADP_PROJECT_DB_USER_NAME=\"acauser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4739,7 +4716,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                     echo "$DB_SERVER_PREFIX.APP_ENGINE_DB_CURRENT_SCHEMA=\"<Optional>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 fi
             else
-                echo "## The designated database name on the EDB Postgres for runtime application engine. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database name on the IBM Cloud Native Postgres for runtime application engine. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.APP_ENGINE_DB_NAME=\"aaedb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             fi
         fi
@@ -4886,7 +4863,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 fi
                 echo "$DB_SERVER_PREFIX.BAW_RUNTIME_DB_USER_PASSWORD=\"{Base64}<yourpassword>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             else
-                echo "## The designated database name on the EDB Postgres for Business Automation Workflow Runtime. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database name on the IBM Cloud Native Postgres for Business Automation Workflow Runtime. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.BAW_RUNTIME_DB_NAME=\"bawdb0\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "## The designated user name of the database for Business Automation Workflow Runtime. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.BAW_RUNTIME_DB_USER_NAME=\"bawuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -4932,26 +4909,55 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
     fi
 
 
-    # generate property for Workflow ssistants
+    # generate property for Workflow Assistants
     if [[ "${optional_component_cr_arr[@]}" =~ "workflow_assistant" || "${optional_component_cr_arr[@]}" =~ "workplace_assistant" ]]; then
         # Add user property into user_profile for Workflow Assistant
-        wait_msg "Creating Property file for Workflow Assistant"
+        # WFA_WATSONX_DEPLOYMENT_TYPE was already set interactively in input_information()
+        wait_msg "Creating Property file for Workflow Assistant ($WFA_WATSONX_DEPLOYMENT_TYPE deployment)"
 
         tip="##           USER Property for Workflow Assistant        ##"
         echo "####################################################" >> ${USER_PROFILE_PROPERTY_FILE}
         echo $tip >> ${USER_PROFILE_PROPERTY_FILE}
         echo "####################################################" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "## Provide the API Key for WatsonX" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "WFA.WATSONX_API_KEY=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
-        echo "## Provide the Project ID of WatsonX" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "WFA.WATSONX_PROJECT_ID=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+        if [[ "$WFA_WATSONX_DEPLOYMENT_TYPE" == "SaaS" ]]; then
+            echo "## Properties for SaaS Deployment (IBM Cloud)" >> ${USER_PROFILE_PROPERTY_FILE}
 
-        echo "## Provide the URL of WatsonX" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "WFA.WATSONX_URL=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "## IBM Cloud API Key for WatsonX.ai SaaS" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "WFA.WATSONX_API_KEY=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+
+            echo "## WatsonX.ai SaaS service endpoint URL" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "## Example: https://us-south.ml.cloud.ibm.com" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "WFA.WATSONX_URL=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+
+            echo "## WatsonX.ai Project ID" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "WFA.WATSONX_PROJECT_ID=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+        else
+            echo "####################################################" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "## Properties for LWE Deployment (Lightweight Engine)" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "####################################################" >> ${USER_PROFILE_PROPERTY_FILE}
+
+            echo "## WatsonX.ai LWE cluster URL" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "## Example: https://cpd-cluster.company.com" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "WFA.WATSONX_URL=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+
+            echo "## WatsonX.ai LWE username" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "WFA.WATSONX_USERNAME=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+
+            echo "## WatsonX.ai LWE password" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "WFA.WATSONX_PASSWORD=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+
+            echo "## WatsonX.ai LWE version" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "## Example: 5.0.0" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "WFA.WATSONX_VERSION=\"<Required>\"" >> ${USER_PROFILE_PROPERTY_FILE}
+            echo "" >> ${USER_PROFILE_PROPERTY_FILE}
+        fi
 
         echo "## Flag to run the Workplace Assistant" >> ${USER_PROFILE_PROPERTY_FILE}
         if [[ "${optional_component_cr_arr[@]}" =~ "workplace_assistant" ]]; then
@@ -4967,26 +4973,6 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
         else
           echo "WFA.RUN_AUTHORING_AGENT=\"false\"" >> ${USER_PROFILE_PROPERTY_FILE}
         fi
-        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-
-        echo "## Provide the CP4D user name." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "WFA.WATSONX_USERNAME=\"<Optional>\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-
-        echo "## Provide the CP4D token." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "WFA.WATSONX_TOKEN=\"<Optional>\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-
-        echo "## Provide the CP4D instance ID." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "WFA.WATSONX_INSTANCE_ID=\"<Optional>\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-
-        echo "## Provide the CP4D version." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "WFA.WATSONX_VERSION=\"<Optional>\"" >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "" >> ${USER_PROFILE_PROPERTY_FILE}
-
-        echo "## Optional - Only required if WATSONX_API_KEY is not set." >> ${USER_PROFILE_PROPERTY_FILE}
-        echo "WFA.WATSONX_PASSWORD=\"<Optional>\"" >> ${USER_PROFILE_PROPERTY_FILE}
         echo "" >> ${USER_PROFILE_PROPERTY_FILE}
 
         echo "## Optional - The ID of the LLM model to use. Default set to meta-llama/llama-3-3-70b-instruct." >> ${USER_PROFILE_PROPERTY_FILE}
@@ -5010,7 +4996,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
             echo "" >> ${USER_PROFILE_PROPERTY_FILE}
         fi
 
-        success "Property file for Workflow Assistant has been created.\n"
+        success "Property file for Workflow Assistant ($WFA_WATSONX_DEPLOYMENT_TYPE deployment) has been created.\n"
     fi
 
     # generate property for AWS
@@ -5056,7 +5042,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 fi
                 echo "$DB_SERVER_PREFIX.AWS_DB_USER_PASSWORD=\"{Base64}<yourpassword>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             else
-                echo "## The designated database name for database on the EDB Postgres required by Automation Workstream Services. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database name for database on the IBM Cloud Native Postgres required by Automation Workstream Services. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.AWS_DB_NAME=\"awsdb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "## The designated user name of the database for Automation Workstream Services. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.AWS_DB_USER_NAME=\"awsuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -5131,7 +5117,7 @@ element_val.ORACLE_URL_WITHOUT_WALLET_DIRECTORY=\"(DESCRIPTION=(ADDRESS=(PROTOCO
                 echo "## Provide the user name of the database for Application Engine Playback database . For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.APP_PLAYBACK_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             else
-                echo "## The designated database name on the EDB Postgres for Application Engine Playback database . (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database name on the IBM Cloud Native Postgres for Application Engine Playback database . (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.APP_PLAYBACK_DB_NAME=\"appdb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "## The designated user name of the database for Application Engine Playback database . (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.APP_PLAYBACK_DB_USER_NAME=\"appuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -5262,7 +5248,7 @@ fi
                 echo "## Provide the user name of the database for the Business Automation Studio database. For example: \"dbuser1\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.STUDIO_DB_USER_NAME=\"<youruser1>\"" >> ${DB_NAME_USER_PROPERTY_FILE}
             else
-                echo "## The designated database name on the EDB Postgres for Business Automation Studio database . (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
+                echo "## The designated database name on the IBM Cloud Native Postgres for Business Automation Studio database . (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.STUDIO_DB_NAME=\"basdb\"" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "## The designated user name of the database for the Business Automation Studio database. (Notes: DO NOT change the value in the property)" >> ${DB_NAME_USER_PROPERTY_FILE}
                 echo "$DB_SERVER_PREFIX.STUDIO_DB_USER_NAME=\"basuser\"" >> ${DB_NAME_USER_PROPERTY_FILE}
@@ -5636,7 +5622,7 @@ fi
         echo -e  "\x1b[32m* [baw_db_name_user.property]:\x1B[0m"
         echo -e  "  - Properties for database name and user name required by each component of the BAW deployment, such as GCD_DB_NAME/GCD_DB_USER_NAME/GCD_DB_USER_PASSWORD.\n"
         echo -e  "  - Change the prefix \"<DB_ALIAS_NAME>\" to assign which database is used by the component.\n"
-        echo -e  "  - The value of \"<DB_ALIAS_NAME>\" must match the value of <DB_SERVER_LIST> that is defined in \"<DB_SERVER_LIST>\" of \"cp4ba_db_server.property\".\n"
+        echo -e  "  - The value of \"<DB_ALIAS_NAME>\" must match the value of <DB_SERVER_LIST> that is defined in \"<DB_SERVER_LIST>\" of \"baw_db_server.property\".\n"
     fi
     if [[ ! ("${#pattern_cr_arr[@]}" -eq "1" && "${pattern_cr_arr[@]}" =~ "workflow-process-service" && $LDAP_WFPS_AUTHORING == "No") ]]; then
         echo -e  "\x1b[32m* [baw_LDAP.property]:\x1B[0m"
@@ -7372,6 +7358,12 @@ function create_db_script(){
 function select_external_postgresdb_for_im_zen(){
     printf "\n"
     echo ""
+    # When EDB is selected as DB_TYPE, IM and Zen use the EDB managed by the BAW operator — not an external DB
+    if [[ $DB_TYPE == "postgresql-edb" ]]; then
+        EXTERNAL_POSTGRESDB_FOR_IM="false"
+        EXTERNAL_POSTGRESDB_FOR_ZEN="false"
+        return
+    fi
     while true; do
         #DBACLD-194974: Since there no EDB, we won't ask customer whether they want to use external Postgres DB for IM/Zen.  They must use external Postgres DB if they want to install IM/Zen for 26.0.0-GA
         # Display Knowledge Center link once
@@ -7413,6 +7405,11 @@ function select_external_postgresdb_for_im_zen(){
 function select_external_postgresdb_for_bts(){
     printf "\n"
     echo ""
+    # When EDB is selected as DB_TYPE, BTS uses the EDB managed by the BAW operator — not an external DB
+    if [[ $DB_TYPE == "postgresql-edb" ]]; then
+        EXTERNAL_POSTGRESDB_FOR_BTS="false"
+        return
+    fi
     while true; do
         #DBACLD-194974: Since there no EDB, we won't ask customer whether they want to use external Postgres DB for BTS.  They must use external Postgres DB if they want to install BTS with 26.0.0-GA
         echo "${GREEN_TEXT}PLEASE REFER THE KNOWLEDGE CENTER: https://www.ibm.com/docs/en/cloud-paks/foundational-services/$CS_CHANNEL_KC?topic=service-external-database#configuring-an-external-database-with-the-bts-custom-resource${RESET_TEXT}"
@@ -7423,7 +7420,7 @@ function select_external_postgresdb_for_bts(){
             break
         else
         
-            printf "\x1B[1mDo you want to use an external Postgres DB \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THIS POSTGRESQL DB BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for this BAW deployment?\x1B[0m (Yes/No, default: No): "
+            printf "\x1B[1mDo you want to use an external Postgres DB for BTS \x1B[0m[${RED_TEXT}YOU NEED TO CREATE THIS POSTGRESQL DB BY YOURSELF FIRST BEFORE APPLYING THE BAW CUSTOM RESOURCE${RESET_TEXT}] \x1B[1m for this BAW deployment?\x1B[0m (Yes/No, default: No): "
             read -rp "" ans
             ans=$(echo "$ans" | tr '[:upper:]' '[:lower:]')
             case "$ans" in
@@ -7552,6 +7549,34 @@ function select_fips_enable(){
     fi
 }
 
+function select_wfa_deployment_type(){
+    printf "\n"
+    printf "\x1B[1mSelect the WatsonX.ai deployment type for Workplace Assistant and/or Workflow Authoring Assistant:\x1B[0m\n"
+    printf "\n"
+    printf "  1) IBM SaaS (IBM Cloud)\n"
+    printf "  2) Lightweight Engine (LWE)\n"
+    printf "\n"
+    while true; do
+        printf "Enter a valid option [1 to 2, default: 1]: "
+        read -erp "" ans
+        case "$ans" in
+            "1"|"")
+                WFA_WATSONX_DEPLOYMENT_TYPE="SaaS"
+                info "Selected: IBM SaaS deployment"
+                break
+                ;;
+            "2")
+                WFA_WATSONX_DEPLOYMENT_TYPE="LWE"
+                info "Selected: Lightweight Engine (LWE) deployment"
+                break
+                ;;
+            *)
+                echo "Invalid option \"$ans\". Please enter 1 or 2."
+                ;;
+        esac
+    done
+}
+
 function select_ldap_type(){
     printf "\n"
     COLUMNS=12
@@ -7621,9 +7646,9 @@ function select_db_type(){
     printf "\n"
     COLUMNS=12
     echo -e "\x1B[1mWhat is the Database type that is used for this deployment? \x1B[0m"
-    options=("IBM Db2 Database" "Oracle" "External PostgreSQL")
+    # options=("IBM Db2 Database" "Oracle" "External PostgreSQL" "IBM Cloud Native Postgres (deployed by the CP4BA Operator)"=08o,i j66666666\\[])
     # options=("IBM Db2 Database" "Oracle" "External PostgreSQL" "Azure SQL MI")  # Azure SQL MI: re-enable in next release
-    # options=("IBM Db2 Database" "Oracle" "External PostgreSQL" "EDB Postgres (deployed by BAW operator)" "Azure SQL MI")
+    options=("IBM Db2 Database" "Oracle" "External PostgreSQL" "IBM Cloud Native Postgres (deployed by the CP4BA Operator)" "Azure SQL MI")
     # if skip_edb; then
     #     info "\x1B[1m${YELLOW_TEXT}NOTE: Please be aware that for this ${VERSION_TO_SKIP_EDB} version, only external Postgres is supported. Other database types will be supported in the upcoming iFix and next release.\x1B[0m${RESET_TEXT}"
     #     # Remove all the database options except "External PostgreSQL" for all patterns.
@@ -7665,15 +7690,15 @@ function select_db_type(){
                 DB_TYPE="sqlserver"
                 break
                 ;;
-            # "Azure SQL MI")  # Azure SQL MI: re-enable in next release
-            #     DB_TYPE="azuresqlmi"
-            #     break
-            #     ;;
+            "Azure SQL MI")  # Azure SQL MI: re-enable in next release
+                DB_TYPE="azuresqlmi"
+                break
+                ;;
             "PostgreSQL"|"External PostgreSQL")
                 DB_TYPE="postgresql"
                 break
                 ;;
-            "EDB Postgres (deployed by BAW operator)")
+            "IBM Cloud Native Postgres (deployed by the CP4BA Operator)")
                 DB_TYPE="postgresql-edb"
                 break
                 ;;
@@ -7790,6 +7815,10 @@ function input_information(){
 
     select_baw_pattern
     select_optional_component
+    # Ask WatsonX deployment type for workflow_assistant or workplace_assistant after optional component selection
+    if [[ "${optional_component_cr_arr[@]}" =~ "workflow_assistant" || "${optional_component_cr_arr[@]}" =~ "workplace_assistant" ]]; then
+        select_wfa_deployment_type
+    fi
 
     select_ldap_type
 
@@ -8818,7 +8847,7 @@ function validate_prerequisites(){
             rm -rf ${im_external_db_cert_folder}/clientkey.pk8 2>&1 </dev/null
             openssl pkcs8 -topk8 -outform DER -in $postgres_clientkeyfile -out ${im_external_db_cert_folder}/clientkey.pk8 -nocrypt 2>&1 </dev/null
 
-            output=$(java -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${im_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
+            output=$(java -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.13.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${im_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
             retVal_verify_db_tmp=$?
             connection_time=$(echo $output | awk -F 'Round Trip time: ' '{print $2}' | awk '{print $1}')
             if [[ ! -z $connection_time ]]; then
@@ -8826,7 +8855,7 @@ function validate_prerequisites(){
             fi
 
             [[ retVal_verify_db_tmp -ne 0 ]] && \
-            warning "Execute: java -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${im_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
+            warning "Execute: java -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.13.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${im_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
             fail "Unable to connect to database \"$dbname\" on database server \"$dbserver\", please check the configuration again."
             [[ retVal_verify_db_tmp -eq 0 ]] && \
             success "Checked DB connection for \"$dbname\" on database server \"$dbserver\", PASSED!"
@@ -8858,7 +8887,7 @@ function validate_prerequisites(){
             rm -rf ${zen_external_db_cert_folder}/clientkey.pk8 2>&1 </dev/null
             openssl pkcs8 -topk8 -outform DER -in $postgres_clientkeyfile -out ${zen_external_db_cert_folder}/clientkey.pk8 -nocrypt 2>&1 </dev/null
 
-            output=$(java -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${zen_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
+            output=$(java -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.13.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${zen_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
             retVal_verify_db_tmp=$?
             connection_time=$(echo $output | awk -F 'Round Trip time: ' '{print $2}' | awk '{print $1}')
             if [[ ! -z $connection_time ]]; then
@@ -8866,7 +8895,7 @@ function validate_prerequisites(){
             fi
 
             [[ retVal_verify_db_tmp -ne 0 ]] && \
-            warning "Execute: java -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${zen_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
+            warning "Execute: java -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.13.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${zen_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
             fail "Unable to connect to database \"$dbname\" on database server \"$dbserver\", please check the configuration again."
             [[ retVal_verify_db_tmp -eq 0 ]] && \
             success "Checked DB connection for \"$dbname\" on database server \"$dbserver\", PASSED!"
@@ -8899,7 +8928,7 @@ function validate_prerequisites(){
                 rm -rf ${bts_external_db_cert_folder}/clientkey.pk8 2>&1 </dev/null
                 openssl pkcs8 -topk8 -outform DER -in $postgres_clientkeyfile -out ${bts_external_db_cert_folder}/clientkey.pk8 -nocrypt 2>&1 </dev/null
 
-                output=$(java -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${bts_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
+                output=$(java -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp "${DB_JDBC_NAME}/postgresql-42.7.13.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd $dbuserpwd -sslmode verify-ca -ca $postgres_cafile -clientkey ${bts_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile 2>&1)
                 retVal_verify_db_tmp=$?
                 connection_time=$(echo $output | awk -F 'Round Trip time: ' '{print $2}' | awk '{print $1}')
                 if [[ ! -z $connection_time ]]; then
@@ -8907,7 +8936,7 @@ function validate_prerequisites(){
                 fi
 
                 [[ retVal_verify_db_tmp -ne 0 ]] && \
-                warning "Execute: java -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.2.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${bts_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
+                warning "Execute: java -Duser.language=$CP4BA_AUTO_LANGUAGE -Duser.country=$CP4BA_AUTO_REGION -Dcom.ibm.jsse2.overrideDefaultTLS=true -Djavax.net.ssl.trustStoreType=PKCS12 -cp \"${DB_JDBC_NAME}/postgresql-42.7.13.jar:${DB_CONNECTION_JAR_PATH}/PostgresJDBCConnection.jar\" PostgresConnection -h $dbserver -p $dbport -db $dbname -u $dbuser -pwd ****** -sslmode verify-ca -ca $postgres_cafile -clientkey ${bts_external_db_cert_folder}/clientkey.pk8 -clientcert $postgres_clientcertfile" && \
                 fail "Unable to connect to database \"$dbname\" on database server \"$dbserver\", please check the configuration again."
                 [[ retVal_verify_db_tmp -eq 0 ]] && \
                 success "Checked DB connection for \"$dbname\" on database server \"$dbserver\", PASSED!"
@@ -8933,6 +8962,15 @@ function update_components_mode(){
     retVal_baw=1
     select_baw_pattern
     select_optional_component
+
+    # This array (current_cr_optional_components_array) stores the current optional components deployed.
+    # Only ask for the WatsonX deployment type (SaaS or LWE) if workflow_assistant or workplace_assistant
+    # was not already present in the CR but has been newly selected during the update.
+    if ! [[ " ${current_cr_optional_components_array[@]} " =~ "workflow_assistant" || " ${current_cr_optional_components_array[@]} " =~ "workplace_assistant" ]]; then
+        if [[ "${optional_component_cr_arr[@]}" =~ "workflow_assistant" || "${optional_component_cr_arr[@]}" =~ "workplace_assistant" ]]; then
+            select_wfa_deployment_type
+        fi
+    fi
 
     # This array (current_cr_deployment_patterns_array) stores the current patterns deployed , and we should only ask if they want to use external postgres for BTS if they add any of the patterns that need BTS while running the script to update components
     # This variable gets set in the function retrieve_current_custom_resource_file function

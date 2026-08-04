@@ -729,16 +729,44 @@ EOF
 }
 
 function create_workflow_assistant_secret_template(){
-  local watsonx_api_key=$1
-  local watsonx_project_id=$2
-  local watsonx_token=$3
-  local watsonx_password=$4
-  local watsonx_url=$5
+  # Get WFA deployment type selected during property mode (stored in TEMPORARY_PROPERTY_FILE)
+  watsonx_deployment_type="$(prop_tmp_property_file WFA_WATSONX_DEPLOYMENT_TYPE)"
+  watsonx_deployment_type=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_deployment_type")
+  watsonx_deployment_type=$(echo "$watsonx_deployment_type" | tr '[:lower:]' '[:upper:]')
+
+  watsonx_token="$(prop_user_profile_property_file WFA.WATSONX_TOKEN)"
+  watsonx_token=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_token")
+  if [[ "<Optional>" == "$watsonx_token" ]]; then watsonx_token=""; fi
+
+  watsonx_password="$(prop_user_profile_property_file WFA.WATSONX_PASSWORD)"
+  watsonx_password=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_password")
+  if [[ "<Required>" == "$watsonx_password" || "<Optional>" == "$watsonx_password" ]]; then watsonx_password=""; fi
+
+  watsonx_api_key="$(prop_user_profile_property_file WFA.WATSONX_API_KEY)"
+  watsonx_api_key=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_api_key")
+  if [[ "<Required>" == "$watsonx_api_key" ]]; then watsonx_api_key=""; fi
+
+  watsonx_project_id="$(prop_user_profile_property_file WFA.WATSONX_PROJECT_ID)"
+  watsonx_project_id=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_project_id")
+  if [[ "<Required>" == "$watsonx_project_id" ]]; then watsonx_project_id=""; fi
+
+  watsonx_url="$(prop_user_profile_property_file WFA.WATSONX_URL)"
+  watsonx_url=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_url")
+  if [[ "<Required>" == "$watsonx_url" ]]; then watsonx_url=""; fi
+
+  # LWE-specific fields
+  watsonx_username="$(prop_user_profile_property_file WFA.WATSONX_USERNAME)"
+  watsonx_username=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_username")
+  if [[ "<Required>" == "$watsonx_username" ]]; then watsonx_username=""; fi
+
+  watsonx_version="$(prop_user_profile_property_file WFA.WATSONX_VERSION)"
+  watsonx_version=$(sed -e 's/^"//' -e 's/"$//' <<<"$watsonx_version")
+  if [[ "<Required>" == "$watsonx_version" ]]; then watsonx_version=""; fi
 
   wait_msg "Creating IBM Workflow Assistant secret YAML template"
 
 cat << EOF > "${SECRET_FILE_FOLDER}/workflow-assistant-secrets.yaml"
-# YAML template for ibm-workflow-assistant-secret secret
+# YAML template for ibm-workflow-assistant-secrets secret
 ---
 apiVersion: v1
 kind: Secret
@@ -755,8 +783,16 @@ stringData:
   WATSONX_PASSWORD: "$watsonx_password"
   WATSONX_PROJECT_ID: "$watsonx_project_id"
   WATSONX_URL: "$watsonx_url"
-
 EOF
+
+  # Append deployment-type-specific additional fields
+  if [[ "$watsonx_deployment_type" == "LWE" ]]; then
+    cat << EOF >> "${SECRET_FILE_FOLDER}/workflow-assistant-secrets.yaml"
+  WATSONX_USERNAME: "$watsonx_username"
+  WATSONX_VERSION: "$watsonx_version"
+EOF
+  fi
+
   success "Created IBM Workflow Assistant secret YAML template\n"
 }
 

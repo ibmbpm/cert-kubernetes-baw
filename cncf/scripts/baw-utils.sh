@@ -145,8 +145,8 @@ function create_all_catalog_sources(){
 
         # For dev mode the image for the catalog source has to be in cp.stg.icr.io and a secrets field has to be added
         if [[ "$dev" == true ]]; then
-            # temporarily adding ibm-zen-operator-catalog-6-4-0 because as of March 13th 2025 zen has not GAed
-            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-content-cortex-operator-catalog"  || "$name" == "ibm-zen-operator-catalog-6-4-0" || "$name" == "cloud-native-postgresql-catalog" || "$name" == "ibm-cp-automation-catalog" || "$name" == "ibm-redis-cp-operator-catalog" ]]; then
+            # temporarily adding ibm-zen-operator-catalog-6-10-0 because as of March 13th 2025 zen has not GAed
+            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-content-cortex-operator-catalog"  || "$name" == "ibm-zen-operator-catalog-6-10-0" || "$name" == "cloud-native-postgresql-catalog" || "$name" == "ibm-cp-automation-catalog" || "$name" == "ibm-redis-cp-operator-catalog" ]]; then
                 # Extract the current image value
                 current_image=$(${YQ_CMD} r -d "$((doc_index - 1))" "$catalog_source_file_name" 'spec.image')
 
@@ -266,9 +266,9 @@ function get_common_service_version() {
 
 function patch_failed_operator_pods() {
   local ns=$1
-  local head_to_fetch=${2:-"head -n 1"}
+  local head_to_fetch=${2:-"sort -V | tail -n 1"}
 
-  pods=$(kubectl get pods -n "$ns" --no-headers | awk 'index($3,"ImagePullBackOff") || index($3,"Pending") {print $1}')
+  pods=$(kubectl get pods -n "$ns" --no-headers | awk 'index($3,"ImagePullBackOff") || index($3,"ErrImagePull") || index($3,"Pending") {print $1}')
   info "List of Pod need to be patched: ${pods}"
 
   for pod in $pods; do
@@ -279,15 +279,55 @@ function patch_failed_operator_pods() {
   done
 }
 
+# Wait for operator pods to appear and patch any that land in ImagePullBackOff.
+# Keeps retrying until no failing operator pods are found for two consecutive
+# checks, then returns.  Caps at max_wait seconds so it never blocks forever.
+# THIS FUNCTION IS ONLY USED FOR DEV MODE
+function wait_and_patch_operator_pods() {
+    local ns=$1
+    local max_wait=${2:-300}   # seconds before giving up (default 5 min)
+    local poll_interval=15     # seconds between polls
+    local stable_needed=2      # consecutive clean polls before we declare done
+    local stable=0
+    local elapsed=0
+
+    info "[dev] Watching for operator pods in ImagePullBackOff in project \"$ns\" (timeout ${max_wait}s)..."
+    while (( elapsed < max_wait )); do
+        failing=$(kubectl get pods -n "$ns" --no-headers 2>/dev/null \
+            | awk 'index($3,"ImagePullBackOff") || index($3,"ErrImagePull") {print $1}' \
+            | grep -E 'operator-[a-z0-9]+-[a-z0-9]+$' || true)
+
+        if [[ -z "$failing" ]]; then
+            (( stable++ ))
+            if (( stable >= stable_needed )); then
+                info "[dev] No more operator pods in ImagePullBackOff — patching complete."
+                return 0
+            fi
+        else
+            stable=0
+            patch_failed_operator_pods "$ns"
+        fi
+
+        sleep $poll_interval
+        (( elapsed += poll_interval ))
+        printf '%s' "."
+    done
+    printf "\n"
+    warning "[dev] wait_and_patch_operator_pods timed out after ${max_wait}s; some pods may still need manual patching."
+}
+
 # Function that patches the csv with the cp.stg.icr.io image
 # THIS FUNCTION IS ONLY USED FOR DEV MODE
 function patch_csv() {
     local csv_prefix=$1
     local namespace=$2
-    local head_to_fetch=${3:-"head -n 1"}
+    local head_to_fetch=${3:-"sort -V | tail -n 1"}
     local max_retries=20
     local retry_delay=20
-    local target_csv_version="${CP4BA_RELEASE_BASE}"
+    local target_csv_version="${CP4BA_CSV_VERSION//v/}"
+    if [[ -z "$target_csv_version" ]]; then
+        target_csv_version="${CP4BA_RELEASE_BASE}"
+    fi
 
     # Function to find a CSV that starts with the given prefix
     function get_csv_by_prefix() {
@@ -295,7 +335,7 @@ function patch_csv() {
         csv_list=$(${CLI_CMD} get csv -n "$namespace" --no-headers -o custom-columns=":metadata.name" | grep -E "^$csv_prefix")
         if [[ -n "$target_csv_version" ]]; then
             local version_match
-            version_match=$(echo "$csv_list" | grep -E "\\.v${target_csv_version}([.-]|$)" | head -n 1)
+            version_match=$(echo "$csv_list" | grep -E "\\.v${target_csv_version}([.-]|$)" | sort -V | tail -n 1)
             if [[ -n "$version_match" ]]; then
                 echo "$version_match"
                 return 0
@@ -410,6 +450,9 @@ function patch_catalog() {
       -n "$namespace" \
       --type=merge \
       -p "{\"spec\": {\"image\": \"$new_image\"}}"
+
+    # Delete the old catalog pod to force OLM to recreate it with the new image
+    kubectl delete pod -n "$namespace" -l olm.catalogSource="$catalog" --ignore-not-found --grace-period=0 --force >/dev/null 2>&1
 
     echo "Patched $catalog successfully"
   fi

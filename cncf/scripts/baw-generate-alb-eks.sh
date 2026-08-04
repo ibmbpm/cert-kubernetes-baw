@@ -85,24 +85,44 @@ function check_prereqs_eks_alb() {
 }
 
 function prompt_iam_certificate() {
+    # Clean up stale temp files from any previous run to avoid using old certs
+    rm -f /tmp/tls.crt /tmp/tls.key
+
     echo ""
     echo "${YELLOW_TEXT}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET_TEXT}"
-    echo "${YELLOW_TEXT}AWS IAM Certificate Configuration${RESET_TEXT}"
+    echo "${YELLOW_TEXT}AWS Certificate Configuration${RESET_TEXT}"
     echo "${YELLOW_TEXT}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET_TEXT}"
     echo ""
-    echo "For ALB to terminate TLS, you need an AWS certificate."
+    echo "For ALB to terminate TLS, an AWS Certificate ARN (ACM or IAM) is required."
     echo ""
-    echo "Options:"
-    echo "  1. AWS Certificate Manager (ACM) - for production domains with DNS validation"
-    echo "  2. AWS IAM Server Certificate - for testing domains "
+    echo "The script will auto-generate a server certificate signed by the cluster's"
+    echo "trusted root CA (icp4a-root-ca) so that PFS operator natively trusts it."
     echo ""
-    echo "For testing domains that cannot pass ACM DNS validation, use IAM certificates:"
-    echo ""
-    echo "${CYAN_TEXT}# Generate and upload IAM certificate:${RESET_TEXT}"
+    echo "${CYAN_TEXT}# Manual command to generate a CA-signed IAM certificate:${RESET_TEXT}"
+    echo "export NAMESPACE=\"${baw_namespace}\""
     echo "export DOMAIN_NAME=\"${baw_namespace}-cpd.${domain_name}\""
-    echo "openssl req -x509 -nodes -days 365 -newkey rsa:2048 \\"
-    echo "  -keyout tls.key -out tls.crt \\"
-    echo "  -subj \"/CN=\${DOMAIN_NAME}/O=BAW Testing\""
+    echo ""
+    echo "${CYAN_TEXT}# Extract the cluster root CA${RESET_TEXT}"
+    echo "kubectl get secret icp4a-root-ca -n \${NAMESPACE} -o jsonpath='{.data.tls\\.crt}' | base64 -d > ca.crt"
+    echo "kubectl get secret icp4a-root-ca -n \${NAMESPACE} -o jsonpath='{.data.tls\\.key}' | base64 -d > ca.key"
+    echo ""
+    echo "${CYAN_TEXT}# Generate server cert signed by icp4a-root-ca${RESET_TEXT}"
+    echo "cat > san.conf <<SANEOF"
+    echo "[req]"
+    echo "default_bits = 2048"
+    echo "prompt = no"
+    echo "default_md = sha256"
+    echo "distinguished_name = dn"
+    echo "req_extensions = v3_req"
+    echo "[dn]"
+    echo "CN=\${DOMAIN_NAME}"
+    echo "O=BAW Testing"
+    echo "[v3_req]"
+    echo "subjectAltName = DNS:\${DOMAIN_NAME}"
+    echo "SANEOF"
+    echo "openssl req -new -newkey rsa:2048 -nodes -keyout tls.key -out server.csr -config san.conf"
+    echo "openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial \\"
+    echo "  -out tls.crt -days 365 -extensions v3_req -extfile san.conf"
     echo ""
     echo "aws iam upload-server-certificate \\"
     echo "  --server-certificate-name baw-test-cert-\$(date +%s) \\"
@@ -111,13 +131,144 @@ function prompt_iam_certificate() {
     echo ""
     echo "${YELLOW_TEXT}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET_TEXT}"
     echo ""
-    
-    read -rp "Enter your AWS Certificate ARN (ACM or IAM): " cert_arn
+    read -rp "Enter your AWS Certificate ARN (or press Enter to auto-generate a test IAM cert): " cert_arn
+
     if [[ -z "$cert_arn" ]]; then
-        error "Certificate ARN is required for ALB TLS termination"
-        exit 1
+        local cert_domain="${baw_namespace}-cpd.${domain_name}"
+        local cert_name="baw-test-cert-$(date +%s)"
+        local san_conf
+        san_conf=$(mktemp /tmp/san.conf.XXXXXX)
+        local ca_signed="false"
+
+        # Try to use the cluster trusted root CA (icp4a-root-ca) to sign the server cert.
+        # This is REQUIRED for PFS operator to natively trust the ALB certificate.
+        if ${CLI_CMD} get secret icp4a-root-ca -n "${baw_namespace}" &>/dev/null; then
+            info "Found icp4a-root-ca secret. Generating server certificate signed by cluster root CA..."
+            local ca_crt
+            local ca_key
+            ca_crt=$(mktemp /tmp/ca.crt.XXXXXX)
+            ca_key=$(mktemp /tmp/ca.key.XXXXXX)
+            ${CLI_CMD} get secret icp4a-root-ca -n "${baw_namespace}" -o jsonpath='{.data.tls\.crt}' | base64 -d > "${ca_crt}" 2>/dev/null || true
+            ${CLI_CMD} get secret icp4a-root-ca -n "${baw_namespace}" -o jsonpath='{.data.tls\.key}' | base64 -d > "${ca_key}" 2>/dev/null || true
+
+            if [[ -s "${ca_crt}" && -s "${ca_key}" ]]; then
+                cat > "${san_conf}" <<EOF
+[req]
+default_bits = 2048
+prompt = no
+default_md = sha256
+distinguished_name = dn
+req_extensions = v3_req
+[dn]
+CN=${cert_domain}
+O=BAW Testing
+[v3_req]
+subjectAltName = DNS:${cert_domain}
+EOF
+                local server_csr
+                server_csr=$(mktemp /tmp/server.csr.XXXXXX)
+                openssl req -new -newkey rsa:2048 -nodes -keyout /tmp/tls.key -out "${server_csr}" -config "${san_conf}" 2>/dev/null
+                if openssl x509 -req -in "${server_csr}" -CA "${ca_crt}" -CAkey "${ca_key}" -CAcreateserial \
+                    -out /tmp/tls.crt -days 365 -extensions v3_req -extfile "${san_conf}" 2>/dev/null; then
+                    ca_signed="true"
+                    success "Server certificate signed by cluster root CA (icp4a-root-ca)"
+                    # Verify the cert was signed correctly
+                    local issuer
+                    issuer=$(openssl x509 -in /tmp/tls.crt -noout -issuer 2>/dev/null)
+                    info "Certificate issuer: ${issuer}"
+                fi
+                rm -f "${server_csr}" "${ca_crt}" "${ca_key}" "${san_conf}"
+            else
+                warning "icp4a-root-ca secret exists but tls.crt or tls.key is empty"
+                rm -f "${ca_crt}" "${ca_key}"
+            fi
+        else
+            warning "icp4a-root-ca secret not found in namespace ${baw_namespace}"
+            echo ""
+            echo "${YELLOW_TEXT}NOTE: The icp4a-root-ca secret may not have been created yet.${RESET_TEXT}"
+            echo "${YELLOW_TEXT}If you just deployed the namespace, wait for the CP4BA operator to create it,${RESET_TEXT}"
+            echo "${YELLOW_TEXT}then re-run this script.${RESET_TEXT}"
+            echo ""
+        fi
+
+        # Fallback: self-signed cert (will NOT be trusted by PFS operator)
+        if [[ ! -s /tmp/tls.crt || ! -s /tmp/tls.key ]]; then
+            echo ""
+            warning "================================================================"
+            warning "FALLING BACK TO SELF-SIGNED CERTIFICATE"
+            warning "================================================================"
+            warning "PFS operator will NOT trust this certificate because it is not"
+            warning "signed by icp4a-root-ca. This means:"
+            warning "  - Secret 'bawdeploy-bawins1-baw' will NOT be created"
+            warning "  - PFS federated system probe will fail with TLS errors"
+            warning ""
+            warning "To fix this later, re-run the script after icp4a-root-ca exists,"
+            warning "or manually generate a CA-signed cert using the instructions above."
+            warning "================================================================"
+            echo ""
+            read -rp "Continue with self-signed certificate? (yes/no, default: no): " self_signed_continue
+            if [[ "$self_signed_continue" != "yes" && "$self_signed_continue" != "y" ]]; then
+                info "Aborting. Please wait for icp4a-root-ca to be available and re-run."
+                exit 0
+            fi
+
+            info "Generating self-signed SAN certificate for: ${cert_domain}"
+            cat > "${san_conf}" <<EOF
+[req]
+default_bits = 2048
+prompt = no
+default_md = sha256
+distinguished_name = dn
+req_extensions = v3_req
+[dn]
+CN=${cert_domain}
+O=BAW Testing
+[v3_req]
+subjectAltName = DNS:${cert_domain}
+EOF
+            openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+                -keyout /tmp/tls.key -out /tmp/tls.crt \
+                -config "${san_conf}" -extensions v3_req 2>/dev/null
+            rm -f "${san_conf}"
+        fi
+
+        if [[ ! -s /tmp/tls.crt ]]; then
+            error "openssl failed to generate certificate"
+            exit 1
+        fi
+        success "Certificate generated: /tmp/tls.crt"
+
+        info "Uploading certificate to AWS IAM as: ${cert_name}"
+        aws iam upload-server-certificate \
+            --server-certificate-name "${cert_name}" \
+            --certificate-body file:///tmp/tls.crt \
+            --private-key file:///tmp/tls.key
+
+        if [[ $? -ne 0 ]]; then
+            error "Failed to upload certificate to AWS IAM"
+            exit 1
+        fi
+
+        # Fetch the ARN automatically
+        cert_arn=$(aws iam get-server-certificate \
+            --server-certificate-name "${cert_name}" \
+            --query 'ServerCertificate.ServerCertificateMetadata.Arn' \
+            --output text 2>/dev/null)
+
+        if [[ -z "$cert_arn" ]]; then
+            error "Could not retrieve certificate ARN after upload"
+            exit 1
+        fi
+        success "Certificate uploaded. ARN: ${cert_arn}"
+
+        if [[ "$ca_signed" == "true" ]]; then
+            success "This certificate is signed by icp4a-root-ca and will be natively trusted by PFS operator"
+        else
+            warning "This is a self-signed certificate. PFS operator will NOT trust it."
+            warning "Re-run this script after icp4a-root-ca is available to generate a trusted certificate."
+        fi
     fi
-    
+
     # Validate ARN format
     if [[ ! "$cert_arn" =~ ^arn:aws:iam::[0-9]+:server-certificate/.+ ]] && \
        [[ ! "$cert_arn" =~ ^arn:aws:acm:[a-z0-9-]+:[0-9]+:certificate/.+ ]]; then
@@ -142,6 +293,7 @@ function prompt_optional_components() {
     
     # Ask about OpenSearch
     read -rp "Enable OpenSearch? (yes/no, default: no): " opensearch_answer
+    opensearch_answer="${opensearch_answer,,}"
     if [[ "$opensearch_answer" == "yes" || "$opensearch_answer" == "y" ]]; then
         INCLUDE_OPENSEARCH="true"
         
@@ -171,6 +323,7 @@ function prompt_optional_components() {
     # Ask about Kafka
     echo ""
     read -rp "Enable Kafka? (yes/no, default: no): " kafka_answer
+    kafka_answer="${kafka_answer,,}"
     if [[ "$kafka_answer" == "yes" || "$kafka_answer" == "y" ]]; then
         echo ""
         echo "Kafka access options:"
@@ -204,6 +357,7 @@ function generate_alb_manifest() {
     sed -i.bak "s|BAW_NAMESPACE|${baw_namespace}|g" "${output_file}"
     sed -i.bak "s|DOMAIN_NAME|${baw_namespace}-cpd.${domain_name}|g" "${output_file}"
     sed -i.bak "s|IAM_CERT_ARN|${cert_arn}|g" "${output_file}"
+    sed -i.bak "s|CLIENT_ID|${client_id}|g" "${output_file}"
     sed -i.bak "s|LICENSING_NAMESPACE|${licensing_namespace}|g" "${output_file}"
     
     # Generate licensing domain (typically licensing.domain.com)
@@ -288,6 +442,19 @@ function baw_eks_generate_alb() {
         exit 1
     fi
     
+    # Extract OIDC CLIENT_ID for ingress redirect_uri substitution
+    info "Retrieving OIDC CLIENT_ID..."
+    local client_id
+    client_id=$(${CLI_CMD} get secret ibm-iam-bindinfo-platform-oidc-credentials -n ${baw_namespace} -o jsonpath='{.data.WLP_CLIENT_ID}' 2>/dev/null | base64 --decode)
+    if [[ -z "$client_id" ]]; then
+        warning "Cannot retrieve CLIENT_ID from ibm-iam-bindinfo-platform-oidc-credentials secret."
+        warning "Check if the BAW Standalone Custom Resource is marked as ready."
+        warning "Using placeholder CLIENT_ID - you will need to update it manually in the generated ingress."
+        client_id="CLIENT_ID_PLACEHOLDER"
+    else
+        success "OIDC CLIENT_ID retrieved: ${client_id}"
+    fi
+    
     # Create output directory
     output_dir=$(dirname "${output_file}")
     mkdir -p "${output_dir}"
@@ -321,8 +488,12 @@ function baw_eks_generate_alb() {
         
         if [[ "$INCLUDE_OPENSEARCH" == "true" ]]; then
             echo "${YELLOW_TEXT}OpenSearch:${RESET_TEXT}"
-            echo "  • Ensure ICP4ACluster CR has: sc_ingress_type: gatewayapi"
+            echo "  • Ensure ICP4ACluster CR has: sc_ingress_type: loadbalancer"
             echo "  • OpenSearch Cluster CR must configure appProtocol: HTTPS via spec.patches"
+            echo "  • To patch ICP4ACluster CR:"
+            echo "    ${GREEN_TEXT}kubectl patch icp4acluster \$(kubectl get icp4acluster -n ${baw_namespace} -o jsonpath='{.items[0].metadata.name}') \\"
+            echo "      -n ${baw_namespace} --type=merge \\"
+            echo "      -p '{\"spec\":{\"shared_configuration\":{\"sc_ingress_type\":\"loadbalancer\"}}}'${RESET_TEXT}"
             echo ""
         fi
         
@@ -332,6 +503,10 @@ function baw_eks_generate_alb() {
             echo "  • Ensure ICP4ACluster CR has: sc_ingress_type: loadbalancer"
             echo "  • Kafka CR must have: spec.kafka.listeners[].type: loadbalancer"
             echo "  • Separate DNS configuration required for each Kafka broker"
+            echo "  • To patch ICP4ACluster CR:"
+            echo "    ${GREEN_TEXT}kubectl patch icp4acluster \$(kubectl get icp4acluster -n ${baw_namespace} -o jsonpath='{.items[0].metadata.name}') \\"
+            echo "      -n ${baw_namespace} --type=merge \\"
+            echo "      -p '{\"spec\":{\"shared_configuration\":{\"sc_ingress_type\":\"loadbalancer\"}}}'${RESET_TEXT}"
             echo ""
         elif [[ "$INCLUDE_KAFKA" == "nginx" ]]; then
             echo "${YELLOW_TEXT}Kafka (NGINX Ingress):${RESET_TEXT}"
@@ -356,11 +531,11 @@ function baw_eks_generate_alb() {
     echo "3. Apply the ALB Rewrite Proxy resources:"
     echo "   ${GREEN_TEXT}kubectl apply -f ${output_dir}/alb-rewrite-proxy.yaml${RESET_TEXT}"
     echo ""
-    echo "4. Apply the ALB Ingress resources:"
-    echo "   ${GREEN_TEXT}kubectl apply -f ${output_file}${RESET_TEXT}"
+    echo "4. Delete the existing zen-ingress (ALB will provision its own):"
+    echo "   ${GREEN_TEXT}kubectl delete ingress zen-ingress -n ${baw_namespace}${RESET_TEXT}"
     echo ""
-    echo "5. Wait for ALB provisioning (2-5 minutes):"
-    echo "   ${GREEN_TEXT}kubectl get ingress zen-ingress -n ${baw_namespace} -w${RESET_TEXT}"
+    echo "5. Apply the ALB Ingress resources:"
+    echo "   ${GREEN_TEXT}kubectl apply -f ${output_file}${RESET_TEXT}"
     echo ""
     echo "6. Get the ALB DNS name:"
     echo "   ${GREEN_TEXT}kubectl get ingress zen-ingress -n ${baw_namespace} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'${RESET_TEXT}"

@@ -236,7 +236,7 @@ function info() {
 function wait_for_pod() {
     local namespace=$1
     local name=$2
-    local condition="oc -n ${namespace} get po --no-headers --ignore-not-found | grep -E 'Running|Completed|Succeeded' | grep ^${name}"
+    local condition="oc -n ${namespace} get po --no-headers --ignore-not-found | egrep 'Running|Completed|Succeeded' | grep ^${name}"
     local retries=30
     local sleep_time=10
     local total_time_mins=$(( sleep_time * retries / 60))
