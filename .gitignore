@@ -16,3 +16,4 @@ network_cidr
 network_type
 operators_namespace
 services_namespace
+.bob/

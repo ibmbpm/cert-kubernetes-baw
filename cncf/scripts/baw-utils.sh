@@ -150,7 +150,7 @@ function create_all_catalog_sources(){
         # For dev mode the image for the catalog source has to be in cp.stg.icr.io and a secrets field has to be added
         if [[ "$dev" == true ]]; then
             # temporarily adding ibm-zen-operator-catalog because as of March 13th 2025 zen has not GAed
-            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-fncm-operator-catalog"  || "$name" =~ "ibm-zen-operator-catalog" || "$name" == "cloud-native-postgresql-catalog" || "$name" == "ibm-cp-automation-catalog" ]]; then
+            if [[ "$name" == "ibm-cp4a-operator-catalog" || "$name" == "ibm-fncm-operator-catalog"  || "$name" =~ "ibm-zen-operator-catalog" || "$name" == "ibm-pg-operator-catalog" || "$name" == "ibm-cp-automation-catalog" ]]; then
                 # Extract the current image value
                 current_image=$(${YQ_CMD} r -d "$((doc_index - 1))" "$catalog_source_file_name" 'spec.image')
 
@@ -272,17 +272,59 @@ function patch_failed_operator_pods() {
   local ns=$1
   local head_to_fetch=${2:-"head -n 1"}
 
-  pods=$(kubectl get pods -n "$ns" --no-headers | awk 'index($3,"ImagePullBackOff") || index($3,"Pending") {print $1}')
+  pods=$(kubectl get pods -n "$ns" --no-headers | awk 'index($3,"ImagePullBackOff") || index($3,"ErrImagePull") || index($3,"Pending") {print $1}')
   if [[ $head_to_fetch == "head -n 1" ]]; then
     info "List of Pod need to be patched: ${pods}"
   fi
 
   for pod in $pods; do
-      base=$(echo "$pod" | sed 's/\(-operator\).*/\1/')
-      if [[ $base == *operator ]]; then
-        patch_csv "$base" "$ns" "$head_to_fetch"
+      if [[ $pod == *-catalog-* ]]; then
+          catalog_name=$(echo "$pod" | sed 's/\(-catalog\).*/\1/')
+          patch_catalog "$catalog_name" "$ns"
+      else
+          base=$(echo "$pod" | sed 's/\(-operator\).*/\1/')
+          if [[ $base == *operator ]]; then
+            patch_csv "$base" "$ns" "$head_to_fetch"
+          fi
       fi
   done
+}
+
+# Wait for operator pods to appear and patch any that land in ImagePullBackOff.
+# Keeps retrying until no failing operator pods are found for two consecutive
+# checks, then returns.  Caps at max_wait seconds so it never blocks forever.
+# THIS FUNCTION IS ONLY USED FOR DEV MODE
+function wait_and_patch_operator_pods() {
+    local ns=$1
+    local max_wait=${2:-300}   # seconds before giving up (default 5 min)
+    local poll_interval=15     # seconds between polls
+    local stable_needed=2      # consecutive clean polls before we declare done
+    local stable=0
+    local elapsed=0
+
+    info "[dev] Watching for operator pods in ImagePullBackOff in project \"$ns\" (timeout ${max_wait}s)..."
+    while (( elapsed < max_wait )); do
+        failing=$(kubectl get pods -n "$ns" --no-headers 2>/dev/null \
+            | awk 'index($3,"ImagePullBackOff") || index($3,"ErrImagePull") {print $1}' \
+            | grep -E 'operator-[a-z0-9]+-[a-z0-9]+$' || true)
+
+        if [[ -z "$failing" ]]; then
+            (( stable++ ))
+            if (( stable >= stable_needed )); then
+                info "[dev] No more operator pods in ImagePullBackOff — patching complete."
+                return 0
+            fi
+        else
+            stable=0
+            patch_failed_operator_pods "$ns"
+        fi
+
+        sleep $poll_interval
+        (( elapsed += poll_interval ))
+        printf '%s' "."
+    done
+    printf "\n"
+    warning "[dev] wait_and_patch_operator_pods timed out after ${max_wait}s; some pods may still need manual patching."
 }
 
 # Function that patches the csv with the cp.stg.icr.io image

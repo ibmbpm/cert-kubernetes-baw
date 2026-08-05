@@ -2951,6 +2951,8 @@ if [[ $SCRIPT_MODE == "OLM" ]];then
             metadata:
                 name: ibm-cpp-config
                 namespace: $DEDICATED_COMMON_PROJECT
+                labels:
+                    operator.ibm.com/managedByCsOperator: "true"
             data:
                 kubernetes_cluster_type: cncf
                 # modify it according for your worker node ip address

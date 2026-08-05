@@ -37,12 +37,12 @@ OLM_VERSION=v0.32.0
 #Licensing service related variables that required during the creation of subscription and the checks.
 # NEED TO BE UPDATED WHEN WE UPDATE THE VERSIONS
 LICENSING_SERVICE_CHANNEL=v4.2
-LICENSING_SERVICE_TARGET_VERSION="4.2.21"
+LICENSING_SERVICE_TARGET_VERSION="4.2.24"
 
 #Cert Manager related variables that required during the creation of subscription and the checks.
 # NEED TO BE UPDATED WHEN WE UPDATE THE VERSIONS
 CERT_MANAGER_CHANNEL=v4.2
-CERT_MANAGER_TARGET_VERSION="4.2.21"
+CERT_MANAGER_TARGET_VERSION="4.2.23"
 
 # CATALOG SOURCE file name
 CATALOG_SOURCE_FILENAME=${PARENT_DIR}/descriptors/op-olm/catalog_source.yaml
@@ -206,36 +206,36 @@ LDAP_SECRET_FILE=${SECRET_FILE_FOLDER}/ldap-bind-secret.yaml
 # Release/Patch version for CP4BA
 # CP4BA_RELEASE_BASE is for fetch content/foundation operator pod, only need to change for major release.
 CP4BA_RELEASE_BASE="25.0.0"
-BAW_PATCH_VERSION="IF005"
+BAW_PATCH_VERSION="IF006"
 # CP4BA_RELEASE_BASE_MAJOR_VERSION is used in certain checks where we used to hardcode to see if a upgrade is not ifix to ifix,change this only for major release
 CP4BA_RELEASE_BASE_MAJOR_VERSION="25.0"
-CP4BA_PATCH_VERSION="IF005"
+CP4BA_PATCH_VERSION="IF006"
 # CP4BA_CSV_VERSION is for checking CP4BA operator upgrade status, need to update for each IFIX
-CP4BA_CSV_VERSION="v25.0.5"
+CP4BA_CSV_VERSION="v25.0.6"
 # CP4BA_CHANNEL_VERSION is for switch CP4BA operator upgrade status, need to update for major release
 CP4BA_CHANNEL_VERSION="v25.0"
 # CS_OPERATOR_VERSION is for checking CPFS operator upgrade status, need to update for each IFIX
-CS_OPERATOR_VERSION="v4.18.1"
+CS_OPERATOR_VERSION="v4.19.2"
 # CS_CHANNEL_VERSION is for for CPFS script -c option, need to update for each IFIX
-CS_CHANNEL_VERSION="v4.18"
+CS_CHANNEL_VERSION="v4.19"
 # CS CHANNEL VERSION that is used in the KC
 CS_CHANNEL_KC="4.x_cd"
 # CERT_LICENSE_OPERATOR_VERSION is for checking IBM cert-manager/licensing operator upgrade status, need to update for each IFIX
-CERT_LICENSE_OPERATOR_VERSION="v4.2.21"
+CERT_LICENSE_OPERATOR_VERSION="v4.2.24"
 # CERT_LICENSE_CHANNEL_VERSION is for for IBM cert-manager/licensing script -c option, need to update for each IFIX
 CERT_LICENSE_CHANNEL_VERSION="v4.2"
 # CS_CATALOG_VERSION is for CPFS script -s option, need to update for each IFIX
-CS_CATALOG_VERSION="ibm-cs-install-catalog-v4-18-0"
+CS_CATALOG_VERSION="ibm-cs-install-catalog-v4-19-0"
 # ZEN_OPERATOR_VERSION is for checking ZenService operator upgrade status, need to update for each IFIX
-ZEN_OPERATOR_VERSION="v6.4.5"
+ZEN_OPERATOR_VERSION="v6.10.3"
 # BTS_CHANNEL_VERSION is for for BTS, need to update for each IFIX
 BTS_CHANNEL_VERSION="v3.35"
-# BTS_CATALOG_VERSION is for BTS 3.35.10.
+# BTS_CATALOG_VERSION is for BTS 3.35.13.
 BTS_CATALOG_VERSION="ibm-bts-operator-catalog-v3-35"
 # REQUIREDVER_BTS is for checking bts operator upgrade status before run removal_iaf.sh, need to update for each IFIX
-REQUIREDVER_BTS="3.35.10"
+REQUIREDVER_BTS="3.35.13"
 # REQUIREDVER_POSTGRESQL is for checking postgresql operator upgrade status before run removal_iaf.sh, need to update for each IFIX
-REQUIREDVER_POSTGRESQL="1.25.6"
+REQUIREDVER_POSTGRESQL="1.28.4"
 # EVENTS_OPERATOR_VERSION is for checking IBM Events operator upgrade status, need to update for each IFIX
 EVENTS_OPERATOR_VERSION="v5.2.1"
 #This is the list where we further restricted the versions that are supported for upgrade to $CP4BA_CSV_VERSION.  
@@ -270,6 +270,18 @@ CP4BA_OPERATOR_LIST="ibm-cp4a-operator ibm-content-operator icp4a-foundation-ope
 
 # CP4BA EDB default instance name
 EDB_INSTANCE_CP4BA_NAME="postgres-cp4ba"
+
+# EDB to CNPG Migration ConfigMap name
+EDB_CNPG_MIGRATION_CM_NAME="edb-cnpg-migration"
+EDB_TO_CNPG_MIGRATION_FOLDER="${CUR_DIR}/cp4ba-upgrade/project/$1"
+
+# EDB to CNPG Migration CNPG Cluster template path
+CNPG_CLUSTER_TEMPLATE="${PARENT_DIR}/descriptors/cnpg/cnpg-cluster-postgres-cp4ba-template.yaml"
+
+# CNPG operator subscription template and version
+CNPG_OPERATOR_SUBSCRIPTION_TEMPLATE="${PARENT_DIR}/descriptors/cnpg/cnpg-operator-subscription-template.yaml"
+CNPG_OPERATOR_CHANNEL="v28"
+CNPG_OPERATOR_CSV_VERSION="ibm-pg-operator.v28.4.0"
 
 # Becomes true if any SSL certificate validation fails (Used in the validate_ssl_certificates function and it's helper functions)
 SSL_CERT_ERROR_TAG=false
@@ -742,6 +754,28 @@ function save_log(){
 #    # Redirect stdout and stderr directly to the log file
 #    exec > >(tee -a "$LOG_FILE") 2>&1
 #}
+
+#DBACLD-222678: Function to check whether EDB is detected
+# Enhanced to specifically check for postgres-cp4ba instance and set CP4BA_EDB_INSTANCE_DETECTED flag
+function is_edb_detected(){
+    local ns=$1
+    is_edb=$($CLI_CMD get cluster.postgresql.k8s.enterprisedb.io -n $ns --no-headers --ignore-not-found 2>/dev/null | awk {'print $1'} || echo "")
+    
+    # Reset the flag
+    CP4BA_EDB_INSTANCE_DETECTED="false"
+    
+    if [[ ! -z $is_edb ]]; then
+        # Check if postgres-cp4ba is one of the EDB instances
+        if echo "$is_edb" | grep -q "^postgres-cp4ba$"; then
+            CP4BA_EDB_INSTANCE_DETECTED="true"
+            #info "CP4BA EDB instance 'postgres-cp4ba' detected"
+        fi
+        #info "The following EDB instances are found: \n$is_edb"
+        return 0
+    else
+        return 1
+    fi
+}
 
 function cleanup_log() {
     # Check if the log file already exists
@@ -1486,3 +1520,117 @@ function patch_strimzi_podset(){
         echo "Events operator is not at channel v5.2"
     fi
 }
+
+
+# Complete the IBM Usage Metering installation after the subscription has already been created/patched.
+# This function covers the second phase of the UMS setup: waiting for the operator to become ready,
+# applying service meter definition CRs, and configuring the connection point secret and CR.
+# The subscription setup phase is handled separately by setup_ibm_usage_metering_subscription().
+#
+# Arguments:
+# $1 Operator namespace
+# $2 Services namespace
+# $3 scenario i.e fresh_install or upgrade
+# $4 entitlement_key (empty for upgrade, will be retrieved if needed)
+# $5 runtime mode that tells the script if it is being used in dev mode
+# $6 airgap mode which makes sure that the connection point CR is created without the softwareCentral section
+function complete_ibm_usage_metering_installation() {
+    local operator_namespace=$1
+    local services_namespace=$2
+    local scenario=$3
+    local entitlement_key=$4
+    local runtime_mode=$5
+    local airgap_mode=$6
+    local create_secret_and_resources="true"
+    local connection_point_secret_creation="false"
+
+    echo ""
+    echo "=========================================="
+    echo "IBM Usage Metering Installation (Phase 2)"
+    echo "=========================================="
+    echo ""
+
+    # Step 1: Wait for UMS operator CSV to be ready
+    echo "Waiting for the UMS operator to be ready and in running state"
+    local timeout=600
+    local elapsed=0
+    while [ $elapsed -lt $timeout ]; do
+        if ${CLI_CMD} get csv -n "$operator_namespace" 2>/dev/null | grep -q "ibm-usage-metering.*Succeeded"; then
+            echo "✓ Operator is ready"
+            break
+        fi
+        sleep 10
+        elapsed=$((elapsed + 10))
+        echo "  Waiting... (${elapsed}s/${timeout}s)"
+    done
+
+    if [ $elapsed -ge $timeout ]; then
+        echo "✗ ERROR: Operator did not become ready in time"
+        return 1
+    fi
+    echo ""
+
+    # Step 2: Wait for UMS operator pod to be running
+    timeout=300
+    elapsed=0
+    while [ $elapsed -lt $timeout ]; do
+        if ${CLI_CMD} get pods -n "$operator_namespace" -l app.kubernetes.io/name=ibm-usage-metering-operator --field-selector=status.phase=Running 2>/dev/null | grep -q Running; then
+            echo "✓ Operator pod is running"
+            break
+        fi
+        sleep 10
+        elapsed=$((elapsed + 10))
+    done
+
+    if [ $elapsed -ge $timeout ]; then
+        echo "✗ WARNING: Operator pod not running yet, but continuing..."
+    fi
+    echo ""
+
+    # Step 3: Apply the service metering definition static CRs from the descriptors folder
+    apply_service_meter_definitions "$services_namespace" "$UMS_STATIC_CR_LOCATION"
+
+    # Step 4: Create the connection point secret and apply connection point CR
+    if [[ "$airgap_mode" == "true" || "$airgap_mode" == "yes" || "$airgap_mode" == "Yes" ]]; then
+        info "Airgap mode detected. Skipping creation of secret '$UMS_CONNECTION_POINT_SECRET_NAME' and applying UsageMetering CR."
+        apply_usage_metering_definition "$services_namespace" "$UMS_CONNECTION_POINT_SECRET_NAME" "$UMS_CONNECTION_POINT_STATIC_CR_LOCATION" "$runtime_mode" "$airgap_mode"
+    else
+        if ${CLI_CMD} get secret "$UMS_CONNECTION_POINT_SECRET_NAME" -n "$services_namespace" >/dev/null 2>&1; then
+            success "UMS connection point secret '$UMS_CONNECTION_POINT_SECRET_NAME' already exists in namespace '$services_namespace', skipping the creation of the secret."
+            create_secret_and_resources="true"
+            connection_point_secret_creation="true"
+        else
+            info "UMS connection point secret '$UMS_CONNECTION_POINT_SECRET_NAME' not found in namespace '$services_namespace', the script will now proceed to creating it using the entitlement key."
+
+            # For upgrade non-airgap, if the entitlement key was not passed in, retrieve it from an existing secret.
+            if [[ -z "$entitlement_key" && "$scenario" == "upgrade" ]]; then
+                get_entitlement_key_from_secret "ibm-entitlement-key" "$services_namespace"
+                if [ $? -ne 0 ]; then
+                    warning "Failed to extract entitlement key from secret.Refer to https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE for more information on how to create the $UMS_CONNECTION_POINT_SECRET_NAME secret and the UsageMetering connection point custom resource file."
+                    create_secret_and_resources="false"
+                fi
+            fi
+
+            # If entitlement key is still empty, do not create the secret or CR.
+            if [[ -z "$entitlement_key" ]]; then
+                warning "[IMPORTANT]The IBM Entitlement key is not available, so the $UMS_CONNECTION_POINT_SECRET_NAME secret and the UsageMetering connection point Custom Resource file will not be created.Refer to https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE for more information on how to create the $UMS_CONNECTION_POINT_SECRET_NAME secret and the UsageMetering connection point Custom Resource file."
+                create_secret_and_resources="false"
+            fi
+        fi
+
+        if [[ "$create_secret_and_resources" == "true" ]]; then
+            create_connection_point_secret "$UMS_CONNECTION_POINT_SECRET_NAME" "$services_namespace" "$entitlement_key"
+            if [[ "$connection_point_secret_creation" == "true" ]]; then
+                apply_usage_metering_definition "$services_namespace" "$UMS_CONNECTION_POINT_SECRET_NAME" "$UMS_CONNECTION_POINT_STATIC_CR_LOCATION" "$runtime_mode" "$airgap_mode"
+            else
+                warning "[IMPORTANT]Since the $UMS_CONNECTION_POINT_SECRET_NAME could not be created, the UsageMetering connection point Custom Resource file will not be created.Refer to https://www.ibm.com/docs/en/cloud-paks/cp-biz-automation/$CP4BA_RELEASE_BASE for more information on how to create the $UMS_CONNECTION_POINT_SECRET_NAME secret and the UsageMetering connection point Custom Resource file."
+            fi
+        fi
+    fi
+
+    echo "================================================="
+    echo "Usage Metering Installation Complete!"
+    echo "================================================="
+    echo ""
+}
+

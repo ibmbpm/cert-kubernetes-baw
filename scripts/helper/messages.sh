@@ -30,3 +30,20 @@ function displayUpgradeOperatorMessage() {
   echo "           Example command: "
   echo "           # ./baw-deployment.sh -m upgradeOperator -n $tmp_target_project_name --cpfs-upgrade-mode dedicated2dedicated --original-cp4ba-csv-ver $tmp_original_cp4ba_csv_ver"
 }
+
+function displayEdbMigrationRetryMessage() {
+  local tmp_phase_name=$1
+  local tmp_target_project_name=$2
+  local tmp_original_cp4ba_csv_ver=$3
+  warning "EDB to IBM CloudNativePG migration failed at phase: $tmp_phase_name"
+  echo "${YELLOW_TEXT}[ATTENTION]:${RESET_TEXT} You can run the following command to retry the migration after fixing the issue."
+  echo "           ${GREEN_TEXT}# ./baw-deployment.sh -m upgradeOperator -n $tmp_target_project_name --original-cp4ba-csv-ver <cp4ba-csv-version-before-upgrade>${RESET_TEXT}"
+  echo "           Usage:"
+  echo "           --original-cp4ba-csv-ver: The version of CSV for CP4BA operator before upgrade such as $tmp_original_cp4ba_csv_ver"
+  echo "           Example command: "
+  echo "           # ./baw-deployment.sh -m upgradeOperator -n $tmp_target_project_name --original-cp4ba-csv-ver $tmp_original_cp4ba_csv_ver"
+  echo ""
+  info "The EDB to IBM CloudNativePG migration will automatically resume from the failed phase."
+  echo
+  info " Migration state is tracked in ConfigMap: edb-cnpg-migration"
+}

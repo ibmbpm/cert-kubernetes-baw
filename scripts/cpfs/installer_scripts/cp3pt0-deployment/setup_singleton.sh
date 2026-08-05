@@ -69,6 +69,7 @@ STEP=0
 # ---------- Main functions ----------
 
 . ${BASE_DIR}/common/utils.sh
+. ${BASE_DIR}/common/cli_compat.sh
 
 function main() {
     parse_arguments "$@"
@@ -198,7 +199,7 @@ function print_usage() {
     echo "See https://www.ibm.com/docs/en/cloud-paks/foundational-services/4.0?topic=manager-installing-cert-licensing-by-script for more information."
     echo ""
     echo "Options:"
-    echo "   --oc string                                            Optional. File path to oc CLI. Default uses oc in your PATH"
+    echo "   --oc string                                            Optional. File path to oc/kubectl CLI. Default uses oc in your PATH"
     echo "   --yq string                                            Optional. File path to yq CLI. Default uses yq in your PATH"
     echo "   --operator-namespace string                            Optional. Namespace to migrate Cloud Pak 2 Foundational services"
     echo "   -ls, --enable-licensing                                Optional. Set this flag to install ibm-licensing-operator"
@@ -250,6 +251,7 @@ function is_migrate_licensing() {
         return 0
     fi
 
+    local ns=$("$OC" get deployments -A | grep ibm-licensing-service-instance | cut -d ' ' -f1)
     local licensing_service_count=$("$OC" get deployments -A | grep ibm-licensing-service-instance | wc -l)
     # If multiple Licensing service deployment is found, it should error out
     if [ "$licensing_service_count" -ge 2 ]; then

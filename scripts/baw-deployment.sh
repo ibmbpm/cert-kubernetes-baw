@@ -12,6 +12,10 @@
 ###############################################################################
 CUR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PARENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
+# Open file descriptor 3 for suppressing output
+exec 3>/dev/null
+
 # Import common utilities and environment variables
 source ${CUR_DIR}/helper/common.sh
 
@@ -9337,6 +9341,11 @@ function cncf_install(){
   # Change the location of the image
   echo "Using the operator image name: $IMAGEREGISTRY"
   sed -e "s|image: .*|image: \"$IMAGEREGISTRY\" |g" ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml > ${CUR_DIR}/../upgradeOperatorsav.yaml ;  mv ${CUR_DIR}/../upgradeOperatorsav.yaml ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml
+  elif [[ "$SCRIPT_MODE" == "dev" || "$SCRIPT_MODE" == "review" ]]; then
+  # In dev/review mode rewrite icr.io/cpopen/<image> @sha256:<digest> → cp.stg.icr.io/cp/<image>:<IMAGE_TAG_DEV>
+  # The @sha256 digest in operator.yaml is prod-only and does not exist in the staging registry.
+  # Strip any existing tag or digest suffix and replace with IMAGE_TAG_DEV.
+  sed -e "s|icr\.io/cpopen/\([^ @: ]*\)[^[:space:]]*|cp.stg.icr.io/cp/\1:${IMAGE_TAG_DEV}|g" ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml > ${CUR_DIR}/../upgradeOperatorsav.yaml ;  mv ${CUR_DIR}/../upgradeOperatorsav.yaml ${UPGRADE_DEPLOYMENT_FOLDER}/upgradeOperator.yaml
   fi
 
   # Change the pullSecrets if needed
@@ -11020,12 +11029,13 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
             # Checking ibm-cp4a-operator catalog source pod
             info "Checking CP4BA operator catalog pod ready or not in the project \"$TEMP_CATALOG_PROJECT_NAME\""
 
-            if [[ "$SCRIPT_MODE" == "dev" ]];then
+            # In dev mode, watch for operator pods landing in ImagePullBackOff and
+            # patch their CSVs to use cp.stg.icr.io images.  A one-shot call here
+            # fires too early (OLM hasn't created the new pods yet), so we use the
+            # retry wrapper which polls until the namespace is stable.
+            if [[ "$SCRIPT_MODE" == "dev" ]]; then
                 source $BAW_CNCF_FOLDER/baw-utils.sh
-
-                patch_failed_operator_pods $TEMP_CATALOG_PROJECT_NAME
-                patch_catalog "ibm-cp4a-operator-catalog" $TEMP_CATALOG_PROJECT_NAME
-                patch_catalog "ibm-fncm-operator-catalog" $TEMP_CATALOG_PROJECT_NAME
+                wait_and_patch_operator_pods $CP4BA_OPERATOR_NS
             fi
 
             maxRetry=50
@@ -11059,9 +11069,9 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                         fi
                         exit 1
                     else
-                        if [[ "$SCRIPT_MODE" == "dev" ]];then
+                        if [[ "$SCRIPT_MODE" == "dev" ]]; then
                             source $BAW_CNCF_FOLDER/baw-utils.sh
-                            patch_failed_operator_pods $TEMP_CATALOG_PROJECT_NAME "sed -n '2p'"
+                            wait_and_patch_operator_pods $CP4BA_OPERATOR_NS
                         fi
                         sleep 30
                         echo -n "..."
@@ -12094,6 +12104,34 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
         if [[ ! ("$cp4ba_original_csv_ver_for_upgrade_script" == "$CP4BA_RELEASE_BASE_MAJOR_VERSION"*) ]]; then
             info "Shutdown CP4BA Operators before upgrade CP4BA capabilities."
             shutdown_operator $TEMP_OPERATOR_PROJECT_NAME
+
+            ############## Start - Phased EDB to CNPG Migration Integration ##############
+            # Check for EDB presence if migrating from 23.0.2 to >= 24.0.0
+            if [[ "$CP4BA_EDB_INSTANCE_DETECTED" == "true" ]]; then
+                # Ensure CP4BA is separation of operators and operands to get correct top_level_cr_kind
+                check_cp4ba_separate_operand $TARGET_PROJECT_NAME
+                
+                # Fetch top_level_cr_kind
+                if [[ $SEPARATE_OPERAND_FLAG == "Yes" ]]; then
+                    top_level_cr_kind=$(${CLI_CMD} get ICP4ACluster,Content -n $CP4BA_SERVICES_NS -o custom-columns=KIND:.kind --no-headers | head -n 1)
+                else
+                    top_level_cr_kind=$(${CLI_CMD} get ICP4ACluster,Content -n $TARGET_PROJECT_NAME -o custom-columns=KIND:.kind --no-headers | head -n 1)
+                fi
+                
+                info "Top level CR Kind detected: $top_level_cr_kind"
+                
+                if [[ "$CP4BA_EDB_INSTANCE_DETECTED" == "true" ]]; then
+                    # Call the EDB migration handler function
+                    if ! handle_edb_migration_process "$CP4BA_SERVICES_NS" "$CP4BA_OPERATOR_NS" "$top_level_cr_kind"; then
+                        # Migration not complete, exit to allow retry
+                        echo
+                    fi
+                else
+                    info "EDB instances detected, but postgres-cp4ba instance not found. Skipping CP4BA EDB migration."
+                fi
+            fi
+            ############## End - Phased EDB to CNPG Migration Integration ##############
+
             printf "\n"
             if [[ $CONTENT_CR_EXIST == "Yes" || (" ${EXISTING_PATTERN_ARR[@]} " =~ "content") || ((" ${EXISTING_PATTERN_ARR[@]} " =~ "workflow") && (! " ${EXISTING_PATTERN_ARR[@]} " =~ "workflow-process-service")) || (" ${EXISTING_PATTERN_ARR[@]} " =~ "document_processing") || (" ${EXISTING_OPT_COMPONENT_ARR[@]} " =~ "baw_authoring") || (" ${EXISTING_OPT_COMPONENT_ARR[@]} " =~ "ae_data_persistence") ]]; then
                 if [[ $UPGRADE_MODE == "shared2dedicated" ]]; then
@@ -12270,6 +12308,28 @@ if [ "$RUNTIME_MODE" == "upgradeOperatorStatus" ]; then
         #check if the original CSV version is not matching a specific pattern (version "25.0.")
         #check ensures that the shutdown operation is only performed if the version is not the major version, i.e we are not doing a ifix ifix upgrade The version check helps in controlling upgrade.
         CUR_DIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
+
+        # Source messages.sh for EDB migration messaging
+        source "$CUR_DIR/helper/messages.sh"
+        source "$CUR_DIR/helper/edb-to-cnpg-migration/cp4a-migrate-edb-to-cnpg.sh"
+
+        # Check if EDB PostgreSQL is detected and also if the EDB instance still found is postgres-cp4ba
+        #Only if those two conditions matched should we then validate if the EDB to CNPG migration completed and where it failed
+        # If those conditions are not met, that means the validation either completed or is not required in the specific upgrade scenario
+
+        if is_edb_detected "$CP4BA_SERVICES_NS"; then
+            # Only proceed with migration check if postgres-cp4ba instance is detected
+            # This variable is set in the is_edb_detected function
+            if [[ "$CP4BA_EDB_INSTANCE_DETECTED" == "true" ]]; then
+                # Validate EDB to CNPG migration status
+                # Function displays migration status and retry steps if incomplete
+                # Returns 0 if no EDB detected or migration complete, 1 if incomplete
+                if ! validate_edb_migration_completed "$CP4BA_SERVICES_NS" "$cp4ba_original_csv_ver_for_upgrade_script" "$CP4BA_CSV_VERSION"; then
+                    exit 1
+                fi
+            fi
+        fi
+
         if [[ ! ("$cp4ba_original_csv_ver_for_upgrade_script" == "$CP4BA_RELEASE_BASE_MAJOR_VERSION"*) ]]; then
             echo "${YELLOW_TEXT}* Run the script in [upgradeDeployment] mode to upgrade the CP4BA deployment when upgrade CP4BA to $CP4BA_RELEASE_BASE.${RESET_TEXT}"
             echo "${GREEN_TEXT}# ${CUR_DIR}/baw-deployment.sh -m upgradeDeployment -n $TARGET_PROJECT_NAME${RESET_TEXT}"
@@ -12327,6 +12387,37 @@ if [ "$RUNTIME_MODE" == "upgradeDeployment" ]; then
         echo "Exiting ..."
         exit 1
     fi
+
+    # Source messages.sh for EDB migration messaging
+    source "$CUR_DIR/helper/messages.sh"
+    source "$CUR_DIR/helper/edb-to-cnpg-migration/cp4a-migrate-edb-to-cnpg.sh"
+
+    ############## Start - Validate EDB to CNPG Migration Completion ##############
+    # Before proceeding with upgradeDeployment, validate that EDB to CNPG migration
+    # has been completed if EDB was detected. This ensures data integrity and prevents
+    # deployment issues due to incomplete migration.
+    info "Checking if EDB to CNPG migration is required and completed..."
+
+    # Check if EDB PostgreSQL is detected and also if the EDB instance still found is postgres-cp4ba
+    #Only if those two conditions matched should we then validate if the EDB to CNPG migration completed and where it failed
+    # If those conditions are not met, that means the validation either completed or is not required in the specific upgrade scenario
+
+    if is_edb_detected "$CP4BA_SERVICES_NS"; then
+        # Only proceed with migration check if postgres-cp4ba instance is detected
+        # This variable is set in the is_edb_detected function
+        if [[ "$CP4BA_EDB_INSTANCE_DETECTED" == "true" ]]; then
+            # Validate EDB to CNPG migration status
+            # Function displays migration status and retry steps if incomplete
+            # Returns 0 if no EDB detected or migration complete, 1 if incomplete
+            if ! validate_edb_migration_completed "$CP4BA_SERVICES_NS" "$cp4ba_original_csv_ver_for_upgrade_script" "$CP4BA_CSV_VERSION"; then
+                exit 1
+            fi
+        fi
+    fi
+
+    success "EDB to CNPG migration has either been completed or is not required in this upgrade scenario..."
+    ############## End - Validate EDB to CNPG Migration Completion ##############
+
 
     #check whether operands (resources managed by the operator) are deployed separately from the main CP4BA project
     if [[ $SEPARATE_OPERAND_FLAG == "Yes" ]]; then
@@ -12661,6 +12752,26 @@ if [[ "$RUNTIME_MODE" == "upgradeDeploymentStatus" ]]; then
         tmp_csv_val=$(${CLI_CMD} get configmap ibm-cp4ba-content-shared-info -n $CP4BA_SERVICES_NS -o jsonpath='{.data.cp4ba_original_csv_ver_for_upgrade_script}')
         if [[ ! -z $tmp_csv_val ]]; then
             cp4ba_original_csv_ver_for_upgrade_script=$tmp_csv_val
+        fi
+    fi
+
+    # Source messages.sh for EDB migration messaging
+    source "$CUR_DIR/helper/messages.sh"
+    source "$CUR_DIR/helper/edb-to-cnpg-migration/cp4a-migrate-edb-to-cnpg.sh"
+    # Check if EDB PostgreSQL is detected and also if the EDB instance still found is postgres-cp4ba
+    #Only if those two conditions matched should we then validate if the EDB to CNPG migration completed and where it failed
+    # If those conditions are not met, that means the validation either completed or is not required in the specific upgrade scenario
+
+    if is_edb_detected "$CP4BA_SERVICES_NS"; then
+        # Only proceed with migration check if postgres-cp4ba instance is detected
+        # This variable is set in the is_edb_detected function
+        if [[ "$CP4BA_EDB_INSTANCE_DETECTED" == "true" ]]; then
+            # Validate EDB to CNPG migration status
+            # Function displays migration status and retry steps if incomplete
+            # Returns 0 if no EDB detected or migration complete, 1 if incomplete
+            if ! validate_edb_migration_completed "$CP4BA_SERVICES_NS" "$cp4ba_original_csv_ver_for_upgrade_script" "$CP4BA_CSV_VERSION"; then
+                exit 1
+            fi
         fi
     fi
 
@@ -13063,5 +13174,14 @@ if [ "$RUNTIME_MODE" == "upgradePostconfig" ]; then
             fi
         fi
     fi
+
+    # Reset EDB-CNPG migration ConfigMap validity flag to false after successful upgrade
+    if ${CLI_CMD} get configmap ${EDB_CNPG_MIGRATION_CM_NAME} -n $CP4BA_SERVICES_NS >/dev/null 2>&1; then
+        #info "Resetting EDB-CNPG migration ConfigMap validity flag to 'false' after successful upgrade..."
+        ${CLI_CMD} patch configmap ${EDB_CNPG_MIGRATION_CM_NAME} -n $CP4BA_SERVICES_NS \
+            --type merge \
+            -p '{"data":{"cm-valid":"false"}}' >/dev/null 2>&1 || true
+    fi
+
     success "Completed to execute script for post BAW ON CONTAINERS upgrade"
 fi

@@ -1165,9 +1165,11 @@ function check_cp4ba_separate_operand(){
             info "This CP4BA deployment is separation of operators and operands"
             SEPARATE_OPERAND_FLAG="Yes"
             CP4BA_SERVICES_NS=$cp4ba_services_namespace
+            CP4BA_OPERATOR_NS=$cp4ba_operators_namespace
         else
             SEPARATE_OPERAND_FLAG="No"
-            CP4BA_SERVICES_NS=$TARGET_PROJECT_NAME
+            CP4BA_SERVICES_NS=$cp4ba_services_namespace
+            CP4BA_OPERATOR_NS=$cp4ba_operators_namespace
         fi
     else
         warning "\"operator_namespace\\services_namespace\" was not found in \"ibm-cp4ba-common-config\" configMap under the project \"$tmp_namespace_val\""

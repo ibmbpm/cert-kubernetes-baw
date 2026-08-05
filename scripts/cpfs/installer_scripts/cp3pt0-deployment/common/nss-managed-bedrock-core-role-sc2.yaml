@@ -710,6 +710,20 @@ rules:
       - kafkamirrormaker2s/status
       - kafkarebalances/status
   - verbs:
+      - update
+    apiGroups:
+      - ibmevents.ibm.com
+    resources:
+      - kafkas/finalizers
+      - kafkanodepools/finalizers
+      - kafkaconnects/finalizers
+      - kafkaconnectors/finalizers
+      - kafkabridges/finalizers
+      - kafkamirrormaker2s/finalizers
+      - kafkarebalances/finalizers
+      - kafkatopics/finalizers
+      - kafkausers/finalizers
+  - verbs:
       - get
       - list
       - watch
@@ -729,6 +743,12 @@ rules:
       - core.ibmevents.ibm.com
     resources:
       - strimzipodsets/status
+  - verbs:
+      - update
+    apiGroups:
+      - core.ibmevents.ibm.com
+    resources:
+      - strimzipodsets/finalizers
   - verbs:
       - get
       - list
@@ -1652,6 +1672,25 @@ rules:
       - clusterimagecatalogs
     apiGroups:
       - postgresql.k8s.enterprisedb.io
+  - apiGroups:
+      - postgresql.k8s.enterprisedb.io
+    resources:
+      - failoverquorums
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - postgresql.k8s.enterprisedb.io
+    resources:
+      - failoverquorums/status
+    verbs:
+      - get
+      - patch
+      - update
+      - watch
   - verbs:
       - get
       - list

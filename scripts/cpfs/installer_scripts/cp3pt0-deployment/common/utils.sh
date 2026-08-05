@@ -58,7 +58,6 @@ function check_command() {
              exit 1
          fi
     fi
-    
     if [[ -z "$(command -v ${command} 2> /dev/null)" ]]; then
         error "${command} command not available"
     else
@@ -166,18 +165,14 @@ function wait_for_condition() {
     local success_message=$5
     local error_message=$6
     local debug_condition=${7:-}
-    local kill_on_failure=${8:-}
 
     info "${wait_message}"
     while true; do
         result=$(eval "${condition}")
 
         if [[ ( ${retries} -eq 0 ) && ( -z "${result}" ) ]]; then
-            if [[ -z "${kill_on_failure}" ]]; then
-                error "${error_message}"
-            else
-                return 1
-            fi
+            msg "\33[31m[✘] ${error_message}\33[0m"
+            return 1
         fi
 
         sleep ${sleep_time}
@@ -198,6 +193,7 @@ function wait_for_condition() {
     if [[ ! -z "${success_message}" ]]; then
         success "${success_message}\n"
     fi
+    return 0
 }
 
 function wait_for_not_condition() {
@@ -249,7 +245,7 @@ function wait_for_configmap() {
 function wait_for_pod() {
     local namespace=$1
     local name=$2
-    local condition="${OC} -n ${namespace} get po --no-headers --ignore-not-found | egrep 'Running|Completed|Succeeded' | grep ^${name}"
+    local condition="${OC} -n ${namespace} get po --no-headers --ignore-not-found | grep -E 'Running|Completed|Succeeded' | grep ^${name}"
     local retries=30
     local sleep_time=30
     local total_time_mins=$(( sleep_time * retries / 60))
@@ -290,7 +286,7 @@ function wait_for_project() {
 function wait_for_operator() {
     local namespace=$1
     local operator_name=$2
-    local condition="${OC} -n ${namespace} get csv --no-headers --ignore-not-found | egrep 'Succeeded' | grep ^${operator_name}"
+    local condition="${OC} -n ${namespace} get csv --no-headers --ignore-not-found | grep -E 'Succeeded' | grep ^${operator_name}"
     local retries=50
     local sleep_time=10
     local total_time_mins=$(( sleep_time * retries / 60))
@@ -561,8 +557,6 @@ function wait_for_licensing_instance_deployment() {
     done
 
 }
-
-# THIS FUNCTION IS ONLY USED FOR DEV MODE
 function patch_csv() {
     local csv_prefix=$1
     local namespace=$2
@@ -647,7 +641,7 @@ function patch_failed_operator_pods() {
 
         operator_problematic=0
         for pod in $pods; do
-            base=$(echo "$pod" | sed 's/\(-operator\).*/\1/')
+            base=$(echo "$pod" | sed -E 's/-[a-z0-9]{8,10}-[a-z0-9]{4,5}$//')
             if [[ $base == *operator ]]; then
               patch_csv "$base" "$ns"
               operator_problematic=1
@@ -680,7 +674,7 @@ function wait_for_operator_upgrade() {
     local condition="${OC} get subscription.operators.coreos.com -l operators.coreos.com/${length_limited_key}='' -n ${namespace} -o yaml -o jsonpath='{.items[*].status.installedCSV}' | grep -w $channel"
     local debug_condition="${OC} get subscription.operators.coreos.com -l operators.coreos.com/${length_limited_key}='' -n ${namespace} -o jsonpath='{.items[*].status.conditions}'"
 
-    local retries=120
+    local retries=200
     local sleep_time=20
     local total_time_mins=$(( sleep_time * retries / 60))
     local wait_message="Waiting for operator ${package_name} to be upgraded"
@@ -700,21 +694,17 @@ function wait_for_operator_upgrade() {
         error_message="Timeout after ${total_time_mins} minutes waiting for operator ${package_name} to be upgraded \nInstallPlan is not manually approved yet"
     fi
 
-    info "going for sleep of ${sleep_time}Sec before patching the csv...."
-    sleep ${sleep_time}
-
+    local retries_per_iter=$(( retries / 4 ))
     for i in {1..4}; do
       msg "Operator Upgrade iteration $i"
       patch_failed_operator_pods $namespace
 
-      wait_for_condition "${condition}" ${retries}/4 ${sleep_time} "${wait_message}" "${success_message}" "${error_message}" "${debug_condition}" "No"
+      wait_for_condition "${condition}" ${retries_per_iter} ${sleep_time} "${wait_message}" "${success_message}" "${error_message}" "${debug_condition}"
 
       if [[ $? -eq 0 ]]; then
         return 0
       fi
     done
-
-    error "$error_message"
 }
 
 function wait_for_cs_webhook() {
