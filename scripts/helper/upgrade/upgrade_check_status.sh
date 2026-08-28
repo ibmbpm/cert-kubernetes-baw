@@ -24,7 +24,7 @@ upgrade_valid_versions=("25.0." "25.1." "26.0.")
 # Format of CSV x.y.z where x is major version, y is minor version and z is ifix version
 # For example:
 # - 24.0.1 version will have 24.1.0 in the CSV
-# - 24.0.1-IF001 version will 24.1.1 in the CSV
+# - 24.0.1-IF002 version will 24.1.1 in the CSV
 # - 26.0.0-GA wversion will have 26.0.0 in the CSV
 # The rules are:
 # 1. n-1 upgrade: Use the desired major version such as 24 from the CP4BA_CSV_VERSION in the common.sh  to compare with the current install version

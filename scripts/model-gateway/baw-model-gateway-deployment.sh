@@ -26,7 +26,7 @@ source ${SCRIPTS_DIR}/helper/common.sh
 CUR_DIR="$ORIGINAL_CUR_DIR"
 
 # Default values
-MODEL_GATEWAY_VERSION="13.0.0"
+MODEL_GATEWAY_VERSION="13.0.5"
 HELM_CHART_PATH="${PARENT_DIR}/descriptors/BAW/helm-charts"
 OPERATOR_NAMESPACE=""
 INSTANCE_NAMESPACE=""
@@ -982,7 +982,8 @@ function create_postgres_secret_from_property() {
     [ -z "$pg_host" ] && missing_fields+=("MODEL_GATEWAY_POSTGRES_HOST")
     [ -z "$pg_port" ] && missing_fields+=("MODEL_GATEWAY_POSTGRES_PORT")
     [ -z "$pg_username" ] && missing_fields+=("MODEL_GATEWAY_POSTGRES_USERNAME")
-    [ -z "$pg_password" ] && missing_fields+=("MODEL_GATEWAY_POSTGRES_PASSWORD")
+    # Password is optional when client certificate authentication is used
+    [ -z "$pg_password" ] && [ "$pg_use_client_cert" != "true" ] && missing_fields+=("MODEL_GATEWAY_POSTGRES_PASSWORD")
     [ -z "$pg_dbname" ] && missing_fields+=("MODEL_GATEWAY_POSTGRES_DBNAME")
     
     if [ ${#missing_fields[@]} -gt 0 ]; then
@@ -1156,7 +1157,7 @@ function check_external_postgres_secret() {
             error "    MODEL_GATEWAY_POSTGRES_HOST      - PostgreSQL hostname or IP address"
             error "    MODEL_GATEWAY_POSTGRES_PORT      - PostgreSQL port (e.g. 5432)"
             error "    MODEL_GATEWAY_POSTGRES_USERNAME  - Database username"
-            error "    MODEL_GATEWAY_POSTGRES_PASSWORD  - Database password"
+            error "    MODEL_GATEWAY_POSTGRES_PASSWORD  - Database password (optional when MODEL_GATEWAY_POSTGRES_USE_CLIENT_CERT=true)"
             error "    MODEL_GATEWAY_POSTGRES_DBNAME    - Database name"
             error "    MODEL_GATEWAY_POSTGRES_SSL_MODE  - SSL mode (disable|require|verify-ca|verify-full)"
             error "Once the file is populated correctly, re-run the deployment."
@@ -1176,7 +1177,7 @@ function check_external_postgres_secret() {
             error "    MODEL_GATEWAY_POSTGRES_HOST      - PostgreSQL hostname or IP address"
             error "    MODEL_GATEWAY_POSTGRES_PORT      - PostgreSQL port (e.g. 5432)"
             error "    MODEL_GATEWAY_POSTGRES_USERNAME  - Database username"
-            error "    MODEL_GATEWAY_POSTGRES_PASSWORD  - Database password"
+            error "    MODEL_GATEWAY_POSTGRES_PASSWORD  - Database password (optional when MODEL_GATEWAY_POSTGRES_USE_CLIENT_CERT=true)"
             error "    MODEL_GATEWAY_POSTGRES_DBNAME    - Database name"
             error "    MODEL_GATEWAY_POSTGRES_SSL_MODE  - SSL mode (disable|require|verify-ca|verify-full)"
             error "Once the file is populated correctly, re-run the deployment."
@@ -1749,7 +1750,7 @@ prompt = no
 CN = ${server_cn}
 
 [v3_req]
-keyUsage = keyEncipherment, dataEncipherment
+keyUsage = digitalSignature, keyEncipherment
 extendedKeyUsage = serverAuth
 subjectAltName = @alt_names
 
@@ -2892,19 +2893,26 @@ function install_operator() {
         info "Including provider configuration from: $PROVIDER_HELM_VALUES_FILE"
     fi
     
+    # Always include iaf-cluster-ca in tls_ca_secrets so the operator trusts
+    # the IAF cluster CA from the moment the CR is first created.
+    local ca_secret_index=0
+    helm_args+=("--set" "modelGateway.tls_ca_secrets[$ca_secret_index]=ibm-nginx-internal-tls-ca")
+    ca_secret_index=$((ca_secret_index + 1))
+    helm_args+=("--set" "modelGateway.tls_ca_secrets[$ca_secret_index]=iaf-cluster-ca")
+    ca_secret_index=$((ca_secret_index + 1))
+    info "Including IAF cluster CA secret: iaf-cluster-ca"
+
     # Add custom TLS certificate configuration
     if [ "$USE_CUSTOM_TLS" = "true" ] && [ -n "$TLS_SECRET_NAME" ]; then
-        local ca_secret_index=0
-        helm_args+=("--set" "modelGateway.tls_ca_secrets[$ca_secret_index]=ibm-nginx-internal-tls-ca")
-        ca_secret_index=$((ca_secret_index + 1))
         helm_args+=("--set" "modelGateway.tls_ca_secrets[$ca_secret_index]=$TLS_SECRET_NAME")
+        ca_secret_index=$((ca_secret_index + 1))
         info "Including custom TLS certificate: $TLS_SECRET_NAME"
         
         # Add additional CA secrets if any were specified
         if [ -n "${ADDITIONAL_CA_SECRETS:-}" ] && [ ${#ADDITIONAL_CA_SECRETS[@]} -gt 0 ]; then
             for secret in "${ADDITIONAL_CA_SECRETS[@]}"; do
-                ca_secret_index=$((ca_secret_index + 1))
                 helm_args+=("--set" "modelGateway.tls_ca_secrets[$ca_secret_index]=$secret")
+                ca_secret_index=$((ca_secret_index + 1))
                 info "Including additional CA secret: $secret"
             done
         fi
@@ -3138,6 +3146,290 @@ function uninstall() {
     return 0
 }
 
+# Locate the cluster CA secret across the candidate namespaces.
+# Probe order (first match wins):
+#   cs-ca-certificate-secret  — CNCF/GKE CPFS (keys: tls.crt / tls.key)
+#   icp4a-root-ca             — OCP dedicated CP4BA (keys: tls.crt / tls.key)
+#   ibm-nginx-internal-tls-ca — nginx internal CA (keys: cert.crt / cert.key)
+#   iaf-system-cluster-ca-cert— legacy OCP shared CPFS (keys: ca.crt / ca.key)
+# On success prints "<secret-name> <namespace>" and returns 0.
+# On failure returns 1.
+function find_cluster_ca_secret() {
+    # Each entry is "secret-name:cert-key:key-key"
+    local candidates=(
+        "cs-ca-certificate-secret:tls.crt:tls.key"
+        "icp4a-root-ca:tls.crt:tls.key"
+        "ibm-nginx-internal-tls-ca:cert.crt:cert.key"
+        "iaf-system-cluster-ca-cert:ca.crt:ca.key"
+    )
+    local ns_list=("$INSTANCE_NAMESPACE" "$OPERATOR_NAMESPACE" "ibm-common-services" "cs-control")
+
+    for entry in "${candidates[@]}"; do
+        local sname="${entry%%:*}"
+        for probe_ns in "${ns_list[@]}"; do
+            [ -z "$probe_ns" ] && continue
+            if ${CLI_CMD} get secret "$sname" -n "$probe_ns" &>/dev/null; then
+                echo "$sname $probe_ns"
+                return 0
+            fi
+        done
+    done
+    return 1
+}
+
+# Create (or replace) the generic secret 'iaf-cluster-ca' in $INSTANCE_NAMESPACE
+# that holds the cluster CA certificate, so it can be included in the Model
+# Gateway CR's tls_ca_secrets list before the Helm install renders the CR.
+function register_iaf_cluster_ca_secret() {
+    local target_ns="$INSTANCE_NAMESPACE"
+    local secret_name="iaf-cluster-ca"
+
+    info "Creating cluster CA secret ($secret_name) in namespace: $target_ns ..."
+
+    # Locate the cluster CA secret
+    local ca_info
+    ca_info=$(find_cluster_ca_secret)
+    if [ $? -ne 0 ]; then
+        error "No cluster CA secret found (tried cs-ca-certificate-secret, icp4a-root-ca, iaf-system-cluster-ca-cert)"
+        error "Cannot create '$secret_name' — cluster CA will not be trusted by Model Gateway"
+        return 1
+    fi
+    local source_secret source_ns cert_key
+    source_secret=$(echo "$ca_info" | awk '{print $1}')
+    source_ns=$(echo "$ca_info" | awk '{print $2}')
+    # Determine which key holds the cert in this secret
+    case "$source_secret" in
+        cs-ca-certificate-secret|icp4a-root-ca) cert_key="tls.crt" ;;
+        ibm-nginx-internal-tls-ca)              cert_key="cert.crt" ;;
+        *)                                      cert_key="ca.crt"   ;;
+    esac
+    info "  Using '$source_secret' (key: $cert_key) from namespace: $source_ns"
+
+    # Decode the CA cert into a temp file so --from-file stores raw PEM
+    local tmp_ca
+    tmp_ca=$(mktemp)
+    info "  Extracting $cert_key from $source_secret in namespace $source_ns ..."
+    ${CLI_CMD} get secret "$source_secret" -n "$source_ns" \
+        -o go-template="{{index .data \"${cert_key}\"}}" | base64 -d > "$tmp_ca"
+    local decode_rc=$?
+    info "  Decoded size: $(wc -c < "$tmp_ca" 2>/dev/null || echo 0) bytes (exit: $decode_rc)"
+    if [ $decode_rc -ne 0 ] || [ ! -s "$tmp_ca" ]; then
+        error "Failed to decode $cert_key from $source_secret"
+        rm -f "$tmp_ca"
+        return 1
+    fi
+
+    # Idempotent: delete existing before re-creating
+    if ${CLI_CMD} get secret "$secret_name" -n "$target_ns" &>/dev/null; then
+        info "  Secret '$secret_name' already exists — replacing ..."
+        ${CLI_CMD} delete secret "$secret_name" -n "$target_ns" &>/dev/null || true
+    fi
+
+    if ! ${CLI_CMD} create secret generic "$secret_name" \
+        --from-file=ca.crt="$tmp_ca" \
+        -n "$target_ns"; then
+        rm -f "$tmp_ca"
+        error "Failed to create secret '$secret_name' in namespace '$target_ns'"
+        return 1
+    fi
+
+    rm -f "$tmp_ca"
+    success "Secret '$secret_name' created in namespace '$target_ns'"
+    return 0
+}
+
+# Reissue external-tls-secret certificate using the IAF cluster CA so that
+# the new Model Gateway SAN (*.svc.cluster.local, *.api) is covered.
+# The function is namespace-aware: it uses $INSTANCE_NAMESPACE throughout.
+# It is a no-op (with a warning) when external-tls-secret does not exist.
+function reissue_external_tls_cert() {
+    local ns="$INSTANCE_NAMESPACE"
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+    
+    info "Checking for external-tls-secret in namespace: $ns ..."
+    
+    # Guard: only proceed when the secret exists
+    if ! ${CLI_CMD} get secret external-tls-secret -n "$ns" &>/dev/null; then
+        warning "Secret 'external-tls-secret' not found in namespace '$ns' — skipping TLS reissue"
+        rm -rf "$tmp_dir"
+        return 0
+    fi
+    
+    info "Found external-tls-secret — reissuing certificate with updated SANs ..."
+
+    # ── 1 & 2. Locate cluster CA cert + key ─────────────────────────────────
+    local ca_info
+    ca_info=$(find_cluster_ca_secret)
+    if [ $? -ne 0 ]; then
+        error "No cluster CA secret found — cannot reissue external-tls-secret"
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+    local ca_secret ca_ns ca_cert_key ca_key_key
+    ca_secret=$(echo "$ca_info" | awk '{print $1}')
+    ca_ns=$(echo "$ca_info" | awk '{print $2}')
+    case "$ca_secret" in
+        cs-ca-certificate-secret|icp4a-root-ca) ca_cert_key="tls.crt";  ca_key_key="tls.key"  ;;
+        ibm-nginx-internal-tls-ca)              ca_cert_key="cert.crt"; ca_key_key="cert.key" ;;
+        *)                                      ca_cert_key="ca.crt";   ca_key_key="ca.key"   ;;
+    esac
+    info "  Using CA secret '$ca_secret' (cert: $ca_cert_key, key: $ca_key_key) from namespace: $ca_ns"
+
+    local ca_crt="$tmp_dir/ca.crt"
+    info "  Extracting $ca_cert_key from $ca_secret in namespace $ca_ns ..."
+    ${CLI_CMD} get secret "$ca_secret" -n "$ca_ns" \
+        -o go-template="{{index .data \"${ca_cert_key}\"}}" | base64 -d > "$ca_crt"
+    local crt_rc=$?
+    info "  CA cert decoded: $(wc -c < "$ca_crt" 2>/dev/null || echo 0) bytes (exit: $crt_rc)"
+    if [ $crt_rc -ne 0 ] || [ ! -s "$ca_crt" ]; then
+        error "Failed to extract $ca_cert_key from $ca_secret"
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+
+    local ca_key="$tmp_dir/ca.key"
+    info "  Extracting $ca_key_key from $ca_secret in namespace $ca_ns ..."
+    ${CLI_CMD} get secret "$ca_secret" -n "$ca_ns" \
+        -o go-template="{{index .data \"${ca_key_key}\"}}" | base64 -d > "$ca_key"
+    local key_rc=$?
+    info "  CA key decoded: $(wc -c < "$ca_key" 2>/dev/null || echo 0) bytes (exit: $key_rc)"
+    if [ $key_rc -ne 0 ] || [ ! -s "$ca_key" ]; then
+        error "Failed to extract $ca_key_key from $ca_secret"
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+    
+    # ── 3. Extract current private key from external-tls-secret ─────────────
+    local cert_key="$tmp_dir/current-cert.key"
+    ${CLI_CMD} get secret external-tls-secret -n "$ns" \
+        -o jsonpath='{.data.cert\.key}' | base64 -d > "$cert_key"
+    if [ $? -ne 0 ] || [ ! -s "$cert_key" ]; then
+        error "Failed to extract cert.key from external-tls-secret"
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+    
+    # ── 4. Build OpenSSL config with namespace-aware SANs ───────────────────
+    # Derive the short cluster hostname used in external routes, e.g. the
+    # first DNS SAN already present in the existing cert (best-effort).
+    # Fall back to the simple pattern <ns>.svc if nothing can be detected.
+    local external_dns=""
+    if command -v openssl &>/dev/null; then
+        # Try to read the existing cert to discover the external hostname.
+        # Skip internal/cluster-local names and deduplicate so the SAN only
+        # appears once (the old cert may already list it in multiple slots).
+        local existing_crt="$tmp_dir/existing.crt"
+        ${CLI_CMD} get secret external-tls-secret -n "$ns" \
+            -o jsonpath='{.data.cert\.crt}' 2>/dev/null | base64 -d > "$existing_crt" 2>/dev/null || true
+        if [ -s "$existing_crt" ]; then
+            # Pick SANs that look like external FQDNs:
+            #   - contain a dot  (not bare hostnames)
+            #   - not *.svc* (cluster-internal)
+            #   - not cpd.* (already hardcoded in the template)
+            #   - not *.ibm.com internal patterns
+            external_dns=$(openssl x509 -in "$existing_crt" -noout -text 2>/dev/null \
+                | grep -oP 'DNS:[^,\s]+' \
+                | sed 's/^DNS://' \
+                | grep '\.' \
+                | grep -v '\.svc' \
+                | grep -v "^cpd\." \
+                | grep -v "^cpd$" \
+                | sort -u \
+                | head -1 || true)
+        fi
+    fi
+
+    local reissue_cnf="$tmp_dir/reissue.cnf"
+    cat > "$reissue_cnf" <<CNFEOF
+[req]
+distinguished_name = dn
+prompt = no
+[dn]
+CN = cpd
+[v3_ext]
+keyUsage = keyEncipherment, dataEncipherment, digitalSignature
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+[alt_names]
+DNS.1  = cpd
+DNS.2  = cpd.${ns}
+DNS.3  = cpd.${ns}.svc
+DNS.5  = internal-nginx-svc
+DNS.6  = ibm-nginx-svc
+DNS.7  = zen-core-api
+DNS.8  = api-svc
+DNS.9  = *.svc.cluster.local
+DNS.10 = *.api
+CNFEOF
+
+    # Insert the external FQDN SAN only when one was detected (log only here)
+    if [ -n "$external_dns" ]; then
+        info "  Adding external DNS SAN: $external_dns"
+        sed -i.bak "s|DNS.3  = cpd.${ns}.svc|DNS.3  = cpd.${ns}.svc\nDNS.4  = ${external_dns}|" "$reissue_cnf"
+        rm -f "${reissue_cnf}.bak"
+    fi
+    
+    # ── 5. Generate CSR from current private key ─────────────────────────────
+    local new_csr="$tmp_dir/new-cert.csr"
+    if ! openssl req -new -key "$cert_key" -out "$new_csr" -config "$reissue_cnf" 2>/dev/null; then
+        error "Failed to generate CSR for external-tls-secret"
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+    
+    # ── 6. Sign new certificate with IAF cluster CA ──────────────────────────
+    local new_crt="$tmp_dir/new-cert.crt"
+    if ! openssl x509 -req -in "$new_csr" \
+        -CA "$ca_crt" -CAkey "$ca_key" \
+        -CAcreateserial -out "$new_crt" \
+        -days 365 -extensions v3_ext -extfile "$reissue_cnf" 2>/dev/null; then
+        error "Failed to sign new certificate for external-tls-secret"
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+    
+    # ── 7. Patch cert.crt in external-tls-secret ────────────────────────────
+    local new_crt_b64
+    new_crt_b64=$(base64 -w0 "$new_crt" 2>/dev/null || base64 "$new_crt" | tr -d '\n')
+    if ! ${CLI_CMD} patch secret external-tls-secret -n "$ns" \
+        --type='json' \
+        -p="[{\"op\":\"replace\",\"path\":\"/data/cert.crt\",\"value\":\"${new_crt_b64}\"}]"; then
+        error "Failed to patch external-tls-secret with new certificate"
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+    success "external-tls-secret patched with new certificate"
+
+    # ── 8. Restart ibm-nginx to pick up the new certificate ──────────────────
+    if ${CLI_CMD} get deployment ibm-nginx -n "$ns" &>/dev/null; then
+        info "Restarting ibm-nginx deployment ..."
+        if ${CLI_CMD} rollout restart deployment ibm-nginx -n "$ns"; then
+            success "ibm-nginx rollout restart initiated"
+            info "Waiting for ibm-nginx rollout to complete ..."
+            ${CLI_CMD} rollout status deployment ibm-nginx -n "$ns" --timeout=180s 2>/dev/null || \
+                warning "ibm-nginx rollout did not complete within 180s — continuing"
+        else
+            warning "Failed to restart ibm-nginx — you may need to restart it manually"
+        fi
+    else
+        warning "Deployment 'ibm-nginx' not found in namespace '$ns' — skipping restart"
+    fi
+
+    # ── 9. Restart model-gateway pods so they re-connect with the updated cert ─
+    if ${CLI_CMD} get deployment model-gateway -n "$ns" &>/dev/null; then
+        info "Restarting model-gateway deployment to reload updated TLS trust ..."
+        if ${CLI_CMD} rollout restart deployment model-gateway -n "$ns"; then
+            success "model-gateway rollout restart initiated"
+        else
+            warning "Failed to restart model-gateway — you may need to restart it manually"
+        fi
+    fi
+    
+    rm -rf "$tmp_dir"
+    return 0
+}
+
 function deploy() {
     info "Starting Model Gateway deployment..."
     echo
@@ -3166,6 +3458,12 @@ function deploy() {
     
     info "Installing Model Gateway..."
     echo
+
+    # Create the iaf-cluster-ca secret so it exists when the Helm chart renders
+    # the CR and includes it in tls_ca_secrets at creation time (no post-install
+    # patch required).
+    register_iaf_cluster_ca_secret
+    echo
     
     # Install CRD
     if ! install_crd; then
@@ -3188,9 +3486,17 @@ function deploy() {
         error "Operator failed to become ready"
         return 1
     fi
-    
+
     echo
-    
+
+    # Reissue external-tls-secret NOW — before waiting for deployment to complete.
+    # The model-gateway pod crash-loops because ibm-nginx-svc is missing from the
+    # cert SANs; fixing the cert unblocks the pod, which unblocks the CR reaching
+    # Completed status.
+    reissue_external_tls_cert
+
+    echo
+
     # Wait for deployment
     if ! wait_for_deployment; then
         error "Deployment failed to complete"
@@ -3211,6 +3517,7 @@ function deploy() {
     info "  3. Access Model Gateway service: ${CLI_CMD} get svc model-gateway-service -n $INSTANCE_NAMESPACE"
     echo
 }
+
 
 function parse_arguments() {
     local verify_only=false

@@ -294,16 +294,22 @@ rules:
   - modelgateway.cpd.ibm.com
   resources:
   - modelgateway
-  - modelgateway/spec
-  - modelgateway/status
   verbs:
   - create
   - delete
   - get
   - list
+  - watch
   - patch
   - update
-  - watch
+- apiGroups:
+  - modelgateway.cpd.ibm.com
+  resources:
+  - modelgateway/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - zen.cpd.ibm.com
   resources:
@@ -362,9 +368,6 @@ rules:
   - redis.ibm.com
   resources:
   - rediscps
-  - rediscps/finalizers
-  - rediscps/spec
-  - rediscps/status
   verbs:
   - create
   - delete
@@ -372,6 +375,28 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - redis.ibm.com
+  resources:
+  - rediscps/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - redis.ibm.com
+  resources:
+  - rediscps/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - redis.ibm.com
+  resources:
+  - rediscps/spec
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - operator.ibm.com
@@ -426,6 +451,7 @@ rules:
   - update
   - create
   - patch
+  - delete
 - apiGroups:
   - ""
   resources:
@@ -690,16 +716,22 @@ rules:
   - modelgateway.cpd.ibm.com
   resources:
   - modelgateway
-  - modelgateway/spec
-  - modelgateway/status
   verbs:
   - create
   - delete
   - get
   - list
+  - watch
   - patch
   - update
-  - watch
+- apiGroups:
+  - modelgateway.cpd.ibm.com
+  resources:
+  - modelgateway/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - zen.cpd.ibm.com
   resources:
@@ -758,9 +790,6 @@ rules:
   - redis.ibm.com
   resources:
   - rediscps
-  - rediscps/finalizers
-  - rediscps/spec
-  - rediscps/status
   verbs:
   - create
   - delete
@@ -768,6 +797,28 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - redis.ibm.com
+  resources:
+  - rediscps/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - redis.ibm.com
+  resources:
+  - rediscps/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - redis.ibm.com
+  resources:
+  - rediscps/spec
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - operator.ibm.com
@@ -823,6 +874,7 @@ rules:
   - update
   - create
   - patch
+  - delete
 - apiGroups:
   - ""
   resources:
@@ -1087,16 +1139,22 @@ rules:
   - modelgateway.cpd.ibm.com
   resources:
   - modelgateway
-  - modelgateway/spec
-  - modelgateway/status
   verbs:
   - create
   - delete
   - get
   - list
+  - watch
   - patch
   - update
-  - watch
+- apiGroups:
+  - modelgateway.cpd.ibm.com
+  resources:
+  - modelgateway/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - zen.cpd.ibm.com
   resources:
@@ -1155,9 +1213,6 @@ rules:
   - redis.ibm.com
   resources:
   - rediscps
-  - rediscps/finalizers
-  - rediscps/spec
-  - rediscps/status
   verbs:
   - create
   - delete
@@ -1165,6 +1220,28 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - redis.ibm.com
+  resources:
+  - rediscps/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - redis.ibm.com
+  resources:
+  - rediscps/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - redis.ibm.com
+  resources:
+  - rediscps/spec
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - operator.ibm.com

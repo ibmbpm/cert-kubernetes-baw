@@ -1,10 +1,10 @@
 name: ibm-cp-automation
-version: 26.0.1
-description: Generated from CASE ibm-cp-automation version 26.0.1 on 2026-06-07 06:24:59
+version: 26.0.2
+description: Generated from CASE ibm-cp-automation version 26.0.2 on 2026-08-10 06:24:59
   PDT
 cases:
 - name: ibm-cp-automation
-  version: 26.0.1
+  version: 26.0.2
   launch: true
   catalogGeneration:
     ocMirror:
@@ -45,7 +45,7 @@ cases:
     ocMirror:
       disableMerge: true
 - name: ibm-zen
-  version: 6.10.3+20260713.120632.33
+  version: 6.10.5+20260730.105209.12
   catalogGeneration:
     ocMirror:
       disableMerge: true

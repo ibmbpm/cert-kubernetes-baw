@@ -427,7 +427,7 @@ function patch_csv() {
     }
     ]"
 
-    ${CLI_CMD} delete deployment $csv_prefix
+    ${CLI_CMD} delete deployment $csv_prefix -n "$namespace"
     success "The $csv_name CSV has been patched successfully!"
 }
 

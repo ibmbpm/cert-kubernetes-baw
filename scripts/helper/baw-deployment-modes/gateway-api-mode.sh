@@ -153,6 +153,57 @@ function generate_gke_gateway_api_templates(){
     exit
 }
 
+# function used to generate the Gateway API templates for Rancher/RKE2
+function generate_rancher_gateway_api_templates(){
+    info "Generating Gateway API files required for a BAW Standalone deployment on Rancher/RKE2..."
+    printf "\n"
+    echo "${RED_TEXT}[WARNING]${RESET_TEXT}: ${YELLOW_TEXT}Before proceeding with the Gateway API generation, make sure the ZenService CR is ready by using: kubectl get ZenService ${RESET_TEXT}"
+    echo "${RED_TEXT}[WARNING]${RESET_TEXT}: ${YELLOW_TEXT}Ensure that Gateway API is enabled on your Rancher/RKE2 cluster${RESET_TEXT}"
+    attempt=0
+
+    while (( attempt < 3 )); do
+        read -rp "Confirm if you want to proceed with generating Gateway API templates required for a BAW Standalone deployment on Rancher (Yes/No, default: No): " answer
+        answer=$(echo "$answer" | tr '[:upper:]' '[:lower:]')  # Convert to lowercase
+
+        if [[ -z "$answer" || "$answer" == "no" || "$answer" = "n" ]]; then
+            echo "Gateway API templates for a BAW Standalone deployment will not be created. Exiting the script.."
+            exit
+        elif [[ "$answer" == "yes" ||  "$answer" == "y" ]]; then
+            info "Proceeding with the generation of Gateway API templates for a BAW Standalone deployment on Rancher"
+            break
+        else
+            echo "Invalid input. Please enter 'yes' or 'no'."
+        fi
+
+        ((attempt++))
+    done
+    if [[ "$attempt" == 3 ]]; then
+        error "maximum number of incorrect answers exceeded, exiting..."
+        exit
+    fi
+    
+    source $BAW_CNCF_FOLDER/baw-utils.sh
+    source $BAW_CNCF_FOLDER/baw-generate-gateway-api-rancher.sh
+    rm -rf $GENERATED_GATEWAY_API_FILE_FOLDER >/dev/null 2>&1
+    mkdir -p $GENERATED_GATEWAY_API_FILE_FOLDER >/dev/null 2>&1
+    baw_rancher_generate_gateway_api "$TARGET_PROJECT_NAME" "$GENERATED_GATEWAY_API_FILE_FOLDER/gateway-api-rancher.yaml"
+    
+    printf "\n"
+    success "The Gateway API files have been created successfully at: ${GREEN_TEXT}$GENERATED_GATEWAY_API_FILE_FOLDER/${RESET_TEXT}"
+    printf "\n"
+    info "${YELLOW_TEXT}Next Steps:${RESET_TEXT}"
+    echo "  1. Review the Gateway API manifest:"
+    echo "     ${GREEN_TEXT}cat $GENERATED_GATEWAY_API_FILE_FOLDER/gateway-api-rancher.yaml${RESET_TEXT}"
+    printf "\n"
+    echo "  2. Apply the Gateway API resources:"
+    echo "     ${GREEN_TEXT}kubectl apply -f $GENERATED_GATEWAY_API_FILE_FOLDER/gateway-api-rancher.yaml${RESET_TEXT}"
+    printf "\n"
+    echo "  3. Delete legacy ingresses to finalize migration:"
+    echo "     ${GREEN_TEXT}kubectl delete ingress --all -n $TARGET_PROJECT_NAME${RESET_TEXT}"
+    printf "\n"
+    exit
+}
+
 #### END - Functions being called by the generate_gateway_api_templates function ####
 
 # The main function that calls the platform specific Gateway API generation function
@@ -161,11 +212,13 @@ function generate_gateway_api_templates(){
         generate_aks_gateway_api_templates
     elif [[ "$GATEWAY_API_PLATFORM" == "gke" ]]; then
         generate_gke_gateway_api_templates
+    elif [[ "$GATEWAY_API_PLATFORM" == "rancher" || "$GATEWAY_API_PLATFORM" == "rke2" ]]; then
+        generate_rancher_gateway_api_templates
     else
-        error "Invalid platform specified. Supported platforms: aks, gke"
+        error "Invalid platform specified. Supported platforms: aks, gke, rancher"
         echo ""
         echo "${YELLOW_TEXT}Note:${RESET_TEXT} For EKS, use the following command instead:"
-        echo "  ./baw-deployment.sh -m generateIngress -n <namespace> --ingress eks"
+        echo "  ./baw-deployment.sh -m generateIngress --ingress eks"
         exit 1
     fi
 }

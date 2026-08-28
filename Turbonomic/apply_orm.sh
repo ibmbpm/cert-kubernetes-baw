@@ -71,7 +71,7 @@ function detect_cr_name() {
     info "Detected ICP4ACluster CR: $CR_NAME"
   else
     # Detect Content CR
-    local content_cr=$(${CLI_CMD} get content -n "$CP4BA_SERVICE_NAMESPACE" --no-headers 2>/dev/null | awk '{print $1}')
+    local content_cr=$(${CLI_CMD} get content.icp4a.ibm.com -n "$CP4BA_SERVICE_NAMESPACE" --no-headers 2>/dev/null | awk '{print $1}')
     if [ -n "$content_cr" ]; then
       CR_NAME="$content_cr"
       info "Detected Content CR: $CR_NAME"
@@ -120,7 +120,7 @@ function apply_orms() {
   local found=0
   local applied=0
   local icp4a_cr=$(${CLI_CMD} get icp4acluster -n "$CP4BA_SERVICE_NAMESPACE" --no-headers 2>/dev/null | awk '{print $1}')
-  local content_cr=$(${CLI_CMD} get content -n "$CP4BA_SERVICE_NAMESPACE" --no-headers 2>/dev/null | awk '{print $1}')
+  local content_cr=$(${CLI_CMD} get content.icp4a.ibm.com -n "$CP4BA_SERVICE_NAMESPACE" --no-headers 2>/dev/null | awk '{print $1}')
 
   for f in "$CUR_DIR"/ORMs/*.yaml; do
     [ -e "$f" ] || continue

@@ -29,7 +29,7 @@ function show_help() {
     echo "  -i  Optional: Operator image name, by default it is cp.icr.io/cp/cp4a/icp4a-operator:$CP4BA_RELEASE_BASE"
     echo "  -p  Optional: Pull secret to use to connect to the registry, by default it is ibm-entitlement-key"
     echo "  --ingress  Only for Other type of platform (not OCP or ROKS): Platform type for which the ingress templates are created. Possible options are rancher, tanzu, gke, eks and aks"
-    echo "  --platform Only for generateGatewayAPITemplate mode: Platform type for which the Gateway API templates are created. Possible options are aks and gke"
+    echo "  --platform Only for generateGatewayAPITemplate mode: Platform type for which the Gateway API templates are created. Possible options are aks, gke, and rancher"
     echo "  --enable-private-catalog Optional: Set this flag to let the script to switch CatalogSource from global to namespace scoped. Default is in openshift-marketplace namespace"
     echo "  ${YELLOW_TEXT}* Running the script to create a custom resource file for new BAW deployment:${RESET_TEXT}"
     echo "      - STEP 1: Run the script with \"-n <BAW_NAMESPACE>\"."
@@ -159,10 +159,10 @@ function parse_arguments() {
                 exit 1
             fi
             GATEWAY_API_PLATFORM=$1
-            if [[ $GATEWAY_API_PLATFORM == "aks" || $GATEWAY_API_PLATFORM == "gke" || $GATEWAY_API_PLATFORM == "eks" ]]; then
+            if [[ $GATEWAY_API_PLATFORM == "aks" || $GATEWAY_API_PLATFORM == "gke" || $GATEWAY_API_PLATFORM == "eks" || $GATEWAY_API_PLATFORM == "rancher" || $GATEWAY_API_PLATFORM == "rke2" ]]; then
                 echo -n
             else
-                msg "Provide a valid argument for --platform: [aks], [gke] or [eks]"
+                msg "Provide a valid argument for --platform: [aks], [gke], [eks] or [rancher]"
                 exit -1
             fi
             ;;
@@ -8930,7 +8930,7 @@ function apply_pattern_cr(){
         
         # Add keytool_init_container to shared_configuration.images
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.images.keytool_init_container.repository "cp.stg.icr.io/cp/cp4a/bai/dba-keytool-initcontainer"
-        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.images.keytool_init_container.tag "26.0.0-IF001"
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.shared_configuration.images.keytool_init_container.tag "26.0.0-IF002"
         
         # Configure bai_configuration section
         # Use CONTENT admin user for BAI
@@ -8944,21 +8944,21 @@ function apply_pattern_cr(){
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.bpmn.install "true"
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.bpmn.parallelism "2"
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.content.image.repository "cp.stg.icr.io/cp/cp4a/bai/bai-bpmn"
-        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.content.image.tag "26.0.0-IF001"
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.content.image.tag "26.0.0-IF002"
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.bpmn.force_elasticsearch_timeseries "true"
         
         # ICM configuration
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.bpmn.install "true"
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.bpmn.parallelism "2"
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.content.image.repository "cp.stg.icr.io/cp/cp4a/bai/bai-icm"
-        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.content.image.tag "26.0.0-IF001"
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.content.image.tag "26.0.0-IF002"
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.icm.force_elasticsearch_timeseries "true"
         
         # Content configuration
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.content.install "true"
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.content.parallelism "2"
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.content.image.repository "cp.stg.icr.io/cp/cp4a/bai/bai-flink"
-        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.content.image.tag "26.0.0-IF001"
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.content.image.tag "26.0.0-IF002"
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.content.force_elasticsearch_timeseries "true"
         
         
@@ -8966,33 +8966,33 @@ function apply_pattern_cr(){
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.navigator.install "true"
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.navigator.parallelism "2"
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.navigator.image.repository "cp.stg.icr.io/cp/cp4a/bai/bai-flink"
-        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.navigator.image.tag "26.0.0-IF001"
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.navigator.image.tag "26.0.0-IF002"
         
         # Application setup configuration
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.application_setup.image.repository "cp.stg.icr.io/cp/cp4a/bai/insights-engine-application-setup"
-        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.application_setup.image.tag "26.0.0-IF001"
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.application_setup.image.tag "26.0.0-IF002"
         
         # Setup configuration
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.setup.image.repository "cp.stg.icr.io/cp/cp4a/bai/bai-setup"
-        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.setup.image.tag "26.0.0-IF001"
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.setup.image.tag "26.0.0-IF002"
         
         # Management configuration
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.management.image.repository "cp.stg.icr.io/cp/cp4a/bai/insights-engine-management"
-        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.management.image.tag "26.0.0-IF001"
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.management.image.tag "26.0.0-IF002"
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.management.backend.image.repository "cp.stg.icr.io/cp/cp4a/bai/insights-engine-management-backend"
-        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.management.backend.image.tag "26.0.0-IF001"
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.management.backend.image.tag "26.0.0-IF002"
         
         # Init image configuration
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.init_image.image.repository "cp.stg.icr.io/cp/cp4a/bai/bai-init"
-        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.init_image.image.tag "26.0.0-IF001"
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.init_image.image.tag "26.0.0-IF002"
         
         # Init image configuration
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.keytool_init_container.image.repository "cp.stg.icr.io/cp/cp4a/bai/dba-keytool-initcontainer"
-        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.keytool_init_container.image.tag "26.0.0-IF001"
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.keytool_init_container.image.tag "26.0.0-IF002"
         
         # Business Performance Center configuration
         ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.business_performance_center.image.repository "cp.stg.icr.io/cp/cp4a/bai/insights-engine-cockpit"
-        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.business_performance_center.image.tag "26.0.0-IF001"
+        ${YQ_CMD} w -i ${CP4A_PATTERN_FILE_TMP} spec.bai_configuration.business_performance_center.image.tag "26.0.0-IF002"
         
         success "BAI dev configuration added with staging images (cp.stg.icr.io)"
     fi
@@ -10201,8 +10201,8 @@ fi
 
 # IF the GATEWAY_API_PLATFORM variable is set that means the user has used --platform flag and wants to generate Gateway API template files
 if [ "$RUNTIME_MODE" == "generateGatewayAPITemplate" ]; then
-    if [[ ($GATEWAY_API_PLATFORM != "aks" && $GATEWAY_API_PLATFORM != "gke") ]]; then
-        echo -e "\x1B[1;31mPlease provide a valid value for \"--platform [aks|gke]\" option.\n\x1B[0m"
+    if [[ ($GATEWAY_API_PLATFORM != "aks" && $GATEWAY_API_PLATFORM != "gke" && $GATEWAY_API_PLATFORM != "rancher" && $GATEWAY_API_PLATFORM != "rke2") ]]; then
+        echo -e "\x1B[1;31mPlease provide a valid value for \"--platform [aks|gke|rancher]\" option.\n\x1B[0m"
         echo -e "\x1B[1;33mNote: For EKS, use -m generateIngress --ingress eks instead.\x1B[0m"
         exit 1
     fi
@@ -10256,7 +10256,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
 
     #DBACLD-222678: Check to see if we allow upgrade when EDB is used.
     # We only allow upgrade when there's no EDB is installed (is_edb_detected) and EDB is allowed (skip_edb = 1)
-    # When 26.0.0-IF001 release where CNPG is supported, the skip_edb would return 1, then this condition would return false and allow the upgrade to proceed even when EDB is detected.
+    # When 26.0.0-IF002 release where CNPG is supported, the skip_edb would return 1, then this condition would return false and allow the upgrade to proceed even when EDB is detected.
     if is_edb_detected $TARGET_PROJECT_NAME && skip_edb ; then
         info "Upgrade is not supported on ${VERSION_TO_SKIP_EDB} since EDB is being used. Upgrade with EDB will be supported in the upcoming iFix and next release "
         exit 1
@@ -10308,7 +10308,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
     ################## Start - Apply third-party WORKAROUND ####################
     # As workaround for https://github.ibm.com/IBMPrivateCloud/roadmap/issues/64017
     # require to remove ibm-operator-catalog first, and then to add back after upgrading.
-    # This check has been commented out since 24.0.0 IF001 as upgrade can now be completed with ibm-operator-catalog
+    # This check has been commented out since 24.0.0 IF002 as upgrade can now be completed with ibm-operator-catalog
     #info "Checking \"ibm-operator-catalog\" exist or not in project \"openshift-marketplace\""
     #printf "\n"
     #if ${CLI_CMD} get catalogsource -n openshift-marketplace --no-headers --ignore-not-found | grep ibm-operator-catalog ; then
@@ -10343,10 +10343,10 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
         CONTENT_CR_EXIST="Yes"
         cp4ba_root_ca_secret_name=`${YQ_CMD} r "$top_level_cr_details_location" spec.shared_configuration.root_ca_secret`
         # Check if CSS has been selected as an optional component or not 
-        css_flag=$(${CLI_CMD} get content $content_cr_name -n $CP4BA_SERVICES_NS -o yaml | ${YQ_CMD} r - spec.content_optional_components.css)
+        css_flag=$(${CLI_CMD} get content.icp4a.ibm.com $content_cr_name -n $CP4BA_SERVICES_NS -o yaml | ${YQ_CMD} r - spec.content_optional_components.css)
         css_flag=$(echo "$css_flag" | tr '[:upper:]' '[:lower:]')
         # Check fncm_secret_name for default ibm-fncm-secret
-        fncm_secret_name_val=$(${CLI_CMD} get content $content_cr_name -n $CP4BA_SERVICES_NS -o yaml | ${YQ_CMD} r - spec.ecm_configuration.fncm_secret_name)
+        fncm_secret_name_val=$(${CLI_CMD} get content.icp4a.ibm.com $content_cr_name -n $CP4BA_SERVICES_NS -o yaml | ${YQ_CMD} r - spec.ecm_configuration.fncm_secret_name)
         if [[ ! -z $fncm_secret_name_val ]]; then
             CP4BA_IBM_FNCM_SECRET_NAME=$fncm_secret_name_val
         fi
@@ -10515,7 +10515,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
     ############## Start - Check existing icp4acluster/content cr or not ##############
     PLATFORM_SELECTED=$(eval echo $(${CLI_CMD} get icp4acluster $(${CLI_CMD} get icp4acluster --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS | grep NAME -v | awk '{print $1}') --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS -o yaml | grep sc_deployment_platform | tail -1 | cut -d ':' -f 2))
     if [[ -z $PLATFORM_SELECTED ]]; then
-        PLATFORM_SELECTED=$(eval echo $(${CLI_CMD} get content $(${CLI_CMD} get content --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS | grep NAME -v | awk '{print $1}') --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS -o yaml | grep sc_deployment_platform | tail -1 | cut -d ':' -f 2))
+        PLATFORM_SELECTED=$(eval echo $(${CLI_CMD} get content.icp4a.ibm.com $(${CLI_CMD} get content.icp4a.ibm.com --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS | grep NAME -v | awk '{print $1}') --no-headers --ignore-not-found -n $CP4BA_SERVICES_NS -o yaml | grep sc_deployment_platform | tail -1 | cut -d ':' -f 2))
         if [[ -z $PLATFORM_SELECTED ]]; then
             fail "No custom resource for CP4BA found in the project \"$CP4BA_SERVICES_NS\", exiting"
             exit 1
@@ -10986,7 +10986,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
             for ((retry=0;retry<=${maxRetry};retry++)); do
                 cp4a_catalog_pod_name=$(${CLI_CMD} get pod -l=olm.catalogSource=ibm-cp4a-operator-catalog -n $TEMP_CATALOG_PROJECT_NAME -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}')
                 fncm_catalog_pod_name=$(${CLI_CMD} get pod -l=olm.catalogSource=ibm-content-cortex-operator-catalog -n $TEMP_CATALOG_PROJECT_NAME -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}')
-                # DBACLD-216925: Skip EDB catalog check for 26.0.0 GA, will be restored in 26.0.0-IF001 or later
+                # DBACLD-216925: Skip EDB catalog check for 26.0.0 GA, will be restored in 26.0.0-IF002 or later
                 if ! skip_edb; then
                     postgresql_catalog_pod_name=$(${CLI_CMD} get pod -l=olm.catalogSource=ibm-pg-operator-catalog -n $TEMP_CATALOG_PROJECT_NAME -o 'custom-columns=NAME:.metadata.name,PHASE:.status.phase,READY:.status.containerStatuses[0].ready,DELETED:.metadata.deletionTimestamp' --no-headers | grep 'Running' | grep 'true' | grep '<none>' | head -1 | awk '{print $1}')
                 fi
@@ -11276,6 +11276,41 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
                 fi
             fi
         fi
+
+        ################## Start - Apply CPFS 4.19.2 operandConfig WORKAROUND ####################
+        # WORKAROUND: https://jsw.ibm.com/browse/DBACLD-251442
+        # CPFS 4.19.2 upgrade issue — patch operandConfig common-service to fix the
+        # common-service-db PostgreSQL Cluster resource: remove .data.spec.imageCatalogRef
+        # and pin .data.spec.imageName to the correct digest so CPFS can complete the upgrade.
+        # Applied immediately after setup_tenant.sh completes so CPFS picks it up on its
+        # next reconcile cycle.  Remove once the CPFS team ships an official fix.
+        # NOTE: uses yq v3 d|w pipe syntax — this repo bundles yq v3, not v4.
+        if [[ "$CP4BA_OPERATOR_NS" == "$CP4BA_SERVICES_NS" ]]; then
+            cpfs_services_ns="$CP4BA_SERVICES_NS"
+        else
+            cpfs_services_ns="ibm-common-services"
+        fi
+        info "Applying CPFS 4.19.2 workaround: patching operandConfig 'common-service' in namespace \"$cpfs_services_ns\""
+        if ${CLI_CMD} get operandconfig common-service -n "$cpfs_services_ns" --no-headers --ignore-not-found >/dev/null 2>&1; then
+            _cpfs_patched=$(${CLI_CMD} get operandconfig common-service -n "$cpfs_services_ns" -o yaml | \
+              ${YQ_CMD} d - 'spec.services.(name==common-service-cnpg).resources.(name==common-service-db).data.spec.imageCatalogRef' | \
+              ${YQ_CMD} w - 'spec.services.(name==common-service-cnpg).resources.(name==common-service-db).data.spec.imageName' \
+                'icr.io/cpopen/ibm-pg/ibm-pg-16:16.14-v28.4.0@sha256:cd1fd631b3e20141cbd462cdd713bee9e2b062472b674fd20ee4c64f923c5cbf')
+            if echo "$_cpfs_patched" | grep -q 'apiVersion:'; then
+                echo "$_cpfs_patched" | ${CLI_CMD} apply -f - >/dev/null 2>&1
+                if [[ $? -eq 0 ]]; then
+                    success "Successfully applied CPFS 4.19.2 workaround to operandConfig 'common-service' in namespace \"$cpfs_services_ns\""
+                else
+                    warning "Failed to patch operandConfig 'common-service' in namespace \"$cpfs_services_ns\" — apply the following command manually:"
+                    echo "  ${CLI_CMD} get operandconfig common-service -n $cpfs_services_ns -o yaml | ${YQ_CMD} d - 'spec.services.(name==common-service-cnpg).resources.(name==common-service-db).data.spec.imageCatalogRef' | ${YQ_CMD} w - 'spec.services.(name==common-service-cnpg).resources.(name==common-service-db).data.spec.imageName' 'icr.io/cpopen/ibm-pg/ibm-pg-16:16.14-v28.4.0@sha256:cd1fd631b3e20141cbd462cdd713bee9e2b062472b674fd20ee4c64f923c5cbf' | ${CLI_CMD} apply -f -"
+                fi
+            else
+                warning "Could not read operandConfig 'common-service' from namespace \"$cpfs_services_ns\" — skipping CPFS 4.19.2 workaround."
+            fi
+        else
+            info "operandConfig 'common-service' not found in namespace \"$cpfs_services_ns\" — skipping CPFS 4.19.2 workaround."
+        fi
+        ################## End - Apply CPFS 4.19.2 operandConfig WORKAROUND ####################
 
         if [[ "$SCRIPT_MODE" == "dev" ]]; then
             source $BAW_CNCF_FOLDER/baw-utils.sh
@@ -11604,7 +11639,7 @@ if [ "$RUNTIME_MODE" == "upgradeOperator" ]; then
         # DBACLD-168537: need to re-create {{meta.name}}-fncm-custom-ssl-secret to add CSS DNSName (in case they are missing from previous deployment) which will be included in Content Cortex's keystores
         cr_name=$(${CLI_CMD} get icp4acluster -n $CP4BA_SERVICES_NS --no-headers --ignore-not-found | awk '{print $1}')
         if [[ -z $cr_name ]]; then
-            cr_name=$(${CLI_CMD} get content -n $CP4BA_SERVICES_NS --no-headers --ignore-not-found | awk '{print $1}')
+            cr_name=$(${CLI_CMD} get content.icp4a.ibm.com -n $CP4BA_SERVICES_NS --no-headers --ignore-not-found | awk '{print $1}')
         fi
         fncm_custom_ssl_secret=$(${CLI_CMD} get secret --no-headers --ignore-not-found ${cr_name}-fncm-custom-ssl-secret -n $CP4BA_SERVICES_NS | awk '{print $1}') 
         if [[ -z $fncm_custom_ssl_secret ]]; then
@@ -12118,6 +12153,42 @@ if [[ "$RUNTIME_MODE" == "upgradeDeploymentStatus" ]]; then
 
     # The control variable used to detect if the strimzi patch function has to be executed.
     strimzi_patched=false
+
+    ################## Start - Apply CPFS 4.19.2 operandConfig WORKAROUND ####################
+    # WORKAROUND: https://jsw.ibm.com/browse/DBACLD-251442
+    # Applied once at the start of upgradeDeploymentStatus to unblock zenService if it is stuck
+    # due to the common-service-db PostgreSQL Cluster resource referencing an invalid imageCatalogRef.
+    # Patches operandConfig 'common-service': removes .data.spec.imageCatalogRef and pins
+    # .data.spec.imageName to the correct digest on the postgresql-operator / common-service-db entry.
+    # Remove once the CPFS team ships an official fix.
+    # NOTE: uses yq v3 d|w pipe syntax — this repo bundles yq v3, not v4.
+    if [[ "$CP4BA_OPERATOR_NS" == "$CP4BA_SERVICES_NS" ]]; then
+        cpfs_services_ns="$CP4BA_SERVICES_NS"
+    else
+        cpfs_services_ns="ibm-common-services"
+    fi
+    info "Applying CPFS 4.19.2 workaround: patching operandConfig 'common-service' in namespace \"$cpfs_services_ns\""
+    if ${CLI_CMD} get operandconfig common-service -n "$cpfs_services_ns" --no-headers --ignore-not-found >/dev/null 2>&1; then
+        _cpfs_patched=$(${CLI_CMD} get operandconfig common-service -n "$cpfs_services_ns" -o yaml | \
+          ${YQ_CMD} d - 'spec.services.(name==common-service-cnpg).resources.(name==common-service-db).data.spec.imageCatalogRef' | \
+          ${YQ_CMD} w - 'spec.services.(name==common-service-cnpg).resources.(name==common-service-db).data.spec.imageName' \
+            'icr.io/cpopen/ibm-pg/ibm-pg-16:16.14-v28.4.0@sha256:cd1fd631b3e20141cbd462cdd713bee9e2b062472b674fd20ee4c64f923c5cbf')
+        if echo "$_cpfs_patched" | grep -q 'apiVersion:'; then
+            echo "$_cpfs_patched" | ${CLI_CMD} apply -f - >/dev/null 2>&1
+            if [[ $? -eq 0 ]]; then
+                success "Successfully applied CPFS 4.19.2 workaround to operandConfig 'common-service' in namespace \"$cpfs_services_ns\""
+            else
+                warning "Failed to patch operandConfig 'common-service' in namespace \"$cpfs_services_ns\" — apply the following command manually:"
+                echo "  ${CLI_CMD} get operandconfig common-service -n $cpfs_services_ns -o yaml | ${YQ_CMD} d - 'spec.services.(name==common-service-cnpg).resources.(name==common-service-db).data.spec.imageCatalogRef' | ${YQ_CMD} w - 'spec.services.(name==common-service-cnpg).resources.(name==common-service-db).data.spec.imageName' 'icr.io/cpopen/ibm-pg/ibm-pg-16:16.14-v28.4.0@sha256:cd1fd631b3e20141cbd462cdd713bee9e2b062472b674fd20ee4c64f923c5cbf' | ${CLI_CMD} apply -f -"
+            fi
+        else
+            warning "Could not read operandConfig 'common-service' from namespace \"$cpfs_services_ns\" — skipping CPFS 4.19.2 workaround."
+        fi
+    else
+        info "operandConfig 'common-service' not found in namespace \"$cpfs_services_ns\" — skipping CPFS 4.19.2 workaround."
+    fi
+    ################## End - Apply CPFS 4.19.2 operandConfig WORKAROUND ####################
+
     # The control variable used to detect if we should display manual steps to patch strimzipodset, by default we want to print it
     DISPLAY_MANUAL_PATCH_STEPS=true
     
@@ -12405,12 +12476,12 @@ if [ "$RUNTIME_MODE" == "upgradePostconfig" ]; then
     fi
 
     # # Retrieve existing Content CR for remove route cp-console-iam-provider/cp-console-iam-idmgmt
-    # content_cr_name=$(${CLI_CMD} get content -n $project_name --no-headers --ignore-not-found | awk '{print $1}')
+    # content_cr_name=$(${CLI_CMD} get content.icp4a.ibm.com -n $project_name --no-headers --ignore-not-found | awk '{print $1}')
     # if [ ! -z $content_cr_name ]; then
     #     info "Retrieving existing CP4BA Content (Kind: content.icp4a.ibm.com) Custom Resource"
     #     cr_type="content"
-    #     cr_metaname=$(${CLI_CMD} get content $content_cr_name -n $project_name -o yaml | ${YQ_CMD} r - metadata.name)
-    #     owner_ref=$(${CLI_CMD} get content $content_cr_name -n $project_name -o yaml | ${YQ_CMD} r - metadata.ownerReferences.[0].kind)
+    #     cr_metaname=$(${CLI_CMD} get content.icp4a.ibm.com $content_cr_name -n $project_name -o yaml | ${YQ_CMD} r - metadata.name)
+    #     owner_ref=$(${CLI_CMD} get content.icp4a.ibm.com $content_cr_name -n $project_name -o yaml | ${YQ_CMD} r - metadata.ownerReferences.[0].kind)
     #     if [[ ${owner_ref} != "ICP4ACluster" ]]; then
     #         iam_idprovider=$(${CLI_CMD} get route -n $project_name -o 'custom-columns=NAME:.metadata.name' --no-headers --ignore-not-found | grep cp-console-iam-provider)
     #         iam_idmgmt=$(${CLI_CMD} get route -n $project_name -o 'custom-columns=NAME:.metadata.name' --no-headers --ignore-not-found | grep cp-console-iam-idmgmt)

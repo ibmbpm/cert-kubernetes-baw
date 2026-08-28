@@ -12,10 +12,12 @@ spec:
     accept: {{ .Values.global.licenseAccept }}
     license: {{ .Values.global.licenseType }}
   version: {{ .Values.modelGateway.crVersion }}
+{{- if not .Values.modelGateway.lite_install }}
   blockStorageClass: {{ .Values.global.blockStorageClass }}
   fileStorageClass: {{ .Values.global.fileStorageClass }}
 {{- if .Values.global.storageVendor }}
   storageVendor: {{ .Values.global.storageVendor }}
+{{- end }}
 {{- end }}
   scaleConfig: {{ .Values.modelGateway.scaleConfig }}
 {{- if .Values.modelGateway.devImagePullPrefix }}

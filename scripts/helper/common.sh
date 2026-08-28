@@ -213,17 +213,17 @@ LDAP_SECRET_FILE=${SECRET_FILE_FOLDER}/ldap-bind-secret.yaml
 # Release/Patch version for CP4BA
 # CP4BA_RELEASE_BASE is for fetch content/foundation operator pod, only need to change for major release.
 CP4BA_RELEASE_BASE="26.0.0"
-BAW_PATCH_VERSION="IF001"
-BAW_PATCH_VERSION="IF001"
+BAW_PATCH_VERSION="IF002"
+BAW_PATCH_VERSION="IF002"
 #DBACLD-222678: This variable is used to specify the version that will skip EDB and Starter deployment option. It should be in the format of ${CP4BA_RELEASE_BASE}_${BAW_PATCH_VERSION}
 # For 26.0.0_GA we will remove the Starter option and EDB option.
-# From 26.0.0_IF001 onwards CNPG is supported, so skip_edb() returns 1 (false) and upgrade is allowed.
+# From 26.0.0_IF002 onwards CNPG is supported, so skip_edb() returns 1 (false) and upgrade is allowed.
 VERSION_TO_SKIP_EDB="26.0.0_GA"
 # CP4BA_RELEASE_BASE_MAJOR_VERSION is used in certain checks where we used to hardcode to see if a upgrade is not ifix to ifix,change this only for major release
 CP4BA_RELEASE_BASE_MAJOR_VERSION="26.0"
-CP4BA_PATCH_VERSION="IF001"
+CP4BA_PATCH_VERSION="IF002"
 # CP4BA_CSV_VERSION is for checking CP4BA operator upgrade status, need to update for each IFIX
-CP4BA_CSV_VERSION="v26.0.1"
+CP4BA_CSV_VERSION="v26.0.2"
 # CP4BA_CHANNEL_VERSION is for switch CP4BA operator upgrade status, need to update for major release
 CP4BA_CHANNEL_VERSION="v26.0"
 # CS_OPERATOR_VERSION is for checking CPFS operator upgrade status, need to update for each IFIX
@@ -261,7 +261,7 @@ CERT_LICENSE_CHANNEL_VERSION="v4.2"
 # CS_CATALOG_VERSION is for CPFS script -s option, need to update for each IFIX
 CS_CATALOG_VERSION="ibm-cs-install-catalog-v4-19-0"
 # ZEN_OPERATOR_VERSION is for checking ZenService operator upgrade status, need to update for each IFIX
-ZEN_OPERATOR_VERSION="v6.10.3"
+ZEN_OPERATOR_VERSION="v6.10.5"
 # BTS_CHANNEL_VERSION is for for BTS, need to update for each IFIX
 BTS_CHANNEL_VERSION="v3.35"
 # BTS_CATALOG_VERSION is for BTS 3.35.13.
@@ -2815,11 +2815,11 @@ function retrieve_custom_resource_details(){
     # If the content CR does not have an owner reference , it is the top level CR otherwise the top level CR is the ICP4ACLuster CR
     ${CLI_CMD} get crd |grep contents.icp4a.ibm.com >/dev/null 2>&1
     if [[ $? -eq 0 ]]; then
-        content_cr_name=$(${CLI_CMD} get content -n $cr_namespace --no-headers --ignore-not-found | awk '{print $1}')
+        content_cr_name=$(${CLI_CMD} get content.icp4a.ibm.com -n $cr_namespace --no-headers --ignore-not-found | awk '{print $1}')
         if [[ ! -z $content_cr_name ]]; then
-            owner_ref=$(${CLI_CMD} get content $content_cr_name -n $cr_namespace -o yaml | ${YQ_CMD} r - metadata.ownerReferences.[0].kind)
+            owner_ref=$(${CLI_CMD} get content.icp4a.ibm.com $content_cr_name -n $cr_namespace -o yaml | ${YQ_CMD} r - metadata.ownerReferences.[0].kind)
             # Store the Content CR contents in a certain file location
-            ${CLI_CMD} get content $content_cr_name -n $cr_namespace -o yaml > ${content_cr_details_location}
+            ${CLI_CMD} get content.icp4a.ibm.com $content_cr_name -n $cr_namespace -o yaml > ${content_cr_details_location}
             if [[ ${owner_ref} != "ICP4ACluster" ]]; then
                 top_level_cr_kind="content"
                 top_level_cr_name="$content_cr_name"

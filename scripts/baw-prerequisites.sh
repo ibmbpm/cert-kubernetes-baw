@@ -8970,6 +8970,18 @@ function update_components_mode(){
         if [[ "${optional_component_cr_arr[@]}" =~ "workflow_assistant" || "${optional_component_cr_arr[@]}" =~ "workplace_assistant" ]]; then
             select_wfa_deployment_type
         fi
+    else
+        # WPA/WFA was already deployed in the previous iteration. Restore the previously chosen
+        # WatsonX deployment type (SaaS or LWE) from the persisted TEMPORARY_PROPERTY_FILE so that
+        # create_property_file() regenerates the correct parameter block instead of defaulting to LWE.
+        # DBACLD-251199
+        if [[ "${optional_component_cr_arr[@]}" =~ "workflow_assistant" || "${optional_component_cr_arr[@]}" =~ "workplace_assistant" ]]; then
+            WFA_WATSONX_DEPLOYMENT_TYPE="$(prop_tmp_property_file WFA_WATSONX_DEPLOYMENT_TYPE)"
+            if [[ -z "$WFA_WATSONX_DEPLOYMENT_TYPE" ]]; then
+                WFA_WATSONX_DEPLOYMENT_TYPE="SaaS"
+            fi
+            info "Retaining previously selected WatsonX deployment type for Workplace/Workflow Assistant: $WFA_WATSONX_DEPLOYMENT_TYPE"
+        fi
     fi
 
     # This array (current_cr_deployment_patterns_array) stores the current patterns deployed , and we should only ask if they want to use external postgres for BTS if they add any of the patterns that need BTS while running the script to update components

@@ -1,0 +1,386 @@
+# ================================================================================
+# SECTION 1: TLS CERTIFICATES (cert-manager)
+# ================================================================================
+# These Certificate resources instruct cert-manager (via zen-tls-issuer) to
+# provision the TLS secrets that the Gateway listeners reference.
+# Without these, the websecure / websecure-licensing listeners fail with
+# "Cannot load CertificateRef ... secret not found".
+# Mirrors the same 3-cert pattern used by the AKS and GKE templates.
+
+---
+# Certificate 1: cpd-ingress-tls-secret  (consumed by websecure listener + CPD pods)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cpd-ingress-tls
+  namespace: NAMESPACE
+spec:
+  secretName: cpd-ingress-tls-secret
+  issuerRef:
+    name: zen-tls-issuer
+    kind: Issuer
+  dnsNames:
+    - HOST
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+
+---
+# Certificate 2: licensing-gateway-tls-secret  (consumed by websecure-licensing listener)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: licensing-gateway-tls
+  namespace: NAMESPACE
+spec:
+  secretName: licensing-gateway-tls-secret
+  issuerRef:
+    name: zen-tls-issuer
+    kind: Issuer
+  dnsNames:
+    - licensing.DOMAIN
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+
+# ================================================================================
+# SECTION 2: GATEWAY RESOURCE
+# ================================================================================
+
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: baw-gateway
+  namespace: NAMESPACE
+spec:
+  gatewayClassName: GATEWAY_CLASS
+  listeners:
+  - name: web
+    protocol: HTTP
+    port: 8000
+    allowedRoutes:
+      namespaces:
+        from: Same
+  - name: websecure
+    protocol: HTTPS
+    port: 8443
+    hostname: "HOST"
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: cpd-ingress-tls-secret
+    allowedRoutes:
+      namespaces:
+        from: Same
+  - name: websecure-licensing
+    protocol: HTTPS
+    port: 8443
+    hostname: "licensing.DOMAIN"
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: licensing-gateway-tls-secret
+    allowedRoutes:
+      namespaces:
+        from: All
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: cp4ba-baw-auth-grant
+  namespace: NAMESPACE
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: NAMESPACE
+  to:
+  - group: ""
+    kind: Service
+  - group: ""
+    kind: Secret
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: NAMESPACE-allow-licensing-to-gateway
+  namespace: NAMESPACE
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: LICENSING_NS
+  to:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: baw-gateway
+
+# ================================================================================
+# SECTION 3: IBM CP4BA CA SECRET + SECURE BACKEND TRANSPORTS
+# ================================================================================
+# Traefik's Gateway API provider does not support BackendTLSPolicy.
+# The IBM CP4BA backend services serve TLS certs signed by "CN=IBM Automation
+# Foundation CA" (stored in secret/external-tls-secret key ca.crt in the CP4BA
+# namespace).  We extract this CA into a dedicated Secret and use Traefik's
+# native ServersTransport CRD to configure:
+#   - serverName: the DNS SAN matching each backend's certificate
+#   - rootCAsSecrets: the CA that signed each backend cert
+# This provides full TLS verification without insecureSkipVerify.
+#
+# Two CA secrets are required (IBM CP4BA uses two different internal CAs):
+#
+#   ibm-iaf-ca   — CN=IBM Automation Foundation CA
+#                  Signs: ibm-nginx-svc (cpd cert)
+#                  Source: secret/external-tls-secret key ca.crt
+#
+#   ibm-cs-ca    — CN=cs-ca-certificate
+#                  Signs: platform-auth-service, platform-identity-provider,
+#                         platform-identity-management
+#                  Source: secret/cs-ca-certificate-secret key ca.crt
+#
+# The install script creates both secrets automatically.  If applying manually:
+#   kubectl get secret external-tls-secret -n NAMESPACE \
+#     -o jsonpath='{.data.ca\.crt}' | base64 -d > /tmp/iaf-ca.crt
+#   kubectl create secret generic ibm-iaf-ca -n NAMESPACE --from-file=tls.crt=/tmp/iaf-ca.crt
+#
+#   kubectl get secret cs-ca-certificate-secret -n NAMESPACE \
+#     -o jsonpath='{.data.ca\.crt}' | base64 -d > /tmp/cs-ca.crt
+#   kubectl create secret generic ibm-cs-ca -n NAMESPACE --from-file=tls.crt=/tmp/cs-ca.crt
+---
+# ibm-nginx-svc backend (port 443)
+# Cert SAN: cpd, cpd.NAMESPACE, cpd.NAMESPACE.svc, cpd-NAMESPACE.<domain>
+# Cert issuer: CN=IBM Automation Foundation CA  (ibm-iaf-ca)
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: ibm-nginx-transport
+  namespace: NAMESPACE
+spec:
+  serverName: cpd.NAMESPACE.svc
+  rootCAsSecrets:
+  - ibm-iaf-ca
+---
+# platform-auth-service backend (port 9443)
+# Cert SAN: platform-auth-service, IP 127.0.0.1, IP ::1
+# Cert issuer: CN=cs-ca-certificate  (ibm-cs-ca)
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: platform-auth-transport
+  namespace: NAMESPACE
+spec:
+  serverName: platform-auth-service
+  rootCAsSecrets:
+  - ibm-cs-ca
+---
+# platform-identity-provider backend (port 4300)
+# Cert SAN: platform-identity-provider.NAMESPACE.svc, platform-identity-provider
+# Cert issuer: CN=cs-ca-certificate  (ibm-cs-ca)
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: platform-idp-transport
+  namespace: NAMESPACE
+spec:
+  serverName: platform-identity-provider
+  rootCAsSecrets:
+  - ibm-cs-ca
+---
+# platform-identity-management backend (port 4500)
+# Cert SAN: platform-identity-management.NAMESPACE.svc, platform-identity-management
+# Cert issuer: CN=cs-ca-certificate  (ibm-cs-ca)
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: platform-idm-transport
+  namespace: NAMESPACE
+spec:
+  serverName: platform-identity-management
+  rootCAsSecrets:
+  - ibm-cs-ca
+
+# ================================================================================
+# SECTION 4: HTTP -> HTTPS REDIRECT (Gateway API HTTPRoute on 'web' listener)
+# ================================================================================
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cp4ba-http-to-https-redirect-auth
+  namespace: NAMESPACE
+spec:
+  parentRefs:
+  - name: baw-gateway
+    sectionName: web
+  hostnames:
+  - "HOST"
+  rules:
+  - filters:
+    - type: RequestRedirect
+      requestRedirect:
+        scheme: https
+        statusCode: 301
+
+# ================================================================================
+# SECTION 5: INGRESSROUTES (Traefik CRD) FOR TLS BACKEND SERVICES
+# ================================================================================
+# Traefik's Gateway API provider (HTTPRoute) does not support per-service
+# ServersTransport references — the annotation only works for the Ingress/CRD
+# provider.  We use Traefik IngressRoute CRDs here so that each backend gets
+# its own ServersTransport with the correct serverName (SNI) and CA.
+# The 'websecure' entryPoint maps to hostPort 443 (port 8443 internal).
+# These IngressRoutes REPLACE the equivalent HTTPRoutes for TLS backends.
+---
+# ibm-nginx-svc: main CP4BA/Zen frontend (all paths not matched below)
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: cp4ba-zen-ingress
+  namespace: NAMESPACE
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: "Host(`HOST`) && PathPrefix(`/`)"
+    kind: Rule
+    priority: 1
+    services:
+    - name: ibm-nginx-svc
+      port: 443
+      scheme: https
+      serversTransport: ibm-nginx-transport
+  tls:
+    secretName: cpd-ingress-tls-secret
+---
+# platform-auth-service: /idauth, /oidc, /ibm/saml20/defaultSP/acs, /ibm/api/social-login
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: cp4ba-platform-id-auth
+  namespace: NAMESPACE
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: "Host(`HOST`) && (PathPrefix(`/idauth/`) || Path(`/idauth`))"
+    kind: Rule
+    priority: 100
+    services:
+    - name: platform-auth-service
+      port: 9443
+      scheme: https
+      serversTransport: platform-auth-transport
+  - match: "Host(`HOST`) && (PathPrefix(`/oidc/`) || Path(`/oidc`))"
+    kind: Rule
+    priority: 100
+    services:
+    - name: platform-auth-service
+      port: 9443
+      scheme: https
+      serversTransport: platform-auth-transport
+  - match: "Host(`HOST`) && (PathPrefix(`/ibm/saml20/defaultSP/acs/`) || Path(`/ibm/saml20/defaultSP/acs`))"
+    kind: Rule
+    priority: 100
+    services:
+    - name: platform-auth-service
+      port: 9443
+      scheme: https
+      serversTransport: platform-auth-transport
+  - match: "Host(`HOST`) && (PathPrefix(`/ibm/api/social-login/`) || Path(`/ibm/api/social-login`))"
+    kind: Rule
+    priority: 100
+    services:
+    - name: platform-auth-service
+      port: 9443
+      scheme: https
+      serversTransport: platform-auth-transport
+  tls:
+    secretName: cpd-ingress-tls-secret
+---
+# platform-identity-provider: /idprovider, /v1/auth, /login
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: cp4ba-platform-id-provider
+  namespace: NAMESPACE
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: "Host(`HOST`) && (PathPrefix(`/idprovider/`) || Path(`/idprovider`))"
+    kind: Rule
+    priority: 100
+    services:
+    - name: platform-identity-provider
+      port: 4300
+      scheme: https
+      serversTransport: platform-idp-transport
+  - match: "Host(`HOST`) && (PathPrefix(`/v1/auth/`) || Path(`/v1/auth`))"
+    kind: Rule
+    priority: 100
+    services:
+    - name: platform-identity-provider
+      port: 4300
+      scheme: https
+      serversTransport: platform-idp-transport
+  - match: "Host(`HOST`) && (PathPrefix(`/login/`) || Path(`/login`))"
+    kind: Rule
+    priority: 100
+    services:
+    - name: platform-identity-provider
+      port: 4300
+      scheme: https
+      serversTransport: platform-idp-transport
+  tls:
+    secretName: cpd-ingress-tls-secret
+---
+# platform-identity-management: /idmgmt
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: cp4ba-cncf-id-mgmt
+  namespace: NAMESPACE
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: "Host(`HOST`) && (PathPrefix(`/idmgmt/`) || Path(`/idmgmt`))"
+    kind: Rule
+    priority: 100
+    services:
+    - name: platform-identity-management
+      port: 4500
+      scheme: https
+      serversTransport: platform-idm-transport
+  tls:
+    secretName: cpd-ingress-tls-secret
+
+# ================================================================================
+# SECTION 6: LICENSING SERVICE ROUTE (Gateway API HTTPRoute - no TLS backend)
+# ================================================================================
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: LICENSING_NS-cncf-ibm-licensing-service-instance
+  namespace: LICENSING_NS
+spec:
+  parentRefs:
+  - name: baw-gateway
+    namespace: NAMESPACE
+    sectionName: websecure-licensing
+  hostnames:
+  - "licensing.DOMAIN"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: ibm-licensing-service-instance
+      port: 8080
